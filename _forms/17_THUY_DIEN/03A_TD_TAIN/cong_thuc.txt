@@ -1,0 +1,551 @@
+CÔNG THỨC TÍNH (human-readable) — 03A_TD_TAIN (Tờ khai thuế tài nguyên mẫu số 03A/TĐ-TAIN)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+
+## File 03A_TD_TAIN_v2.0.5_mau.xls (v2.6.2 giống, trừ ghi chú tại sheet 03-1)
+
+### Sheet "03" (tờ khai chính)
+- [I6] [01] Kỳ tính thuế = "Kỳ tính thuế: Năm " + Header!V48
+- [K7] Lần đầu = "[X]" nếu Header!V29 rỗng, khác ""
+- [P7] Bổ sung lần thứ = Header!V29 nếu có, khác ""
+- [F8] Tên người nộp thuế = TRIM(Header!C3)
+- [F9] Mã số thuế = nối từng ô chữ số Header!C2.. (mỗi ô TRIM, ô rỗng chèn " ") (IF+ISBLANK, bị cắt trong dump)
+- [G10..T12] (7 ô) Địa chỉ, Quận/Huyện, Tỉnh/Thành phố, Điện thoại, Fax, Email = TRIM(Header!C4..C9)
+- [F13..T17] (8 ô) Tên đại lý thuế (nếu có) + MST/địa chỉ/quận/tỉnh/ĐT/fax/email của đại lý = TRIM(Header!V5..V12)
+- [M18] Số (giấy ủy quyền) = TRIM(Header!V13); [T18] Ngày = TRIM(Header!V14)
+- [C27] Cột Thuế suất = "1" nếu Header!V29 rỗng, khác ""
+- [G27] = "1" nếu Header!V29 rỗng, khác ""
+- [J27] = TRIM(Header!V29)
+- [M27, N27] = TRIM(Header!V34) / TRIM(Header!V35)
+- [O37, O46] = SUM(O43:O45) (tổng 3 dòng khối)
+- [R37, R46] = SUM(R43:R45)
+- [V37, V46] = SUM(V43:V45)
+- [W37, W46] = SUM(W43:W45)
+- [X37, X46] = SUM(X43:X45)
+- [O44] [27] = ROUND(I44 × K44 × $E$25/100, 0) (đơn vị tài nguyên [22] × thuế suất [25] × đơn giá [26])
+- [V44] [29] = IF(O44−R44 < 0, 0, O44−R44) (thuế phải nộp [27] − số đã nộp [28], chặn âm)
+- [X44] [31] = V44−W44 (thuế còn lại sau giảm trừ [30])
+- [R58] "Ngày dd tháng mm năm yyyy" = từ S56 (MID)
+- [G61] Họ và tên = TRIM(Header!V15); [G63] Chứng chỉ hành nghề số = TRIM(Header!V16)
+- [P61] Người ký = TRIM(Header!V41); [P63] Ngày ký = TRIM(Header!V42)
+
+### Sheet "03-1" (bảng chi tiết theo thời gian)
+- [U35] = U45 (sao chép)
+- [AB43] = IF(G43=1, 0, R43) (bỏ giá trị nếu cờ G43 = 1)
+- [AD43] (6b) = U43−AC43
+- [AI43] = G43 (sao chép cờ)
+- [AB45] = SUM(AB41:AB44)
+- (v2.6.2 thêm: [AD42] (6b) = U42−AC42; [AD45] = U45−AC45)
+
+### Sheet "01_KHBS" (khai bổ sung)
+- [B3] Dòng tiêu đề = "Tờ khai thuế tài nguyên mẫu số 03A/TĐ-TAIN kỳ tính thuế: Năm " + Header!V48 + " ngày dd tháng mm năm yyyy" (MID từ BG5)
+- [B9, B13, B17] Số thứ tự = dòng trên +1 (lặp theo dòng trong 3 khối I/II/III)
+- [BF5] = ROUND(BH15 × BE20 × 0.05/100, 0) (tiền chậm nộp = số thuế × số ngày × 0,05%/ngày)
+- [BH17] = BI5 (sao chép); [BE20] Số ngày nộp chậm = BD5
+- [BE21] Số tiền chậm nộp = IF(BH17×BE20×0.05/100 > 0, ROUND(...,0), 0)
+- [BG45] Người ký = TRIM(03!P61); [BG46] Ngày ký = TRIM(03!P63)
+- [B47] = BG5 (sao chép)
+- [BD47] = SUM(BH8:BH10) (tổng khối I); [BF47] = SUM(BH12:BH14) (tổng khối II)
+
+### Sheet "Header"
+- [M2] Cờ ngắt địa chỉ: nếu N2, O2, P2 rỗng thì " ", khác " - "
+- [T8] Người ký = CONCATENATE(1) (tĩnh)
+- [B18] Cờ đối chiếu: "0" nếu '03-1'!U35 ≠ 03!V37, khác "1"
+
+## File 03A_TD_TAIN_v2.0.5_mau.xls1 (và v2.6.2_mau.xls1 — bản in, công thức giống nhau)
+
+### Sheet "03" (trang in tờ chính)
+- [K6] [01] Kỳ tính thuế = " Kỳ tính thuế: Năm " + Header!V48
+- [L7] Lần đầu = "[X]" nếu Header!V29 rỗng; [S7] Bổ sung lần thứ = Header!V29
+- [H8] Tên NNT = TRIM(Header!C3); khối [F9..S9] = từng chữ số MST (Header!C2..P2)
+- [F10..S12] (6 ô) Địa chỉ/Quận/Tỉnh/ĐT/Fax/Email = TRIM(Header!C4..C9)
+- [H13] Tên đại lý thuế = TRIM(Header!V6); khối [F14..S14] = từng ký tự MST đại lý (Header!V5, MID 1..13) + [P14] = TRIM(Header!M2)
+- [F15..S17] (6 ô) Địa chỉ/Quận/Tỉnh/ĐT/Fax/Email đại lý = TRIM(Header!V7..V12)
+- [L18] Số = TRIM(Header!V13); [S18] Ngày = "dd tháng mm năm yyyy" từ Header!V14; nếu rỗng thì "ngày …..tháng……năm….."
+- [F20] Thuế suất = L27 & "%"
+- [B44] STT = B43+1 (lặp)
+- [Q46, V46, Y46, AC46, AG46] Tổng cột = SUM(41:45)
+- [Y58] "Ngày dd tháng mm năm yyyy" = từ R56 (MID)
+
+### Sheet "03-1" (trang in bảng chi tiết)
+- [I7] [01] = TRIM(03!K6); [H9] Tên NNT = TRIM(Header!C3)
+- [F10..S10] Từng chữ số MST (Header!C2..P2); [H11] Tên đại lý = TRIM(Header!V6); [F12..S12] Từng ký tự MST đại lý (MID) + [P12] = TRIM(Header!M2)
+- [R54] = TRIM(03!Y58) (ngày); [D56] Họ và tên = TRIM(03!D60); [G57] Chứng chỉ = TRIM(03!G61); [R59] Chữ ký = TRIM(03!Y63)
+
+### Sheet "01_KHBS" (trang in khai bổ sung)
+- [E7] Tiêu đề = "Tờ khai thuế TAIN mẫu số 03A/TĐ-TAIN kỳ tính thuế: Năm " + Header!V48 + " ngày dd..." (MID từ E70)
+- [AF10..CK28] (khối lớn) Prefill từ Header: tên (C3), MST (C2..P2), địa chỉ (C4..C9), đại lý (V5..V14, mỗi ô TRIM hoặc MID)
+- [D39, D43, D47] STT = dòng trên +1 (lặp trong 3 khối I/II/III)
+- [CP39] (6) = BU39−BB39 ((5)−(4)); [CP43, CP47] = BU43−BB43 / tương tự dòng 47
+- [BL72] "Ngày dd..." = từ C70 (MID); [N74] = TRIM(03!D60); [AA75] = TRIM(03!G61)
+
+### Sheet "Header" (của bản .xls1)
+- [M2] Cờ ngắt địa chỉ: " " nếu rỗng, khác " - "
+- [T8] Người ký = CONCATENATE(1) (tĩnh)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 03A_TD_TAIN
+Thư mục: 17_THUY_DIEN/03A_TD_TAIN (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 03A_TD_TAIN_v2.0.5_mau.xls ===
+--- Sheet "03" ---
+I6: "Kỳ tính thuế: Năm "&Header!V48
+K7: IF(Header!V29="","[X]","")
+P7: IF(Header!V29="","",Header!V29)
+F8: TRIM(Header!C3)
+F9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G10: TRIM(Header!C4)
+G11: TRIM(Header!C5)
+Q11: TRIM(Header!C6)
+G12: TRIM(Header!C7)
+N12: TRIM(Header!C8)
+T12: TRIM(Header!C9)
+F13: TRIM(Header!V6)
+F14: TRIM(Header!V5)
+G15: TRIM(Header!V7)
+G16: TRIM(Header!V8)
+Q16: TRIM(Header!V9)
+G17: TRIM(Header!V10)
+N17: TRIM(Header!V11)
+T17: TRIM(Header!V12)
+M18: TRIM(Header!V13)
+T18: TRIM(Header!V14)
+C27: IF(Header!V29="","1","")
+G27: IF(Header!V29="","","1")
+J27: TRIM(Header!V29)
+M27: TRIM(Header!V34)
+N27: TRIM(Header!V35)
+O37: SUM(O43:O45)
+R37: SUM(R43:R45)
+V37: SUM(V43:V45)
+W37: SUM(W43:W45)
+X37: SUM(X43:X45)
+O44: ROUND(I44*K44*$E$25/100,0)
+V44: IF(O44-R44<0,0,O44-R44)
+X44: V44-W44
+O46: SUM(O43:O45)
+R46: SUM(R43:R45)
+V46: SUM(V43:V45)
+W46: SUM(W43:W45)
+X46: SUM(X43:X45)
+R58: "Ngày "&MID(TRIM(S56),1,2)&" tháng "&MID(TRIM(S56),4,2)&" năm "&MID(TRIM(S56),7,4)
+G61: TRIM(Header!V15)
+P61: TRIM(Header!V41)
+G63: TRIM(Header!V16)
+P63: TRIM(Header!V42)
+--- Sheet "03-1" ---
+U35: U45
+AB43: IF(G43=1,0,R43)
+AD43: U43-AC43
+AI43: G43
+AB45: SUM(AB41:AB44)
+--- Sheet "01_KHBS" ---
+B3: "Tờ khai thuế tài nguyên mẫu số 03A/TĐ-TAIN kỳ tính thuế: Năm "&Header!V48&" ngày  "&MID(BG5,1,2)&" tháng "&MID(BG5,4,2)&" năm "&MID(BG5,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BH17: BI5
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: TRIM(03!P61)
+BG46: TRIM(03!P63)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "01_1_KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B18: IF('03-1'!U35<>03!V37,"0","1")
+=> 65 cell công thức trong file này
+
+=== FILE: 03A_TD_TAIN_v2.0.5_mau.xls1 ===
+--- Sheet "03" ---
+K6: " Kỳ tính thuế: Năm "&Header!V48
+L7: IF(Header!V29="","[X]","")
+S7: IF(Header!V29="","",Header!V29)
+H8: TRIM(Header!C3)
+F9: Header!C2
+G9: Header!D2
+H9: Header!E2
+I9: Header!F2
+J9: Header!G2
+K9: Header!H2
+L9: Header!I2
+M9: Header!J2
+N9: Header!K2
+O9: Header!L2
+P9: Header!M2
+Q9: Header!N2
+R9: Header!O2
+S9: Header!P2
+F10: TRIM(Header!C4)
+F11: TRIM(Header!C5)
+P11: TRIM(Header!C6)
+F12: TRIM(Header!C7)
+M12: TRIM(Header!C8)
+S12: TRIM(Header!C9)
+H13: TRIM(Header!V6)
+F14: MID(TRIM(Header!V5),1,1)
+G14: MID(TRIM(Header!V5),2,1)
+H14: MID(TRIM(Header!V5),3,1)
+I14: MID(TRIM(Header!V5),4,1)
+J14: MID(TRIM(Header!V5),5,1)
+K14: MID(TRIM(Header!V5),6,1)
+L14: MID(TRIM(Header!V5),7,1)
+M14: MID(TRIM(Header!V5),8,1)
+N14: MID(TRIM(Header!V5),9,1)
+O14: MID(TRIM(Header!V5),10,1)
+P14: TRIM(Header!M2)
+Q14: MID(TRIM(Header!V5),11,1)
+R14: MID(TRIM(Header!V5),12,1)
+S14: MID(TRIM(Header!V5),13,1)
+F15: TRIM(Header!V7)
+F16: TRIM(Header!V8)
+P16: TRIM(Header!V9)
+F17: TRIM(Header!V10)
+M17: TRIM(Header!V11)
+S17: TRIM(Header!V12)
+L18: TRIM(Header!V13)
+S18: IF(MID(TRIM(Header!V14),1,2)<>"",""&MID(TRIM(Header!V14),1,2)&" tháng "&MID(TRIM(Header!V14),4,2)&" năm "&MID(TRIM(Header!V14),7,4),"ngày …..tháng……năm…..")
+F20: L27&"%"
+B44: B43+1
+Q46: SUM(Q41:Q45)
+V46: SUM(V41:V45)
+Y46: SUM(Y41:Y45)
+AC46: SUM(AC41:AC45)
+AG46: SUM(AG41:AG45)
+Y58: "Ngày "&MID(TRIM(R56),1,2)&" tháng "&MID(TRIM(R56),4,2)&" năm "&MID(TRIM(R56),7,4)
+--- Sheet "03-1" ---
+I7: TRIM(03!K6)
+H9: TRIM(Header!C3)
+F10: Header!C2
+G10: Header!D2
+H10: Header!E2
+I10: Header!F2
+J10: Header!G2
+K10: Header!H2
+L10: Header!I2
+M10: Header!J2
+N10: Header!K2
+O10: Header!L2
+P10: Header!M2
+Q10: Header!N2
+R10: Header!O2
+S10: Header!P2
+H11: TRIM(Header!V6)
+F12: MID(TRIM(Header!V5),1,1)
+G12: MID(TRIM(Header!V5),2,1)
+H12: MID(TRIM(Header!V5),3,1)
+I12: MID(TRIM(Header!V5),4,1)
+J12: MID(TRIM(Header!V5),5,1)
+K12: MID(TRIM(Header!V5),6,1)
+L12: MID(TRIM(Header!V5),7,1)
+M12: MID(TRIM(Header!V5),8,1)
+N12: MID(TRIM(Header!V5),9,1)
+O12: MID(TRIM(Header!V5),10,1)
+P12: TRIM(Header!M2)
+Q12: MID(TRIM(Header!V5),11,1)
+R12: MID(TRIM(Header!V5),12,1)
+S12: MID(TRIM(Header!V5),13,1)
+R54: TRIM(03!Y58)
+D56: TRIM(03!D60)
+G57: TRIM(03!G61)
+R59: TRIM(03!Y63)
+--- Sheet "01_KHBS" ---
+E7: "Tờ khai thuế TAIN mẫu số 03A/TĐ-TAIN kỳ tính thuế:  Năm "&Header!V48&"  ngày "&MID(E70,1,2)&" tháng "&MID(E70,4,2)&" năm "&MID(E70,7,4)&")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: TRIM(Header!C4)
+AA16: TRIM(Header!C5)
+CK16: TRIM(Header!C6)
+AA18: TRIM(Header!C7)
+BD18: TRIM(Header!C8)
+CK18: TRIM(Header!C9)
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU43-BB43
+BL72: "Ngày "&MID(TRIM(C70),1,2)&" tháng "&MID(TRIM(C70),4,2)&" năm "&MID(TRIM(C70),7,4)
+N74: TRIM(03!D60)
+AA75: TRIM(03!G61)
+--- Sheet "01_1_KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 144 cell công thức trong file này
+
+=== FILE: 03A_TD_TAIN_v2.6.2_mau.xls ===
+--- Sheet "03" ---
+I6: "Kỳ tính thuế: Năm "&Header!V48
+K7: IF(Header!V29="","[X]","")
+P7: IF(Header!V29="","",Header!V29)
+F8: TRIM(Header!C3)
+F9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G10: TRIM(Header!C4)
+G11: TRIM(Header!C5)
+Q11: TRIM(Header!C6)
+G12: TRIM(Header!C7)
+N12: TRIM(Header!C8)
+T12: TRIM(Header!C9)
+F13: TRIM(Header!V6)
+F14: TRIM(Header!V5)
+G15: TRIM(Header!V7)
+G16: TRIM(Header!V8)
+Q16: TRIM(Header!V9)
+G17: TRIM(Header!V10)
+N17: TRIM(Header!V11)
+T17: TRIM(Header!V12)
+M18: TRIM(Header!V13)
+T18: TRIM(Header!V14)
+C27: IF(Header!V29="","1","")
+G27: IF(Header!V29="","","1")
+J27: TRIM(Header!V29)
+M27: TRIM(Header!V34)
+N27: TRIM(Header!V35)
+O37: SUM(O43:O45)
+R37: SUM(R43:R45)
+V37: SUM(V43:V45)
+W37: SUM(W43:W45)
+X37: SUM(X43:X45)
+O44: ROUND(I44*K44*$E$25/100,0)
+V44: IF(O44-R44<0,0,O44-R44)
+X44: V44-W44
+O46: SUM(O43:O45)
+R46: SUM(R43:R45)
+V46: SUM(V43:V45)
+W46: SUM(W43:W45)
+X46: SUM(X43:X45)
+R58: "Ngày "&MID(TRIM(S56),1,2)&" tháng "&MID(TRIM(S56),4,2)&" năm "&MID(TRIM(S56),7,4)
+G61: TRIM(Header!V15)
+P61: TRIM(Header!V41)
+G63: TRIM(Header!V16)
+P63: TRIM(Header!V42)
+--- Sheet "03-1" ---
+U35: U45
+AD42: U42-AC42
+AB43: IF(G43=1,0,R43)
+AD43: U43-AC43
+AI43: G43
+AB45: SUM(AB41:AB44)
+AD45: U45-AC45
+--- Sheet "01_KHBS" ---
+B3: "Tờ khai thuế tài nguyên mẫu số 03A/TĐ-TAIN kỳ tính thuế: Năm "&Header!V48&" ngày  "&MID(BG5,1,2)&" tháng "&MID(BG5,4,2)&" năm "&MID(BG5,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BH17: BI5
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: TRIM(03!P61)
+BG46: TRIM(03!P63)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "01_1_KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B18: IF('03-1'!U35<>03!V37,"0","1")
+=> 67 cell công thức trong file này
+
+=== FILE: 03A_TD_TAIN_v2.6.2_mau.xls1 ===
+--- Sheet "03" ---
+K6: " Kỳ tính thuế: Năm "&Header!V48
+L7: IF(Header!V29="","[X]","")
+S7: IF(Header!V29="","",Header!V29)
+H8: TRIM(Header!C3)
+F9: Header!C2
+G9: Header!D2
+H9: Header!E2
+I9: Header!F2
+J9: Header!G2
+K9: Header!H2
+L9: Header!I2
+M9: Header!J2
+N9: Header!K2
+O9: Header!L2
+P9: Header!M2
+Q9: Header!N2
+R9: Header!O2
+S9: Header!P2
+F10: TRIM(Header!C4)
+F11: TRIM(Header!C5)
+P11: TRIM(Header!C6)
+F12: TRIM(Header!C7)
+M12: TRIM(Header!C8)
+S12: TRIM(Header!C9)
+H13: TRIM(Header!V6)
+F14: MID(TRIM(Header!V5),1,1)
+G14: MID(TRIM(Header!V5),2,1)
+H14: MID(TRIM(Header!V5),3,1)
+I14: MID(TRIM(Header!V5),4,1)
+J14: MID(TRIM(Header!V5),5,1)
+K14: MID(TRIM(Header!V5),6,1)
+L14: MID(TRIM(Header!V5),7,1)
+M14: MID(TRIM(Header!V5),8,1)
+N14: MID(TRIM(Header!V5),9,1)
+O14: MID(TRIM(Header!V5),10,1)
+P14: TRIM(Header!M2)
+Q14: MID(TRIM(Header!V5),11,1)
+R14: MID(TRIM(Header!V5),12,1)
+S14: MID(TRIM(Header!V5),13,1)
+F15: TRIM(Header!V7)
+F16: TRIM(Header!V8)
+P16: TRIM(Header!V9)
+F17: TRIM(Header!V10)
+M17: TRIM(Header!V11)
+S17: TRIM(Header!V12)
+L18: TRIM(Header!V13)
+S18: IF(MID(TRIM(Header!V14),1,2)<>"",""&MID(TRIM(Header!V14),1,2)&" tháng "&MID(TRIM(Header!V14),4,2)&" năm "&MID(TRIM(Header!V14),7,4),"ngày …..tháng……năm…..")
+F20: L27&"%"
+B44: B43+1
+Q46: SUM(Q41:Q45)
+V46: SUM(V41:V45)
+Y46: SUM(Y41:Y45)
+AC46: SUM(AC41:AC45)
+AG46: SUM(AG41:AG45)
+Y58: "Ngày "&MID(TRIM(R56),1,2)&" tháng "&MID(TRIM(R56),4,2)&" năm "&MID(TRIM(R56),7,4)
+--- Sheet "03-1" ---
+I7: TRIM(03!K6)
+H9: TRIM(Header!C3)
+F10: Header!C2
+G10: Header!D2
+H10: Header!E2
+I10: Header!F2
+J10: Header!G2
+K10: Header!H2
+L10: Header!I2
+M10: Header!J2
+N10: Header!K2
+O10: Header!L2
+P10: Header!M2
+Q10: Header!N2
+R10: Header!O2
+S10: Header!P2
+H11: TRIM(Header!V6)
+F12: MID(TRIM(Header!V5),1,1)
+G12: MID(TRIM(Header!V5),2,1)
+H12: MID(TRIM(Header!V5),3,1)
+I12: MID(TRIM(Header!V5),4,1)
+J12: MID(TRIM(Header!V5),5,1)
+K12: MID(TRIM(Header!V5),6,1)
+L12: MID(TRIM(Header!V5),7,1)
+M12: MID(TRIM(Header!V5),8,1)
+N12: MID(TRIM(Header!V5),9,1)
+O12: MID(TRIM(Header!V5),10,1)
+P12: TRIM(Header!M2)
+Q12: MID(TRIM(Header!V5),11,1)
+R12: MID(TRIM(Header!V5),12,1)
+S12: MID(TRIM(Header!V5),13,1)
+R54: TRIM(03!Y58)
+D56: TRIM(03!D60)
+G57: TRIM(03!G61)
+R59: TRIM(03!Y63)
+--- Sheet "01_KHBS" ---
+E7: "Tờ khai thuế TAIN mẫu số 03A/TĐ-TAIN kỳ tính thuế:  Năm "&Header!V48&"  ngày "&MID(E70,1,2)&" tháng "&MID(E70,4,2)&" năm "&MID(E70,7,4)&")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: TRIM(Header!C4)
+AA16: TRIM(Header!C5)
+CK16: TRIM(Header!C6)
+AA18: TRIM(Header!C7)
+BD18: TRIM(Header!C8)
+CK18: TRIM(Header!C9)
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU43-BB43
+BL72: "Ngày "&MID(TRIM(C70),1,2)&" tháng "&MID(TRIM(C70),4,2)&" năm "&MID(TRIM(C70),7,4)
+N74: TRIM(03!D60)
+AA75: TRIM(03!G61)
+--- Sheet "01_1_KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 144 cell công thức trong file này
+
+
+TỔNG CỘNG: 420 cell công thức trong 4 file

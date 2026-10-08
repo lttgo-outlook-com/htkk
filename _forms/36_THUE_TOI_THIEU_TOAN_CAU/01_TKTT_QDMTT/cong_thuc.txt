@@ -1,0 +1,772 @@
+CÔNG THỨC TÍNH (human-readable) — Tờ khai thông tin quyết định thuế tối thiểu toàn cầu mẫu 01-TKTT/QDMTT (thuế tối thiểu toàn cầu — IIR/Quy tắc chống xói mòn nền thuế)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Folder có 1 template 01_TKTT_QDMTT_v2.8.8_mau.xls + .xls1 (bản có dữ liệu) + bang_ke_01_tktt_qdmtt.xls (bảng kê kèm). 6 sheet: 01 (tờ khai — bảng điều chỉnh thu nhập và thuế), 01-1 (tính thuế bổ sung theo tỷ lệ hiệu dụng), 01-2 (bổ sung), 01-KHBS, 01-1-KHBS, Header.
+
+## File 01_TKTT_QDMTT_v2.8.8_mau.xls
+
+### Sheet "01" (tờ khai chính — 2 bảng lớn: điều chỉnh thu nhập (dòng 227) và điều chỉnh thuế (dòng 308), mỗi bảng ~20 cột, tổng = SUM(3 dòng 498:500 / 531:533))
+- [AC20] năm tài chính báo cáo = "Năm ... Từ ... đến ..." (Header!V31/V32/V33)
+- [AC22] [02] lần đầu = IF(Header!V29 = "", "X", ""); [AN22] [03] bổ sung lần thứ = Header!V29
+- [U29, V31, AS37, DA37]: tên đơn vị/MST tối thiểu toàn cầu/đơn vị tiền tệ/mã BCTC (ô prefill, được các sheet khác tham chiếu)
+- [U53] [04] tên đơn vị hợp thành = U29; [AH53] [05] MST = V31; [AX73] đơn vị tiền tệ BCTC = AS37; [DB73] (1) mã BCTC = DA37
+- [D227] mục 1 "Tổng thu nhập hoặc lỗ ròng tại BCTC" = SUM(J498:J500)
+- [H227..CF227] mục 2.1..2.20 (chi phí thuế ròng, cổ tức loại trừ, lãi/lỗ trên vốn chủ sở hữu, đánh giá lại, chênh lệch tỷ giá, chi phí không được trừ, sai sót kỳ trước, thay đổi nguyên tắc kế toán, hưu trí, xóa nợ, cổ phiếu, ... điều chỉnh thu nhập) = SUM(một cột trong khối 498:500) theo từng mục
+- [CJ227] mục 2.21 (điều chỉnh do giao dịch chuyển giao tài sản sau 30/11) = SUM(CO498:CO500)
+- [CN227] mục 3 "Thu nhập ròng theo Quy định thuế tối thiểu toàn cầu" = SUM(CP498:CP500)
+- [D308] mục 1 (thuế thuộc phạm vi áp dụng sau phân bổ) = SUM(Q531:Q533)
+- [I308..BL308] mục 2.1..2.13 (thuế hạch toán chi phí, tài sản thuế hoãn lại do lỗ, thuế nộp trong năm, chi phí thuế hiện hành, giảm trừ/hoàn trả, thuế hoãn lại, thuế chưa ghi nhận, ...) = SUM(một cột trong khối 531:533) theo từng mục
+- [BQ308] mục 2.13 (chi phí thuế < 0 chưa bù trừ) = N321; [BV308] mục 2.14 (điều tiết) = X321
+- [AH321] mục 4 "Chi phí thuế nhỏ hơn 0 chưa bù trừ hết còn lại" = D321+N321−X321
+
+### Sheet "01-1" (tính thuế TNDN bổ sung — thuế suất hiệu dụng, cột O = tính chính, cột AA = tính song song đối chiếu)
+- [G4] năm = 01!AC20; [F6] lần đầu = IF(Header!V29 = "", "X", " "); [N6] bổ sung = Header!V29
+- [H15, H17] tên/MST đơn vị = 01!U29, 01!V31; [F26] [09] đồng tiền khai = 01!AS37; [AA26] mã đơn vị tiền = 01!DA37
+- [O41] [10] = F26 (đơn vị tiền); [AA41] cùng
+- [O42] [11] = O43−O45 (thu nhập ròng theo QĐTTTC trừ điều chỉnh); [AA42] = AA43−AA45
+- [O45] [13] = O46+O49; [O46] = O47×AB48/100; [O49] = O50×AB51/100 (2 khoản điều chỉnh theo %)
+- [O52] [15] thuế suất bổ sung = IF(15−O54 < 0, 0, IF(15−O54 > 15, 15, 15−O54)) (chặn trong [0;15]%)
+- [O54] [14] tỷ lệ hiệu dụng (%) = IF(O42 = 0, 0, ROUND((O53/O42)×100, 4)); [AA54] tương tự
+- [O56] [16] số thuế phải nộp = IF(ROUND((O41×O52)/100+O55, 2) < 0, 0, ROUND(...) — làm tròn 2 số lẻ, nếu đơn vị tiền ≠ VND và cờ M29 thì làm tròn 0) ; [AA56] cùng công thức làm tròn 4 số lẻ (bản đối chiếu)
+- [AA57] = O56×C31 (đổi tỷ); [AB57] = IF(N56 ≠ "Việt Nam đồng", ROUND(O57, 2), ROUND(O56, 0))
+- [AC57, AD57] tên/mã đơn vị tiền (IF đơn vị ≠ VND và cờ G29 thì lấy AA26, nếu không "VND")
+- [O63] đơn vị tiền = IF(M29, N57, F26); [AA63] = IF(M29, "VND", AA26)
+- [N41..N53] cột (4) = F26 (đơn vị tiền lặp theo dòng); các dòng tổng [Q74, R74] = SUM(Q71:Q73) / SUM(R71:R73)
+- [M19, N19] = #REF! (ô lỗi cố định trong template)
+
+### Sheet "01-2" (bổ sung)
+- [R3, R5, Y5, Q7, Q9] prefill từ tờ khai 01 (AC20, AC22, AN22, U29, V31); [O12] MST = 01!L35; [S15] ngày = 01!AS37
+- [AD27, BA27] cột (8) = (7)−(6) = X27−T27 (cột chính + cột song song)
+
+### Sheet "01-KHBS" và "01-1-KHBS" (khai bổ sung — 2 sheet cùng công thức)
+- [BF5] số tiền chậm nộp = ROUND(BH15×BE20×0,05/100, 0) (5%/năm × số ngày × tiền)
+- [BE20] số ngày nộp chậm = BD5; [BE21] = IF(BH17×BE20×0,05/100 > 0, ROUND(...), 0)
+- [BH17] chỉ tiêu (40) = BI5; [BH18] chỉ tiêu (43) = BI6
+- [BG45, BG46] người ký/ngày ký = 03!N139, 03!N141 (tham chiếu ô tên sheet cũ "03" — còn sót từ layout trước)
+- [B47] = BG5 (mã kỳ); [BD47] tổng nhóm 1 = SUM(BH8:BH10); [BF47] tổng nhóm 2 = SUM(BH12:BH14)
+
+### Sheet "Header"
+- [M2] định dạng MST = IF(TRIM(N2&O2&P2) = "", " ", " - "); [T8] = CONCATENATE(1)
+- Bộ cờ kiểm tra (0/1, ~142 pattern), các nhóm chính:
+  - đối chiếu cột O với cột AA/AB song song của 01-1: IF('01-1'!O41 ≠ '01-1'!AA41, 0, 1) (và O42/O45/O47/O48/O49/O50/O51/O52/O53/O54/O55/O56/O57); IF('01-1'!AB48 = "", 0, 1), IF('01-1'!AB51 = "", 0, 1)
+  - đối chiếu 01-2: IF('01-2'!AD27 ≠ '01-2'!BA27, 0, 1)
+  - 01!AR195 >= 7 → 0; 01!AR335 ≠ 01!CA348 → 0
+  - khi có thuế phải nộp ('01-1'!O56/O57 ≠ 0): bảng 72 của 01-1 phải đủ (Q72 ≠ 0, R72 ≠ 0, Q74 = 100, các ô B66/C72/E72/G72/L72/O72/P72 không rỗng); đơn vị tiền VND + C31 = 0 → 0
+  - cờ 01!S122/S123 = TRUE thì các ô tên/MST (D129, AB129, DA129, DB129, T129, T130, DB130) phải có chữ
+  - mã BCTC (01!DA140) chứa "04"/"05"/"06" thì các ô X149/X150/X151/X152/AH149 phải ≠ 0; DA140 rỗng thì các ô D463/N463/AH463/AR463/D499/D532 phải có giá trị
+
+## File 01_TKTT_QDMTT_v2.8.8_mau.xls1 (bản có dữ liệu)
+- Sheet 01, 01-1, 01-2, 01-KHBS, 01-1-KHBS: chỉ có prefill (tên/MST/đại lý từ Header, tách ký tự MID) + 1 vài ô tham chiếu nội bộ (AB29, AD31, AS37)
+- Sheet Header: 81 pattern — bộ cờ kiểm tra (giống template nhưng tham chiếu dữ liệu đã nhập)
+
+## File bang_ke_01_tktt_qdmtt.xls (bảng kê kèm)
+- Sheet 01_TKTT_QDMTT: tra mã bằng XLOOKUP từ sheet Data
+  - [E4..E8] "Mã Quốc gia" = IFNA(XLOOKUP(B4, Data!$B$2:$B$275, Data!$A$2:$A$275), "") (tra mã quốc gia theo tên)
+  - [E12..E17] "Mã Loại Hình" = IFNA(XLOOKUP(D12, Data!$D$2:$D$15, Data!$E$2:$E$15), "") (tra mã loại hình)
+  - [E21..E17] tra mã loại hình khác = XLOOKUP(D21, Data!$H$2:$H$9, Data!$G$2:$G$9)
+  - [G29..H33] mã loại hình trước/sau thay đổi = XLOOKUP(E29/F29, Data!$D$2:$D$15, Data!$E$2:$E$15)
+  - [J37, K37...] mã quốc gia công ty chính cư trú = XLOOKUP(B37, Data!$B$2:$B$275, Data!$A$2:$A$275)
+  - các ô prefill khác (TRIM/MID từ Header)
+- Sheet HDSD (hướng dẫn sử dụng), Data (bảng tra mã — không công thức), Header (không công thức)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_TKTT_QDMTT
+Thư mục: 36_THUE_TOI_THIEU_TOAN_CAU/01_TKTT_QDMTT (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_TKTT_QDMTT_v2.8.8_mau.xls ===
+--- Sheet "01" ---
+AC20: "Năm "&Header!V31&" Từ "&Header!V32&" đến "&Header!V33
+AC22: IF(Header!V29="","X","")
+AN22: IF(Header!V29<>"",Header!V29,"")
+U29: TRIM(Header!C3)
+V31: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+O33: TRIM(Header!V6)
+L35: TRIM(Header!V5)
+N37: TRIM(Header!V13)
+AG37: TRIM(Header!V14)
+U53: U29
+AH53: V31
+AX73: AS37
+DB73: DA37
+D227: SUM(J498:J500)
+H227: SUM(N498:N500)
+L227: SUM(R498:R500)
+P227: SUM(V498:V500)
+T227: SUM(Z498:Z500)
+X227: SUM(AD498:AD500)
+AB227: SUM(AH498:AH500)
+AF227: SUM(AL498:AL500)
+AJ227: SUM(AP498:AP500)
+AN227: SUM(AS498:AS500)
+AR227: SUM(AW498:AW500)
+AV227: SUM(BA498:BA500)
+AZ227: SUM(BE498:BE500)
+BD227: SUM(BI498:BI500)
+BH227: SUM(BM498:BM500)
+BL227: SUM(BQ498:BQ500)
+BP227: SUM(BU498:BU500)
+BT227: SUM(BY498:BY500)
+BX227: SUM(CC498:CC500)
+CB227: SUM(CG498:CG500)
+CF227: SUM(CK498:CK500)
+CJ227: SUM(CO498:CO500)
+CN227: SUM(CP498:CP500)
+D308: SUM(Q531:Q533)
+I308: SUM(V531:V533)
+N308: SUM(AA531:AA533)
+S308: SUM(AF531:AF533)
+X308: SUM(AK531:AK533)
+AC308: SUM(AP531:AP533)
+AH308: SUM(AU531:AU533)
+AM308: SUM(AZ531:AZ533)
+AR308: SUM(BE531:BE533)
+AW308: SUM(BJ531:BJ533)
+BB308: SUM(BO531:BO533)
+BG308: SUM(BS531:BS533)
+BL308: SUM(BX531:BX533)
+BQ308: N321
+BV308: X321
+AH321: D321+N321-X321
+BB335: N335+AR335
+N463: CN227
+AH463: CA308
+D485: IF(15-AR463<0,0,IF(15-AR463>15,15,15-AR463))
+N485: AJ246
+AR485: D485*X485+AH485
+CY485: N463-N485
+CZ485: BY473+AH479
+BE515: Q515-AV515
+AH613: X613-N613
+I631: TRIM(Header!V15)
+AN631: TRIM(Header!V41)
+M633: TRIM(Header!V16)
+AN633: TRIM(Header!V42)
+--- Sheet "01-1" ---
+G4: 01!AC20
+F6: IF(Header!V29="","X"," ")
+N6: IF(Header!V29<>"",Header!V29," ")
+H15: 01!U29
+H17: 01!V31
+E19: IF(TRIM(Header!V29)="",1,"")
+F19: IF(TRIM(Header!V29)<>"",1,"")
+I19: TRIM(Header!V29)
+M19: #REF!
+N19: #REF!
+E20: TRIM(Header!V6)
+E22: TRIM(Header!V5)
+E24: TRIM(Header!V13)
+O24: TRIM(Header!V14)
+F26: 01!AS37
+AA26: 01!DA37
+N41: F26
+O41: O42-O45
+AA41: O42-O45
+N42: F26
+O42: O43-O44
+AA42: O43-O44
+N43: F26
+N44: F26
+N45: F26
+O45: O46+O49
+AA45: O46+O49
+AB45: 01!N485
+N46: F26
+O46: O47*AB48/100
+AA46: O47*AB48/100
+N47: F26
+AA47: 01!T246
+AA48: 01!AF246
+N49: F26
+O49: O50*AB51/100
+AA49: O50*AB51/100
+N50: F26
+AA50: 01!D246
+AA51: 01!P246
+O52: IF(15-O54<0,0,IF(15-O54>15,15,15-O54))
+AA52: IF(15-O54<0,0,IF(15-O54>15,15,15-O54))
+N53: F26
+AA53: 01!AH463
+O54: IF(O42=0,0,ROUND((O53/O42)*100,4))
+AA54: IF(O42=0,0,ROUND((O53/O42)*100,4))
+N55: F26
+AA55: 01!AH485
+N56: F26
+O56: IF(ROUND((O41*O52)/100+O55,2)<0,0,IF(AND(AA26<>"VND",M29=TRUE),ROUND((O41*O52)/100+O55,0),ROUND((O41*O52)/100+O55,2)))
+AA56: IF(ROUND((O41*O52)/100+O55,4)<0,0,ROUND((O41*O52)/100+O55,4))
+AA57: O56*C31
+AB57: IF(N56<>"Việt Nam đồng",ROUND(O57,2),ROUND(O56,0))
+AC57: IF(AND(AA26<>"VND",G29=TRUE),F26,"Việt Nam đồng")
+AD57: IF(AND(AA26<>"VND",G29=TRUE),AA26,"VND")
+O63: IF(M29=TRUE,N57,F26)
+AA63: IF(M29=TRUE,"VND",AA26)
+Q74: SUM(Q71:Q73)
+R74: SUM(R71:R73)
+--- Sheet "01-2" ---
+R3: 01!AC20
+R5: 01!AC22
+Y5: 01!AN22
+Q7: 01!U29
+Q9: 01!V31
+O11: TRIM(Header!V6)
+O12: 01!L35
+O13: TRIM(Header!V13)
+T13: TRIM(Header!V14)
+S15: 01!AS37
+AD27: X27-T27
+BA27: X27-T27
+--- Sheet "01-KHBS" ---
+BD3: "                                           Tờ khai thuế TNDN mẫu số 03/TNDN kỳ tính thuế: Năm "&Header!V48&" ngày "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+BH17: BI5
+BH18: BI6
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: 03!N139
+BG46: 03!N141
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "01-1-KHBS" ---
+BD3: "                                           Tờ khai thuế TNDN mẫu số 03/TNDN kỳ tính thuế: Năm "&Header!V48&" ngày "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+BH17: BI5
+BH18: BI6
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: 03!N139
+BG46: 03!N141
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+A12: 01!E54
+B12: IF(AND(01!E54=FALSE,01!E56=FALSE),0,1)
+C12: 01!E54&01!E56
+A13: 01!D66
+B13: IF(TRIM(01!D66)="",0,1)
+C13: 01!D66
+A14: 01!AH66
+B14: IF(TRIM(01!AH66)="",0,1)
+C14: 01!AH66
+A15: 01!AT66
+B15: IF(TRIM(01!AT66)="",0,1)
+C15: 01!AT66
+A16: 01!AE73
+B16: IF(TRIM(01!AE73)="",0,1)
+C16: 01!AE73
+A17: 01!P83
+B17: IF(TRIM(01!P83)="",0,1)
+C17: 01!P83
+A18: 01!AJ83
+B18: IF(TRIM(01!AJ83)="",0,1)
+C18: 01!AJ83
+A19: 01!AF89
+B19: IF(AND(01!AF89=FALSE,01!AF91=FALSE),0,1)
+C19: 01!AF89&01!AF91
+A20: 01!D99
+B20: IF(TRIM(01!D99)="",0,1)
+C20: 01!D99
+A21: 01!Z99
+B21: IF(TRIM(01!Z99)="",0,1)
+C21: 01!Z99
+A22: 01!Z99
+C22: 01!Z99
+A23: 01!D73
+B23: IF(TRIM(01!DA73)="",0,1)
+C23: 01!D73
+A25: 01!D83
+B25: IF(TRIM(01!DA83)="",0,1)
+C25: 01!D83
+A26: 01!AI99
+B26: IF(TRIM(01!DA99)="",0,1)
+C26: 01!AI99
+A27: 01!Z115
+C27: 01!Z115
+A28: 01!D129
+B28: IF(AND(01!S122=TRUE,TRIM(01!D129)=""),0,1)
+C28: 01!D129
+A29: 01!T129
+B29: IF(AND(01!S122=TRUE,TRIM(01!T129)=""),0,1)
+C29: 01!T129
+A30: 01!T130
+B30: IF(AND(01!S122=TRUE,TRIM(01!T130)=""),0,1)
+C30: 01!T130
+A31: 01!T130
+C31: 01!T130
+A32: 01!AB129
+B32: IF(AND(01!S122=TRUE,TRIM(01!AB129)=""),0,1)
+C32: 01!AB129
+A33: 01!AH129
+B33: IF(AND(01!S122=TRUE,TRIM(01!DA129)=""),0,1)
+C33: 01!AH129
+A34: 01!AW129
+B34: IF(AND(01!S122=TRUE,TRIM(01!DB129)=""),0,1)
+C34: 01!AW129
+A35: 01!AW130
+B35: IF(AND(01!S123=TRUE,TRIM(01!DB130)=""),0,1)
+C35: 01!AW130
+A52: 01!AR195
+B52: IF(01!AR195>=7,0,1)
+C52: 01!AR195
+A53: 01!G499
+C53: 01!G499
+A54: 01!L546
+C54: 01!L546
+A55: 01!L557
+C55: 01!L557
+A56: 01!Q570
+C56: 01!Q570
+A57: 01!Q580
+C57: 01!Q580
+A58: 01!Q591
+C58: 01!Q591
+A59: 01!M603
+C59: 01!M603
+A60: 01!U623
+C60: 01!U623
+A62: 01!D532
+B62: IF(AND(TRIM(01!DA140)="",TRIM(01!D532)=""),0,1)
+C62: 01!D532
+A63: 01!L532
+B63: IF(AND(TRIM(01!DA140)="",TRIM(01!L532)=""),0,1)
+C63: 01!L532
+A64: 01!L532
+C64: 01!L532
+A67: '01-1'!C31
+B67: IF(AND('01-1'!AA26<>"VND",'01-1'!M29=TRUE,'01-1'!C31=0),0,1)
+C67: '01-1'!C31
+A68: '01-1'!O41
+B68: IF('01-1'!O41<>'01-1'!AA41,0,1)
+C68: '01-1'!O41
+A69: '01-1'!O42
+B69: IF('01-1'!O42<>'01-1'!AA42,0,1)
+C69: '01-1'!O42
+A70: '01-1'!O45
+B70: IF('01-1'!O45<>'01-1'!AB45,0,1)
+C70: '01-1'!O45
+A71: '01-1'!O49
+B71: IF('01-1'!O49<>'01-1'!AA49,0,1)
+C71: '01-1'!O49
+A72: '01-1'!O52
+B72: IF('01-1'!O52<>'01-1'!AA52,0,1)
+C72: '01-1'!O52
+A73: '01-1'!O54
+B73: IF('01-1'!O54<>'01-1'!AA54,0,1)
+C73: '01-1'!O54
+A74: '01-1'!O56
+B74: IF('01-1'!O56<>'01-1'!AA56,0,1)
+C74: '01-1'!O56
+A75: '01-1'!O57
+B75: IF('01-1'!O57<>'01-1'!AA57,0,1)
+C75: '01-1'!O57
+A76: '01-1'!O47
+B76: IF('01-1'!O47<>'01-1'!AA47,0,1)
+C76: '01-1'!O47
+A77: '01-1'!O48
+B77: IF('01-1'!O48<>'01-1'!AA48,0,1)
+C77: '01-1'!O48
+A78: '01-1'!O50
+B78: IF('01-1'!O50<>'01-1'!AA50,0,1)
+C78: '01-1'!O50
+A79: '01-1'!O51
+B79: IF('01-1'!O51<>'01-1'!AA51,0,1)
+C79: '01-1'!O51
+A80: '01-1'!O53
+B80: IF('01-1'!O53<>'01-1'!AA53,0,1)
+C80: '01-1'!O53
+A81: '01-1'!O55
+B81: IF('01-1'!O55<>'01-1'!AA55,0,1)
+C81: '01-1'!O55
+A82: '01-1'!B66
+B82: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),TRIM('01-1'!B66)=""),0,1)
+C82: '01-1'!B66
+A83: '01-1'!E72
+C83: '01-1'!E72
+A87: '01-1'!C72
+B87: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),TRIM('01-1'!C72)=""),0,1)
+C87: '01-1'!C72
+A88: '01-1'!E72
+B88: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),TRIM('01-1'!E72)=""),0,1)
+C88: '01-1'!E72
+A89: '01-1'!E72
+C89: '01-1'!E72
+A90: '01-1'!G72
+B90: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),TRIM('01-1'!G72)=""),0,1)
+C90: '01-1'!G72
+A91: '01-1'!L72
+B91: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),TRIM('01-1'!L72)=""),0,1)
+C91: '01-1'!L72
+A92: '01-1'!O72
+B92: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),TRIM('01-1'!O72)=""),0,1)
+C92: '01-1'!O72
+A93: '01-1'!P72
+B93: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),TRIM('01-1'!P72)=""),0,1)
+C93: '01-1'!P72
+A94: '01-1'!Q72
+B94: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),'01-1'!Q72=0),0,1)
+C94: '01-1'!Q72
+A95: '01-1'!R72
+B95: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),'01-1'!R72=0),0,1)
+C95: '01-1'!R72
+A96: '01-2'!E27
+C96: '01-2'!E27
+A102: '01-2'!AD27
+B102: IF('01-2'!AD27<>'01-2'!BA27,0,1)
+C102: '01-2'!AD27
+A104: 01!AS37
+B104: IF(TRIM(01!DA37)="",0,1)
+C104: 01!AS37
+A105: 01!X149
+B105: IF(AND(OR(ISNUMBER(SEARCH("04",01!DA140)),ISNUMBER(SEARCH("05",01!DA140)),ISNUMBER(SEARCH("06",01!DA140))),01!X149=0),0,1)
+C105: 01!X149
+A106: 01!X150
+B106: IF(AND(OR(ISNUMBER(SEARCH("04",01!DA140)),ISNUMBER(SEARCH("05",01!DA140)),ISNUMBER(SEARCH("06",01!DA140))),01!X150=0),0,1)
+C106: 01!X150
+A107: 01!X151
+B107: IF(AND(OR(ISNUMBER(SEARCH("04",01!DA140)),ISNUMBER(SEARCH("05",01!DA140)),ISNUMBER(SEARCH("06",01!DA140))),01!X151=0),0,1)
+C107: 01!X151
+A108: 01!X152
+B108: IF(AND(OR(ISNUMBER(SEARCH("04",01!DA140)),ISNUMBER(SEARCH("05",01!DA140)),ISNUMBER(SEARCH("06",01!DA140))),01!X152=0),0,1)
+C108: 01!X152
+A109: 01!AH149
+B109: IF(AND(OR(ISNUMBER(SEARCH("04",01!DA140)),ISNUMBER(SEARCH("05",01!DA140)),ISNUMBER(SEARCH("06",01!DA140))),01!AH149=0),0,1)
+C109: 01!AH149
+A114: 01!D463
+B114: IF(AND(TRIM(01!DA140)="",01!D463=0),0,1)
+C114: 01!D463
+A115: 01!N463
+B115: IF(AND(TRIM(01!DA140)="",01!N463=0),0,1)
+C115: 01!N463
+A117: 01!AH463
+B117: IF(AND(TRIM(01!DA140)="",01!AH463=0),0,1)
+C117: 01!AH463
+A118: 01!AR463
+B118: IF(AND(TRIM(01!DA140)="",01!AR463=0),0,1)
+C118: 01!AR463
+A119: '01-1'!F31
+B119: IF(AND(VALUE(SUBSTITUTE('01-1'!C31,",","."))<>0,TRIM('01-1'!F31)=""),0,1)
+C119: '01-1'!F31
+A120: 01!CA348
+B120: IF(01!AR335<>01!CA348,0,1)
+C120: 01!CA348&01!AR335
+A121: '01-1'!Q74
+B121: IF(AND(OR('01-1'!O56<>0,'01-1'!O57<>0),'01-1'!Q74<>100),0,1)
+C121: '01-1'!Q74
+A122: '01-1'!O48
+B122: IF('01-1'!AB48="",0,1)
+C122: '01-1'!O48
+A123: '01-1'!O51
+B123: IF('01-1'!AB51="",0,1)
+C123: '01-1'!O51
+A124: 01!D499
+B124: IF(AND(TRIM(01!DA140)="",TRIM(01!D499)=""),0,1)
+C124: 01!D499
+A125: 01!G499
+B125: IF(AND(TRIM(01!DA140)="",TRIM(01!G499)=""),0,1)
+C125: 01!G499
+A126: 01!D532
+B126: IF(AND(TRIM(01!DA140)="",TRIM(01!D532)=""),0,1)
+C126: 01!D532
+A127: 01!L532
+B127: IF(AND(TRIM(01!DA140)="",TRIM(01!L532)=""),0,1)
+C127: 01!L532
+=> 392 cell công thức trong file này
+
+=== FILE: 01_TKTT_QDMTT_v2.8.8_mau.xls1 ===
+--- Sheet "01" ---
+D25: "[01] Năm tài chính báo cáo: Năm " & TRIM(Header!V48) & " Từ " & TRIM(Header!V32) & " đến " & TRIM(Header!V33)
+AQ27: IF(Header!V29="","X","")
+BJ27: IF(Header!V29<>"",Header!V29,"")
+AB29: TRIM(Header!C3)
+AD31: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+R33: TRIM(Header!V6)
+L35: TRIM(Header!V5)
+R37: TRIM(Header!V13)
+AG37: TRIM(Header!V14)
+U53: AB29
+AH53: AD31
+AX73: AS37
+I631: TRIM(Header!V15)
+AN631: TRIM(Header!V41)
+M633: TRIM(Header!V16)
+AN633: TRIM(Header!V42)
+--- Sheet "01-1" ---
+C12: "[01] Năm tài chính báo cáo: Năm " & TRIM(Header!V48) & " Từ " & TRIM(Header!V32) & " đến " & TRIM(Header!V33)
+F13: IF(Header!V29="","X"," ")
+N13: IF(Header!V29<>"",Header!V29," ")
+E19: IF(TRIM(Header!V29)="",1,"")
+F19: IF(TRIM(Header!V29)<>"",1,"")
+I19: TRIM(Header!V29)
+M19: #REF!
+N19: #REF!
+F20: TRIM(Header!V6)
+F22: TRIM(Header!V5)
+F24: TRIM(Header!V13)
+O24: TRIM(Header!V14)
+R74: SUM(R71:R73)
+B85:  "Họ và tên: " & TRIM(Header!V15)
+B86:  "Chứng chỉ hành nghề số: " & TRIM(Header!V16)
+--- Sheet "01-2" ---
+P5:  "[01] Năm tài chính báo cáo: Năm " & TRIM(Header!V48)
+R6: IF(Header!V29="","X"," ")
+AD27: X27-T27
+--- Sheet "01-KHBS" ---
+BD3: "                                           Tờ khai thuế TNDN mẫu số 03/TNDN kỳ tính thuế: Năm "&Header!V48&" ngày "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+BH17: BI5
+BH18: BI6
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: 03!N139
+BG46: 03!N141
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "01-1-KHBS" ---
+BD3: "                                           Tờ khai thuế TNDN mẫu số 03/TNDN kỳ tính thuế: Năm "&Header!V48&" ngày "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+BH17: BI5
+BH18: BI6
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: 03!N139
+BG46: 03!N141
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+A12: 01!E54
+B12: IF(AND(01!E54=FALSE,01!E56=FALSE),0,1)
+C12: 01!E54&01!E56
+A13: 01!D66
+B13: IF(TRIM(01!D66)="",0,1)
+C13: 01!D66
+A14: 01!AH66
+B14: IF(TRIM(01!AH66)="",0,1)
+C14: 01!AH66
+A15: 01!AT66
+B15: IF(TRIM(01!AT66)="",0,1)
+C15: 01!AT66
+A16: 01!AE73
+B16: IF(TRIM(01!AE73)="",0,1)
+C16: 01!AE73
+A17: 01!P83
+B17: IF(TRIM(01!P83)="",0,1)
+C17: 01!P83
+A18: 01!AJ83
+B18: IF(TRIM(01!AJ83)="",0,1)
+C18: 01!AJ83
+A19: 01!AF89
+B19: IF(AND(01!AF89=FALSE,01!AF91=FALSE),0,1)
+C19: 01!AF89&01!AF91
+A20: 01!D99
+B20: IF(TRIM(01!D99)="",0,1)
+C20: 01!D99
+A21: 01!Z99
+B21: IF(TRIM(01!Z99)="",0,1)
+C21: 01!Z99
+A22: 01!Z99
+C22: 01!Z99
+A23: 01!D73
+B23: IF(TRIM(01!DA73)="",0,1)
+C23: 01!D73
+A24: 01!D74
+B24: IF(TRIM(01!DA74)="",0,1)
+C24: 01!D74
+A25: 01!D83
+B25: IF(TRIM(01!DA83)="",0,1)
+C25: 01!D83
+A26: 01!AI99
+B26: IF(TRIM(01!DA99)="",0,1)
+C26: 01!AI99
+A27: 01!Z115
+C27: 01!Z115
+A28: 01!D129
+B28: IF(AND(01!S122=TRUE,TRIM(01!D129)=""),0,1)
+C28: 01!D129
+A29: 01!T129
+B29: IF(AND(01!S122=TRUE,TRIM(01!T129)=""),0,1)
+C29: 01!T129
+A30: 01!T130
+B30: IF(AND(01!S122=TRUE,TRIM(01!T130)=""),0,1)
+C30: 01!T130
+A31: 01!T130
+C31: 01!T130
+A32: 01!AB129
+B32: IF(AND(01!S122=TRUE,TRIM(01!AB129)=""),0,1)
+C32: 01!AB129
+A33: 01!AH129
+B33: IF(AND(01!S122=TRUE,TRIM(01!DA129)=""),0,1)
+C33: 01!AH129
+A34: 01!AW129
+B34: IF(AND(01!S122=TRUE,TRIM(01!DB129)=""),0,1)
+C34: 01!AW129
+A35: 01!AW130
+B35: IF(AND(01!S123=TRUE,TRIM(01!DB130)=""),0,1)
+C35: 01!AW130
+A36: 01!R174
+B36: IF(AND(01!E170=TRUE,01!R174=0),0,1)
+C36: 01!R174
+A37: 01!R175
+B37: IF(AND(01!E170=TRUE,01!R175=0),0,1)
+C37: 01!R175
+A38: 01!R176
+B38: IF(AND(01!E170=TRUE,01!R176=0),0,1)
+C38: 01!R176
+A39: 01!R177
+B39: IF(AND(01!E170=TRUE,01!R177=0),0,1)
+C39: 01!R177
+A40: 01!AB174
+B40: IF(AND(01!E170=TRUE,01!AB174=0),0,1)
+C40: 01!AB174
+A41: 01!AB175
+B41: IF(AND(01!E170=TRUE,01!AB175=0),0,1)
+C41: 01!AB175
+A42: 01!AB176
+B42: IF(AND(01!E170=TRUE,01!AB176=0),0,1)
+C42: 01!AB176
+A43: 01!AB177
+B43: IF(AND(01!E170=TRUE,01!AB177=0),0,1)
+C43: 01!AB177
+A44: 01!AL174
+B44: IF(AND(01!E170=TRUE,01!AL174=0),0,1)
+C44: 01!AL174
+A45: 01!AL175
+B45: IF(AND(01!E170=TRUE,01!AL175=0),0,1)
+C45: 01!AL175
+A46: 01!AL176
+B46: IF(AND(01!E170=TRUE,01!AL176=0),0,1)
+C46: 01!AL176
+A47: 01!AL177
+B47: IF(AND(01!E170=TRUE,01!AL177=0),0,1)
+C47: 01!AL177
+A48: 01!AV174
+B48: IF(AND(01!E170=TRUE,01!AV174=0),0,1)
+C48: 01!AV174
+A49: 01!AV175
+B49: IF(AND(01!E170=TRUE,01!AV175=0),0,1)
+C49: 01!AV175
+A50: 01!AV176
+B50: IF(AND(01!E170=TRUE,01!AV176=0),0,1)
+C50: 01!AV176
+A51: 01!AV177
+B51: IF(AND(01!E170=TRUE,01!AV177=0),0,1)
+C51: 01!AV177
+A52: 01!AR195
+B52: IF(01!AR195>9999999,0,1)
+C52: 01!AR195
+=> 178 cell công thức trong file này
+
+=== FILE: bang_ke_01_tktt_qdmtt.xls ===
+--- Sheet "01_TKTT_QDMTT" ---
+E4: IFNA(XLOOKUP(B4,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+E5: IFNA(XLOOKUP(B5,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+E6: IFNA(XLOOKUP(B6,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+E7: IFNA(XLOOKUP(B7,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+E8: IFNA(XLOOKUP(B8,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+E12: IFNA(XLOOKUP(D12,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+E13: IFNA(XLOOKUP(D13,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+E14: IFNA(XLOOKUP(D14,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+E15: IFNA(XLOOKUP(D15,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+E16: IFNA(XLOOKUP(D16,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+E17: IFNA(XLOOKUP(D17,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+E21: IFNA(XLOOKUP(D21,Data!$H$2:$H$9,Data!$G$2:$G$9),"")
+G29: IFNA(XLOOKUP(E29,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+H29: IFNA(XLOOKUP(F29,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+G30: IFNA(XLOOKUP(E30,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+H30: IFNA(XLOOKUP(F30,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+G31: IFNA(XLOOKUP(E31,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+H31: IFNA(XLOOKUP(F31,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+G32: IFNA(XLOOKUP(E32,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+H32: IFNA(XLOOKUP(F32,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+G33: IFNA(XLOOKUP(E33,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+H33: IFNA(XLOOKUP(F33,Data!$D$2:$D$15,Data!$E$2:$E$15),"")
+J37: IFNA(XLOOKUP(B37,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+K37: IFNA(XLOOKUP(E37,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J38: IFNA(XLOOKUP(B38,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+K38: IFNA(XLOOKUP(E38,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J39: IFNA(XLOOKUP(B39,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+K39: IFNA(XLOOKUP(E39,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J40: IFNA(XLOOKUP(B40,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+K40: IFNA(XLOOKUP(E40,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J41: IFNA(XLOOKUP(B41,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+K41: IFNA(XLOOKUP(E41,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+I45: IFNA(XLOOKUP(D45,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+I46: IFNA(XLOOKUP(D46,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+I47: IFNA(XLOOKUP(D47,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+I48: IFNA(XLOOKUP(D48,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+I49: IFNA(XLOOKUP(D49,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+G53: IFNA(XLOOKUP(B53,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+G54: IFNA(XLOOKUP(B54,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+G55: IFNA(XLOOKUP(B55,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+G56: IFNA(XLOOKUP(B56,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+G57: IFNA(XLOOKUP(B57,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+Q61: IFNA(XLOOKUP(B61,Data!$K$2:$K$4,Data!$J$2:$J$4),"")
+Q62: IFNA(XLOOKUP(B62,Data!$K$2:$K$4,Data!$J$2:$J$4),"")
+Q63: IFNA(XLOOKUP(B63,Data!$K$2:$K$4,Data!$J$2:$J$4),"")
+Q64: IFNA(XLOOKUP(B64,Data!$K$2:$K$4,Data!$J$2:$J$4),"")
+Q65: IFNA(XLOOKUP(B65,Data!$K$2:$K$4,Data!$J$2:$J$4),"")
+Q66: IFNA(XLOOKUP(B66,Data!$K$2:$K$4,Data!$J$2:$J$4),"")
+K78: IFNA(XLOOKUP(D78,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L78: IFNA(XLOOKUP(H78,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+K79: IFNA(XLOOKUP(D79,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L79: IFNA(XLOOKUP(H79,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+K80: IFNA(XLOOKUP(D80,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L80: IFNA(XLOOKUP(H80,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+K81: IFNA(XLOOKUP(D81,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L81: IFNA(XLOOKUP(H81,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+K82: IFNA(XLOOKUP(D82,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L82: IFNA(XLOOKUP(H82,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J86: IFNA(XLOOKUP(G86,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J87: IFNA(XLOOKUP(G87,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J88: IFNA(XLOOKUP(G88,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J89: IFNA(XLOOKUP(G89,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J90: IFNA(XLOOKUP(G90,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J94: IFNA(XLOOKUP(D94,Data!$N$2:$N$3,Data!$M$2:$M$3),"")
+K94: IFNA(XLOOKUP(H94,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J95: IFNA(XLOOKUP(D95,Data!$N$2:$N$3,Data!$M$2:$M$3),"")
+K95: IFNA(XLOOKUP(H95,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J96: IFNA(XLOOKUP(D96,Data!$N$2:$N$3,Data!$M$2:$M$3),"")
+K96: IFNA(XLOOKUP(H96,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J97: IFNA(XLOOKUP(D97,Data!$N$2:$N$3,Data!$M$2:$M$3),"")
+K97: IFNA(XLOOKUP(H97,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+J98: IFNA(XLOOKUP(D98,Data!$N$2:$N$3,Data!$M$2:$M$3),"")
+K98: IFNA(XLOOKUP(H98,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L111: IFNA(XLOOKUP(E111,Data!$Q$2:$Q$3,Data!$P$2:$P$3),"")
+M111: IFNA(XLOOKUP(H111,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L112: IFNA(XLOOKUP(E112,Data!$Q$2:$Q$3,Data!$P$2:$P$3),"")
+M112: IFNA(XLOOKUP(H112,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L113: IFNA(XLOOKUP(E113,Data!$Q$2:$Q$3,Data!$P$2:$P$3),"")
+M113: IFNA(XLOOKUP(H113,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L114: IFNA(XLOOKUP(E114,Data!$Q$2:$Q$3,Data!$P$2:$P$3),"")
+M114: IFNA(XLOOKUP(H114,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+L115: IFNA(XLOOKUP(E115,Data!$Q$2:$Q$3,Data!$P$2:$P$3),"")
+M115: IFNA(XLOOKUP(H115,Data!$B$2:$B$275,Data!$A$2:$A$275),"")
+O151: IFNA(XLOOKUP(D151,Data!$U$2:$U$7,Data!$T$2:$T$7),"")
+P151: IFNA(XLOOKUP(H151,Data!$U$9:$U$13,Data!$T$9:$T$13),"")
+O152: IFNA(XLOOKUP(D152,Data!$U$2:$U$7,Data!$T$2:$T$7),"")
+P152: IFNA(XLOOKUP(H152,Data!$U$9:$U$13,Data!$T$9:$T$13),"")
+O153: IFNA(XLOOKUP(D153,Data!$U$2:$U$7,Data!$T$2:$T$7),"")
+P153: IFNA(XLOOKUP(H153,Data!$U$9:$U$13,Data!$T$9:$T$13),"")
+O154: IFNA(XLOOKUP(D154,Data!$U$2:$U$7,Data!$T$2:$T$7),"")
+P154: IFNA(XLOOKUP(H154,Data!$U$9:$U$13,Data!$T$9:$T$13),"")
+O155: IFNA(XLOOKUP(D155,Data!$U$2:$U$7,Data!$T$2:$T$7),"")
+P155: IFNA(XLOOKUP(H155,Data!$U$9:$U$13,Data!$T$9:$T$13),"")
+--- Sheet "HDSD" ---
+(không có cell công thức)
+--- Sheet "Data" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 93 cell công thức trong file này
+
+
+TỔNG CỘNG: 663 cell công thức trong 3 file

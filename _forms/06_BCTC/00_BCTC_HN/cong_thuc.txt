@@ -1,0 +1,932 @@
+CÔNG THỨC TÍNH (human-readable) — 00_BCTC_HN (06_BCTC)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+2 version file: 00_bctc_hn_226.xls và 00_bctc_hn_243.xls (mỗi version kèm bản .xls1). Cấu trúc dưới theo version mới nhất (243); version 226 khác ở: tiêu đề 01-1 là "BÁO CÁO KẾT QUẢ HOẠT ĐỘNG SẢN XUẤT KINH DOANH HỢP NHẤT" (thay vì "...HOẠT ĐỘNG KINH DOANH HỢP NHẤT"), dòng 30 của 01-1 nằm ở dòng 32 với công thức I32 = I26+I27−I28−I30−I31 (243: dòng 33, I33 = I26+I27−I28−I31−I32+I30), và số dòng bảng tổng 01 dịch +1 dòng ở vài vị trí (vd dòng 310 = SUM(dòng 121:134) thay vì SUM(dòng 122:135)).
+
+## File 00_bctc_hn_243.xls
+
+### Sheet "01" (tờ khai chính — Bảng cân đối kế toán hợp nhất)
+- [G1] Tiêu đề = "BẢNG CÂN ĐỐI KẾ TOÁN HỢP NHẤT (Mẫu số: B01 - DN-HN)" nếu cờ K45="1", bằng không "BẢNG CÂN ĐỐI KẾ TOÁN HỢP NHẤT (Mẫu số: B01/CDHĐ – DNKLT-HN)"
+- [G5] "Tại ngày " + ngày/tháng/năm tách từ Header!V33; [G6] Tên NNT = TRIM(Header!C3); [G7] MST = nối 15 ô C2..P2 của Header (mỗi ô TRIM); [G9] Đại lý thuế = TRIM(Header!V6); [G10] MST đại lý = TRIM(Header!V5)
+- [F38] Đơn vị tính = Header!V50; [F40] Mã đơn vị tiền = TRIM(Header!V49); [S45] Từ ngày = TRIM(Header!V32); [U45] Đến ngày = TRIM(Header!V33)
+- Cột R (cột 4) và cột W (cột 5), hai khối bảng với số dòng theo nhãn:
+  - Khối 1 (dòng 56-172, áp dụng khi K45="1"): [R56] 100 = R57+R60+R64+R73+R76 (110+120+130+140+150); [R57] 110 = 2 dòng; [R60] 120 = 3 dòng; [R64] 130 = 8 dòng; [R73] 140 = 2 dòng; [R76] 150 = 5 dòng
+  - [R82] 200 = R83+R91+R101+R104+R107+R113 (210+220+230+240+250+260); [R83] 210 = 7 dòng; [R91] 220 = 221+224+227 (mỗi dòng con = 2 dòng); [R101] 230, [R104] 240 = 2 dòng; [R107] 250 = 5 dòng; [R113] 260 = 5 dòng
+  - [R119] 270 = R56+R82 (100+200); [R120] 300 = 310+330; [R121] 310 = SUM(dòng 122:135); [R136] 330 = tổng 13 dòng
+  - [R150] 400 = 410+430; [R151] 410 = tổng 13 dòng (trong đó [R152] 411 = 2 dòng, [R164] 421 = 2 dòng); [R169] 430 = 2 dòng; [R172] 440 = R120+R150 (300+400)
+  - Khối 2 (dòng 178-252, áp dụng khi L45="1"): [R178] 100 = R179+R182+R188+R197+R198+R202+R203+R204; [R179] 110 = 2 dòng; [R182] 120 = 5 dòng; [R188] 130 = 8 dòng; [R198] 150 = 3 dòng; [R204] 180 = 7 dòng
+  - [R212] 300 = SUM(dòng 213:231); [R232] 400 = 410+430; [R233] 410 = tổng 11 dòng (trong đó [R234] 411 = 2 dòng, [R244] 421 = 2 dòng); [R249] 430 = 2 dòng; [R252] 440 = R212+R232 (300+400)
+- [F255] Người lập biểu = TRIM(Header!V15); [V255] Giám đốc = Header!V41; [V257] Ngày ký = Header!V42; [I259] Số chứng chỉ hành nghề = TRIM(Header!V16)
+
+### Sheet "01-1" (kết quả hoạt động kinh doanh hợp nhất)
+- [C1] Tiêu đề = "BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH HỢP NHẤT (Mẫu số B 02 - DN-HN hoặc B02/CDHĐ - DNKLT-HN tuỳ cờ K45)"; [C3] "Năm " + Header!V48; khối tên NNT/MST/đại lý giống sheet 01
+- Cột I (cột 4) và cột J (cột 5), dòng theo nhãn:
+  - [I24, J24] 10 = I22−I23 (dòng 1 − dòng 2)
+  - [I26, J26] 20 = I24−I25 (10−11)
+  - [I33, J33] 30 = I26+I27−I28−I31−I32+I30
+  - [I36, J36] 40 = I34−I35
+  - [I37, J37] 50 = I33+I36 (30+40)
+  - [I40, J40] 60 = I37−I38−I39 (50−51−52)
+- [D47] Người lập biểu = TRIM(01!F255); [J47] Giám đốc = TRIM(01!V255); [D49] Kế toán trưởng = TRIM(01!F257); [J49] Ngày ký = TRIM(01!V257); [E51] Số chứng chỉ = TRIM(01!I259); [E53] Đơn vị cung cấp dịch vụ kế toán = TRIM(01!I261)
+
+### Sheet "01-2" (lưu chuyển tiền tệ hợp nhất, phương pháp trực tiếp)
+- [C1] Tiêu đề = "LƯU CHUYỂN TIỀN TỆ HỢP NHẤT (THEO PHƯƠNG PHÁP TRỰC TIẾP) (Mẫu số B 03 - DN-HN hoặc B03/CDHĐ - DNKLT-HN tuỳ cờ K45)"; khối tên NNT giống sheet 01
+- Cột R và cột W, dòng theo nhãn: [R51] 20 = tổng 7 dòng (44-50); [R60] 30 = tổng 7 dòng (53-59); [R68] 40 = tổng 6 dòng (62-67); [R69] 50 = R51+R60+R68 (20+30+40); [R72] 70 = R69+R70+R71 (50+71+72)
+- Khối chữ ký giống sheet 01-1 (Người lập/Giám đốc/Kế toán trưởng/Ngày ký/chứng chỉ/đơn vị)
+
+### Sheet "01-3" (lưu chuyển tiền tệ hợp nhất, phương pháp gián tiếp)
+- [D1] Tiêu đề = "LƯU CHUYỂN TIỀN TỆ HỢP NHẤT (THEO PHƯƠNG PHÁP GIÁN TIẾP) (Mẫu số B 03 - DN-HN hoặc B03/CDHĐ - DNKLT-HN tuỳ cờ K45)"; khối tên NNT giống sheet 01
+- Cột R và cột W, dòng theo nhãn: [R56] 08 = tổng 7 dòng (48, 50-55); [R66] 20 = tổng 10 dòng (56-65); [R75] 30 = SUM(dòng 68:74); [R83] 40 = SUM(dòng 77:82); [R84] 50 = R66+R75+R83 (20+30+40); [R87] 70 = R84+R85+R86 (50+71+72)
+- Khối chữ ký giống sheet 01-1
+
+### Sheet "KHBS" (khối hồ sơ)
+- [B6] Số thứ tự dòng tiếp theo = B5+1; [G6] Chênh lệch = F6−E6
+- [E8, F8, G8] Tổng cộng = SUM(dòng 5:7) từng cột
+
+### Sheet "Header"
+- [M2] " - " nếu cả 3 ô N2, O2, P2 trống; [T8] CONCATENATE(1) (ô "nguoi ky")
+- Các ô cờ kiểm tra (cột B = "0"/"1", cột C = giá trị nguồn): B15 = 4 ô tên/địa chỉ C3..C6 có nhập; B16 = 01!V257 (ngày ký) không rỗng; B27/B28 = nếu K45="1" thì dòng 270 = dòng 440 khối 1 (01!R119 = 01!R172, tương tự cột W); B29/B30 = nếu K45="1" thì dòng 411 khối 1 > 0 (01!R152>0 / 01!W152>0); B31/B32 = nếu L45="1" thì 01!R178 = 01!R252 (tổng tài sản = tổng nguồn vốn khối 2); B33/B34 = nếu L45="1" thì dòng 411 khối 2 > 0; C37/C38 = giá trị dòng 29 của 01-1 (cột I/J); B40 = 01!V255 (giám đốc) không rỗng; B46 = nếu K45="1" thì 01!R172 ≠ 0; B47 = nếu L45="1" thì 01!R252 ≠ 0
+
+## File 00_bctc_hn_243.xls1 (lớp prefill/hiển thị)
+### Các sheet "01", "01-1", "01-2", "01-3"
+- Tên NNT = TRIM(Header!C3); đại lý thuế = TRIM(Header!V6); MST tách từng chữ: MID(TRIM(Header!V5), n, 1) (13 ô); địa chỉ = TRIM(Header!D2..P2) (14 ô)
+- "Năm " + Header!T2 (sheet 01) hoặc + Header!V48 (các bảng khác); "Tại ngày " + ngày tách từ Header!V33; [K21] = Header!U32; [L21] = Header!V33
+- "Đơn vị tính: " + T52 (sheet 01); các bảng phụ lấy "Đơn vị tính" từ 01!C53
+- Khối chữ ký prefill từ sheet 01: Người lập/Giám đốc/Kế toán trưởng/Ngày ký = TRIM(01!C265/K265/S265) và TRIM(01!I267/J268); "Lập, ngày " + ngày tách từ R258; [R256] = Header!T5
+### Sheet "KHBS"
+- (giống file .xls: B6 = B5+1, G6 = F6−E6, tổng E8:G8 = SUM(dòng 5:7))
+### Sheet "Header"
+- [M2] " - " nếu N2, O2, P2 trống; [T8] CONCATENATE(1)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 00_BCTC_HN
+Thư mục: 06_BCTC/00_BCTC_HN (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 00_bctc_hn_226.xls ===
+--- Sheet "01" ---
+G1: IF(K45="1","BẢNG CÂN ĐỐI KẾ TOÁN HỢP NHẤT (Mẫu số B-01/DN-HN)","BẢNG CÂN ĐỐI KẾ TOÁN (Mẫu số B-01/CDHĐ – DNKLT-HN)")
+G5: "Tại ngày "& LEFT(Header!V33,2)&" tháng "& MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4)
+G6: TRIM(Header!C3)
+G7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G9: TRIM(Header!V6)
+G10: TRIM(Header!V5)
+F38: Header!V50
+AI39: Header!V50
+F40: TRIM(Header!V49)
+S45: TRIM(Header!V32)
+U45: TRIM(Header!V33)
+R56: R57+R60+R64+R73+R76
+W56: W57+W60+W64+W73+W76
+R57: R58+R59
+W57: W58+W59
+R60: R61+R62+R63
+W60: W61+W62+W63
+R64: R65+R66+R67+R68+R69+R70+R71+R72
+W64: W65+W66+W67+W68+W69+W70+W71+W72
+R73: R74+R75
+W73: W74+W75
+R76: R77+R78+R79+R80+R81
+W76: W77+W78+W79+W80+W81
+R82: R83+R91+R101+R104+R107+R113
+W82: W83+W91+W101+W104+W107+W113
+R83: R84+R85+R86+R87+R88+R89+R90
+W83: W84+W85+W86+W87+W88+W89+W90
+R91: R92+R95+R98
+W91: W92+W95+W98
+R92: R93+R94
+W92: W93+W94
+R95: R96+R97
+W95: W96+W97
+R98: R99+R100
+W98: W99+W100
+R101: R102+R103
+W101: W102+W103
+R104: R105+R106
+W104: W105+W106
+R107: R108+R109+R110+R111+R112
+W107: W108+W109+W110+W111+W112
+R113: R114+R115+R116+R117
+W113: W114+W115+W116+W117
+R118: R56+R82
+W118: W56+W82
+R119: R120+R135
+W119: W120+W135
+R120: SUM(R121:R134)
+W120: SUM(W121:W134)
+R135: R136+R137+R138+R139+R140+R141+R142+R143+R144+R145+R146+R147+R148
+W135: W136+W137+W138+W139+W140+W141+W142+W143+W144+W145+W146+W147+W148
+R149: R150+R167
+W149: W150+W167
+R150: R151+R154+R155+R156+R157+R158+R159+R160+R161+R162+R163+R166
+W150: W151+W154+W155+W156+W157+W158+W159+W160+W161+W162+W163+W166
+R151: R152+R153
+W151: W152+W153
+R163: R164+R165
+W163: W164+W165
+R167: R168+R169
+W167: W168+W169
+R170: R119+R149
+W170: W119+W149
+R176: R177+R180+R186+R195+R196+R200+R201+R202
+W176: W177+W180+W186+W195+W196+W200+W201+W202
+R177: R178+R179
+W177: W178+W179
+R180: R181+R182+R183+R184+R185
+W180: W181+W182+W183+W184+W185
+R186: R187+R188+R189+R190+R191+R192+R193+R194
+W186: W187+W188+W189+W190+W191+W192+W193+W194
+R196: R197+R198+R199
+W196: W197+W198+W199
+R202: R203+R204+R205+R206+R207+R208
+W202: W203+W204+W205+W206+W207+W208
+R209: SUM(R210:R228)
+W209: SUM(W210:W228)
+R229: R230+R245
+W229: W230+W245
+R230: R231+R234+R235+R236+R237+R238+R239+R240+R241+R244
+W230: W231+W234+W235+W236+W237+W238+W239+W240+W241+W244
+R231: R232+R233
+W231: W232+W233
+R241: R242+R243
+W241: W242+W243
+R245: R246+R247
+W245: W246+W247
+R248: R209+R229
+W248: W209+W229
+F251: TRIM(Header!V15)
+V251: Header!V41
+V253: Header!V42
+I255: TRIM(Header!V16)
+I257: TRIM(Header!V6)
+--- Sheet "01-1" ---
+C1: "BÁO CÁO KẾT QUẢ HOẠT ĐỘNG SẢN XUẤT KINH DOANH HỢP NHẤT
+(Mẫu số " & IF(01!K45="1","B 02 - DN -HN)","B02/CDHĐ - DNKLT-HN)")
+C3: "Năm "&Header!V48
+E5: TRIM(Header!C3)
+E6: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+E8: TRIM(Header!V6)
+E9: TRIM(Header!V5)
+I19: "Đơn vị tính: "&01!F38
+I24: I22-I23
+J24: J22-J23
+I26: I24-I25
+J26: J24-J25
+I32: I26+I27-I28-I30-I31
+J32: J26+J27-J28-J30-J31
+I35: I33-I34
+J35: J33-J34
+I36: I32+I35
+J36: J32+J35
+I39: I36-I37-I38
+J39: J36-J37-J38
+D44: TRIM(01!F251)
+J44: TRIM(01!V251)
+D46: TRIM(01!F253)
+J46: TRIM(01!V253)
+E48: TRIM(01!I255)
+E50: TRIM(01!I257)
+--- Sheet "01-2" ---
+C1: "LƯU CHUYỂN TIỀN TỆ HỢP NHẤT (THEO PHƯƠNG PHÁP TRỰC TIẾP) (Mẫu số "&IF(01!K45="1","B 03 - DN-HN)","B03/CDHĐ - DNKLT-HN)")
+F3: "Năm "&Header!V48
+G4: TRIM(Header!C3)
+G5: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G7: TRIM(Header!V6)
+G8: TRIM(Header!V5)
+T40: "Đơn vị tính: "&01!F38
+R51: R44+R45+R46+R47+R48+R49+R50
+W51: W44+W45+W46+W47+W48+W49+W50
+R60: R53+R54+R55+R56+R57+R58+R59
+W60: W53+W54+W55+W56+W57+W58+W59
+R68: R62+R63+R64+R65+R66+R67
+W68: W62+W63+W64+W65+W66+W67
+R69: R51+R60+R68
+W69: W51+W60+W68
+R72: R69+R70+R71
+W72: W69+W70+W71
+F74: TRIM(01!F251)
+T74: TRIM(01!V251)
+F76: TRIM(01!F253)
+T76: TRIM(01!V253)
+H78: TRIM(01!I255)
+H80: TRIM(01!I257)
+--- Sheet "01-3" ---
+D1: "LƯU CHUYỂN TIỀN TỆ HỢP NHẤT (THEO PHƯƠNG PHÁP GIÁN TIẾP) (Mẫu số "&IF(01!K45="1","B 03 - DN-HN)","B03/CDHĐ - DNKLT-HN)")
+I3: "Năm "&Header!V48
+G6: TRIM(Header!C3)
+G7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G9: TRIM(Header!V6)
+G10: TRIM(Header!V5)
+T44: " Đơn vị tính: "&01!F38
+R56: R48+R50+R51+R52+R53+R54+R55
+W56: W48+W50+W51+W52+W53+W54+W55
+R66: R56+R57+R58+R59+R60+R61+R62+R63+R64+R65
+W66: W56+W57+W58+W59+W60+W61+W62+W63+W64+W65
+R75: SUM(R68:R74)
+W75: SUM(W68:W74)
+R83: SUM(R77:R82)
+W83: SUM(W77:W82)
+R84: R66+R75+R83
+W84: W66+W75+W83
+R87: R84+R85+R86
+W87: W84+W85+W86
+F89: TRIM(01!F251)
+T89: TRIM(01!V251)
+F91: TRIM(01!F253)
+T91: TRIM(01!V253)
+H93: TRIM(01!I255)
+H95: TRIM(01!I257)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B15: IF(OR(LEN(C3)=0,LEN(C4)=0,LEN(C5)=0,LEN(C6)=0),"0","1")
+B16: IF(LEN(01!V253)=0,"0","1")
+C16: 01!V253
+B27: IF(01!K45="1",IF(01!R118=01!R170,"1","0"),"1")
+C27: 01!R118
+B28: IF(01!K45="1",IF(01!W118=01!W170,"1","0"),"1")
+C28: 01!W118
+B29: IF(AND(01!R151<=0,01!K45="1"),"0","1")
+C29: 01!R151
+B30: IF(AND(01!W151<=0,01!K45="1"),"0","1")
+C30: 01!W151
+B31: IF(01!L45="1",IF(01!R176=01!R248,"1","0"),"1")
+C31: 01!R176
+B32: IF(01!L45="1",IF(01!W176=01!W248,"1","0"),"1")
+C32: 01!W176
+B33: IF(AND(01!R231<=0,01!L45="1"),"0","1")
+C33: 01!R231
+B34: IF(AND(01!W231<=0,01!L45="1"),"0","1")
+C34: 01!W231
+C37: '01-1'!I29
+C38: '01-1'!J29
+B40: IF(LEN(01!V251)=0,"0","1")
+C40: 01!V251
+B41: IF(01!K45="1",IF(01!R118=01!R170,"1","0"),"1")
+C41: 01!R170
+B42: IF(01!K45="1",IF(01!W118=01!W170,"1","0"),"1")
+C42: 01!W170
+B43: IF(01!L45="1",IF(01!R176=01!R248,"1","0"),"1")
+C43: 01!R248
+B44: IF(01!L45="1",IF(01!W176=01!W248,"1","0"),"1")
+C44: 01!W248
+B46: IF(AND(01!R170=0,01!K45="1"),0,1)
+C46: 01!R170
+B47: IF(AND(01!R248=0,01!L45="1"),0,1)
+C47: 01!R248
+=> 209 cell công thức trong file này
+
+=== FILE: 00_bctc_hn_226.xls1 ===
+--- Sheet "01" ---
+K19: "                Năm "&Header!T2
+E20: "Tại ngày " & MID(Header!V33,1,2) & " tháng " & MID(Header!V33,4,2) & " năm " & MID(Header!V33,7,4)
+K21: Header!U32
+L21: Header!V33
+H24: TRIM(Header!C3)
+F25: TRIM(Header!C2)
+G25: TRIM(Header!D2)
+H25: TRIM(Header!E2)
+I25: TRIM(Header!F2)
+J25: TRIM(Header!G2)
+K25: TRIM(Header!H2)
+L25: TRIM(Header!I2)
+M25: TRIM(Header!J2)
+N25: TRIM(Header!K2)
+O25: TRIM(Header!L2)
+P25: TRIM(Header!M2)
+Q25: TRIM(Header!N2)
+R25: TRIM(Header!O2)
+S25: TRIM(Header!P2)
+F26: TRIM(Header!C4)
+F27: TRIM(Header!C5)
+R27: TRIM(Header!C6)
+F28: TRIM(Header!C7)
+L28: TRIM(Header!C8)
+R28: TRIM(Header!C9)
+H30: TRIM(Header!V6)
+F31: MID(TRIM(Header!V5),1,1)
+G31: MID(TRIM(Header!V5),2,1)
+H31: MID(TRIM(Header!V5),3,1)
+I31: MID(TRIM(Header!V5),4,1)
+J31: MID(TRIM(Header!V5),5,1)
+K31: MID(TRIM(Header!V5),6,1)
+L31: MID(TRIM(Header!V5),7,1)
+M31: MID(TRIM(Header!V5),8,1)
+N31: MID(TRIM(Header!V5),9,1)
+O31: MID(TRIM(Header!V5),10,1)
+Q31: MID(TRIM(Header!V5),11,1)
+R31: MID(TRIM(Header!V5),12,1)
+S31: MID(TRIM(Header!V5),13,1)
+F32: TRIM(Header!V7)
+F33: TRIM(Header!V8)
+R33: TRIM(Header!V9)
+F34: TRIM(Header!V10)
+L34: TRIM(Header!V11)
+R34: TRIM(Header!V12)
+C53: "Đơn vị tính: " &T52
+R252: Header!T5
+R255: "    Lập, ngày " & MID(TRIM(R254),1,2) & " tháng " & MID(TRIM(R254),4,2) & " năm " & MID(TRIM(R254),7,4)
+--- Sheet "01-1" ---
+M6: "   Năm "&Header!V48
+F7: TRIM(Header!C3)
+D8: Header!C2
+E8: Header!D2
+F8: Header!E2
+G8: Header!F2
+H8: Header!G2
+I8: Header!H2
+J8: Header!I2
+K8: Header!J2
+L8: Header!K2
+M8: Header!L2
+N8: Header!M2
+O8: Header!N2
+P8: Header!O2
+Q8: Header!P2
+D9: TRIM(Header!C4)
+D10: TRIM(Header!C5)
+T10: TRIM(Header!C6)
+D11: TRIM(Header!C7)
+L11: TRIM(Header!C8)
+Y11: TRIM(Header!C9)
+F13: TRIM(Header!V6)
+D14: MID(TRIM(Header!V5),1,1)
+E14: MID(TRIM(Header!V5),2,1)
+F14: MID(TRIM(Header!V5),3,1)
+G14: MID(TRIM(Header!V5),4,1)
+H14: MID(TRIM(Header!V5),5,1)
+I14: MID(TRIM(Header!V5),6,1)
+J14: MID(TRIM(Header!V5),7,1)
+K14: MID(TRIM(Header!V5),8,1)
+L14: MID(TRIM(Header!V5),9,1)
+M14: MID(TRIM(Header!V5),10,1)
+O14: MID(TRIM(Header!V5),11,1)
+P14: MID(TRIM(Header!V5),12,1)
+Q14: MID(TRIM(Header!V5),13,1)
+D15: TRIM(Header!V7)
+D16: TRIM(Header!V8)
+T16: TRIM(Header!V9)
+D17: TRIM(Header!V10)
+L17: TRIM(Header!V11)
+Y17: TRIM(Header!V12)
+C19: 01!C53
+Z45: 01!R255
+C52: TRIM(01!C261)
+J52: TRIM(01!K261)
+Z52: TRIM(01!S261)
+H55: TRIM(01!I263)
+H56: TRIM(01!J264)
+--- Sheet "01-2" ---
+K10: "                    Năm "&Header!V48
+G11: TRIM(Header!C3)
+F12: Header!C2
+G12: Header!D2
+H12: Header!E2
+I12: Header!F2
+J12: Header!G2
+K12: Header!H2
+L12: Header!I2
+M12: Header!J2
+N12: Header!K2
+O12: Header!L2
+P12: Header!M2
+Q12: Header!N2
+R12: Header!O2
+S12: Header!P2
+F13: TRIM(Header!C4)
+F14: TRIM(Header!C5)
+R14: TRIM(Header!C6)
+F15: TRIM(Header!C7)
+L15: TRIM(Header!C8)
+R15: TRIM(Header!C9)
+G17: TRIM(Header!V6)
+F18: MID(TRIM(Header!V5),1,1)
+G18: MID(TRIM(Header!V5),2,1)
+H18: MID(TRIM(Header!V5),3,1)
+I18: MID(TRIM(Header!V5),4,1)
+J18: MID(TRIM(Header!V5),5,1)
+K18: MID(TRIM(Header!V5),6,1)
+L18: MID(TRIM(Header!V5),7,1)
+M18: MID(TRIM(Header!V5),8,1)
+N18: MID(TRIM(Header!V5),9,1)
+O18: MID(TRIM(Header!V5),10,1)
+Q18: MID(TRIM(Header!V5),11,1)
+R18: MID(TRIM(Header!V5),12,1)
+S18: MID(TRIM(Header!V5),13,1)
+F19: TRIM(Header!V7)
+F20: TRIM(Header!V8)
+R20: TRIM(Header!V9)
+F21: TRIM(Header!V10)
+L21: TRIM(Header!V11)
+R21: TRIM(Header!V12)
+C40: 01!C53
+R74: Header!T5
+R77: 01!R255
+C84: TRIM(01!C261)
+K84: TRIM(01!K261)
+S84: TRIM(01!S261)
+I88: TRIM(01!I263)
+I89: TRIM(01!J264)
+--- Sheet "01-3" ---
+K10: "                Năm "&Header!V48
+H15: TRIM(Header!C3)
+F16: Header!C2
+G16: Header!D2
+H16: Header!E2
+I16: Header!F2
+J16: Header!G2
+K16: Header!H2
+L16: Header!I2
+M16: Header!J2
+N16: Header!K2
+O16: Header!L2
+P16: Header!M2
+Q16: Header!N2
+R16: Header!O2
+S16: Header!P2
+F17: TRIM(Header!C4)
+F18: TRIM(Header!C5)
+R18: TRIM(Header!C6)
+F19: TRIM(Header!C7)
+L19: TRIM(Header!C8)
+R19: TRIM(Header!C9)
+H21: TRIM(Header!V6)
+F22: MID(TRIM(Header!V5),1,1)
+G22: MID(TRIM(Header!V5),2,1)
+H22: MID(TRIM(Header!V5),3,1)
+I22: MID(TRIM(Header!V5),4,1)
+J22: MID(TRIM(Header!V5),5,1)
+K22: MID(TRIM(Header!V5),6,1)
+L22: MID(TRIM(Header!V5),7,1)
+M22: MID(TRIM(Header!V5),8,1)
+N22: MID(TRIM(Header!V5),9,1)
+O22: MID(TRIM(Header!V5),10,1)
+Q22: MID(TRIM(Header!V5),11,1)
+R22: MID(TRIM(Header!V5),12,1)
+F23: TRIM(Header!V7)
+F24: TRIM(Header!V8)
+R24: TRIM(Header!V9)
+F25: TRIM(Header!V10)
+L25: TRIM(Header!V11)
+R25: TRIM(Header!V12)
+C44: 01!C53
+R89: Header!T5
+R92: 01!R255
+C100: TRIM(01!C261)
+K100: TRIM(01!K261)
+S100: TRIM(01!S261)
+J103: TRIM(01!I263)
+J104: TRIM(01!J264)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 203 cell công thức trong file này
+
+=== FILE: 00_bctc_hn_243.xls ===
+--- Sheet "01" ---
+G1: IF(K45="1","BẢNG CÂN ĐỐI KẾ TOÁN HỢP NHẤT HỢP NHẤT(Mẫu số: B01 - DN-HN)","BẢNG CÂN ĐỐI KẾ TOÁN HỢP NHẤT(Mẫu số: B01/CDHĐ – DNKLT-HN)")
+G5: "Tại ngày "& LEFT(Header!V33,2)&" tháng "& MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4)
+G6: TRIM(Header!C3)
+G7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G9: TRIM(Header!V6)
+G10: TRIM(Header!V5)
+F38: Header!V50
+AI39: Header!V50
+F40: TRIM(Header!V49)
+S45: TRIM(Header!V32)
+U45: TRIM(Header!V33)
+R56: R57+R60+R64+R73+R76
+W56: W57+W60+W64+W73+W76
+R57: R58+R59
+W57: W58+W59
+R60: R61+R62+R63
+W60: W61+W62+W63
+R64: R65+R66+R67+R68+R69+R70+R71+R72
+W64: W65+W66+W67+W68+W69+W70+W71+W72
+R73: R74+R75
+W73: W74+W75
+R76: R77+R78+R79+R80+R81
+W76: W77+W78+W79+W80+W81
+R82: R83+R91+R101+R104+R107+R113
+W82: W83+W91+W101+W104+W107+W113
+R83: R84+R85+R86+R87+R88+R89+R90
+W83: W84+W85+W86+W87+W88+W89+W90
+R91: R92+R95+R98
+W91: W92+W95+W98
+R92: R93+R94
+W92: W93+W94
+R95: R96+R97
+W95: W96+W97
+R98: R99+R100
+W98: W99+W100
+R101: R102+R103
+W101: W102+W103
+R104: R105+R106
+W104: W105+W106
+R107: R108+R109+R110+R111+R112
+W107: W108+W109+W110+W111+W112
+R113: R114+R115+R116+R117+R118
+W113: W114+W115+W116+W117+W118
+R119: R56+R82
+W119: W56+W82
+R120: R121+R136
+W120: W121+W136
+R121: SUM(R122:R135)
+W121: SUM(W122:W135)
+R136: R137+R138+R139+R140+R141+R142+R143+R144+R145+R146+R147+R148+R149
+W136: W137+W138+W139+W140+W141+W142+W143+W144+W145+W146+W147+W148+W149
+R150: R151+R169
+W150: W151+W169
+R151: R152+R155+R156+R157+R158+R159+R160+R161+R162+R163+R164+R167+R168
+W151: W152+W155+W156+W157+W158+W159+W160+W161+W162+W163+W164+W167+W168
+R152: R153+R154
+W152: W153+W154
+R164: R165+R166
+W164: W165+W166
+R169: R170+R171
+W169: W170+W171
+R172: R120+R150
+W172: W120+W150
+R178: R179+R182+R188+R197+R198+R202+R203+R204
+W178: W179+W182+W188+W197+W198+W202+W203+W204
+R179: R180+R181
+W179: W180+W181
+R182: R183+R184+R185+R186+R187
+W182: W183+W184+W185+W186+W187
+R188: R189+R190+R191+R192+R193+R194+R195+R196
+W188: W189+W190+W191+W192+W193+W194+W195+W196
+R198: R199+R200+R201
+W198: W199+W200+W201
+R204: R205+R206+R207+R208+R209+R210+R211
+W204: W205+W206+W207+W208+W209+W210+W211
+R212: SUM(R213:R231)
+W212: SUM(W213:W231)
+R232: R233+R249
+W232: W233+W249
+R233: R234+R237+R238+R239+R240+R241+R242+R243+R244+R247+R248
+W233: W234+W237+W238+W239+W240+W241+W242+W243+W244+W247+W248
+R234: R235+R236
+W234: W235+W236
+R244: R245+R246
+W244: W245+W246
+R249: R250+R251
+W249: W250+W251
+R252: R212+R232
+W252: W212+W232
+F255: TRIM(Header!V15)
+V255: Header!V41
+V257: Header!V42
+I259: TRIM(Header!V16)
+I261: TRIM(Header!V6)
+--- Sheet "01-1" ---
+C1: "BÁO CÁO KẾT QUẢ HOẠT ĐỘNG KINH DOANH HỢP NHẤT
+(Mẫu số " & IF(01!K45="1","B 02 - DN -HN)","B02/CDHĐ - DNKLT-HN)")
+C3: "Năm "&Header!V48
+E5: TRIM(Header!C3)
+E6: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+E8: TRIM(Header!V6)
+E9: TRIM(Header!V5)
+I19: "Đơn vị tính: "&01!F38
+I24: I22-I23
+J24: J22-J23
+I26: I24-I25
+J26: J24-J25
+I33: I26+I27-I28-I31-I32+I30
+J33: J26+J27-J28-J31-J32+J30
+I36: I34-I35
+J36: J34-J35
+I37: I33+I36
+J37: J33+J36
+I40: I37-I38-I39
+J40: J37-J38-J39
+D47: TRIM(01!F255)
+J47: TRIM(01!V255)
+D49: TRIM(01!F257)
+J49: TRIM(01!V257)
+E51: TRIM(01!I259)
+E53: TRIM(01!I261)
+--- Sheet "01-2" ---
+C1: "LƯU CHUYỂN TIỀN TỆ HỢP NHẤT (THEO PHƯƠNG PHÁP TRỰC TIẾP) (Mẫu số "&IF(01!K45="1","B 03 - DN-HN)","B03/CDHĐ - DNKLT-HN)")
+F3: "Năm "&Header!V48
+G4: TRIM(Header!C3)
+G5: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G7: TRIM(Header!V6)
+G8: TRIM(Header!V5)
+T40: "Đơn vị tính: "&01!F38
+R51: R44+R45+R46+R47+R48+R49+R50
+W51: W44+W45+W46+W47+W48+W49+W50
+R60: R53+R54+R55+R56+R57+R58+R59
+W60: W53+W54+W55+W56+W57+W58+W59
+R68: R62+R63+R64+R65+R66+R67
+W68: W62+W63+W64+W65+W66+W67
+R69: R51+R60+R68
+W69: W51+W60+W68
+R72: R69+R70+R71
+W72: W69+W70+W71
+F74: TRIM(01!F255)
+T74: TRIM(01!V255)
+F76: TRIM(01!F257)
+T76: TRIM(01!V257)
+H78: TRIM(01!I259)
+H80: TRIM(01!I261)
+--- Sheet "01-3" ---
+D1: "LƯU CHUYỂN TIỀN TỆ HỢP NHẤT (THEO PHƯƠNG PHÁP GIÁN TIẾP) (Mẫu số "&IF(01!K45="1","B 03 - DN-HN)","B03/CDHĐ - DNKLT-HN)")
+I3: "Năm "&Header!V48
+G6: TRIM(Header!C3)
+G7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G9: TRIM(Header!V6)
+G10: TRIM(Header!V5)
+T44: " Đơn vị tính: "&01!F38
+R56: R48+R50+R51+R52+R53+R54+R55
+W56: W48+W50+W51+W52+W53+W54+W55
+R66: R56+R57+R58+R59+R60+R61+R62+R63+R64+R65
+W66: W56+W57+W58+W59+W60+W61+W62+W63+W64+W65
+R75: SUM(R68:R74)
+W75: SUM(W68:W74)
+R83: SUM(R77:R82)
+W83: SUM(W77:W82)
+R84: R66+R75+R83
+W84: W66+W75+W83
+R87: R84+R85+R86
+W87: W84+W85+W86
+F89: TRIM(01!F255)
+T89: TRIM(01!V255)
+F91: TRIM(01!F257)
+T91: TRIM(01!V257)
+H93: TRIM(01!I259)
+H95: TRIM(01!I261)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B15: IF(OR(LEN(C3)=0,LEN(C4)=0,LEN(C5)=0,LEN(C6)=0),"0","1")
+B16: IF(LEN(01!V257)=0,"0","1")
+C16: 01!V257
+B27: IF(01!K45="1",IF(01!R119=01!R172,"1","0"),"1")
+C27: 01!R119
+B28: IF(01!K45="1",IF(01!W119=01!W172,"1","0"),"1")
+C28: 01!W119
+B29: IF(AND(01!R152<=0,01!K45="1"),"0","1")
+C29: 01!R152
+B30: IF(AND(01!W152<=0,01!K45="1"),"0","1")
+C30: 01!W152
+B31: IF(01!L45="1",IF(01!R178=01!R252,"1","0"),"1")
+C31: 01!R178
+B32: IF(01!L45="1",IF(01!W178=01!W252,"1","0"),"1")
+C32: 01!W178
+B33: IF(AND(01!R234<=0,01!L45="1"),"0","1")
+C33: 01!R234
+B34: IF(AND(01!W234<=0,01!L45="1"),"0","1")
+C34: 01!W234
+C37: '01-1'!I29
+C38: '01-1'!J29
+B40: IF(LEN(01!V255)=0,"0","1")
+C40: 01!V255
+B41: IF(01!K45="1",IF(01!R119=01!R172,"1","0"),"1")
+C41: 01!R172
+B42: IF(01!K45="1",IF(01!W119=01!W172,"1","0"),"1")
+C42: 01!W172
+B43: IF(01!L45="1",IF(01!R178=01!R252,"1","0"),"1")
+C43: 01!R252
+B44: IF(01!L45="1",IF(01!W178=01!W252,"1","0"),"1")
+C44: 01!W252
+B46: IF(AND(01!R172=0,01!K45="1"),0,1)
+C46: 01!R172
+B47: IF(AND(01!R252=0,01!L45="1"),0,1)
+C47: 01!R252
+=> 209 cell công thức trong file này
+
+=== FILE: 00_bctc_hn_243.xls1 ===
+--- Sheet "01" ---
+K19: "                Năm "&Header!T2
+E20: "Tại ngày " & MID(Header!V33,1,2) & " tháng " & MID(Header!V33,4,2) & " năm " & MID(Header!V33,7,4)
+K21: Header!U32
+L21: Header!V33
+H24: TRIM(Header!C3)
+F25: TRIM(Header!C2)
+G25: TRIM(Header!D2)
+H25: TRIM(Header!E2)
+I25: TRIM(Header!F2)
+J25: TRIM(Header!G2)
+K25: TRIM(Header!H2)
+L25: TRIM(Header!I2)
+M25: TRIM(Header!J2)
+N25: TRIM(Header!K2)
+O25: TRIM(Header!L2)
+P25: TRIM(Header!M2)
+Q25: TRIM(Header!N2)
+R25: TRIM(Header!O2)
+S25: TRIM(Header!P2)
+F26: TRIM(Header!C4)
+F27: TRIM(Header!C5)
+R27: TRIM(Header!C6)
+F28: TRIM(Header!C7)
+L28: TRIM(Header!C8)
+R28: TRIM(Header!C9)
+H30: TRIM(Header!V6)
+F31: MID(TRIM(Header!V5),1,1)
+G31: MID(TRIM(Header!V5),2,1)
+H31: MID(TRIM(Header!V5),3,1)
+I31: MID(TRIM(Header!V5),4,1)
+J31: MID(TRIM(Header!V5),5,1)
+K31: MID(TRIM(Header!V5),6,1)
+L31: MID(TRIM(Header!V5),7,1)
+M31: MID(TRIM(Header!V5),8,1)
+N31: MID(TRIM(Header!V5),9,1)
+O31: MID(TRIM(Header!V5),10,1)
+Q31: MID(TRIM(Header!V5),11,1)
+R31: MID(TRIM(Header!V5),12,1)
+S31: MID(TRIM(Header!V5),13,1)
+F32: TRIM(Header!V7)
+F33: TRIM(Header!V8)
+R33: TRIM(Header!V9)
+F34: TRIM(Header!V10)
+L34: TRIM(Header!V11)
+R34: TRIM(Header!V12)
+C53: "Đơn vị tính: " &T52
+R256: Header!T5
+R259: "    Lập, ngày " & MID(TRIM(R258),1,2) & " tháng " & MID(TRIM(R258),4,2) & " năm " & MID(TRIM(R258),7,4)
+--- Sheet "01-1" ---
+M6: "   Năm "&Header!V48
+F7: TRIM(Header!C3)
+D8: Header!C2
+E8: Header!D2
+F8: Header!E2
+G8: Header!F2
+H8: Header!G2
+I8: Header!H2
+J8: Header!I2
+K8: Header!J2
+L8: Header!K2
+M8: Header!L2
+N8: Header!M2
+O8: Header!N2
+P8: Header!O2
+Q8: Header!P2
+D9: TRIM(Header!C4)
+D10: TRIM(Header!C5)
+T10: TRIM(Header!C6)
+D11: TRIM(Header!C7)
+L11: TRIM(Header!C8)
+Y11: TRIM(Header!C9)
+F13: TRIM(Header!V6)
+D14: MID(TRIM(Header!V5),1,1)
+E14: MID(TRIM(Header!V5),2,1)
+F14: MID(TRIM(Header!V5),3,1)
+G14: MID(TRIM(Header!V5),4,1)
+H14: MID(TRIM(Header!V5),5,1)
+I14: MID(TRIM(Header!V5),6,1)
+J14: MID(TRIM(Header!V5),7,1)
+K14: MID(TRIM(Header!V5),8,1)
+L14: MID(TRIM(Header!V5),9,1)
+M14: MID(TRIM(Header!V5),10,1)
+O14: MID(TRIM(Header!V5),11,1)
+P14: MID(TRIM(Header!V5),12,1)
+Q14: MID(TRIM(Header!V5),13,1)
+D15: TRIM(Header!V7)
+D16: TRIM(Header!V8)
+T16: TRIM(Header!V9)
+D17: TRIM(Header!V10)
+L17: TRIM(Header!V11)
+Y17: TRIM(Header!V12)
+C19: 01!C53
+Z48: 01!R259
+C55: TRIM(01!C265)
+J55: TRIM(01!K265)
+Z55: TRIM(01!S265)
+H58: TRIM(01!I267)
+H59: TRIM(01!J268)
+--- Sheet "01-2" ---
+K10: "                    Năm "&Header!V48
+G11: TRIM(Header!C3)
+F12: Header!C2
+G12: Header!D2
+H12: Header!E2
+I12: Header!F2
+J12: Header!G2
+K12: Header!H2
+L12: Header!I2
+M12: Header!J2
+N12: Header!K2
+O12: Header!L2
+P12: Header!M2
+Q12: Header!N2
+R12: Header!O2
+S12: Header!P2
+F13: TRIM(Header!C4)
+F14: TRIM(Header!C5)
+R14: TRIM(Header!C6)
+F15: TRIM(Header!C7)
+L15: TRIM(Header!C8)
+R15: TRIM(Header!C9)
+G17: TRIM(Header!V6)
+F18: MID(TRIM(Header!V5),1,1)
+G18: MID(TRIM(Header!V5),2,1)
+H18: MID(TRIM(Header!V5),3,1)
+I18: MID(TRIM(Header!V5),4,1)
+J18: MID(TRIM(Header!V5),5,1)
+K18: MID(TRIM(Header!V5),6,1)
+L18: MID(TRIM(Header!V5),7,1)
+M18: MID(TRIM(Header!V5),8,1)
+N18: MID(TRIM(Header!V5),9,1)
+O18: MID(TRIM(Header!V5),10,1)
+Q18: MID(TRIM(Header!V5),11,1)
+R18: MID(TRIM(Header!V5),12,1)
+S18: MID(TRIM(Header!V5),13,1)
+F19: TRIM(Header!V7)
+F20: TRIM(Header!V8)
+R20: TRIM(Header!V9)
+F21: TRIM(Header!V10)
+L21: TRIM(Header!V11)
+R21: TRIM(Header!V12)
+C40: 01!C53
+R74: Header!T5
+R77: 01!R259
+C84: TRIM(01!C265)
+K84: TRIM(01!K265)
+S84: TRIM(01!S265)
+I88: TRIM(01!I267)
+I89: TRIM(01!J268)
+--- Sheet "01-3" ---
+K10: "                Năm "&Header!V48
+H15: TRIM(Header!C3)
+F16: Header!C2
+G16: Header!D2
+H16: Header!E2
+I16: Header!F2
+J16: Header!G2
+K16: Header!H2
+L16: Header!I2
+M16: Header!J2
+N16: Header!K2
+O16: Header!L2
+P16: Header!M2
+Q16: Header!N2
+R16: Header!O2
+S16: Header!P2
+F17: TRIM(Header!C4)
+F18: TRIM(Header!C5)
+R18: TRIM(Header!C6)
+F19: TRIM(Header!C7)
+L19: TRIM(Header!C8)
+R19: TRIM(Header!C9)
+H21: TRIM(Header!V6)
+F22: MID(TRIM(Header!V5),1,1)
+G22: MID(TRIM(Header!V5),2,1)
+H22: MID(TRIM(Header!V5),3,1)
+I22: MID(TRIM(Header!V5),4,1)
+J22: MID(TRIM(Header!V5),5,1)
+K22: MID(TRIM(Header!V5),6,1)
+L22: MID(TRIM(Header!V5),7,1)
+M22: MID(TRIM(Header!V5),8,1)
+N22: MID(TRIM(Header!V5),9,1)
+O22: MID(TRIM(Header!V5),10,1)
+Q22: MID(TRIM(Header!V5),11,1)
+R22: MID(TRIM(Header!V5),12,1)
+F23: TRIM(Header!V7)
+F24: TRIM(Header!V8)
+R24: TRIM(Header!V9)
+F25: TRIM(Header!V10)
+L25: TRIM(Header!V11)
+R25: TRIM(Header!V12)
+C44: 01!C53
+R89: Header!T5
+R92: 01!R259
+C100: TRIM(01!C265)
+K100: TRIM(01!K265)
+S100: TRIM(01!S265)
+J103: TRIM(01!I267)
+J104: TRIM(01!J268)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 203 cell công thức trong file này
+
+
+TỔNG CỘNG: 824 cell công thức trong 4 file

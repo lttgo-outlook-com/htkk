@@ -1,0 +1,251 @@
+CÔNG THỨC TÍNH (human-readable) — 01_PHLP
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Tờ khai thuế phí, lệ phí (01/PHLP), kỳ tính thuế theo tháng. Folder gồm 1 cặp file .xls (tờ khai + tính toán) và .xls1 (pre-fill XML).
+
+## File 01_PHLP_v2.0.2_mau.xls
+
+### Sheet "01" (tờ khai chính)
+- [L6] [01] Kỳ tính thuế = "Tháng <Header!V46> năm <Header!V48>"
+- [L7] [02] Lần đầu = X nếu Header!V29 trống; [S7, I35] [03] Bổ sung lần thứ = V29
+- [I8] Tên NNT = TRIM(Header!C3); [I9] Mã số thuế = nối từng ký tự TRIM của Header!C2:…
+- [F10, F11, P11, F12, M12, T12] Địa chỉ/quận huyện/tỉnh/điện thoại/fax/email = TRIM(Header!C4:C9)
+- Khối đại lý thuế (nếu có): [I16] Tên = TRIM(Header!V6); [I17] MST = TRIM(V5); [F18, F19, P19, F20, M20, T20] địa chỉ/… = TRIM(V7:V12); [L21] Số, [T21] Ngày = TRIM(V13/V14)
+- [C35] = "1" nếu lần đầu; [F35] = "1" nếu bổ sung
+- [L37, R37, V37] Tổng (3 dòng 43:45) = SUM(L43:L45), SUM(R43:R45), SUM(V43:V45) — cùng ở dòng L46/R46/V46
+- [R44] (6) = (4) × (5) = ROUND(L44 × Q44/100, 0) — cơ số (L44) × tỷ lệ (Q44, %)
+- [V44] (7) = (4) − (6) = L44 − R44 nếu > 0, nếu không 0
+- [H32, H55] Họ và tên = TRIM(Header!V15); [H34, H57] Chứng chỉ = TRIM(V16); [S32] = TRIM(Header!T5)
+- [C55] nhãn "Họ và tên:"; [S55] Người ký = TRIM(Header!V41); [C57] nhãn "Chứng chỉ hành nghề số:"; [S57] Ngày ký = TRIM(V42)
+
+### Sheet "KHBS" (bổ sung, điều chỉnh)
+- [BD3] Mô tả "Tờ khai thuế PHLP mẫu số 01/PHLP kỳ tính thuế: Tháng <V46>/<V48>" + "ngày dd/tháng/năm" (định dạng lại B47)
+- [BF5] = ROUND(BH15 × BE20 × 0,05/100, 0) — tiền chậm nộp: cơ số (BH15) × số ngày nộp chậm (BE20) × 0,05%/ngày
+- [BE20] Số ngày nộp chậm = BD5; [BE21] Số tiền chậm nộp = ROUND(BH17 × BE20 × 0,05/100, 0) nếu > 0, nếu không 0 (cùng công thức, cơ số BH17)
+- [BH17] = BI5
+- [B9, B13, B17] Số thứ tự STT = dòng trước + 1 (theo nhóm I tăng/II giảm/III tổng hợp)
+- [B47] = BG5 (ngày lập); [BD47] Tổng điều chỉnh tăng = SUM(BH8:BH10); [BF47] Tổng điều chỉnh giảm = SUM(BH12:BH14)
+- [BG45] Người ký = TRIM(01!S55); [BG46] Ngày ký = TRIM(01!S57)
+
+### Sheet "Header" (cờ kiểm tra nội bộ)
+- [M2] Dấu " - " nếu N2:P2 trống; [T8] CONCATENATE(1)
+- [B16] Cờ 0/1: Ngày ký (01!S57) có điền chưa; [C16] giá trị 01!S57
+
+## File 01_PHLP_v2.0.2_mau.xls1 (pre-fill XML)
+
+### Sheet "01"
+- [K6] Chuỗi [01] Kỳ tính thuế (Tháng/Năm) — cùng logic file chính
+- [L7] Lần đầu = X; [R7] số lần bổ sung theo Header!V29
+- [H8] NNT = TRIM(Header!C3); [F9:S9] Tách Mã số thuế (Header!C2:…P2) từng ô
+- [F10:S12] địa chỉ/quận huyện/tỉnh/điện thoại/fax/email = TRIM(Header!C4:C9)
+- [H16] đại lý = TRIM(Header!V6); [F17:S17] Tách Mã số thuế đại lý (V5) từng ký tự bằng MID
+- [F18:S20] địa chỉ đại lý = TRIM(Header!V7:V12); [L21] Số, [S21] Ngày = TRIM(V13/V14)
+- [I37] = SUM(U43:U45); [N37] = SUM(#REF!) (tham chiếu hỏng trong template)
+- [B44] Số thứ tự (1) = B43 + 1
+- [V44] (7) = (4) − (6) = L44 − R44 nếu > 0 (giữ công thức như file chính)
+- [L46, R46, V46] Tổng 3 dòng = SUM(L43:L45), SUM(R43:R45), SUM(V43:V45)
+- [B49] "Số tiền phí, lệ phí phải nộp vào NSNN (ghi bằng chữ): " nối giá trị AB37
+- [O55] "Ngày dd tháng mm năm yyyy" (định dạng lại R53)
+
+### Sheet "KHBS"
+- [D7] Mô tả "Tờ khai thuế PHLP mẫu số 01/PHLP kỳ tính thuế: Tháng …" + ngày E70 định dạng
+- [AF10] NNT = Header!C3; [AA12:CL12] Tách Mã số thuế (Header!C2:…P2) từng ô
+- [AA14, AA16, CK16, AA18, BD18, CK18] địa chỉ/fax/email = TRIM(Header!C4:C9); [AK20] đại lý = TRIM(V6)
+- [AA22:CL22] Tách Mã số thuế đại lý (V5) từng ký tự bằng MID
+- [AA24:BP30] [19] Địa chỉ/[21] Quận huyện/[23] Điện thoại/[24] Fax/[25] E-mail/[26] Số hợp đồng = TRIM(Header!V7:V14)
+- [D39, D43, D47] Số thứ tự STT = dòng trước + 1 (nhóm I tăng/II giảm/III tổng hợp)
+- [CP39, CP43] (6) = (5) − (4) = BU − BB (cột số liệu cuối trừ cột số liệu trước)
+- [BL72] "Ngày dd tháng mm năm yyyy" (định dạng lại C70); [N74, AA75] Họ tên/Chứng chỉ = TRIM(01!D57/G58)
+
+### Sheet "Header"
+- [M2] Dấu nối; [T8] "nguoi ky" CONCATENATE(1)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_PHLP
+Thư mục: 09_PHI_LE_PHI/01_PHLP (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_PHLP_v2.0.2_mau.xls ===
+--- Sheet "01" ---
+L6: " Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48
+L7: IF(Header!V29="","[X]","")
+S7: IF(Header!V29="","",Header!V29)
+I8: TRIM(Header!C3)
+I9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+F10: TRIM(Header!C4)
+F11: TRIM(Header!C5)
+P11: TRIM(Header!C6)
+F12: TRIM(Header!C7)
+M12: TRIM(Header!C8)
+T12: TRIM(Header!C9)
+I16: TRIM(Header!V6)
+I17: TRIM(Header!V5)
+F18: TRIM(Header!V7)
+F19: TRIM(Header!V8)
+P19: TRIM(Header!V9)
+F20: TRIM(Header!V10)
+M20: TRIM(Header!V11)
+T20: TRIM(Header!V12)
+L21: TRIM(Header!V13)
+T21: TRIM(Header!V14)
+H32: TRIM(Header!V15)
+S32: TRIM(Header!T5)
+H34: TRIM(Header!V16)
+C35: IF(Header!V29="","1","")
+F35: IF(Header!V29="","","1")
+I35: IF(Header!V29="","",Header!V29)
+L37: SUM(L43:L45)
+R37: SUM(R43:R45)
+V37: SUM(V43:V45)
+R44: ROUND(L44*Q44/100,0)
+V44: IF(L44-R44<0,0,L44-R44)
+L46: SUM(L43:L45)
+R46: SUM(R43:R45)
+V46: SUM(V43:V45)
+C55: "Họ và tên:"
+H55: TRIM(Header!V15)
+S55: TRIM(Header!V41)
+C57: "Chứng chỉ hành nghề số:"
+H57: TRIM(Header!V16)
+S57: TRIM(Header!V42)
+--- Sheet "KHBS" ---
+BD3: "Tờ khai thuế PHLP mẫu số 01/PHLP kỳ tính thuế: Tháng "&Header!V46&"/"&Header!V48&" ngày "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BH17: BI5
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: TRIM(01!S55)
+BG46: TRIM(01!S57)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B16: IF(LEN(01!S57)=0,"0","1")
+C16: 01!S57
+=> 58 cell công thức trong file này
+
+=== FILE: 01_PHLP_v2.0.2_mau.xls1 ===
+--- Sheet "01" ---
+K6: " Kỳ tính thuế: Tháng " &Header!V46&" năm " &Header!V48
+L7: IF(Header!V29="","[X]","")
+R7: IF(Header!V29="","",Header!V29)
+H8: TRIM(Header!C3)
+F9: Header!C2
+G9: Header!D2
+H9: Header!E2
+I9: Header!F2
+J9: Header!G2
+K9: Header!H2
+L9: Header!I2
+M9: Header!J2
+N9: Header!K2
+O9: Header!L2
+P9: Header!M2
+Q9: Header!N2
+R9: Header!O2
+S9: Header!P2
+F10: TRIM(Header!C4)
+F11: TRIM(Header!C5)
+P11: TRIM(Header!C6)
+F12: TRIM(Header!C7)
+M12: TRIM(Header!C8)
+S12: TRIM(Header!C9)
+H16: TRIM(Header!V6)
+F17: MID(TRIM(Header!V5),1,1)
+G17: MID(TRIM(Header!V5),2,1)
+H17: MID(TRIM(Header!V5),3,1)
+I17: MID(TRIM(Header!V5),4,1)
+J17: MID(TRIM(Header!V5),5,1)
+K17: MID(TRIM(Header!V5),6,1)
+L17: MID(TRIM(Header!V5),7,1)
+M17: MID(TRIM(Header!V5),8,1)
+N17: MID(TRIM(Header!V5),9,1)
+O17: MID(TRIM(Header!V5),10,1)
+P17: TRIM(Header!M2)
+Q17: MID(TRIM(Header!V5),11,1)
+R17: MID(TRIM(Header!V5),12,1)
+S17: MID(TRIM(Header!V5),13,1)
+F18: TRIM(Header!V7)
+F19: TRIM(Header!V8)
+P19: TRIM(Header!V9)
+F20: TRIM(Header!V10)
+M20: TRIM(Header!V11)
+S20: TRIM(Header!V12)
+L21: TRIM(Header!V13)
+S21: TRIM(Header!V14)
+I37: SUM(U43:U45)
+N37: SUM(#REF!)
+B44: B43+1
+V44: IF(L44-R44<0, 0, L44-R44)
+L46: SUM(L43:L45)
+R46: SUM(R43:R45)
+V46: SUM(V43:V45)
+B49: "Số tiền phí, lệ phí phải nộp vào NSNN (ghi bằng chữ): " & AB37
+O55: "Ngày " & MID(TRIM(R53),1,2) &" tháng " &MID(TRIM(R53),4,2) & " năm " & MID(TRIM(R53),7,4)
+--- Sheet "KHBS" ---
+D7: "                  Tờ khai thuế PHLP mẫu số 01/PHLP kỳ tính thuế:  Tháng " & Header!V46  & "/" & Header!V48 &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: TRIM(Header!C4)
+AA16: TRIM(Header!C5)
+CK16: TRIM(Header!C6)
+AA18: TRIM(Header!C7)
+BD18: TRIM(Header!C8)
+CK18: TRIM(Header!C9)
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+BL72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
+N74: TRIM(01!D57)
+AA75: TRIM(01!G58)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 109 cell công thức trong file này
+
+
+TỔNG CỘNG: 167 cell công thức trong 2 file

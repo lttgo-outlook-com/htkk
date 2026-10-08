@@ -1,0 +1,210 @@
+CÔNG THỨC TÍNH (human-readable) — Tờ khai danh mục hóa đơn đã lập mẫu 03/DL-HDDT (tháng/quý)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Folder có 1 phiên bản 03_DL_HDDT_v3.0.0_mau.xls + .xls1 (bản có dữ liệu) + bangke_03_dl_hddt.xls (bảng kê phụ). 3 sheet trong .xls: 01 (tờ khai chính), KHBS, Header. Kỳ: quý nếu Header!V47 có giá trị, bằng không tháng (V46); năm V48.
+
+## File 03_DL_HDDT_v3.0.0_mau.xls (template)
+
+### Sheet "01" (tờ khai chính)
+- [I6] Kỳ tính thuế = IF(TRIM(Header!V47)="", "Tháng "&TRIM(Header!V46)&" năm "&Header!V48, "Quý "&TRIM(Header!V47)&" năm "&Header!V48)
+- [V7, L35] Bổ sung = IF(Header!V29="","",Header!V29)
+- prefill NNT (I8 = TRIM(C3)), MST nối ký tự ISBLANK (I9), địa chỉ (F10..W12 = C4..C9), đại lý (I16..W20 = V6..V12), [O21] "Số:" = TRIM(V13), [W21] "Ngày:" = TRIM(V14)
+- [H32] = TRIM(V15); [V32] = TRIM(Header!T5); [H34] = TRIM(V16)
+- Cờ: [C35] = IF(V29="","1",""); [F35] = IF(V29="","","1")
+- Tổng 3 cột (dòng 44..46 → 37): [O37] = SUM(O44:O46); [U37] = SUM(U44:U46); [Y37] = SUM(Y44:Y46)
+- [AG45] = TRIM(IF(AF45="KHAC", "KHAC:"&TEXT(I45,"00.00")&"%", AF45)) (tỷ lệ thuế "khác" ghi kèm %)
+- [K48] = "Tổng doanh thu hàng hóa, dịch vụ bán ra chịu thuế GTGT (*): " (chuỗi nhãn); [K49] = "Tổng số thuế GTGT của hàng hóa, dịch vụ bán ra (**):   "
+- [O69] "Người ký" = TRIM(Header!V41); [O71] "Ngày lập" = TRIM(Header!V42)
+
+### Sheet "KHBS"
+- [BD3] tiêu đề = "Tờ khai thuế PHLP mẫu số 01/PHLP kỳ tính thuế: Tháng "&V46&"/"&V48&" ngày "&MID(B47)...&")" (nhiên liệu chữ cứng của mẫu 01/PHLP)
+- [B9] mục I = B8+1; [B13] mục II = B12+1; [B17] mục III = B16+1 (STT)
+- [BH17] "7" = BI5; [BE20] "Số ngày nộp chậm" = BD5
+- [BE21] "Số tiền chậm nộp" = IF((BH17×BE20×0,05/100) > 0, ROUND(BH17×BE20×0,05/100, 0), 0); [BF5] = ROUND(BH15×BE20×0,05/100, 0) (0,05%/ngày)
+- [B47] ngày = BG5; [BD47] tổng mục I = SUM(BH8:BH10); [BF47] tổng mục II = SUM(BH12:BH14)
+- Chữ ký: [BG45] = TRIM(01!O69); [BG46] = TRIM(01!O71)
+
+### Sheet "Header"
+- [M2] định dạng MST + [T8] = CONCATENATE(1) (không có bộ cờ)
+
+## File 03_DL_HDDT_v3.0.0_mau.xls1 (bản có dữ liệu — số liệu lưu tĩnh, chỉ còn prefill)
+- Sheet 01: [K6] [01] Kỳ = IF(V30<>"M", "Kỳ tính thuế: Quý "&V47&" "&V48, "Kỳ tính thuế: Tháng "&V46&" "&V48); NNT (H8 = TRIM(C3)); MST tách ký tự [F9..S9] = C2..P2; đại lý (H16 = TRIM(V6), MST tách MID [F17..S17] = MID(TRIM(V5)))
+- [I37] 1 = SUM(U44:U46); [N37] = SUM(#REF!) (artifact tham chiếu hỏng còn sót)
+- [B48] = "Tổng doanh thu hàng hóa, dịch vụ bán ra chịu thuế GTGT (*) : " (chuỗi nhãn); [B49] = "Tổng số thuế GTGT của hàng hóa, dịch vụ bán ra (**): "
+- [B52] (ô nhãn "Tổng số thuế GTGT...") = "Số tiền phí, lệ phí phải nộp vào NSNN (ghi bằng chữ): "&AB37 (nhiên liệu chữ cứng của mẫu PHLP)
+- [U58] = AF54&", ngày "&MID(TRIM(R56)) (nối họ tên + ngày tách d/m/n)
+- Sheet KHBS: [Y14] = "Tháng "&V46&" năm "&V48; [Z16] = 01!R7; prefill đầy đủ NNT/MST/đại lý/MST đại lý (AF18..CL30), [AI38] = TRIM(V13), [BP38] = TRIM(V14)
+- [BL131] = 01!M58; [N133] = 01!D60; [AA134] = 01!G61; [BL140] = 01!M65 (kéo ngày/chữ ký từ 01 xuống)
+- Sheet Header: [M2] định dạng MST + [T8] = CONCATENATE(1) (không có bộ cờ)
+
+## File bangke_03_dl_hddt.xls (bảng kê phụ — tra mã từ sheet Data)
+### Sheet "03-DL-HDDT"
+- [D22] "Mã Nhóm thuế suất" = IF(ISNA(""&VLOOKUP(C22, Data!E4:F9, 2, FALSE)), "", ""&VLOOKUP(C22, Data!E4:F9, 2, FALSE)) — lặp dòng 22..26
+- [G22] "Mã loại hóa đơn" = IF(ISNA(""&VLOOKUP(F22, Data!B4:C10, 2, FALSE)), "", ""&VLOOKUP(F22, Data!B4:C10, 2, FALSE)) — lặp dòng 22..26
+### Sheet "Data", "HDSD"
+- Không có công thức (toàn dữ liệu tĩnh)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 03_DL_HDDT
+Thư mục: 07_HOA_DON/03_DL_HDDT (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 03_DL_HDDT_v3.0.0_mau.xls ===
+--- Sheet "01" ---
+I6: IF(TRIM(Header!V47)="","Tháng "&TRIM(Header!V46)&" năm "&Header!V48,"Quý "&TRIM(Header!V47)&" năm "&Header!V48)
+V7: IF(Header!V29="","",Header!V29)
+I8: TRIM(Header!C3)
+I9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+F10: TRIM(Header!C4)
+F11: TRIM(Header!C5)
+S11: TRIM(Header!C6)
+F12: TRIM(Header!C7)
+P12: TRIM(Header!C8)
+W12: TRIM(Header!C9)
+I16: TRIM(Header!V6)
+I17: TRIM(Header!V5)
+F18: TRIM(Header!V7)
+F19: TRIM(Header!V8)
+S19: TRIM(Header!V9)
+F20: TRIM(Header!V10)
+P20: TRIM(Header!V11)
+W20: TRIM(Header!V12)
+O21: TRIM(Header!V13)
+W21: TRIM(Header!V14)
+H32: TRIM(Header!V15)
+V32: TRIM(Header!T5)
+H34: TRIM(Header!V16)
+C35: IF(Header!V29="","1","")
+F35: IF(Header!V29="","","1")
+L35: IF(Header!V29="","",Header!V29)
+O37: SUM(O44:O46)
+U37: SUM(U44:U46)
+Y37: SUM(Y44:Y46)
+AG45: TRIM(IF(AF45="KHAC","KHAC:"&TEXT(I45,"00.00")&"%",AF45))
+K48: "Tổng doanh thu hàng hóa, dịch vụ bán ra chịu thuế GTGT (*): "
+K49: "Tổng số thuế GTGT của hàng hóa, dịch vụ bán ra (**):   "
+O69: TRIM(Header!V41)
+O71: TRIM(Header!V42)
+--- Sheet "KHBS" ---
+BD3: "Tờ khai thuế PHLP mẫu số 01/PHLP kỳ tính thuế: Tháng "&Header!V46&"/"&Header!V48&" ngày "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BH17: BI5
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: TRIM(01!O69)
+BG46: TRIM(01!O71)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 49 cell công thức trong file này
+
+=== FILE: 03_DL_HDDT_v3.0.0_mau.xls1 ===
+--- Sheet "01" ---
+K6: IF(Header!V30<>"M","Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, "Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+H8: TRIM(Header!C3)
+F9: Header!C2
+G9: Header!D2
+H9: Header!E2
+I9: Header!F2
+J9: Header!G2
+K9: Header!H2
+L9: Header!I2
+M9: Header!J2
+N9: Header!K2
+O9: Header!L2
+P9: Header!M2
+Q9: Header!N2
+R9: Header!O2
+S9: Header!P2
+H16: TRIM(Header!V6)
+F17: MID(TRIM(Header!V5),1,1)
+G17: MID(TRIM(Header!V5),2,1)
+H17: MID(TRIM(Header!V5),3,1)
+I17: MID(TRIM(Header!V5),4,1)
+J17: MID(TRIM(Header!V5),5,1)
+K17: MID(TRIM(Header!V5),6,1)
+L17: MID(TRIM(Header!V5),7,1)
+M17: MID(TRIM(Header!V5),8,1)
+N17: MID(TRIM(Header!V5),9,1)
+O17: MID(TRIM(Header!V5),10,1)
+P17: TRIM(Header!M2)
+Q17: MID(TRIM(Header!V5),11,1)
+R17: MID(TRIM(Header!V5),12,1)
+S17: MID(TRIM(Header!V5),13,1)
+I37: SUM(U44:U46)
+N37: SUM(#REF!)
+B48: "Tổng doanh thu hàng hóa, dịch vụ bán ra chịu thuế GTGT (*) : "
+B49: "Tổng số thuế GTGT của hàng hóa, dịch vụ bán ra (**): "
+B52: "Số tiền phí, lệ phí phải nộp vào NSNN (ghi bằng chữ): " & AB37
+U58: AF54& ", ngày " & MID(TRIM(R56),1,2) &" tháng " &MID(TRIM(R56),4,2) & " năm " & MID(TRIM(R56),7,4)
+--- Sheet "KHBS" ---
+Y14: "Tháng " &Header!V46&" năm " &Header!V48
+Z16: 01!R7
+AF18: TRIM(Header!C3)
+AA20: Header!C2
+AF20: Header!D2
+AK20: Header!E2
+AP20: Header!F2
+AU20: Header!G2
+AZ20: Header!H2
+BE20: Header!I2
+BJ20: Header!J2
+BO20: Header!K2
+BT20: Header!L2
+CB20: Header!N2
+CG20: Header!O2
+CL20: Header!P2
+AK28: TRIM(Header!V6)
+AA30: MID(TRIM(Header!V5),1,1)
+AF30: MID(TRIM(Header!V5),2,1)
+AK30: MID(TRIM(Header!V5),3,1)
+AP30: MID(TRIM(Header!V5),4,1)
+AU30: MID(TRIM(Header!V5),5,1)
+AZ30: MID(TRIM(Header!V5),6,1)
+BE30: MID(TRIM(Header!V5),7,1)
+BJ30: MID(TRIM(Header!V5),8,1)
+BO30: MID(TRIM(Header!V5),9,1)
+BT30: MID(TRIM(Header!V5),10,1)
+CB30: MID(TRIM(Header!V5),11,1)
+CG30: MID(TRIM(Header!V5),12,1)
+CL30: MID(TRIM(Header!V5),13,1)
+AI38: TRIM(Header!V13)
+BP38: TRIM(Header!V14)
+BL131: 01!M58
+N133: 01!D60
+AA134: 01!G61
+BL140: 01!M65
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 75 cell công thức trong file này
+
+=== FILE: bangke_03_dl_hddt.xls ===
+--- Sheet "03-DL-HDDT" ---
+D22: IF(ISNA(""&VLOOKUP(C22,Data!$E$4:$F$9,2,FALSE)),"",""&VLOOKUP(C22,Data!$E$4:$F$9,2,FALSE))
+G22: IF(ISNA(""&VLOOKUP(F22,Data!$B$4:$C$10,2,FALSE)),"",""&VLOOKUP(F22,Data!$B$4:$C$10,2,FALSE))
+D23: IF(ISNA(""&VLOOKUP(C23,Data!$E$4:$F$9,2,FALSE)),"",""&VLOOKUP(C23,Data!$E$4:$F$9,2,FALSE))
+G23: IF(ISNA(""&VLOOKUP(F23,Data!$B$4:$C$10,2,FALSE)),"",""&VLOOKUP(F23,Data!$B$4:$C$10,2,FALSE))
+D24: IF(ISNA(""&VLOOKUP(C24,Data!$E$4:$F$9,2,FALSE)),"",""&VLOOKUP(C24,Data!$E$4:$F$9,2,FALSE))
+G24: IF(ISNA(""&VLOOKUP(F24,Data!$B$4:$C$10,2,FALSE)),"",""&VLOOKUP(F24,Data!$B$4:$C$10,2,FALSE))
+D25: IF(ISNA(""&VLOOKUP(C25,Data!$E$4:$F$9,2,FALSE)),"",""&VLOOKUP(C25,Data!$E$4:$F$9,2,FALSE))
+G25: IF(ISNA(""&VLOOKUP(F25,Data!$B$4:$C$10,2,FALSE)),"",""&VLOOKUP(F25,Data!$B$4:$C$10,2,FALSE))
+D26: IF(ISNA(""&VLOOKUP(C26,Data!$E$4:$F$9,2,FALSE)),"",""&VLOOKUP(C26,Data!$E$4:$F$9,2,FALSE))
+G26: IF(ISNA(""&VLOOKUP(F26,Data!$B$4:$C$10,2,FALSE)),"",""&VLOOKUP(F26,Data!$B$4:$C$10,2,FALSE))
+--- Sheet "Data" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+(không có cell công thức)
+=> 10 cell công thức trong file này
+
+
+TỔNG CỘNG: 134 cell công thức trong 3 file

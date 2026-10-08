@@ -1,0 +1,257 @@
+CÔNG THỨC TÍNH (human-readable) — 133_B01_DNSN_BCTC (Báo cáo tài chính, Mẫu số B 01 - DNSN)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+
+## File 133_B01_DNSN_BCTC_v2.3.2_mau.xls
+
+### Sheet "01" (báo cáo tài chính chính — bảng cân đối)
+- [J4] "Tại ngày ..." = "Tại ngày " + dd + " tháng " + mm + " năm " + yyyy rút từ Header!V33 (MID)
+- [G9] Mã số thuế = nối 10 ô Header!C2..K2, mỗi ô TRIM, ô rỗng → " " (IF+ISBLANK)
+- [G10] Người nộp thuế = TRIM(Header!C3)
+- [G11] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
+- [G12] Mã số thuế (đại lý) = TRIM(Header!V5)
+- [R46, W46] Tổng khối trên = tổng các ô dòng 40, 41, 42, 43, 44, 45 cùng cột (R40+R41+R42+R43+R44+R45)
+- [R48, W48] Tổng khối giữa = tổng các ô dòng 49, 50, 51, 52, 53, 54 cùng cột
+- [R55, W55] Tổng khối dưới = tổng các ô dòng 56, 57, 58 cùng cột
+- [R59, W59] Tổng chung = ô dòng 48 + ô dòng 55 cùng cột (R48+R55)
+- [R67] Giám đốc = Header!V41; [R69] Ngày lập = Header!V42
+- [H71] Chứng chỉ hành nghề số = Header!V16
+- [H73] Đơn vị cung cấp dịch vụ kế toán = Header!V6
+- [F75] Từ ngày = Header!V32; [H75] đến ngày = Header!V33
+
+### Sheet "01-1" (bảng cân đối phần hai)
+- [F3] "Năm ..." = "Năm " & Header!V48
+- [E4] Mã số thuế = nối 10 ô Header!C2..K2 (IF+ISBLANK)
+- [E5] Người nộp thuế = TRIM(Header!C3)
+- [E6] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
+- [E7] Mã số thuế (đại lý) = TRIM(Header!V5)
+- [J26, K26] Dòng 05 = dòng 22 − dòng 23 − dòng 24 + dòng 25 (J22−J23−J24+J25)
+- [J28, K28] Dòng 07 = dòng 05 − dòng 27 (J26−J27)
+- [J32] Người ký = 01!R67; [J34] Ngày ký = 01!R69 (lấy từ khổ ký sheet "01")
+
+### Sheet "KHBS" (khai bổ sung)
+- [B6] STT = B5 + 1 (các dòng kế tiếp lặp theo cách này)
+- [G6] = F6 − E6 (chênh lệch 2 cột cùng dòng)
+- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
+
+### Sheet "Header"
+- [M2] Dấu ngăn cách địa chỉ: nếu 3 ô N2, O2, P2 bên cạnh cùng rỗng thì " ", ngược lại " - " (IF(TRIM(N2&O2&P2)))
+- [T8] Giá trị cố định = CONCATENATE(1)
+- [B15] Cờ đủ thông tin NNT = IF(OR(LEN(C3)=0, LEN(C4)=0, LEN(C5)=0, LEN(C6)=0), "0", "1") (một trong 4 ô C3..C6 rỗng thì "0")
+- [B16, C16] Cờ + giá trị: C16 = 01!R69 (Ngày lập); B16 = IF(LEN(01!R69)=0,"0","1")
+- [B17, B18, C17, C18] Cờ khớp 2 tổng: C17 = 01!R46, C18 = 01!R59; B17 = B18 = IF(01!R46<>01!R59,"0","1")
+- [B19, B20, C19, C20] Cờ khớp 2 tổng cột W: C19 = 01!W46, C20 = 01!W59; B19 = B20 = IF(01!W46<>01!W59,"0","1")
+- [B21] Cờ: ô R46 khác 0 → "1", bằng 0 → "0" (IF(01!R46<>0,"1","0"))
+- [B22] Cờ: ô R59 khác 0 → "1", bằng 0 → "0" (IF(01!R59<>0,"1","0"))
+
+## File 133_B01_DNSN_BCTC_v2.3.2_mau.xls1
+
+### Sheet "01" (bản cũ — mã số thuế tách từng ô)
+- [D5] "Tại ngày ..." = "Tại ngày " + dd/mm/yyyy rút từ ô L21 của chính sheet (MID)
+- [I7] Người nộp thuế = TRIM(Header!C3)
+- [F8, G8, H8, I8, J8, K8, L8, M8, N8, O8, P8, Q8, R8, S8] 14 ô mã số thuế = lần lượt Header!C2..P2
+- [F9, F10, R10, F11, L11, R11] Khối địa chỉ NNT: Địa chỉ trụ sở = TRIM(Header!C4); Quận Huyện = C5; Tỉnh/Thành phố = C6; Điện thoại = C7; Fax = C8; Email = C9
+- [I13] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
+- [F14, G14, H14, I14, J14, K14, L14, M14, N14, O14, Q14, R14, S14] 13 ô mã số thuế đại lý = mỗi ký tự của TRIM(Header!V5) (MID 1..13)
+- [F15, F16, R16, F17, L17, R17] Khối địa chỉ đại lý = TRIM(Header!V7..V12) (địa chỉ, quận huyện, tỉnh/thành, điện thoại, fax, email)
+- [L21] Ô không nhãn (ngày lập) = Header!V42
+- [R64] "Lập, ngày ..." = "Lập, ngày " + dd/mm/yyyy rút từ ô R63 của chính sheet (MID+TRIM)
+
+### Sheet "01-1" (bảng cân đối phần hai — bản cũ)
+- [I6] "Năm ..." = "Năm " & Header!V48
+- [G7] Người nộp thuế = TRIM(Header!C3)
+- [D8, E8, F8, G8, H8, I8, J8, K8, L8, M8, N8, O8, P8, Q8] 14 ô mã số thuế = lần lượt Header!C2..P2
+- [D9, D10, R10, D11, L11, S11] Khối địa chỉ NNT = TRIM(Header!C4..C9)
+- [G13] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
+- [D14, E14, F14, G14, H14, I14, J14, K14, L14, M14, O14, P14, Q14] 13 ô mã số thuế đại lý = mỗi ký tự của TRIM(Header!V5) (MID 1..13)
+- [D15, D16, R16, D17, L17, S17] Khối địa chỉ đại lý = TRIM(Header!V7..V12)
+- [Z33] Ô không nhãn = 01!R64 (dòng "Lập, ngày ..." của sheet "01")
+- [B39, H39, Z39] 3 cột "(Ký, họ tên)" = TRIM(01!C70), TRIM(01!K70), TRIM(01!R70)
+- [H41] "- Số chứng chỉ hành nghề" = TRIM(01!I72)
+- [H42] "- Đơn vị cung cấp dịch vụ kế toán" = TRIM(01!J73)
+
+### Sheet "KHBS" (khai bổ sung — giống file trước)
+- [B6] STT = B5 + 1; [G6] = F6 − E6
+- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
+
+### Sheet "Header" (bản cũ)
+- [M2] Dấu ngăn cách địa chỉ: nếu 3 ô N2, O2, P2 cùng rỗng thì " ", ngược lại " - " (IF(TRIM(N2&O2&P2)))
+- [V4] "Mã số thuế đơn vị chủ quản" = IF(LEN(TRIM(V5))>10, "-", "") (dài hơn 10 ký tự thì "-", không thì rỗng)
+- [T8] Giá trị cố định = CONCATENATE(1)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 133_B01_DNSN_BCTC
+Thư mục: 06_BCTC/133_B01_DNSN_BCTC (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 133_B01_DNSN_BCTC_v2.3.2_mau.xls ===
+--- Sheet "01" ---
+J4: "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4)
+G9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G10: TRIM(Header!C3)
+G11: TRIM(Header!V6)
+G12: TRIM(Header!V5)
+R46: R40+R41+R42+R43+R44+R45
+W46: W40+W41+W42+W43+W44+W45
+R48: R49+R50+R51+R52+R53+R54
+W48: W49+W50+W51+W52+W53+W54
+R55: R56+R57+R58
+W55: W56+W57+W58
+R59: R48+R55
+W59: W48+W55
+R67: Header!V41
+R69: Header!V42
+H71: Header!V16
+H73: Header!V6
+F75: Header!V32
+H75: Header!V33
+--- Sheet "01-1" ---
+F3: "Năm "&Header!V48
+E4: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+E5: TRIM(Header!C3)
+E6: TRIM(Header!V6)
+E7: TRIM(Header!V5)
+J26: J22-J23-J24+J25
+K26: K22-K23-K24+K25
+J28: J26-J27
+K28: K26-K27
+J32: 01!R67
+J34: 01!R69
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B15: IF(OR(LEN(C3)=0,LEN(C4)=0,LEN(C5)=0,LEN(C6)=0),"0","1")
+B16: IF(LEN(01!R69)=0,"0","1")
+C16: 01!R69
+B17: IF(01!R46<>01!R59,"0","1")
+C17: 01!R46
+B18: IF(01!R46<>01!R59,"0","1")
+C18: 01!R59
+B19: IF(01!W46<>01!W59,"0","1")
+C19: 01!W46
+B20: IF(01!W46<>01!W59,"0","1")
+C20: 01!W59
+B21: IF(01!R46<>0,"1","0")
+C21: 01!R46
+B22: IF(01!R59<>0,"1","0")
+C22: 01!R59
+=> 52 cell công thức trong file này
+
+=== FILE: 133_B01_DNSN_BCTC_v2.3.2_mau.xls1 ===
+--- Sheet "01" ---
+D5: "Tại ngày " & MID(L21,1,2) & " tháng " & MID(L21,4,2) & " năm " & MID(L21,7,4)
+I7: TRIM(Header!C3)
+F8: Header!C2
+G8: Header!D2
+H8: Header!E2
+I8: Header!F2
+J8: Header!G2
+K8: Header!H2
+L8: Header!I2
+M8: Header!J2
+N8: Header!K2
+O8: Header!L2
+P8: Header!M2
+Q8: Header!N2
+R8: Header!O2
+S8: Header!P2
+F9: TRIM(Header!C4)
+F10: TRIM(Header!C5)
+R10: TRIM(Header!C6)
+F11: TRIM(Header!C7)
+L11: TRIM(Header!C8)
+R11: TRIM(Header!C9)
+I13: TRIM(Header!V6)
+F14: MID(TRIM(Header!V5),1,1)
+G14: MID(TRIM(Header!V5),2,1)
+H14: MID(TRIM(Header!V5),3,1)
+I14: MID(TRIM(Header!V5),4,1)
+J14: MID(TRIM(Header!V5),5,1)
+K14: MID(TRIM(Header!V5),6,1)
+L14: MID(TRIM(Header!V5),7,1)
+M14: MID(TRIM(Header!V5),8,1)
+N14: MID(TRIM(Header!V5),9,1)
+O14: MID(TRIM(Header!V5),10,1)
+Q14: MID(TRIM(Header!V5),11,1)
+R14: MID(TRIM(Header!V5),12,1)
+S14: MID(TRIM(Header!V5),13,1)
+F15: TRIM(Header!V7)
+F16: TRIM(Header!V8)
+R16: TRIM(Header!V9)
+F17: TRIM(Header!V10)
+L17: TRIM(Header!V11)
+R17: TRIM(Header!V12)
+L21: Header!V42
+R64: "Lập, ngày " & MID(TRIM(R63),1,2) & " tháng " & MID(TRIM(R63),4,2) & " năm " & MID(TRIM(R63),7,4)
+--- Sheet "01-1" ---
+I6: "Năm "&Header!V48
+G7: TRIM(Header!C3)
+D8: Header!C2
+E8: Header!D2
+F8: Header!E2
+G8: Header!F2
+H8: Header!G2
+I8: Header!H2
+J8: Header!I2
+K8: Header!J2
+L8: Header!K2
+M8: Header!L2
+N8: Header!M2
+O8: Header!N2
+P8: Header!O2
+Q8: Header!P2
+D9: TRIM(Header!C4)
+D10: TRIM(Header!C5)
+R10: TRIM(Header!C6)
+D11: TRIM(Header!C7)
+L11: TRIM(Header!C8)
+S11: TRIM(Header!C9)
+G13: TRIM(Header!V6)
+D14: MID(TRIM(Header!V5),1,1)
+E14: MID(TRIM(Header!V5),2,1)
+F14: MID(TRIM(Header!V5),3,1)
+G14: MID(TRIM(Header!V5),4,1)
+H14: MID(TRIM(Header!V5),5,1)
+I14: MID(TRIM(Header!V5),6,1)
+J14: MID(TRIM(Header!V5),7,1)
+K14: MID(TRIM(Header!V5),8,1)
+L14: MID(TRIM(Header!V5),9,1)
+M14: MID(TRIM(Header!V5),10,1)
+O14: MID(TRIM(Header!V5),11,1)
+P14: MID(TRIM(Header!V5),12,1)
+Q14: MID(TRIM(Header!V5),13,1)
+D15: TRIM(Header!V7)
+D16: TRIM(Header!V8)
+R16: TRIM(Header!V9)
+D17: TRIM(Header!V10)
+L17: TRIM(Header!V11)
+S17: TRIM(Header!V12)
+Z33: 01!R64
+B39: TRIM(01!C70)
+H39: TRIM(01!K70)
+Z39: TRIM(01!R70)
+H41: TRIM(01!I72)
+H42: TRIM(01!J73)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+V4: IF(LEN(TRIM(V5))>10,"-","")
+T8: CONCATENATE(1)
+=> 100 cell công thức trong file này
+
+
+TỔNG CỘNG: 152 cell công thức trong 2 file

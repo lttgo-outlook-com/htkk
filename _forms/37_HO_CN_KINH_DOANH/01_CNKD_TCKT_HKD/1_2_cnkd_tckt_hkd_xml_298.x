@@ -1,0 +1,22 @@
+<PLuc_CANHAN_TTS>
+	<DiaChi_BDS>
+		<ma_xa/>
+		<ten_xa/>
+		<ma_tinh/>
+		<ten_tinh/>
+	</DiaChi_BDS>
+	<CTietBKeCNTTS id="String">
+		<ct05/>
+		<ct06/>
+		<ct07_diaChi/>
+		<ct08/>
+		<ct09/>
+		<ct10/>
+		<ct11/>
+		<ct12/>
+	</CTietBKeCNTTS>
+	<tong_doanhThu/>
+	<tong_duocTru/>
+	<tong_thueGTGT/>
+	<tong_thueTNCN/>
+</PLuc_CANHAN_TTS>

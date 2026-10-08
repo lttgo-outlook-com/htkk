@@ -1,0 +1,109 @@
+CÔNG THỨC TÍNH (human-readable) — 03_TB_DVHT
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Thông báo áp dụng thuế tối thiểu toàn cầu (03/TB-DVHT), kỳ báo cáo theo năm tài chính. Tờ khai dạng văn bản cam kết — KHÔNG có công thức tính thuế, chỉ pre-fill + câu cam kết + cờ nội bộ. Folder gồm 1 cặp file .xls và .xls1 (pre-fill XML).
+
+## File 03_TB_DVHT_v2.8.8_mau.xls
+
+### Sheet "01" (thông báo chính)
+- [E73] "Năm tài chính báo cáo: Năm <Header!V31> Từ <V32> đến <V33>"
+- [S89] Tên NNT = TRIM(Header!C3); [S91] Mã số thuế = TRIM(nối từng ký tự TRIM của Header!C2:…)
+- [J93] 3. Địa chỉ trụ sở chính = TRIM(C4) & ", " & TRIM(C5) & ", " & TRIM(C6) (nối 3 phần)
+- [B108] 4.3. Quốc gia cư trú + câu cam kết = M102 & " cam kết về tính chính xác, trung thực và hoàn toàn chịu trách nhiệm trước pháp luật về nội dung của văn bản này."
+- [H110] Người ký = TRIM(Header!V41); [H112] Ngày ký = TRIM(V42)
+
+### Sheet "KHBS" (bổ sung, điều chỉnh)
+- [B6] Số thứ tự STT = B5 + 1
+- [G6] Chênh lệch = F6 − E6
+- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
+
+### Sheet "Header" (cờ kiểm tra nội bộ)
+- [M2] Dấu " - " nếu N2:P2 trống; [T8] CONCATENATE(1)
+- [B15] Cờ 0/1: Quốc gia cư trú (01!M102) có điền chưa; [C15] giá trị 01!M102
+- [B16] Cờ 0/1: ô 01!M106 có điền chưa; [C16] giá trị 01!M106
+- [A17, C17] giá trị 01!S104
+
+## File 03_TB_DVHT_v2.8.8_mau.xls1 (pre-fill XML)
+
+### Sheet "01"
+- [B3] Tên NNT in hoa = UPPER(TRIM(Header!C3))
+- [B6] "Số: " nối BL6; [N6] " Ngày dd tháng mm năm yyyy" (định dạng lại BL114)
+- [B73] "Năm tài chính báo cáo: Năm <V31> Từ <V32> đến <V33>" — cùng file chính
+- [S89] Tên NNT = TRIM(C3); [S91] MST = TRIM(nối từng ký tự)
+- [J93] Địa chỉ = TRIM(C4) & ", " & TRIM(C5) & ", " & TRIM(C6)
+- [B108] Quốc gia cư trú + câu cam kết = S89 & " cam kết về tính chính xác…" (ở đây nối tên NNT S89 thay vì M102 như file chính)
+- [H115] Người ký = TRIM(V41); [H117] Ngày ký = TRIM(V42)
+
+### Sheet "KHBS"
+- Cùng công thức sheet "KHBS" (STT, chênh lệch, tổng cộng 3 cột)
+
+### Sheet "Header"
+- [M2] Dấu nối; [T8] "nguoi ky" CONCATENATE(1)
+- [AK2] "Detect" = 01!B33; [AL2] "Function lock" = 1 nếu Header!V29 trống, nếu không 0 (chế độ tờ chính); [AM2] "Cell lock" = 01!B33 & 01!J33
+- [AK3] "Detect" = 01!B35; [AL3] "Function lock" = 1 nếu 01!B35=TRUE; [AM3] "Cell lock" = 01!B71 & #REF! & 01!B75 (tham chiếu hỏng trong template)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 03_TB_DVHT
+Thư mục: 36_THUE_TOI_THIEU_TOAN_CAU/03_TB_DVHT (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 03_TB_DVHT_v2.8.8_mau.xls ===
+--- Sheet "01" ---
+E73: " Năm tài chính báo cáo: Năm "&Header!V31&" Từ "&Header!V32&" đến "&Header!V33
+S89: TRIM(Header!C3)
+S91: TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+J93: TRIM(Header!C4)&", "&TRIM(Header!C5)&", "&TRIM(Header!C6)
+B108: M102 &" cam kết về tính chính xác, trung thực và hoàn toàn chịu trách nhiệm trước pháp luật về nội dung của văn bản này."
+H110: TRIM(Header!V41)
+H112: TRIM(Header!V42)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B15: IF(01!M102="","0","1")
+C15: 01!M102
+B16: IF(01!M106="","0","1")
+C16: 01!M106
+A17: 01!S104
+C17: 01!S104
+=> 20 cell công thức trong file này
+
+=== FILE: 03_TB_DVHT_v2.8.8_mau.xls1 ===
+--- Sheet "01" ---
+B3: UPPER(TRIM(Header!C3))
+B6: "Số: "&BL6
+N6: "  Ngày "&MID(TRIM(BL114),1,2)&" tháng "&MID(TRIM(BL114),4,2)&" năm "&MID(TRIM(BL114),7,4)
+B73: " Năm tài chính báo cáo: Năm "&Header!V31&" Từ "&Header!V32&" đến "&Header!V33
+S89: TRIM(Header!C3)
+S91: TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+J93: TRIM(Header!C4)&", "&TRIM(Header!C5)&", "&TRIM(Header!C6)
+B108: S89 &" cam kết về tính chính xác, trung thực và hoàn toàn chịu trách nhiệm trước pháp luật về nội dung của văn bản này."
+H115: TRIM(Header!V41)
+H117: TRIM(Header!V42)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+AK2: 01!B33
+AL2: IF(Header!V29<>"",0,1)
+AM2: 01!B33&01!J33
+AK3: 01!B35
+AL3: IF(01!B35=TRUE,1,0)
+AM3: 01!B71&#REF!&01!B75
+T8: CONCATENATE(1)
+=> 23 cell công thức trong file này
+
+
+TỔNG CỘNG: 43 cell công thức trong 2 file

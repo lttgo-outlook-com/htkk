@@ -1,0 +1,122 @@
+CÔNG THỨC TÍNH (human-readable) — BC21_AC (Báo cáo BC21/AC về hóa đơn — theo nhãn "Căn cứ Biên bản mất, cháy, hỏng hóa đơn" và "Ngày hủy" trong dump)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+
+## File BC21_AC_v2.1.0_mau.xls
+
+### Sheet "01" (tờ chính)
+- [H4] Tên tổ chức, cá nhân = TRIM(Header!C3)
+- [H5] Mã số thuế = nối các ô Header!C2..K2 (và các ô tiếp theo), mỗi ô TRIM, ô rỗng lấy khoảng trắng (chained IF+ISBLANK+TRIM, công thức dài bị cắt trong dump)
+- [H6] Địa chỉ = TRIM(Header!C4) & " - " & TRIM(Header!C5) & " - " & TRIM(Header!C6) (nối 3 phần địa chỉ)
+- [V10] (ô tham chiếu) = AB51
+- [AE43] Cờ "Kiểm tra số lượng" = IF(AA43 <= 0, 1, 0) — cảnh báo khi số lượng không dương
+- [AF43] Cờ "Kiểm tra từ số" = IF(V43 = 0, 1, 0) — cảnh báo khi ô "từ số" bằng 0
+- [AG43] Cờ "Kiểm tra đến số" = IF(Y43 = 0, 1, 0) — cảnh báo khi ô "đến số" bằng 0
+- [AB49] "Người đại diện theo pháp luật" = Header!V41
+- [AB51] Ngày lập báo cáo = Header!V42
+
+### Sheet "KHBS" (khai bổ sung)
+- [B6] Số thứ tự = B5+1 (lặp các dòng kế tiếp)
+- [G6] Chênh lệch = F6 − E6 (số mới trừ số đã khai)
+- [E8, F8, G8] Dòng Tổng cộng = SUM(cột E/F/G từ dòng 5 đến 7)
+
+### Sheet "Header"
+- [M2] Cờ nối địa chỉ: nếu 3 ô N2, O2, P2 cùng rỗng trả " ", ngược lại " - " (IF(TRIM(N2&O2&P2)=""," "," - "))
+- [T8] Cờ người ký: CONCATENATE(1)
+- [C22] Ngày lập báo cáo (ô tham chiếu) = 01!AB51
+
+## File BC21_AC_v2.1.0_mau.xls1
+
+### Sheet "01" (bản 2)
+- [J6] Dòng ngày in: "            Ngày " + ngày + " tháng " + tháng + " năm " + năm tách từ R58 bằng MID (múi 2-4-4)
+- [N8] Tên NNT (ô phụ) = TRIM(Header!C3)
+- [F9, G9, H9, I9, J9, K9, L9, M9, N9, O9] Tách 10 ký tự đầu mã số thuế, mỗi ô 1 ký tự: TRIM(Header!C2) .. TRIM(Header!K2)
+- [P9, Q9, R9, S9] Tách 4 ký tự tiếp theo mã số thuế: Header!M2, TRIM(Header!N2), TRIM(Header!O2), TRIM(Header!P2)
+- [E10] Địa chỉ = TRIM(Header!C4) & " - " & TRIM(Header!C5) & " - " & TRIM(Header!C6) (nối 3 phần địa chỉ)
+- [B12] Dòng nội dung sự cố: "Hồi " + giờ (K35) + " giờ " + (L35) + ", Ngày " + ngày tháng năm tách từ D35 bằng MID (múi 2-4-4) + ", " + tên NNT (N8) + " xảy ra việc mất, cháy, hỏng hóa đơn như sau: "
+- [B40] Số thứ tự = B39+1 (lặp các dòng kế tiếp)
+- [R56] Người ký = Header!T5
+- [B60] "Ngày hủy" = "- " & Header!V37 (nối tên cơ quan thuế vào dòng hủy)
+- [P64] (ô "(Ký tên, đóng dấu và ghi rõ họ tên)") = TRIM(R56) — lấy lại tên người ký
+
+### Sheet "KHBS" (khai bổ sung)
+- [B6] Số thứ tự = B5+1
+- [G6] Chênh lệch = F6 − E6
+- [E8, F8, G8] Dòng Tổng cộng = SUM(cột E/F/G từ dòng 5 đến 7)
+
+### Sheet "Header"
+- [M2] Cờ nối địa chỉ: nếu N2, O2, P2 cùng rỗng trả " ", ngược lại " - "
+- [T8] Cờ người ký: CONCATENATE(1)
+- [B15] Cờ có ngày: bằng "0" nếu 01!R58 rỗng (LEN = 0), ngược lại "1"
+- [C15] Ngày (ô tham chiếu) = 01!R58
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — BC21_AC
+Thư mục: 07_HOA_DON/BC21_AC (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: BC21_AC_v2.1.0_mau.xls ===
+--- Sheet "01" ---
+H4: TRIM(Header!C3)
+H5: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+H6: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
+V10: AB51
+AE43: IF(AA43<=0,1,0)
+AF43: IF(V43=0,1,0)
+AG43: IF(Y43=0,1,0)
+AB49: Header!V41
+AB51: Header!V42
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+C22: 01!AB51
+=> 17 cell công thức trong file này
+
+=== FILE: BC21_AC_v2.1.0_mau.xls1 ===
+--- Sheet "01" ---
+J6: "            Ngày "&MID(TRIM(R58),1,2)&" tháng "&MID(TRIM(R58),4,2)&" năm "&MID(TRIM(R58),7,4)
+N8: TRIM(Header!C3)
+F9: TRIM(Header!C2)
+G9: TRIM(Header!D2)
+H9: TRIM(Header!E2)
+I9: TRIM(Header!F2)
+J9: TRIM(Header!G2)
+K9: TRIM(Header!H2)
+L9: TRIM(Header!I2)
+M9: TRIM(Header!J2)
+N9: TRIM(Header!K2)
+O9: TRIM(Header!L2)
+P9: Header!M2
+Q9: TRIM(Header!N2)
+R9: TRIM(Header!O2)
+S9: TRIM(Header!P2)
+E10: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
+B12: "Hồi "&K35&" giờ "&L35&", Ngày "&MID(TRIM(D35),1,2)&" tháng "&MID(TRIM(D35),4,2)&" năm "&MID(TRIM(D35),7,4)&", "&N8&" xảy ra việc mất, cháy, hỏng hóa đơn như sau: "
+B40: B39+1
+R56: Header!T5
+B60: "- " &Header!V37
+P64: TRIM(R56)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B15: IF(LEN(01!R58)=0,"0","1")
+C15: 01!R58
+=> 31 cell công thức trong file này
+
+
+TỔNG CỘNG: 48 cell công thức trong 2 file

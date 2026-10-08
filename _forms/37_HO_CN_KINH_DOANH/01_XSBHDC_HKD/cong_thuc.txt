@@ -1,0 +1,451 @@
+CÔNG THỨC TÍNH (human-readable) — 01_XSBHDC_HKD (Tờ khai thuế TNCN đối với hộ kinh doanh/cá nhân bán nhà xây sẵn, chuyển quyền sử dụng đất)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+
+## File 01_XSBHDC_HKD_v2.8.9_mau.xls
+
+### Sheet "01" (tờ khai chính)
+- [K12] [01a] Dòng chữ kỳ = "Tháng X năm Y" (Header!V46/V48) nếu Header!V30="M", ngược lại "Tháng …năm …. "
+- [K13] [01b] Dòng chữ kỳ (cặp) = "Quý X năm Y" (Header!V47/V48) nếu Header!V30 ≠ "M", ngược lại "Quý … năm... "
+- [L15] [02] Lần đầu = "[X]" nếu Header!V29 rỗng, ngược lại ""
+- [S15] [03] Bổ sung lần thứ (ô I80 cùng công thức) = Header!V29 nếu có, ngược lại ""
+- [H16] Tên người nộp thuế = TRIM(Header!C3)
+- [H17] Mã số thuế = nối các ô Header!C2..K2, mỗi phần TRIM, ô rỗng trả về " " (IF+ISBLANK)
+- [H25] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
+- [H26] Mã số thuế đại lý = TRIM(Header!V5)
+- [AC51] Dữ liệu lấy từ bảng kê = '01-1'!F33 (tổng cộng khối 1)
+- [AC52] = '01-1'!G33
+- [R53] [10] = ROUND(R52 × 5/100, 0) (thuế 5% trên cơ sở R52, làm tròn)
+- [AC53] Ô AC53, AC54 cùng công thức = '01-1'!H33
+- [R54] [11] = R53 (đưa số thuế xuống dòng kế)
+- [AC56] = '01-1'!F38; [AC57] = '01-1'!G38 (dữ liệu tổng cộng khối 2)
+- [R58] [14] = ROUND(R57 × 5/100, 0)
+- [AC58] Ô AC58, AC59 cùng công thức = '01-1'!H38
+- [R59] [15] = R58
+- [AC61] = '01-1'!G43
+- [R62] [17] = R61 × 10%
+- [AC62] Ô AC62, AC63 cùng công thức = '01-1'!H43
+- [R63] [18] = R62
+- [AC65] = '01-1'!F48; [AC66] = '01-1'!G48 (dữ liệu tổng cộng khối 4)
+- [R67] [21] = ROUND(R66 × 5/100, 0)
+- [AC67] Ô AC67, AC68 cùng công thức = '01-1'!H48
+- [R68] [22] = R67
+- [R69] [23] Tổng số thuế = R54 + R59 + R63 + R68
+- [W69] [23] (cột W) = W54 + W59 + W63 + W68
+- [H74] Họ và tên (người ký phía đại lý) = Header!V15
+- [R74] Người ký = Header!V41
+- [H76] Chứng chỉ hành nghề số = TRIM(Header!V16)
+- [R76] Ngày ký = Header!V42
+- [C80] Cờ chính thức "1" = "1" nếu Header!V29 rỗng, ngược lại ""
+- [F80] Cờ bổ sung "1" = "1" nếu Header!V29 không rỗng, ngược lại ""
+- [L80] Loại kỳ khai = "0" nếu Header!V30="Q", ngược lại "1"
+
+### Sheet "01-1" (tính thuế chi tiết theo từng lần phát sinh)
+- [F13] [01] Kỳ tính thuế = "Kỳ tính thuế: Năm "&Header!V48
+- [F14] [02] Lần đầu = "[X]" nếu Header!V29 rỗng, ngược lại ""
+- [H14] [03] Bổ sung lần thứ = Header!V29 nếu có, ngược lại ""
+- [E15] Tên người nộp thuế = TRIM(Header!C3)
+- [E17] Mã số thuế = TRIM(nối các ô Header!C2..K2, mỗi phần TRIM, ô rỗng bỏ qua "")
+- [E19] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
+- [E21] Mã số thuế đại lý = TRIM(Header!V5)
+- [G25] Ô G25, G33 cùng công thức = SUM(G30:G32) (tổng cột G, khối 1)
+- [J25] = SUM(J30:J32) (tổng cột J, khối 1)
+- [H31] [11] Số thuế = ROUND(G31 × 5/100, 0) (thuế 5% trên giá trị G31)
+- [N31] Cờ dòng = "1" nếu D31, E31 khác rỗng hoặc F31, G31 khác 0, ngược lại "0"
+- [F33] Tổng cộng (cột F) = SUM(F30:F32)
+- [H33] Tổng cộng (cột H) = SUM(H30:H32)
+- [H36] Số thuế (khối 2) = ROUND(G36 × 5/100, 0)
+- [N36] Cờ dòng = "1" nếu D36, E36 khác rỗng hoặc F36, G36 khác 0, ngược lại "0"
+- [F38] Tổng cộng = SUM(F35:F37); [G38] = SUM(G35:G37); [H38] = SUM(H35:H37)
+- [H41] Số thuế (khối 3) = ROUND(G41 × 10/100, 0) (thuế 10%)
+- [N41] Cờ dòng = "1" nếu D41, E41 khác rỗng hoặc F41, G41 khác 0, ngược lại "0"
+- [F43] Tổng cộng = SUM(F40:F42); [G43] = SUM(G40:G42); [H43] = SUM(H40:H42)
+- [H46] Số thuế (khối 4) = ROUND(G46 × 5/100, 0)
+- [N46] Cờ dòng = "1" nếu D46, E46 khác rỗng hoặc F46, G46 khác 0, ngược lại "0"
+- [F48] Tổng cộng = SUM(F45:F47); [G48] = SUM(G45:G47); [H48] = SUM(H45:H47)
+- [F49] TỔNG CỘNG (cột F) = F33 + F38 + F43 + F48
+- [G49] TỔNG CỘNG (cột G) = G33 + G38 + G43 + G48
+- [H49] TỔNG CỘNG (cột H) = H33 + H38 + H43 + H48
+
+### Sheet "01-KHBS" (khai bổ sung)
+- [O36] Tổng số thuế phải nộp = O49 (dòng 10)
+- [O37] Tổng số thuế khấu trừ = O88 (dòng 12)
+- [O38] Tổng số thuế đề nghị hoàn = O103 (dòng 13)
+- [O49] [10] = SUM(O46:T48)
+- [AF62] [11] = SUM(AF58:AI60)
+- [O88] [12] = SUM(O85:T87)
+- [O103] [13] = SUM(O100:T102)
+- [G138] Họ và tên = TRIM(O39)
+- [Q138] Người ký = TRIM(U39)
+- [G140] Chứng chỉ hành nghề số = TRIM(O40)
+- [Q140] Ngày ký = TRIM(U40)
+
+### Sheet "01-1-KHBS" (khai bổ sung chi tiết)
+- [AD46] (7) = Z46 nếu BV46 không rỗng (sau TRIM), ngược lại 0
+- [BM46] = V46 − R46 nếu BW46=16, ngược lại 0
+- [CB46] = AD46 nếu BV46=0, ngược lại 0 (chia nhóm 0)
+- [CC46] = AD46 nếu BV46=1, ngược lại 0 (nhóm 1)
+- [CD46] = AD46 nếu BV46=2, ngược lại 0 (nhóm 2)
+- [AD48] [07] = SUM(CB45:CB47)
+- [AD49] [08] = SUM(CC45:CC47)
+- [AD50] [09] = SUM(CD45:CD47)
+- [K73] = TRIM(N18)
+- [U73] Người ký = TRIM(R18)
+- [K75] = TRIM(N20)
+- [U75] Ngày ký = TRIM(R20)
+
+### Sheet "Header" (chứa dữ liệu nhập + cờ kiểm tra)
+- [M2] Dấu phân cách địa chỉ: nếu P2 rỗng (sau TRIM) thì " ", ngược lại " - "
+- [T8] Người ký = CONCATENATE(1)
+- [C15] Ô C15, C16, C17, C18, C19, C47, C48, C49, C50, C51 (và 2 ô nữa) = #REF! (tham chiếu hỏng, còn nguyên trong file)
+- [C28] Ô C28, C57, C63 cùng công thức = 01!R54
+- [C29] Ô C29, C58, C67 cùng công thức = 01!R59
+- [C30] Ô C30, C59, C75 cùng công thức = 01!R68
+- [C46] = 01!W61
+- [C55] = '01-1'!G31
+- [B57] Cờ = "0" nếu 01!R54 > 01!R51, ngược lại "1"
+- [B58] Cờ = "0" nếu 01!R59 > 01!R56, ngược lại "1"
+- [B59] Cờ = "0" nếu 01!R68 > 01!R65, ngược lại "1"
+- Cờ B60..B76 (từng dòng): B = 1 nếu 01!W<n> < 01!R<n>, ngược lại 0; cột C cùng dòng = 01!R<n> (với n thuộc 51, 52, 53, 54, 56, 57, 58, 59, 61, 62, 63, 65, 66, 67, 68, 69; các dòng có cột C: 60, 61, 62, 64, 65, 66, 69, 70, 71, 72, 73, 74, 76)
+
+## File 01_XSBHDC_HKD_v2.8.9_mau.xls1 (bản mẫu cũ, cùng bố cục)
+
+### Sheet "01" (tờ khai chính)
+- [AC61] = '01-1'!F43 (bản .xls lấy G43)
+- [R63] [18] = ROUND(R62 × 10/100, 0) (bản .xls: [17] = R61×10%, [18] = R62)
+- [U74] Dòng "Ngày xx tháng xx năm yyyy" = MID(TRIM(Header!V42),...)
+- [E75] Họ và tên = Header!V15
+- [G76] Chứng chỉ hành nghề số = TRIM(Header!V16)
+- [P86] = TRIM(Header!V41)
+- Các ô còn lại (K12, K13, L15, S15/I80, H16, H17, H25, H26, AC51..AC68, R53..R69, W69, C80, F80, L80) cùng công thức như bản .xls
+
+### Sheet "01-1" (tính thuế chi tiết)
+- [H41] Số thuế (khối 3) = ROUND(G41 × 5/100, 0) (bản .xls dùng 10%)
+- [F61] Dòng "Ngày xx tháng xx năm yyyy" = MID(TRIM(Header!V42),...)
+- [B63] Dòng "Họ và tên: ..." = "Họ và tên: "&Header!V15
+- [B64] Dòng "Chứng chỉ hành nghề số: ..." = "Chứng chỉ hành nghề số: "&Header!V16
+- [F68] = TRIM(Header!V41)
+- Các ô còn lại (F13..E21, G25/G33, J25, H31, F33, H33, H36, F38..H38, F43..H43, H46, F48..H48, F49..H49) cùng công thức như bản .xls
+- Không có các cờ dòng N31, N36, N41, N46 (bản .xls có)
+
+### Sheet "01-KHBS" (khai bổ sung)
+- Cùng công thức như bản .xls (O36, O37, O38, O49, AF62, O88, O103, G138, Q138, G140, Q140)
+
+### Sheet "Header"
+- [M2] Dấu phân cách địa chỉ; [T8] Người ký = CONCATENATE(1)
+- [C15] Các ô C15..C19, C47..C51 (13 ô) = #REF! (tham chiếu hỏng)
+- [C28] Ô C28, C57 cùng công thức = 01!R54
+- [C29] Ô C29, C58 cùng công thức = 01!R59
+- [C30] Ô C30, C59 cùng công thức = 01!R68
+- [C46] = 01!W61
+- [B57] Cờ = "0" nếu 01!R54 > 01!R51, ngược lại "1"
+- [B58] Cờ = "0" nếu 01!R59 > 01!R56, ngược lại "1"
+- [B59] Cờ = "0" nếu 01!R68 > 01!R65, ngược lại "1"
+- Không có khối cờ B60..B76 (bản .xls có)
+
+## File bang_ke_01_1_xsbhdc_hkd.xls (bảng kê kèm theo)
+
+### Sheet "BK 01-1-XSBHDC" (bảng kê)
+- Không có công thức — chỉ có dữ liệu/giá trị nhập tay
+
+### Sheet "Huong dan" (hướng dẫn)
+- Không có công thức
+
+### Sheet "Header"
+- Không có công thức
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_XSBHDC_HKD
+Thư mục: 37_HO_CN_KINH_DOANH/01_XSBHDC_HKD (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_XSBHDC_HKD_v2.8.9_mau.xls ===
+--- Sheet "01" ---
+K12: IF(Header!V30="M","Tháng "&Header!V46&" năm "&Header!V48,"Tháng …năm …. ")
+K13: IF(Header!V30="M","Quý … năm... ","Quý "&Header!V47&" năm "&Header!V48)
+L15: IF(Header!V29="","[X]","")
+S15: IF(Header!V29="","",Header!V29)
+H16: TRIM(Header!C3)
+H17: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+H25: TRIM(Header!V6)
+H26: TRIM(Header!V5)
+AC51: '01-1'!F33
+AC52: '01-1'!G33
+R53: ROUND(R52*5/100,0)
+AC53: '01-1'!H33
+R54: R53
+AC54: '01-1'!H33
+AC56: '01-1'!F38
+AC57: '01-1'!G38
+R58: ROUND(R57*5/100,0)
+AC58: '01-1'!H38
+R59: R58
+AC59: '01-1'!H38
+AC61: '01-1'!G43
+R62: R61*10%
+AC62: '01-1'!H43
+R63: R62
+AC63: '01-1'!H43
+AC65: '01-1'!F48
+AC66: '01-1'!G48
+R67: ROUND(R66*5/100,0)
+AC67: '01-1'!H48
+R68: R67
+AC68: '01-1'!H48
+R69: R54+R59+R63+R68
+W69: W54+W59+W63+W68
+H74: Header!V15
+R74: Header!V41
+H76: TRIM(Header!V16)
+R76: Header!V42
+C80: IF(Header!V29="","1","")
+F80: IF(Header!V29="","","1")
+I80: IF(Header!V29="","",Header!V29)
+L80: IF(Header!V30="Q","0","1")
+--- Sheet "01-1" ---
+F13: "Kỳ tính thuế: Năm "&Header!V48
+F14: IF(Header!V29="","[X]","")
+H14: IF(Header!V29="","",Header!V29)
+E15: TRIM(Header!C3)
+E17: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+E19: TRIM(Header!V6)
+E21: TRIM(Header!V5)
+G25: SUM(G30:G32)
+J25: SUM(J30:J32)
+H31: ROUND(G31*5/100,0)
+N31: IF(OR(D31<>"",E31<>"",F31<>0,G31<>0),"1","0")
+F33: SUM(F30:F32)
+G33: SUM(G30:G32)
+H33: SUM(H30:H32)
+H36: ROUND(G36*5/100,0)
+N36: IF(OR(D36<>"",E36<>"",F36<>0,G36<>0),"1","0")
+F38: SUM(F35:F37)
+G38: SUM(G35:G37)
+H38: SUM(H35:H37)
+H41: ROUND(G41*10/100,0)
+N41: IF(OR(D41<>"",E41<>"",F41<>0,G41<>0),"1","0")
+F43: SUM(F40:F42)
+G43: SUM(G40:G42)
+H43: SUM(H40:H42)
+H46: ROUND(G46*5/100,0)
+N46: IF(OR(D46<>"",E46<>"",F46<>0,G46<>0),"1","0")
+F48: SUM(F45:F47)
+G48: SUM(G45:G47)
+H48: SUM(H45:H47)
+F49: F33+F38+F43+F48
+G49: G33+G38+G43+G48
+H49: H33+H38+H43+H48
+--- Sheet "01-KHBS" ---
+O36: O49
+O37: O88
+O38: O103
+O49: SUM(O46:T48)
+AF62: SUM(AF58:AI60)
+O88: SUM(O85:T87)
+O103: SUM(O100:T102)
+G138: TRIM(O39)
+Q138: TRIM(U39)
+G140: TRIM(O40)
+Q140: TRIM(U40)
+--- Sheet "01-1-KHBS" ---
+AD46: IF(TRIM(BV46)<>"",Z46,0)
+BM46: IF(BW46=16,V46-R46,0)
+CB46: IF(BV46=0,AD46,0)
+CC46: IF(BV46=1,AD46,0)
+CD46: IF(BV46=2,AD46,0)
+AD48: SUM(CB45:CB47)
+AD49: SUM(CC45:CC47)
+AD50: SUM(CD45:CD47)
+K73: TRIM(N18)
+U73: TRIM(R18)
+K75: TRIM(N20)
+U75: TRIM(R20)
+--- Sheet "Header" ---
+M2: IF(TRIM(P2)=""," "," - ")
+T8: CONCATENATE(1)
+C15: #REF!
+C16: #REF!
+C17: #REF!
+C18: #REF!
+C19: #REF!
+C28: 01!R54
+C29: 01!R59
+C30: 01!R68
+C46: 01!W61
+C47: #REF!
+C48: #REF!
+C49: #REF!
+C50: #REF!
+C51: #REF!
+C52: #REF!
+C55: '01-1'!G31
+C56: #REF!
+B57: IF(01!R54>01!R51,"0","1")
+C57: 01!R54
+B58: IF(01!R59>01!R56,"0","1")
+C58: 01!R59
+B59: IF(01!R68>01!R65,"0","1")
+C59: 01!R68
+B60: IF(01!W51 <01!R51,0,1)
+C60: 01!R51
+B61: IF(01!W52 <01!R52,0,1)
+C61: 01!R52
+B62: IF(01!W53 <01!R53,0,1)
+C62: 01!R53
+B63: IF(01!W54 <01!R54,0,1)
+C63: 01!R54
+B64: IF(01!W56 <01!R56,0,1)
+C64: 01!R56
+B65: IF(01!W57 <01!R57,0,1)
+C65: 01!R57
+B66: IF(01!W58 <01!R58,0,1)
+C66: 01!R58
+B67: IF(01!W59 <01!R59,0,1)
+C67: 01!R59
+B69: IF(01!W61 <01!R61,0,1)
+C69: 01!R61
+B70: IF(01!W62 <01!R62,0,1)
+C70: 01!R62
+B71: IF(01!W63 <01!R63,0,1)
+C71: 01!R63
+B72: IF(01!W65 <01!R65,0,1)
+C72: 01!R65
+B73: IF(01!W66 <01!R66,0,1)
+C73: 01!R66
+B74: IF(01!W67 <01!R67,0,1)
+C74: 01!R67
+B75: IF(01!W68 <01!R68,0,1)
+C75: 01!R68
+B76: IF(01!W69 <01!R69,0,1)
+C76: 01!R69
+=> 153 cell công thức trong file này
+
+=== FILE: 01_XSBHDC_HKD_v2.8.9_mau.xls1 ===
+--- Sheet "01" ---
+K12: IF(Header!V30="M","Tháng "&Header!V46&" năm "&Header!V48,"Tháng …năm …. ")
+K13: IF(Header!V30="M","Quý … năm... ","Quý "&Header!V47&" năm "&Header!V48)
+L15: IF(Header!V29="","[X]","")
+S15: IF(Header!V29="","",Header!V29)
+H16: TRIM(Header!C3)
+H17: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+H25: TRIM(Header!V6)
+H26: TRIM(Header!V5)
+AC51: '01-1'!F33
+AC52: '01-1'!G33
+R53: ROUND(R52*5/100,0)
+AC53: '01-1'!H33
+R54: R53
+AC54: '01-1'!H33
+AC56: '01-1'!F38
+AC57: '01-1'!G38
+R58: ROUND(R57*5/100,0)
+AC58: '01-1'!H38
+R59: R58
+AC59: '01-1'!H38
+AC61: '01-1'!F43
+AC62: '01-1'!G43
+R63: ROUND(R62*10/100,0)
+AC63: '01-1'!H43
+AC65: '01-1'!F48
+AC66: '01-1'!G48
+R67: ROUND(R66*5/100,0)
+AC67: '01-1'!H48
+R68: R67
+AC68: '01-1'!H48
+R69: R54+R59+R63+R68
+W69: W54+W59+W63+W68
+U74: "Ngày "& MID(TRIM(Header!V42),1,2) & " tháng " & MID(TRIM(Header!V42),4,2) & " năm " & MID(TRIM(Header!V42),7,4)
+E75: Header!V15
+G76: TRIM(Header!V16)
+C80: IF(Header!V29="","1","")
+F80: IF(Header!V29="","","1")
+I80: IF(Header!V29="","",Header!V29)
+L80: IF(Header!V30="Q","0","1")
+P86: TRIM(Header!V41)
+--- Sheet "01-1" ---
+F13: "Kỳ tính thuế: Năm "&Header!V48
+F14: IF(Header!V29="","[X]","")
+H14: IF(Header!V29="","",Header!V29)
+E15: TRIM(Header!C3)
+E17: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+E19: TRIM(Header!V6)
+E21: TRIM(Header!V5)
+G25: SUM(G30:G32)
+J25: SUM(J30:J32)
+H31: ROUND(G31*5/100,0)
+F33: SUM(F30:F32)
+G33: SUM(G30:G32)
+H33: SUM(H30:H32)
+H36: ROUND(G36*5/100,0)
+F38: SUM(F35:F37)
+G38: SUM(G35:G37)
+H38: SUM(H35:H37)
+H41: ROUND(G41*5/100,0)
+F43: SUM(F40:F42)
+G43: SUM(G40:G42)
+H43: SUM(H40:H42)
+H46: ROUND(G46*5/100,0)
+F48: SUM(F45:F47)
+G48: SUM(G45:G47)
+H48: SUM(H45:H47)
+F49: F33+F38+F43+F48
+G49: G33+G38+G43+G48
+H49: H33+H38+H43+H48
+F61: "Ngày "& MID(TRIM(Header!V42),1,2) & " tháng " & MID(TRIM(Header!V42),4,2) & " năm " & MID(TRIM(Header!V42),7,4)
+B63:  "Họ và tên: " & Header!V15
+B64:  "Chứng chỉ hành nghề số: " & Header!V16
+F68: TRIM(Header!V41)
+--- Sheet "01-KHBS" ---
+O36: O49
+O37: O88
+O38: O103
+O49: SUM(O46:T48)
+AF62: SUM(AF58:AI60)
+O88: SUM(O85:T87)
+O103: SUM(O100:T102)
+G138: TRIM(O39)
+Q138: TRIM(U39)
+G140: TRIM(O40)
+Q140: TRIM(U40)
+--- Sheet "Header" ---
+M2: IF(TRIM(P2)=""," "," - ")
+T8: CONCATENATE(1)
+C15: #REF!
+C16: #REF!
+C17: #REF!
+C18: #REF!
+C19: #REF!
+C28: 01!R54
+C29: 01!R59
+C30: 01!R68
+C46: 01!W61
+C47: #REF!
+C48: #REF!
+C49: #REF!
+C50: #REF!
+C51: #REF!
+C52: #REF!
+C55: #REF!
+C56: #REF!
+B57: IF(01!R54>01!R51,"0","1")
+C57: 01!R54
+B58: IF(01!R59>01!R56,"0","1")
+C58: 01!R59
+B59: IF(01!R68>01!R65,"0","1")
+C59: 01!R68
+=> 108 cell công thức trong file này
+
+=== FILE: bang_ke_01_1_xsbhdc_hkd.xls ===
+--- Sheet "BK 01-1-XSBHDC" ---
+(không có cell công thức)
+--- Sheet "Huong dan" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 0 cell công thức trong file này
+
+
+TỔNG CỘNG: 261 cell công thức trong 3 file

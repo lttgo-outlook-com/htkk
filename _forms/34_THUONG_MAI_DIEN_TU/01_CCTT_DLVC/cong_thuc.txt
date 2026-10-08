@@ -1,0 +1,133 @@
+CÔNG THỨC TÍNH (human-readable) — 01_CCTT_DLVC (Tờ khai 01/CCTT-ĐLVCH — kê khai thông tin sử dụng dịch vụ vận chuyển hàng hóa (TMĐT), nhóm TMĐT)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Hai file: 01_CCTT_DLVC_v3.0.5_mau (.xls và .xls1 — tờ khai, chỉ prefill) và bangke_01_cctt_dlvc_305.xlsx (bảng kê chi tiết: sheet 01 tra cứu Data, sheet Data, sheet HDSD).
+
+## File 01_CCTT_DLVC_v3.0.5_mau.xls / .xls1
+
+### Sheet "01" (tờ khai)
+- [B13] [1] "Tên công ty cung cấp dịch vụ vận chuyển: <C3>" = chuỗi ghép từ Header
+- [B15] [2] "Mã số thuế: <nối 14 ô C2..P2>"
+- [B17] [3] "Kỳ kê khai (Tháng): <V46>"
+- [B19] [4] "Năm kê khai: <V48>"
+- [B21] [5] "Loại tờ khai: Lần đầu" nếu ô ẩn BJ25="01", khác thì "Thay thế" (bản .xls1: kèm số " <BI25>")
+- Bản .xls: [B22] [6] "File số: <BI25>"; bản .xls1: dòng [6] gộp vào [B21]
+- [E23] [7] Cơ quan thuế cấp Cục = TRIM(V45); [E25] [8] Cơ quan thuế quản lý = V37; [BH25] Ô ẩn = TRIM(V36)
+- [I73] Họ và tên = TRIM(V15); [V73]/[X73] Người ký = TRIM(V41); [I75] Chứng chỉ = TRIM(V16); [V75]/[X75] Ngày ký = TRIM(V42)
+
+### Sheet "Header"
+- [M2] ký hiệu MST (3 ô N2..P2 trống → " ", khác → " - "); [T8] "nguoi ky" = CONCATENATE(1)
+
+## File bangke_01_cctt_dlvc_305.xlsx
+
+### Sheet "01" (bảng kê chi tiết)
+- Các dòng bảng (X7:X11): Cột X = VLOOKUP(F(dòng), Data!E2:F3, 2) — tra mã quản lý khách hàng (trùng thì trả "" thay vì #N/A)
+- Cột Y = VLOOKUP(G(dòng), Data!H2:I5, 2) — tra loại khách hàng
+- Cột Z = VLOOKUP(L(dòng), Data!A2:B275, 2) — tra mã/tên theo cột L (mọi dòng cùng 3 công thức trên, khác theo dòng)
+
+### Sheet "Data"
+- Không có công thức (0 pattern — dữ liệu tĩnh của bảng tra)
+
+### Sheet "HDSD" (hướng dẫn sử dụng — mô tả từng cột)
+- [E4..E24] 21 ô mô tả lần lượt 21 cột của bảng kê: (1) Số thứ tự, (2) Mã quản lý khách hàng, (3) Tên gian hàng, (4) Tên chủ gian hàng, (5) Loại khách hàng (Tổ chức/Cá nhân), (6) Loại giấy tờ (CMND/CCCD/Hộ chiếu/GCN ĐKKD), (7) Số giấy tờ, (8) MST, (9) Email, (10) Điện thoại, (11) Quốc gia, (12) Tỉnh/thành phố, (13) Quận/huyện, (14) Phường/xã/thị trấn, (15) Số nhà đường phố, (16) Số tài khoản, (17) Chủ tài khoản, (18) Tên ngân hàng, (19) Kèm thu tiền hộ (COD), (20) Không kèm thu tiền hộ, (21) Tổng giá trị đã thu tiền hộ (COD) — mỗi ô = tham chiếu B(n) (ô mẫu của cột)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_CCTT_DLVC
+Thư mục: 34_THUONG_MAI_DIEN_TU/01_CCTT_DLVC (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_CCTT_DLVC_v3.0.5_mau.xls ===
+--- Sheet "01" ---
+B13: "[1] Tên công ty cung cấp dịch vụ vận chuyển: "&TRIM(Header!C3)
+B15: "[2] Mã số thuế: "&Header!C2&Header!D2&Header!E2&Header!F2&Header!G2&Header!H2&Header!I2&Header!J2&Header!K2&Header!L2&Header!M2&Header!N2&Header!O2&Header!P2
+B17: "[3] Kỳ kê khai (Tháng): "&Header!V46
+B19: "[4] Năm kê khai: "&Header!V48
+B21: "[5] Loại tờ khai: "&IF(BJ25="01","Lần đầu","Thay thế ")
+B22: "[6] File số : "&BI25
+E23: TRIM(Header!V45)
+E25: Header!V37
+BH25: TRIM(Header!V36)
+I73: TRIM(Header!V15)
+V73: TRIM(Header!V41)
+X73: TRIM(Header!V41)
+I75: TRIM(Header!V16)
+V75: TRIM(Header!V42)
+X75: TRIM(Header!V42)
+--- Sheet "KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 17 cell công thức trong file này
+
+=== FILE: 01_CCTT_DLVC_v3.0.5_mau.xls1 ===
+--- Sheet "01" ---
+B13: "[1] Tên công ty cung cấp dịch vụ vận chuyển: "&TRIM(Header!C3)
+B15: "[2] Mã số thuế: "&Header!C2&Header!D2&Header!E2&Header!F2&Header!G2&Header!H2&Header!I2&Header!J2&Header!K2&Header!L2&Header!M2&Header!N2&Header!O2&Header!P2
+B17: "[3] Kỳ kê khai (Tháng): "&Header!V46
+B19: "[4] Năm kê khai: "&Header!V48
+B21: "[5] Loại tờ khai: "&IF(BJ25="01","Lần đầu "&BI25,"Thay thế  "&BI25)
+E23: TRIM(Header!V45)
+E25: Header!V37
+BH25: TRIM(Header!V36)
+I73: TRIM(Header!V15)
+V73: TRIM(Header!V41)
+X73: TRIM(Header!V41)
+I75: TRIM(Header!V16)
+V75: TRIM(Header!V42)
+X75: TRIM(Header!V42)
+--- Sheet "KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 16 cell công thức trong file này
+
+=== FILE: bangke_01_cctt_dlvc_305.xlsx ===
+--- Sheet "01" ---
+X7: IF(ISNA(""&VLOOKUP(F7,Data!$E$2:$F$3,2,FALSE)),"",""&VLOOKUP(F7,Data!$E$2:$F$3,2,FALSE))
+Y7: IF(ISNA(""&VLOOKUP(G7,Data!$H$2:$I$5,2,FALSE)),"",""&VLOOKUP(G7,Data!$H$2:$I$5,2,FALSE))
+Z7: IF(ISNA(""&VLOOKUP(L7,Data!$A$2:$B$275,2,FALSE)),"",""&VLOOKUP(L7,Data!$A$2:$B$275,2,FALSE))
+X8: IF(ISNA(""&VLOOKUP(F8,Data!$E$2:$F$3,2,FALSE)),"",""&VLOOKUP(F8,Data!$E$2:$F$3,2,FALSE))
+Y8: IF(ISNA(""&VLOOKUP(G8,Data!$H$2:$I$5,2,FALSE)),"",""&VLOOKUP(G8,Data!$H$2:$I$5,2,FALSE))
+Z8: IF(ISNA(""&VLOOKUP(L8,Data!$A$2:$B$275,2,FALSE)),"",""&VLOOKUP(L8,Data!$A$2:$B$275,2,FALSE))
+X9: IF(ISNA(""&VLOOKUP(F9,Data!$E$2:$F$3,2,FALSE)),"",""&VLOOKUP(F9,Data!$E$2:$F$3,2,FALSE))
+Y9: IF(ISNA(""&VLOOKUP(G9,Data!$H$2:$I$5,2,FALSE)),"",""&VLOOKUP(G9,Data!$H$2:$I$5,2,FALSE))
+Z9: IF(ISNA(""&VLOOKUP(L9,Data!$A$2:$B$275,2,FALSE)),"",""&VLOOKUP(L9,Data!$A$2:$B$275,2,FALSE))
+X10: IF(ISNA(""&VLOOKUP(F10,Data!$E$2:$F$3,2,FALSE)),"",""&VLOOKUP(F10,Data!$E$2:$F$3,2,FALSE))
+Y10: IF(ISNA(""&VLOOKUP(G10,Data!$H$2:$I$5,2,FALSE)),"",""&VLOOKUP(G10,Data!$H$2:$I$5,2,FALSE))
+Z10: IF(ISNA(""&VLOOKUP(L10,Data!$A$2:$B$275,2,FALSE)),"",""&VLOOKUP(L10,Data!$A$2:$B$275,2,FALSE))
+X11: IF(ISNA(""&VLOOKUP(F11,Data!$E$2:$F$3,2,FALSE)),"",""&VLOOKUP(F11,Data!$E$2:$F$3,2,FALSE))
+Y11: IF(ISNA(""&VLOOKUP(G11,Data!$H$2:$I$5,2,FALSE)),"",""&VLOOKUP(G11,Data!$H$2:$I$5,2,FALSE))
+Z11: IF(ISNA(""&VLOOKUP(L11,Data!$A$2:$B$275,2,FALSE)),"",""&VLOOKUP(L11,Data!$A$2:$B$275,2,FALSE))
+--- Sheet "Data" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+E4: B4
+E5: B5
+E6: B6
+E7: B7
+E8: B8
+E9: B9
+E10: B10
+E11: B11
+E12: B12
+E13: B13
+E14: B14
+E15: B15
+E16: B16
+E17: B17
+E18: B18
+E19: B19
+E20: B20
+E21: B21
+E22: B22
+E23: B23
+E24: B24
+=> 36 cell công thức trong file này
+
+
+TỔNG CỘNG: 69 cell công thức trong 3 file

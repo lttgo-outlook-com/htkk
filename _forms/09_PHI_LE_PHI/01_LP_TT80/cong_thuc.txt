@@ -1,0 +1,609 @@
+CÔNG THỨC TÍNH (human-readable) — Tờ khai thuế phí, lệ phí mẫu 01/LP (TT80)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Folder có 3 phiên bản template (v2.5.1, v2.7.5, v3.0.8) × 2 file (.xls trống / .xls1 có dữ liệu). v2.7.5 và v3.0.8 giống hệt nhau (md5 tập unique từng sheet); v2.5.1 chỉ thiếu ô [AB76] ở sheet 01. 4 sheet: 01 (tờ khai), 01-KHBS, 01-1-KHBS, Header.
+
+## File 01_LP_TT80_v3.0.8_mau.xls (đại diện cho v2.7.5)
+
+### Sheet "01" (tờ khai chính)
+- [K8] [01] kỳ tính thuế = "Tháng ... năm ..." (Header!V46/V48)
+- [L9] [02] lần đầu = IF(Header!V29 = "", "X", ""); [P9, I85] [03] bổ sung lần thứ = Header!V29
+- [C14, F14, I14] cờ chính thức/bổ sung/lần = theo Header!V18
+- [L14] cờ tờ khai = IF(Header!V19 = "Y", 1, IF(Header!V19 = "M", 2, IF(Header!V19 = "Q", 3, 4)))
+- [O14, S14, X14] từ tháng/đến tháng/ngày phát sinh = Header!V23/V24/V21
+- [G20, G22, H30, H32]: prefill NNT/MST/tên tổ chức làm thủ tục về thuế/số hợp đồng từ sheet Header
+- [AB67] chỉ tiêu (7) (số tiền phí, lệ phí phải nộp) = IF(L67−Q67 > 0, L67−Q67, 0) (chặn dưới 0)
+- [AB76] (7) dòng tổng = IF(L76−Q76 > 0, L76−Q76, 0) (CHỈ CÓ TỪ v2.7.5 — v2.5.1 không có ô này)
+- [G81, O81, G83, O83]: prefill chữ ký (họ tên, người ký, chứng chỉ, ngày ký) từ Header
+- [C85, F85] cờ chính thức/bổ sung = IF(Header!V29 = "", "1"/"0", "")
+- MST tách 10 ký tự (MID từ Header); các dòng STT = B43+1, B47+1, B53+1
+
+### Sheet "01-KHBS" (khai bổ sung)
+- [L6, L8, L10, L12, L14, L16] prefill từ '01-1-KHBS' (mã mẫu O6, mã giao dịch O8, kỳ O10, bổ sung O12, NNT O14, MST O16)
+- [O36] "TỔNG SỐ THUẾ PHẢI NỘP" = O49; [O37] "TỔNG SỐ THUẾ KHẤU TRỪ" = O88; [O38] "TỔNG SỐ THUẾ ĐỀ NGHỊ HOÀN" = O103
+- [O49] [10] (tổng số thuế phải nộp) = SUM(O46:O48)
+- [AF62] [11] (tổng khấu trừ) = SUM(AF58:AI60)
+- [M73] = U36 (ô tham chiếu)
+- [O88] [12] = SUM(O85:O87); [O103] [13] = SUM(O100:O102)
+- prefill chữ ký
+
+### Sheet "01-1-KHBS" (bảng điều chỉnh)
+- [O10] [03] kỳ tính thuế = TRIM(01!K8); [O12] [04] bổ sung = TRIM(01!P9); [O16] [06] MST = TRIM(01!G22)
+- (6) = (5)−(4) = V46−R46 (cột chênh lệch theo dòng)
+- (7) = IF(TRIM(CE46) = "1", Z46, 0) (cờ CE46 đánh dấu → lấy Z46)
+- AD46 = IF(BV46 = 0, AD46, 0) / IF(BV46 = 1, AD46, 0) / IF(BV46 = 2, AD46, 0) (theo cờ BV46)
+- [07] = SUM(CB45:CB47); [08] = SUM(CC45:CC47); [09] = SUM(CD45:CD47)
+
+### Sheet "Header"
+- [M2] định dạng MST = IF(TRIM(N2&O2&P2) = "", " ", " - "); [T8] = CONCATENATE(1)
+- (template không có bộ cờ kiểm tra — chỉ 2 pattern)
+
+## File 01_LP_TT80_v3.0.8_mau.xls1 (bản có dữ liệu)
+- Sheet 01: prefill (tên/MST/đại lý từ Header, tách ký tự MID), STT dòng (B43+1...), [SUM(U43:U45)] tổng = SUM(U43:U45), ô "Số tiền phí, lệ phí phải nộp vào NSNN (ghi bằng chữ): " & AB37 (nối chữ số), có 1 ô SUM(#REF!) lỗi tham chiếu
+- Sheet 01_KHBS, 01_1_KHBS: prefill + STT + hiệu số 2 bảng (như bộ KHBS chung)
+- Sheet Header: [M2] + CONCATENATE (không có bộ cờ)
+
+## File 01_LP_TT80_v2.5.1_mau.xls (phiên bản cũ)
+- Như v3.0.8 ở tất cả sheet, trừ: sheet 01 KHÔNG có ô [AB76] (7) dòng tổng = IF(L76−Q76 > 0, L76−Q76, 0)
+- (đã so khớp: chỉ khác 1 pattern này)
+
+## File 01_LP_TT80_v2.5.1_mau.xls1
+- Cùng cấu trúc với v3.0.8_mau.xls1 (bản có dữ liệu)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_LP_TT80
+Thư mục: 09_PHI_LE_PHI/01_LP_TT80 (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_LP_TT80_v2.5.1_mau.xls ===
+--- Sheet "01" ---
+K8: "Tháng "&Header!V46&" năm "&Header!V48
+L9: IF(Header!V29="","X","")
+P9: IF(Header!V29="","",Header!V29)
+C14: IF(Header!V18="",1,0)
+F14: IF(Header!V18="",0,1)
+I14: IF(Header!V18="","",Header!V18)
+L14: IF(Header!V19="Y",1,IF(Header!V19="M",2,IF(Header!V19="Q",3,4)))
+O14: Header!V23
+S14: Header!V24
+X14: Header!V21
+AB14: TRIM(Header!V5)
+G20: TRIM(Header!C3)
+G22: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+H30: TRIM(Header!V6)
+H31: TRIM(Header!V5)
+H32: TRIM(Header!V13)
+Q32: TRIM(Header!V14)
+AB67: IF(L67-Q67>0,L67-Q67,0)
+G81: TRIM(Header!V15)
+O81: TRIM(Header!V41)
+G83: TRIM(Header!V16)
+O83: TRIM(Header!V42)
+C85: IF(Header!V29="","1","")
+F85: IF(Header!V29="","","1")
+I85: IF(Header!V29="","",Header!V29)
+M85: TRIM(Header!V34)
+S85: TRIM(Header!V35)
+--- Sheet "01-KHBS" ---
+L6: '01-1-KHBS'!O6
+L8: TRIM('01-1-KHBS'!O8)
+L10: '01-1-KHBS'!O10
+L12: '01-1-KHBS'!O12
+L14: '01-1-KHBS'!O14
+L16: '01-1-KHBS'!O16
+L18: TRIM(Header!V6)
+L20: TRIM(Header!V5)
+O36: O49
+O37: O88
+O38: O103
+O49: SUM(O46:O48)
+AF62: SUM(AF58:AI60)
+M73: U36
+O88: SUM(O85:O87)
+O103: SUM(O100:O102)
+--- Sheet "01-1-KHBS" ---
+O10: TRIM(01!K8)
+O12: TRIM(01!P9)
+O14: TRIM(Header!C3)
+O16: TRIM(01!G22)
+Z46: V46-R46
+AD46: IF(TRIM(CE46)="1",Z46,0)
+CB46: IF(BV46=0,AD46,0)
+CC46: IF(BV46=1,AD46,0)
+CD46: IF(BV46=2,AD46,0)
+AD48: SUM(CB45:CB47)
+AD49: SUM(CC45:CC47)
+AD50: SUM(CD45:CD47)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 57 cell công thức trong file này
+
+=== FILE: 01_LP_TT80_v2.5.1_mau.xls1 ===
+--- Sheet "01" ---
+O6: "Tháng "&Header!V46&" năm "&Header!V48
+L7: IF(Header!V29="","X","")
+R7: IF(Header!V29="","",Header!V29)
+H8: TRIM(Header!C3)
+F9: Header!C2
+G9: Header!D2
+H9: Header!E2
+I9: Header!F2
+J9: Header!G2
+K9: Header!H2
+L9: Header!I2
+M9: Header!J2
+N9: Header!K2
+O9: Header!L2
+P9: Header!M2
+Q9: Header!N2
+R9: Header!O2
+S9: Header!P2
+C12: IF(Header!V16="",1,0)
+F12: IF(Header!V16="",0,1)
+I12: IF(Header!V16="","",Header!V16)
+L12: IF(Header!V17="Y",1,IF(Header!V17="M",2,IF(Header!V17="Q",3,4)))
+O12: Header!V21
+S12: Header!V22
+X12: Header!V19
+AB12: TRIM(Header!V4)
+H16: TRIM(Header!V6)
+F17: MID(TRIM(Header!V5),1,1)
+G17: MID(TRIM(Header!V5),2,1)
+H17: MID(TRIM(Header!V5),3,1)
+I17: MID(TRIM(Header!V5),4,1)
+J17: MID(TRIM(Header!V5),5,1)
+K17: MID(TRIM(Header!V5),6,1)
+L17: MID(TRIM(Header!V5),7,1)
+M17: MID(TRIM(Header!V5),8,1)
+N17: MID(TRIM(Header!V5),9,1)
+O17: MID(TRIM(Header!V5),10,1)
+P17: TRIM(Header!M2)
+Q17: MID(TRIM(Header!V5),11,1)
+R17: MID(TRIM(Header!V5),12,1)
+S17: MID(TRIM(Header!V5),13,1)
+L21: TRIM(Header!V13)
+S21: TRIM(Header!V14)
+I37: SUM(U43:U45)
+N37: SUM(#REF!)
+B44: B43+1
+B48: B47+1
+B51: "Số tiền phí, lệ phí phải nộp vào NSNN (ghi bằng chữ): "&AB37
+M57: "Ngày "&MID(TRIM(R55),1,2)&" tháng "&MID(TRIM(R55),4,2)&" năm "&MID(TRIM(R55),7,4)
+--- Sheet "01_KHBS" ---
+Y10: TRIM(01_1_KHBS!Y10)
+AD12: TRIM(01_1_KHBS!AD12)
+Y14: TRIM(01_1_KHBS!Y14)
+Z16: TRIM(01_1_KHBS!Z16)
+AF18: TRIM(01_1_KHBS!AF18)
+AA20: Header!C2
+AF20: Header!D2
+AK20: Header!E2
+AP20: Header!F2
+AU20: Header!G2
+AZ20: Header!H2
+BE20: Header!I2
+BJ20: Header!J2
+BO20: Header!K2
+BT20: Header!L2
+CB20: Header!N2
+CG20: Header!O2
+CL20: Header!P2
+AK28: TRIM(Header!V6)
+AA30: MID(TRIM(Header!V5),1,1)
+AF30: MID(TRIM(Header!V5),2,1)
+AK30: MID(TRIM(Header!V5),3,1)
+AP30: MID(TRIM(Header!V5),4,1)
+AU30: MID(TRIM(Header!V5),5,1)
+AZ30: MID(TRIM(Header!V5),6,1)
+BE30: MID(TRIM(Header!V5),7,1)
+BJ30: MID(TRIM(Header!V5),8,1)
+BO30: MID(TRIM(Header!V5),9,1)
+BT30: MID(TRIM(Header!V5),10,1)
+CB30: MID(TRIM(Header!V5),11,1)
+CG30: MID(TRIM(Header!V5),12,1)
+CL30: MID(TRIM(Header!V5),13,1)
+AI38: TRIM(Header!V13)
+BP38: TRIM(Header!V14)
+D101: EL101
+BL131: TRIM(01_1_KHBS!DJ76)
+N133: TRIM(01_1_KHBS!N78)
+AA134: TRIM(01_1_KHBS!AA79)
+BL140: TRIM(01_1_KHBS!DJ85)
+--- Sheet "01_1_KHBS" ---
+Y14: 01!O6
+Z16: TRIM(01!R7)
+AF18: TRIM(Header!C3)
+AA20: Header!C2
+AF20: Header!D2
+AK20: Header!E2
+AP20: Header!F2
+AU20: Header!G2
+AZ20: Header!H2
+BE20: Header!I2
+BJ20: Header!J2
+BO20: Header!K2
+BT20: Header!L2
+CB20: Header!N2
+CG20: Header!O2
+CL20: Header!P2
+DJ76: TRIM(01!M57)
+N78: TRIM(01!D59)
+AA79: TRIM(01!G60)
+DJ85: TRIM(01!M64)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 110 cell công thức trong file này
+
+=== FILE: 01_LP_TT80_v2.7.5_mau.xls ===
+--- Sheet "01" ---
+K8: "Tháng "&Header!V46&" năm "&Header!V48
+L9: IF(Header!V29="","X","")
+P9: IF(Header!V29="","",Header!V29)
+C14: IF(Header!V18="",1,0)
+F14: IF(Header!V18="",0,1)
+I14: IF(Header!V18="","",Header!V18)
+L14: IF(Header!V19="Y",1,IF(Header!V19="M",2,IF(Header!V19="Q",3,4)))
+O14: Header!V23
+S14: Header!V24
+X14: Header!V21
+AB14: TRIM(Header!V5)
+G20: TRIM(Header!C3)
+G22: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+H30: TRIM(Header!V6)
+H31: TRIM(Header!V5)
+H32: TRIM(Header!V13)
+Q32: TRIM(Header!V14)
+AB67: IF(L67-Q67>0,L67-Q67,0)
+AB76: IF(L76-Q76>0,L76-Q76,0)
+G81: TRIM(Header!V15)
+O81: TRIM(Header!V41)
+G83: TRIM(Header!V16)
+O83: TRIM(Header!V42)
+C85: IF(Header!V29="","1","")
+F85: IF(Header!V29="","","1")
+I85: IF(Header!V29="","",Header!V29)
+M85: TRIM(Header!V34)
+S85: TRIM(Header!V35)
+--- Sheet "01-KHBS" ---
+L6: '01-1-KHBS'!O6
+L8: TRIM('01-1-KHBS'!O8)
+L10: '01-1-KHBS'!O10
+L12: '01-1-KHBS'!O12
+L14: '01-1-KHBS'!O14
+L16: '01-1-KHBS'!O16
+L18: TRIM(Header!V6)
+L20: TRIM(Header!V5)
+O36: O49
+O37: O88
+O38: O103
+O49: SUM(O46:O48)
+AF62: SUM(AF58:AI60)
+M73: U36
+O88: SUM(O85:O87)
+O103: SUM(O100:O102)
+--- Sheet "01-1-KHBS" ---
+O10: TRIM(01!K8)
+O12: TRIM(01!P9)
+O14: TRIM(Header!C3)
+O16: TRIM(01!G22)
+Z46: V46-R46
+AD46: IF(TRIM(CE46)="1",Z46,0)
+CB46: IF(BV46=0,AD46,0)
+CC46: IF(BV46=1,AD46,0)
+CD46: IF(BV46=2,AD46,0)
+AD48: SUM(CB45:CB47)
+AD49: SUM(CC45:CC47)
+AD50: SUM(CD45:CD47)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 58 cell công thức trong file này
+
+=== FILE: 01_LP_TT80_v2.7.5_mau.xls1 ===
+--- Sheet "01" ---
+O6: "Tháng "&Header!V46&" năm "&Header!V48
+L7: IF(Header!V29="","X","")
+R7: IF(Header!V29="","",Header!V29)
+H8: TRIM(Header!C3)
+F9: Header!C2
+G9: Header!D2
+H9: Header!E2
+I9: Header!F2
+J9: Header!G2
+K9: Header!H2
+L9: Header!I2
+M9: Header!J2
+N9: Header!K2
+O9: Header!L2
+P9: Header!M2
+Q9: Header!N2
+R9: Header!O2
+S9: Header!P2
+C12: IF(Header!V16="",1,0)
+F12: IF(Header!V16="",0,1)
+I12: IF(Header!V16="","",Header!V16)
+L12: IF(Header!V17="Y",1,IF(Header!V17="M",2,IF(Header!V17="Q",3,4)))
+O12: Header!V21
+S12: Header!V22
+X12: Header!V19
+AB12: TRIM(Header!V4)
+H16: TRIM(Header!V6)
+F17: MID(TRIM(Header!V5),1,1)
+G17: MID(TRIM(Header!V5),2,1)
+H17: MID(TRIM(Header!V5),3,1)
+I17: MID(TRIM(Header!V5),4,1)
+J17: MID(TRIM(Header!V5),5,1)
+K17: MID(TRIM(Header!V5),6,1)
+L17: MID(TRIM(Header!V5),7,1)
+M17: MID(TRIM(Header!V5),8,1)
+N17: MID(TRIM(Header!V5),9,1)
+O17: MID(TRIM(Header!V5),10,1)
+P17: TRIM(Header!M2)
+Q17: MID(TRIM(Header!V5),11,1)
+R17: MID(TRIM(Header!V5),12,1)
+S17: MID(TRIM(Header!V5),13,1)
+L21: TRIM(Header!V13)
+S21: TRIM(Header!V14)
+I37: SUM(U43:U45)
+N37: SUM(#REF!)
+B44: B43+1
+B48: B47+1
+B51: "Số tiền phí, lệ phí phải nộp vào NSNN (ghi bằng chữ): "&AB37
+B54: B53+1
+M65: "Ngày "&MID(TRIM(R63),1,2)&" tháng "&MID(TRIM(R63),4,2)&" năm "&MID(TRIM(R63),7,4)
+--- Sheet "01_KHBS" ---
+Y10: TRIM(01_1_KHBS!Y10)
+AD12: TRIM(01_1_KHBS!AD12)
+Y14: TRIM(01_1_KHBS!Y14)
+Z16: TRIM(01_1_KHBS!Z16)
+AF18: TRIM(01_1_KHBS!AF18)
+AA20: Header!C2
+AF20: Header!D2
+AK20: Header!E2
+AP20: Header!F2
+AU20: Header!G2
+AZ20: Header!H2
+BE20: Header!I2
+BJ20: Header!J2
+BO20: Header!K2
+BT20: Header!L2
+CB20: Header!N2
+CG20: Header!O2
+CL20: Header!P2
+AK28: TRIM(Header!V6)
+AA30: MID(TRIM(Header!V5),1,1)
+AF30: MID(TRIM(Header!V5),2,1)
+AK30: MID(TRIM(Header!V5),3,1)
+AP30: MID(TRIM(Header!V5),4,1)
+AU30: MID(TRIM(Header!V5),5,1)
+AZ30: MID(TRIM(Header!V5),6,1)
+BE30: MID(TRIM(Header!V5),7,1)
+BJ30: MID(TRIM(Header!V5),8,1)
+BO30: MID(TRIM(Header!V5),9,1)
+BT30: MID(TRIM(Header!V5),10,1)
+CB30: MID(TRIM(Header!V5),11,1)
+CG30: MID(TRIM(Header!V5),12,1)
+CL30: MID(TRIM(Header!V5),13,1)
+AI38: TRIM(Header!V13)
+BP38: TRIM(Header!V14)
+D101: EL101
+BL131: TRIM(01_1_KHBS!DJ76)
+N133: TRIM(01_1_KHBS!N78)
+AA134: TRIM(01_1_KHBS!AA79)
+BL140: TRIM(01_1_KHBS!DJ85)
+--- Sheet "01_1_KHBS" ---
+Y14: 01!O6
+Z16: TRIM(01!R7)
+AF18: TRIM(Header!C3)
+AA20: Header!C2
+AF20: Header!D2
+AK20: Header!E2
+AP20: Header!F2
+AU20: Header!G2
+AZ20: Header!H2
+BE20: Header!I2
+BJ20: Header!J2
+BO20: Header!K2
+BT20: Header!L2
+CB20: Header!N2
+CG20: Header!O2
+CL20: Header!P2
+DJ76: TRIM(01!M65)
+N78: TRIM(01!D67)
+AA79: TRIM(01!G68)
+DJ85: TRIM(01!M72)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 111 cell công thức trong file này
+
+=== FILE: 01_LP_TT80_v3.0.8_mau.xls ===
+--- Sheet "01" ---
+K8: "Tháng "&Header!V46&" năm "&Header!V48
+L9: IF(Header!V29="","X","")
+P9: IF(Header!V29="","",Header!V29)
+C14: IF(Header!V18="",1,0)
+F14: IF(Header!V18="",0,1)
+I14: IF(Header!V18="","",Header!V18)
+L14: IF(Header!V19="Y",1,IF(Header!V19="M",2,IF(Header!V19="Q",3,4)))
+O14: Header!V23
+S14: Header!V24
+X14: Header!V21
+AB14: TRIM(Header!V5)
+G20: TRIM(Header!C3)
+G22: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+H30: TRIM(Header!V6)
+H31: TRIM(Header!V5)
+H32: TRIM(Header!V13)
+Q32: TRIM(Header!V14)
+AB67: IF(L67-Q67>0,L67-Q67,0)
+AB76: IF(L76-Q76>0,L76-Q76,0)
+G81: TRIM(Header!V15)
+O81: TRIM(Header!V41)
+G83: TRIM(Header!V16)
+O83: TRIM(Header!V42)
+C85: IF(Header!V29="","1","")
+F85: IF(Header!V29="","","1")
+I85: IF(Header!V29="","",Header!V29)
+M85: TRIM(Header!V34)
+S85: TRIM(Header!V35)
+--- Sheet "01-KHBS" ---
+L6: '01-1-KHBS'!O6
+L8: TRIM('01-1-KHBS'!O8)
+L10: '01-1-KHBS'!O10
+L12: '01-1-KHBS'!O12
+L14: '01-1-KHBS'!O14
+L16: '01-1-KHBS'!O16
+L18: TRIM(Header!V6)
+L20: TRIM(Header!V5)
+O36: O49
+O37: O88
+O38: O103
+O49: SUM(O46:O48)
+AF62: SUM(AF58:AI60)
+M73: U36
+O88: SUM(O85:O87)
+O103: SUM(O100:O102)
+--- Sheet "01-1-KHBS" ---
+O10: TRIM(01!K8)
+O12: TRIM(01!P9)
+O14: TRIM(Header!C3)
+O16: TRIM(01!G22)
+Z46: V46-R46
+AD46: IF(TRIM(CE46)="1",Z46,0)
+CB46: IF(BV46=0,AD46,0)
+CC46: IF(BV46=1,AD46,0)
+CD46: IF(BV46=2,AD46,0)
+AD48: SUM(CB45:CB47)
+AD49: SUM(CC45:CC47)
+AD50: SUM(CD45:CD47)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 58 cell công thức trong file này
+
+=== FILE: 01_LP_TT80_v3.0.8_mau.xls1 ===
+--- Sheet "01" ---
+O6: "Tháng "&Header!V46&" năm "&Header!V48
+L7: IF(Header!V29="","X","")
+R7: IF(Header!V29="","",Header!V29)
+H8: TRIM(Header!C3)
+F9: Header!C2
+G9: Header!D2
+H9: Header!E2
+I9: Header!F2
+J9: Header!G2
+K9: Header!H2
+L9: Header!I2
+M9: Header!J2
+N9: Header!K2
+O9: Header!L2
+P9: Header!M2
+Q9: Header!N2
+R9: Header!O2
+S9: Header!P2
+C12: IF(Header!V16="",1,0)
+F12: IF(Header!V16="",0,1)
+I12: IF(Header!V16="","",Header!V16)
+L12: IF(Header!V17="Y",1,IF(Header!V17="M",2,IF(Header!V17="Q",3,4)))
+O12: Header!V21
+S12: Header!V22
+X12: Header!V19
+AB12: TRIM(Header!V4)
+Q16: TRIM(Header!V6)
+F17: MID(TRIM(Header!V5),1,1)
+G17: MID(TRIM(Header!V5),2,1)
+H17: MID(TRIM(Header!V5),3,1)
+I17: MID(TRIM(Header!V5),4,1)
+J17: MID(TRIM(Header!V5),5,1)
+K17: MID(TRIM(Header!V5),6,1)
+L17: MID(TRIM(Header!V5),7,1)
+M17: MID(TRIM(Header!V5),8,1)
+N17: MID(TRIM(Header!V5),9,1)
+O17: MID(TRIM(Header!V5),10,1)
+P17: TRIM(Header!M2)
+Q17: MID(TRIM(Header!V5),11,1)
+R17: MID(TRIM(Header!V5),12,1)
+S17: MID(TRIM(Header!V5),13,1)
+L21: TRIM(Header!V13)
+S21: TRIM(Header!V14)
+I37: SUM(U43:U45)
+N37: SUM(#REF!)
+B44: B43+1
+B48: B47+1
+B51: "Số tiền phí, lệ phí phải nộp vào NSNN (ghi bằng chữ): "&AB37
+B54: B53+1
+M65: "Ngày "&MID(TRIM(R63),1,2)&" tháng "&MID(TRIM(R63),4,2)&" năm "&MID(TRIM(R63),7,4)
+--- Sheet "01_KHBS" ---
+Y10: TRIM(01_1_KHBS!Y10)
+AD12: TRIM(01_1_KHBS!AD12)
+Y14: TRIM(01_1_KHBS!Y14)
+Z16: TRIM(01_1_KHBS!Z16)
+AF18: TRIM(01_1_KHBS!AF18)
+AA20: Header!C2
+AF20: Header!D2
+AK20: Header!E2
+AP20: Header!F2
+AU20: Header!G2
+AZ20: Header!H2
+BE20: Header!I2
+BJ20: Header!J2
+BO20: Header!K2
+BT20: Header!L2
+CB20: Header!N2
+CG20: Header!O2
+CL20: Header!P2
+AK28: TRIM(Header!V6)
+AA30: MID(TRIM(Header!V5),1,1)
+AF30: MID(TRIM(Header!V5),2,1)
+AK30: MID(TRIM(Header!V5),3,1)
+AP30: MID(TRIM(Header!V5),4,1)
+AU30: MID(TRIM(Header!V5),5,1)
+AZ30: MID(TRIM(Header!V5),6,1)
+BE30: MID(TRIM(Header!V5),7,1)
+BJ30: MID(TRIM(Header!V5),8,1)
+BO30: MID(TRIM(Header!V5),9,1)
+BT30: MID(TRIM(Header!V5),10,1)
+CB30: MID(TRIM(Header!V5),11,1)
+CG30: MID(TRIM(Header!V5),12,1)
+CL30: MID(TRIM(Header!V5),13,1)
+AI38: TRIM(Header!V13)
+BP38: TRIM(Header!V14)
+D101: EL101
+BL131: TRIM(01_1_KHBS!DJ76)
+N133: TRIM(01_1_KHBS!N78)
+AA134: TRIM(01_1_KHBS!AA79)
+BL140: TRIM(01_1_KHBS!DJ85)
+--- Sheet "01_1_KHBS" ---
+Y14: 01!O6
+Z16: TRIM(01!R7)
+AF18: TRIM(Header!C3)
+AA20: Header!C2
+AF20: Header!D2
+AK20: Header!E2
+AP20: Header!F2
+AU20: Header!G2
+AZ20: Header!H2
+BE20: Header!I2
+BJ20: Header!J2
+BO20: Header!K2
+BT20: Header!L2
+CB20: Header!N2
+CG20: Header!O2
+CL20: Header!P2
+DJ76: TRIM(01!M65)
+N78: TRIM(01!D67)
+AA79: TRIM(01!G68)
+DJ85: TRIM(01!M72)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 111 cell công thức trong file này
+
+
+TỔNG CỘNG: 505 cell công thức trong 6 file

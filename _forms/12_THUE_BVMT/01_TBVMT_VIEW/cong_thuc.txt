@@ -1,0 +1,140 @@
+CÔNG THỨC TÍNH (human-readable) — 01_TBVMT_VIEW
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+
+## File 01_TBVMT_VIEW_v2.0.1_mau.xls
+
+### Sheet "01" (tờ khai chính)
+- [E5] (không có nhãn lân cận) = nếu kỳ tính thuế là lần phát sinh (Header!V30="D") thì chuỗi "[01] Kỳ tính thuế: [x] Lần phát sinh: Ngày …tháng …năm…" (tách ngày/tháng/năm từ V32), ngược lại "[01] Kỳ tính thuế: [ ] Lần phát sinh: Ngày …tháng …năm..."
+- [I6] Kỳ báo cáo: Quý năm = nếu kê theo tháng (V30="M") thì "[x] Tháng V46 năm V48", ngược lại "[ ] Tháng … năm …"
+- [L7] [02] Lần đầu: hiện "[X]" nếu chưa có số lần bổ sung (Header!V29 trống), ngược lại để trống
+- [R7] [03] Bổ sung lần thứ: prefill số lần bổ sung từ sheet Header (Header!V29)
+- Các ô [I8, I9, F10, F11, P11, F12, M12, S12, F13, O14]: prefill từ sheet Header (tên NNT Header!C3, mã số thuế nối các trường C2:K2, địa chỉ C4-C6, điện thoại C7, fax C8, email C9, số tài khoản V2, T9)
+- Các ô [I16, I17, F18, F19, P19, F20, M20, S20, L21, S21]: prefill từ sheet Header (tên đại lý thuế V6, mã số thuế đại lý V5, địa chỉ V7-V9, điện thoại/fax/email V10-V12, số V13, ngày V14)
+- Các ô [H32, H55, H34, H57, R32]: prefill từ sheet Header (Header!V15, V16, T5 — không có nhãn lân cận)
+- [C35] (không có nhãn lân cận) = 0 nếu Header!V28="B", ngược lại 1
+- [F35] (không có nhãn lân cận) = 1 nếu Header!V28="B", ngược lại ""
+- [I35] (không có nhãn lân cận) = số lần bổ sung (Header!V29) nếu Header!V28="B", ngược lại ""
+- [L35] (không có nhãn lân cận) = 1 nếu không kê theo tháng (V30<>"M"), ngược lại ""
+- [M35] (không có nhãn lân cận) = ngày lần phát sinh (Header!V32) nếu không kê theo tháng, ngược lại ""
+- [J37, T37, U46] (không có nhãn lân cận) = SUM(U43:U45)
+- [U44] (6)=(4) x (5) = ROUND(L44*Q44, 0)
+- [C55, C57] Dán nhãn tĩnh "Họ và tên:" / "Chứng chỉ hành nghề số:" (vùng đại lý thuế)
+- [R55, R57] Người ký / Ngày ký: prefill từ sheet Header (Header!V41, V42)
+
+### Sheet "01-1" (bảng phụ)
+- [C33, D33, G33, F33, L33, M33, S33, U33] Dán nhãn tĩnh tên cột "(1)"…"(7)" của bảng chi tiết
+- [U30] (không có nhãn lân cận) = U37 (lấy sẵn giá trị tổng)
+- [U35] (8)=(6)/(7) = 0 nếu T35=0, ngược lại ROUND(S35/T35*100, 2) — tỷ lệ phần trăm
+- [X35] (11)=(8)*(9)*(10) = 0 nếu T35=0, ngược lại ROUND(S35/T35*V35*W35, 0)
+- [U37, X37] (không có nhãn lân cận) = SUM(U34:U36) và SUM(X34:X36) — tổng các dòng bảng
+- [G39] (không có nhãn lân cận) = chuỗi "- Mã số thuế: " nối nội dung ô F39
+- [I48] (không có nhãn lân cận) = lấy thẳng giá trị 01!J47 của sheet "01"
+
+### Sheet "KHBS" (khấu trừ / bù trừ theo kỳ)
+- [BD3] (không có nhãn lân cận) = chuỗi tiêu đề "Tờ khai thuế TBVMT mẫu số 01/TBVMT kỳ tính thuế: …" (ngày/tháng/năm từ V32 hoặc V46/V48, nối ngày ký tách từ B47)
+- [B9, B13, B17] Số thứ tự = B8+1, B12+1, B16+1 (tự tăng dòng ở 3 nhóm I/II/III chỉ tiêu điều chỉnh)
+- [BH17] (6) = BI5 (lấy thẳng)
+- [BE20] Số ngày nộp chậm: prefill từ ô BD5
+- [BE21] Số tiền chậm nộp = 0 nếu (BH17*BE20*0.05/100) <= 0, ngược lại ROUND(BH17*BE20*0.05/100, 0)
+- [BF5] (không có nhãn lân cận) = ROUND(BH15*BE20*0.05/100, 0)
+- [BG45, BG46] Người ký / Ngày ký: prefill từ sheet "01" (01!R55, 01!R57)
+- [B47] (không có nhãn lân cận) = BG5 (lấy thẳng)
+- [BD47, BF47] (không có nhãn lân cận) = SUM(BH8:BH10) và SUM(BH12:BH14)
+
+### Sheet "Header" (dữ liệu người nộp thuế)
+- [M2] (không có nhãn lân cận) = " - " nếu N2&O2&P2 có nội dung, ngược lại " "
+- [T8] Dán nhãn vùng "người ký" (thông tin tĩnh)
+- [B16, C16] Cờ + giá trị ngày ký = "0" nếu 01!R57 trống, ngược lại "1"; C16 lấy thẳng 01!R57
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_TBVMT_VIEW
+Thư mục: 12_THUE_BVMT/01_TBVMT_VIEW (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_TBVMT_VIEW_v2.0.1_mau.xls ===
+--- Sheet "01" ---
+E5: IF(Header!V30="D","[01] Kỳ tính thuế: [x] Lần phát sinh: Ngày "&MID(Header!V32,1,2)&" tháng "&MID(Header!V32,4,2)&" năm "&MID(Header!V32,7,4),"[01] Kỳ tính thuế: [ ] Lần phát sinh: Ngày …tháng …năm...")
+I6: "   "&IF(Header!V30="M","[x]  Tháng "&Header!V46&" năm "&Header!V48,"[ ] Tháng … năm …")
+L7: IF(Header!V29="","[X]","")
+R7: IF(Header!V29="","",Header!V29)
+I8: TRIM(Header!C3)
+I9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+F10: TRIM(Header!C4)
+F11: TRIM(Header!C5)
+P11: TRIM(Header!C6)
+F12: TRIM(Header!C7)
+M12: TRIM(Header!C8)
+S12: TRIM(Header!C9)
+F13: TRIM(Header!V2)
+O14: TRIM(Header!T9)
+I16: TRIM(Header!V6)
+I17: TRIM(Header!V5)
+F18: TRIM(Header!V7)
+F19: TRIM(Header!V8)
+P19: TRIM(Header!V9)
+F20: TRIM(Header!V10)
+M20: TRIM(Header!V11)
+S20: TRIM(Header!V12)
+L21: TRIM(Header!V13)
+S21: TRIM(Header!V14)
+H32: TRIM(Header!V15)
+R32: TRIM(Header!T5)
+H34: TRIM(Header!V16)
+C35: IF(Header!V28="B",0,1)
+F35: IF(Header!V28="B",1,"")
+I35: IF(Header!V28="B",Header!V29,"")
+L35: IF(Header!V30<>"M",1,"")
+M35: IF(Header!V30<>"M",Header!V32,"")
+J37: SUM(U43:U45)
+T37: SUM(U43:U45)
+U44: ROUND((L44*Q44),0)
+U46: SUM(U43:U45)
+C55: "Họ và tên:"
+H55: TRIM(Header!V15)
+R55: TRIM(Header!V41)
+C57: "Chứng chỉ hành nghề số:"
+H57: TRIM(Header!V16)
+R57: TRIM(Header!V42)
+--- Sheet "01-1" ---
+U30: U37
+C33: "(1)"
+D33: "(2)"
+F33: "(3)"
+G33: "(2)"
+L33: "(4)"
+M33: "(5)"
+S33: "(6)"
+T33: "(7)"
+U35: IF(T35=0,0,ROUND(S35/T35*100,2))
+X35: IF(T35=0,0,ROUND(S35/T35*V35*W35,0))
+U37: SUM(U34:U36)
+X37: SUM(X34:X36)
+G39: "- Mã số thuế: "&F39
+I48: 01!J47
+--- Sheet "KHBS" ---
+BD3: "Tờ khai thuế TBVMT mẫu số 01/TBVMT kỳ tính thuế: "&IF(Header!V30="D","Ngày "&MID(Header!V32,1,2)&"/"&MID(Header!V32,4,2)&"/"&MID(Header!V32,7,4),"Tháng "&Header!V46&"/"&Header!V48)&" ngày "&MID(B47,1,2)&" tháng "& MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BH17: BI5
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: TRIM(01!R55)
+BG46: TRIM(01!R57)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B16: IF(LEN(01!R57)=0,"0","1")
+C16: 01!R57
+=> 74 cell công thức trong file này
+
+
+TỔNG CỘNG: 74 cell công thức trong 1 file

@@ -1,0 +1,2471 @@
+CÔNG THỨC TÍNH (human-readable) — Tờ khai thuế GTGT mẫu số 01/GTGT (phương pháp khấu trừ)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Folder chứa 5 phiên bản template (v2.0.1, v2.1.2, v2.4.0, v2.5.0, v2.6.2) × 2 file (.xls trống / .xls1 có dữ liệu) + 8 file bang_ke (không có công thức). v2.4.0, v2.5.0, v2.6.2 gần như giống nhau; v2.5.0 thêm phụ lục 01_8 và đổi tên sheet KHBS → 01_KHBS; v2.6.2 có thêm một số tổng cột ở 01_6.
+
+## File 01_GTGT_v2.6.2_mau.xls (phiên bản mới nhất)
+
+### Sheet "01" (tờ khai chính)
+- [D1] tiêu đề "TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)..."; [D2] = TRIM(M14)
+- [B3] kỳ tính thuế = "Kỳ tính thuế: Tháng X năm Y" nếu quý (V47) rỗng, nếu không "Kỳ tính thuế: Quý X năm Y" (theo Header!V46/V47/V48)
+- [I4, K4]: "Lần đầu" = [X] nếu Header!V29 rỗng; "Bổ sung lần thứ" = Header!V29
+- [D5, D6, D7, D8]: prefill từ sheet Header (MST ghép 10 ký tự C2..K2, tên NNT = C3, tên đại lý = V6, MST đại lý = V5)
+- [J31] chỉ tiêu [27] (tổng số thuế GTGT phải nộp) = J32+J33+J34+J35 ([28]+[29]+[31]+[33])
+- [L31] chỉ tiêu [28] (tổng số thuế GTGT được giảm) = L33+L34 ([31]+[33])
+- [L33] chỉ tiêu [31] (giảm 5%) = ROUND([30] (J33) × 5%, 0)
+- [L34] chỉ tiêu [33] (giảm 10%) = ROUND([32] (J34) × 10%, 0)
+- [J36] chỉ tiêu [34] (tổng) = [25] (J30) + [27] (J31)
+- [L36] chỉ tiêu [35] (tổng giảm) = [28] (L31)
+- [L37] chỉ tiêu [36] (số thuế GTGT còn phải nộp sau giảm) = [35] (L36) − [24] (L28)
+- [L41] chỉ tiêu [39] = M54 (= ROUND(tổng phụ lục 01_5, 0))
+- [L43] chỉ tiêu [40a] (số thuế GTGT đề nghị hoàn) = L37−L24+L39−L40−L41 nếu > 0, nếu không = 0
+- [L45] chỉ tiêu [40] (số thuế GTGT đề nghị hoàn được duyệt) = [40a] (L43) − [40b] (L44)
+- [L46] chỉ tiêu [41] (số thuế GTGT phải nộp) = ABS(L37−L24+L39−L40−L41) nếu < 0, nếu không = 0
+- [L48] chỉ tiêu [43] (số thuế GTGT phải nộp sau hoàn) = [41] (L46) − [42] (L47)
+- [D50, K50, D51, K51]: prefill chữ ký (họ tên = V15, người ký = V41, chứng chỉ = V16, ngày ký = V42)
+- [K53, L53, N53, O53, M54]: cờ kiểm tra (lần đầu/bổ sung/quý) + [M54] = ROUND(tổng phụ lục 01_5 (01_5!I9), 0)
+
+### Sheet "01_5" (Phụ lục 1 - xây dựng, lắp đặt, bán hàng, BĐS ngoại tỉnh)
+- [I9] tổng cộng = SUM(I7:I8); [H3] = I9 (lấy tổng lên ô tiêu đề)
+
+### Sheet "01_6" (Phụ lục 2 - phân bổ thuế GTGT cho các địa phương)
+- [G5] cột (4) hàng 5% = G12; [H5] cột (4) hàng 10% = G14; [J5, L5] cột (6) = J10; [M5] mã cấp Cục = K10
+- [M2] = SUM(I7:I9); [V5] tổng cột 15 = SUM(V7:V9); [W5] tổng cột 17 = SUM(W7:W9)
+- [I8, I9] cột [14] = [12] + [13] = G+H theo dòng
+- [J9] cột [15] = 1%×[12] + 2%×[13] = (G9×1%) + (H9×2%)
+- [V8] = ROUND(G8×1%,0) + ROUND(H8×2%,0); [W8] = ROUND(G5×I8/H5, 0) nếu H5 ≠ 0, nếu không = 0 (phân bổ theo tỷ trọng)
+- [N8] nhãn cột = "[15]" nếu J8 ≠ 0, nếu không "[17]"; [O8] = J8 nếu J8 ≠ 0, nếu không K8
+- [J10] tổng = SUM(J7:J9); [K10] = SUM(K7:K9)
+- [G12] [06] số thuế phải nộp của NNT = 01!L45
+- [I17] [19] số thuế nộp cho địa phương trụ sở chính = G12 − J10 nếu G12 ≥ V5, nếu không = 0
+- [I19] [20] (trường hợp [06] < [16]) = G12 − K10 nếu G12 < V5, nếu không = 0
+
+### Sheet "01_7" (Phụ lục 3 - thuế GTGT đối với hàng hóa nhập khẩu)
+- [H7] cột (6) = ROUND((4) × (7)% × 2%, 0) = ROUND(D7×G7/100×2/100, 0)
+- [H9] tổng cộng = SUM(H7:H8)
+
+### Sheet "01_1_TD" (Phụ lục điều chỉnh tăng)
+- [I7] cột (6) = (4) − (5) = F7−H7 nếu > 0, nếu không = 0
+- [F9, H9, I9] tổng cộng = SUM(F6:F8), SUM(H6:H8), SUM(I6:I8)
+
+### Sheet "01_2_TD" (Phụ lục điều chỉnh giảm)
+- [AK4] = Header!V43 (định danh kỳ)
+
+### Sheet "01_8" (Phụ lục giảm thuế GTGT — MỚI từ v2.5.0)
+- [D5, D7, D9, D11]: prefill NNT/đại lý từ sheet 01 (D6, D5, D7, D8)
+- [F17] cột (5) = (4) × 70% = ROUND(I17×0,7, 1)
+- [G17] cột (6) = (3) × [(4)−(5)]% = ROUND(D17×(I17−F17)/100, 0)
+- [D19, G19] tổng cộng = SUM(D16:D18), SUM(G16:G18)
+
+### Sheet "01_KHBS" (khai bổ sung/điều chỉnh)
+- [B3] tiêu đề "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế: Tháng/Quý ... tại ngày ..." (nối từ Header!V46/V47/V48 + ngày BG5)
+- [B9, B13, B17] số thứ tự các phần I/II/III = B8+1, B12+1, B16+1
+- [BF5] số tiền chậm nộp = ROUND(BH15 × BE20 × 0,05/100, 0) (5%/năm × số ngày × tiền chậm)
+- [BE20] số ngày nộp chậm = BD5; [BE21] số tiền chậm nộp = BF5
+- [BF17, BG17, BH17] (chỉ tiêu 40) = BJ5, BK5, BL5; [BF18, BG18, BH18] (chỉ tiêu 43) = BJ6, BK6, BL6
+- [BI27] số tiền = IFERROR(VLOOKUP("42", BE7:BH26, 4, 0), 0) (tra chỉ tiêu 42 trong bảng điều chỉnh)
+- [BG45, BG46] người ký/ngày ký = TRIM(01!K50), TRIM(01!K51)
+- [B47] = BG5; [BD47] = SUM(BH8:BH10); [BF47] = SUM(BH12:BH14)
+
+### Sheet "Header"
+- [M2] = IF(TRIM(N2&O2&P2) = "", "", "  - "); [S7] họ tên = nối N2&O2&P2; [T8] = CONCATENATE(1)
+- [C12..C26]: lấy số từ tờ khai chính (01!G13, J30, J32, J33, L33, J34, L34)
+- [B38..B114] (bộ cờ kiểm tra hợp lệ 0/1, mỗi cặp B/C): kiểm tra L47>L46 và K53, có ngày ký K51, 01_6!K10 ≤ G12, L44 ≤ L43, đủ họ tên+chứng chỉ, khớp số điều chỉnh 01_1_TD/01_2_TD (U45), L24 khớp P24, L45/L46/L48 không bằng 0 đồng thời, khớp 01_KHBS!BE27 với BI27 (tăng/giảm), 01_7!E7/F7 có nhập thì J7 phải có, 01_6!G14 ≤ 01!J31, L28 ≤ L27 (đặc biệt V46=12, V47=4), L33 ≤ J33, L34 ≤ J34, 01_6!M2 = 01_6!G14
+
+## File 01_GTGT_v2.5.0_mau.xls
+Giống v2.6.2 ở các sheet 01, 01_5, 01_7, 01_1_TD, 01_8, 01_KHBS, Header (trừ: sheet 01_6 không có [M2] tổng I7:I9, không có [V5]/[W5] tổng cột 15/17, không có [N8]/[O8] chọn cột [15]/[17], và [W8] = ROUND(G5×I8/H5, 0) có thêm điều kiện G5−J5 < 0). Sheet 01_2_TD không có công thức.
+
+## File 01_GTGT_v2.4.0_mau.xls và 01_GTGT_v2.1.2_mau.xls
+- Sheet 01: như v2.5.0 nhưng v2.1.2 không có ô tiêu đề công thức [D1]/[D2]
+- Sheet 01_5, 01_7, 01_1_TD: giống v2.6.2
+- Sheet 01_6: như v2.5.0 (thiếu [M2], [V5], [W5], [N8], [O8]; [W8] có điều kiện thêm)
+- Sheet KHBS (tên cũ, chưa đổi thành 01_KHBS): công thức như 01_KHBS của v2.5.0; v2.1.2 không có [BI27] (VLOOKUP "42")
+- Sheet 01_8: không có (thêm ở v2.5.0)
+- Header: như v2.6.2, nhưng các cờ tham chiếu sheet "KHBS!" thay vì "01_KHBS!" (v2.1.2 dùng ô K3, từ v2.4.0 dùng K4)
+
+## File 01_GTGT_v2.0.1_mau.xls
+- Sheet 01: như v2.1.2, nhưng [kỳ tính thuế] = TRIM(Header!V43) (lấy nguyên kỳ) thay vì IF tháng/quý
+- Các sheet còn lại: như v2.1.2 (KHBS không có [BI27])
+
+## File 01_GTGT_v*.mau.xls1 (bản có dữ liệu — tất cả phiên bản)
+
+### Sheet "01"
+- prefill NNT/MST/đại lý/chữ ký từ sheet Header + tách ký tự MST (MID)
+- [BW46] = BW46 (cột căn) × 0,05 (thuế suất 5%); [BW47] = × 0,1 (thuế suất 10%) — tính thuế dòng 5%/10% trong bảng
+
+### Sheet "01_5", "01_7"
+- [C15] số thứ tự = C14+1; [SUM(AG15:AG17)] tổng cột = SUM(AG15:AG17) nếu ≠ 0
+- prefill từ sheet 01 (01!U66, 01!U67)
+
+### Sheet "01_6"
+- [B21] số thứ tự = B20+1; [U22+V22] cột [14] = [12]+[13]; [X, Y] tổng = SUM(X21:X23), SUM(Y21:Y23)
+- [U26−X24], [U26−Y24]: tính hiệu tổng − cột phụ
+- prefill từ sheet 01 (01!CT58, 01!BW49, 01!U66)
+
+### Sheet "01_KHBS"
+- [D38, D42, D46] số thứ tự = dòng trên + 1
+- [BU39−BB39], [BU43−BB43], [BU47−BB47], [BU48−BB48]: hiệu số giữa hai bảng (điều chỉnh tăng − giảm)
+
+### Sheet "01_2_TD", "01_1_TD"
+- prefill + số thứ tự dòng
+
+### Sheet "Header"
+- Không có công thức (bản có dữ liệu)
+
+## File bang_ke_01_giamthue_gtgt_* (8 file)
+- Không có công thức (bang kê tĩnh — người dùng nhập tay; sheet HDSD là hướng dẫn sử dụng)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_GTGT
+Thư mục: 01_GTGT/01_GTGT (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_GTGT_v2.0.1_mau.xls ===
+--- Sheet "01" ---
+B2: IF(TRIM(Header!V47)="","Kỳ tính thuế: Tháng "&TRIM(Header!V46)&" năm "&Header!V48,"Kỳ tính thuế: Quý "&TRIM(Header!V47)&" năm "&Header!V48)
+I3: IF(Header!V29="","[X]","")
+K3: IF(Header!V29<>"",Header!V29,"")
+D4: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+D5: TRIM(Header!C3)
+D6: TRIM(Header!V6)
+D7: TRIM(Header!V5)
+L14: TRIM(Header!V43)
+J31: J32+J33+J34+J35
+L31: L33+L34
+L33: ROUND(J33*5/100,0)
+L34: ROUND(J34*10/100,0)
+J36: J30+J31
+L36: L31
+L37: L36-L28
+L41: M54
+L43: IF(L37-L24+L39-L40-L41>0,L37-L24+L39-L40-L41,0)
+L45: L43-L44
+L46: IF(L37-L24+L39-L40-L41<0,ABS(L37-L24+L39-L40-L41),0)
+L48: L46-L47
+D50: TRIM(Header!V15)
+K50: TRIM(Header!V41)
+D51: TRIM(Header!V16)
+K51: TRIM(Header!V42)
+K53: IF(Header!V29="",1,"")
+L53: IF(Header!V29<>"",1,"")
+N53: IF(TRIM(Header!V47)="",0,1)
+O53: IF(Header!V29="","",Header!V29)
+M54: ROUND(01_5!I9,0)
+D55: ROUND(01_5!I9,0)
+--- Sheet "01_5" ---
+H3: I9
+I9: SUM(I7:I8)
+--- Sheet "01_6" ---
+G5: G12
+H5: G14
+J5: J10
+L5: J10
+M5: K10
+I8: G8+H8
+J8: ROUND((G8*1/100),0)+ROUND((H8*2/100),0)
+K8: IF(AND($G$5-$J$5<0,$H$5<>0),ROUND($G$5*I8/$H$5,0),0)
+I9: G9+H9
+J9: (G9*1/100)+(H9*2/100)
+J10: SUM(J7:J9)
+K10: SUM(K7:K9)
+G12: 01!L45
+G14: 01!J36
+I17: IF(G12-J10>0,G12-J10,0)
+I19: IF(G12-J10>0,0,G12-K10)
+--- Sheet "01_7" ---
+H7: ROUND(D7*G7/100*2/100,0)
+H9: SUM(H7:H8)
+--- Sheet "01_1_TD" ---
+I7: IF(F7-H7>0,F7-H7,0)
+F9: SUM(F6:F8)
+H9: SUM(H6:H8)
+I9: SUM(I6:I8)
+--- Sheet "01_2_TD" ---
+(không có cell công thức)
+--- Sheet "KHBS" ---
+B3: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:"&IF(Header!V47=""," Tháng "&Header!V46&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4)," Quý "&Header!V47&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4)) &")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BF17: BJ5
+BG17: BK5
+BH17: BL5
+BF18: BJ6
+BG18: BK6
+BH18: BL6
+BE20: BD5
+BE21: BF5
+BG45: TRIM(01!K50)
+BG46: TRIM(01!K51)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)="","","  - ")
+S7: " "&IF(TRIM(N2)=""," ",TRIM(N2))&IF(TRIM(O2)=""," ",TRIM(O2))&IF(TRIM(P2)=""," ",TRIM(P2))&" "
+T8: CONCATENATE(1)
+C12: 01!G13
+C13: 01!G13
+C14: 01!G13
+B15: IF(AND(ABS(ROUND(01!J33*0.05-01!L33,0))-1000000<=0,ABS(ROUND(01!J33*0.05-01!L33,0))-ABS(ROUND(01!J33*0.0001,0))<=0),"1","0")
+C15: 01!L33
+B16: IF(AND(ABS(ROUND(01!J34*0.1-01!L34,0))-1000000<=0,ABS(ROUND(01!J34*0.1-01!L34,0))-ABS(ROUND(01!J34*0.0001,0))<=0),"1","0")
+C16: 01!L34
+C21: 01!J30
+C22: 01!J32
+C23: 01!J33
+C24: 01!L33
+C25: 01!J34
+C26: 01!L34
+B38: IF(AND(01!L47>01!L46, 01!K53=1),"0","1")
+C38: 01!L47
+B39: IF(LEN(01!K51)=0,"0","1")
+C39: 01!K51
+B41: IF(01_6!K10>01!L45,"1","1")
+C41: 01_6!K10
+B47: IF(01_6!K10>01_6!G12,"0","1")
+C47: 01_6!K10
+C48: 01_6!F8
+B53: IF(01!L44<=01!L43,"1","0")
+C53: 01!L44
+C56: 01!L28
+B61: IF(AND(LEN(01!D50)>0,LEN(01!D51)=0),"0","1")
+C61: 01!D51
+B86: IF(01_1_TD!I9<>0,IF(01_1_TD!I9<>01_2_TD!U45,"0","1"),"1")
+C86: 01_1_TD!I9
+B87: IF(01_2_TD!U45<>0,IF(01_1_TD!I9<>01_2_TD!U45,"0","1"),"1")
+C87: 01_2_TD!U45
+B90: IF(AND(01!P24<>01!L24, Header!V29 = ""), "0","1")
+C90: 01!L24
+B91: IF(AND(01!L45<>0, 01!L46<>0),0, 1)
+C91: 01!L46
+B92: IF(AND(01!L45<>0, 01!L48<>0),0, 1)
+C92: 01!L48
+B93: IF(OR(B91=0, B92=0), 0, 1)
+C93: 01!L45
+=> 114 cell công thức trong file này
+
+=== FILE: 01_GTGT_v2.0.1_mau.xls1 ===
+--- Sheet "01" ---
+P5: IF(Header!V30<>"M","[01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, "[01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+BA8: IF(Header!V29="","[X]","")
+CH8: IF(Header!V29="","",Header!V29)
+AJ12: Header!C3
+AJ14: Header!C2
+AM14: Header!D2
+AP14: Header!E2
+AS14: Header!F2
+AV14: Header!G2
+AY14: Header!H2
+BB14: Header!I2
+BE14: Header!J2
+BH14: Header!K2
+BK14: Header!L2
+BQ14: Header!N2
+BT14: Header!O2
+BW14: Header!P2
+Y16: TRIM(Header!C4)
+Y18: Header!C5
+BT18: Header!C6
+Y20: Header!C7
+BH20: Header!C8
+CO20: Header!C9
+AN22: TRIM(Header!V6)
+AJ24: MID(TRIM(Header!V5),1,1)
+AM24: MID(TRIM(Header!V5),2,1)
+AP24: MID(TRIM(Header!V5),3,1)
+AS24: MID(TRIM(Header!V5),4,1)
+AV24: MID(TRIM(Header!V5),5,1)
+AY24: MID(TRIM(Header!V5),6,1)
+BB24: MID(TRIM(Header!V5),7,1)
+BE24: MID(TRIM(Header!V5),8,1)
+BH24: MID(TRIM(Header!V5),9,1)
+BK24: MID(TRIM(Header!V5),10,1)
+BQ24: MID(TRIM(Header!V5),11,1)
+BT24: MID(TRIM(Header!V5),12,1)
+BW24: MID(TRIM(Header!V5),13,1)
+Y26: TRIM(Header!V7)
+Y28: TRIM(Header!V8)
+BT28: TRIM(Header!V9)
+Y30: TRIM(Header!V10)
+BH30: TRIM(Header!V11)
+CO30: TRIM(Header!V12)
+AG32: TRIM(Header!V13)
+BH32: TRIM(Header!V14)
+CT46: BW46*0.05
+CT47: BW47*0.1
+BV65: "  Ngày " & MID(TRIM(C64),1,2) &" tháng " &MID(TRIM(C64),4,2) & " năm " & MID(TRIM(C64),7,4)
+--- Sheet "01_5" ---
+C3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+C4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+W27: "   "& TRIM(01!BV68)
+--- Sheet "01_6" ---
+B3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+I4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+F5: Header!C3
+F7: Header!C2
+G7: Header!D2
+H7: Header!E2
+I7: Header!F2
+J7: Header!G2
+K7: Header!H2
+L7: Header!I2
+M7: Header!J2
+N7: Header!K2
+O7: Header!L2
+Q7: Header!N2
+R7: Header!O2
+S7: Header!P2
+F9: TRIM(Header!V6)
+F11: MID(TRIM(Header!V5),1,1)
+G11: MID(TRIM(Header!V5),2,1)
+H11: MID(TRIM(Header!V5),3,1)
+I11: MID(TRIM(Header!V5),4,1)
+J11: MID(TRIM(Header!V5),5,1)
+K11: MID(TRIM(Header!V5),6,1)
+L11: MID(TRIM(Header!V5),7,1)
+M11: MID(TRIM(Header!V5),8,1)
+N11: MID(TRIM(Header!V5),9,1)
+O11: MID(TRIM(Header!V5),10,1)
+Q11: MID(TRIM(Header!V5),11,1)
+R11: MID(TRIM(Header!V5),12,1)
+S11: MID(TRIM(Header!V5),13,1)
+K13: U26
+U15: U28
+B22: B21+1
+W22: U22+V22
+X24: SUM(X21:X23)
+Y24: SUM(Y21:Y23)
+U26: 01!CT58
+U28: 01!BW49
+W31: U26-X24
+W33: U26-Y24
+V35: "      Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+H36: 01!U66
+H38: 01!U67
+V40: "        "&TRIM(01!BV68)
+--- Sheet "01_7" ---
+G3: "(Kèm theo Tờ khai thuế giá trị gia tăng mẫu số 01/GTGT)"
+G4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+U27: "   "& TRIM(01!BV68)
+--- Sheet "01_1_TD" ---
+H4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+Q18: IF(SUM(Q15:Q17)<>0,SUM(Q15:Q17),"")
+V18: IF(SUM(V15:V17)<>0,SUM(V15:V17),"")
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+R20: "   Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+J22: TRIM(01!U66)
+J23: TRIM(01!U67)
+R27: TRIM(01!BV68)
+--- Sheet "01_2_TD" ---
+K7:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+H9: TRIM(Header!C3)
+F10: Header!C2
+G10: Header!D2
+H10: Header!E2
+I10: Header!F2
+J10: Header!G2
+K10: Header!H2
+L10: Header!I2
+M10: Header!J2
+N10: Header!K2
+O10: Header!L2
+P10: Header!M2
+Q10: Header!N2
+R10: Header!O2
+S10: Header!P2
+H11: TRIM(Header!V6)
+F12: MID(TRIM(Header!V5),1,1)
+G12: MID(TRIM(Header!V5),2,1)
+H12: MID(TRIM(Header!V5),3,1)
+I12: MID(TRIM(Header!V5),4,1)
+J12: MID(TRIM(Header!V5),5,1)
+K12: MID(TRIM(Header!V5),6,1)
+L12: MID(TRIM(Header!V5),7,1)
+M12: MID(TRIM(Header!V5),8,1)
+N12: MID(TRIM(Header!V5),9,1)
+O12: MID(TRIM(Header!V5),10,1)
+P12: TRIM(Header!M2)
+Q12: MID(TRIM(Header!V5),11,1)
+R12: MID(TRIM(Header!V5),12,1)
+S12: MID(TRIM(Header!V5),13,1)
+R53: TRIM(01!BV65)
+E55: TRIM(01!U66)
+G56: TRIM(01!U67)
+R58: TRIM(01!BV68)
+--- Sheet "KHBS" ---
+D7: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:" & IF(Header!V30<>"M", " Quý " & Header!V47," Tháng " & Header!V46) & "/" & Header!V48 &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: Header!C4
+AA16: Header!C5
+CK16: Header!C6
+AA18: Header!C7
+BD18: Header!C8
+CK18: Header!C9
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU47-BB47
+CP48: BU48-BB48
+BL72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
+N74: TRIM(01!U66)
+AA75: TRIM(01!U67)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 289 cell công thức trong file này
+
+=== FILE: 01_GTGT_v2.1.2_mau.xls ===
+--- Sheet "01" ---
+B2: IF(TRIM(Header!V47)="","Kỳ tính thuế: Tháng "&TRIM(Header!V46)&" năm "&Header!V48,"Kỳ tính thuế: Quý "&TRIM(Header!V47)&" năm "&Header!V48)
+I3: IF(Header!V29="","[X]","")
+K3: IF(Header!V29<>"",Header!V29,"")
+D4: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+D5: TRIM(Header!C3)
+D6: TRIM(Header!V6)
+D7: TRIM(Header!V5)
+J31: J32+J33+J34+J35
+L31: L33+L34
+L33: ROUND(J33*5/100,0)
+L34: ROUND(J34*10/100,0)
+J36: J30+J31
+L36: L31
+L37: L36-L28
+L41: M54
+L43: IF(L37-L24+L39-L40-L41>0,L37-L24+L39-L40-L41,0)
+L45: L43-L44
+L46: IF(L37-L24+L39-L40-L41<0,ABS(L37-L24+L39-L40-L41),0)
+L48: L46-L47
+D50: TRIM(Header!V15)
+K50: TRIM(Header!V41)
+D51: TRIM(Header!V16)
+K51: TRIM(Header!V42)
+K53: IF(Header!V29="",1,"")
+L53: IF(Header!V29<>"",1,"")
+N53: IF(TRIM(Header!V47)="",0,1)
+O53: IF(Header!V29="","",Header!V29)
+M54: ROUND(01_5!I9,0)
+D55: ROUND(01_5!I9,0)
+--- Sheet "01_5" ---
+H3: I9
+I9: SUM(I7:I8)
+--- Sheet "01_6" ---
+G5: G12
+H5: G14
+J5: J10
+L5: J10
+M5: K10
+I8: G8+H8
+J8: ROUND((G8*1/100),0)+ROUND((H8*2/100),0)
+K8: IF(AND($G$5-$J$5<0,$H$5<>0),ROUND($G$5*I8/$H$5,0),0)
+I9: G9+H9
+J9: (G9*1/100)+(H9*2/100)
+J10: SUM(J7:J9)
+K10: SUM(K7:K9)
+G12: 01!L45
+G14: 01!J36
+I17: IF(G12-J10>0,G12-J10,0)
+I19: IF(G12-J10>0,0,G12-K10)
+--- Sheet "01_7" ---
+H7: ROUND(D7*G7/100*2/100,0)
+H9: SUM(H7:H8)
+--- Sheet "01_1_TD" ---
+I7: IF(F7-H7>0,F7-H7,0)
+F9: SUM(F6:F8)
+H9: SUM(H6:H8)
+I9: SUM(I6:I8)
+--- Sheet "01_2_TD" ---
+(không có cell công thức)
+--- Sheet "KHBS" ---
+B3: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:"&IF(Header!V47=""," Tháng "&Header!V46&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4)," Quý "&Header!V47&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4)) &")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BF17: BJ5
+BG17: BK5
+BH17: BL5
+BF18: BJ6
+BG18: BK6
+BH18: BL6
+BE20: BD5
+BE21: BF5
+BI27: IFERROR(VLOOKUP("42",BE7:BH26,4,0),0)
+BG45: TRIM(01!K50)
+BG46: TRIM(01!K51)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)="","","  - ")
+S7: " "&IF(TRIM(N2)=""," ",TRIM(N2))&IF(TRIM(O2)=""," ",TRIM(O2))&IF(TRIM(P2)=""," ",TRIM(P2))&" "
+T8: CONCATENATE(1)
+C12: 01!G13
+C13: 01!G13
+C14: 01!G13
+B15: IF(AND(ABS(ROUND(01!J33*0.05-01!L33,0))-1000000<=0,ABS(ROUND(01!J33*0.05-01!L33,0))-ABS(ROUND(01!J33*0.0001,0))<=0),"1","0")
+C15: 01!L33
+B16: IF(AND(ABS(ROUND(01!J34*0.1-01!L34,0))-1000000<=0,ABS(ROUND(01!J34*0.1-01!L34,0))-ABS(ROUND(01!J34*0.0001,0))<=0),"1","0")
+C16: 01!L34
+C21: 01!J30
+C22: 01!J32
+C23: 01!J33
+C24: 01!L33
+C25: 01!J34
+C26: 01!L34
+B38: IF(AND(01!L47>01!L46, 01!K53=1),"0","1")
+C38: 01!L47
+B39: IF(LEN(01!K51)=0,"0","1")
+C39: 01!K51
+B47: IF(01_6!K10>01_6!G12,"0","1")
+C47: 01_6!K10
+C48: 01_6!F8
+B53: IF(01!L44<=01!L43,"1","0")
+C53: 01!L44
+C56: 01!L28
+B61: IF(AND(LEN(01!D50)>0,LEN(01!D51)=0),"0","1")
+C61: 01!D51
+B86: IF(01_1_TD!I9<>0,IF(01_1_TD!I9<>01_2_TD!U45,"0","1"),"1")
+C86: 01_1_TD!I9
+B87: IF(01_2_TD!U45<>0,IF(01_1_TD!I9<>01_2_TD!U45,"0","1"),"1")
+C87: 01_2_TD!U45
+B90: IF(AND(01!P24<>01!L24, Header!V29 = ""), "0","1")
+C90: 01!L24
+B91: IF(AND(01!L45<>0, 01!L46<>0),0, 1)
+C91: 01!L46
+B92: IF(AND(01!L45<>0, 01!L48<>0),0, 1)
+C92: 01!L48
+B93: IF(OR(B91=0, B92=0), 0, 1)
+C93: 01!L45
+B100: IF(AND(01!K3 < 2, KHBS!BE27 < 0), 0, 1)
+C100: KHBS!BE27
+B101: IF(AND(01!K3 > 1, KHBS!BE27<> 0), IF(KHBS!BE27<>-KHBS!BI27, 0, 1), 1)
+C101: KHBS!BE27
+B102: IF(AND(01!K3 = 1, KHBS!BE27 <>  -KHBS!BI27, KHBS!BE27 <> 0), 0, 1)
+C102: KHBS!BE27
+=> 118 cell công thức trong file này
+
+=== FILE: 01_GTGT_v2.1.2_mau.xls1 ===
+--- Sheet "01" ---
+P5: IF(Header!V30<>"M","[01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, "[01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+BA8: IF(Header!V29="","[X]","")
+CH8: IF(Header!V29="","",Header!V29)
+AJ12: Header!C3
+AJ14: Header!C2
+AM14: Header!D2
+AP14: Header!E2
+AS14: Header!F2
+AV14: Header!G2
+AY14: Header!H2
+BB14: Header!I2
+BE14: Header!J2
+BH14: Header!K2
+BK14: Header!L2
+BQ14: Header!N2
+BT14: Header!O2
+BW14: Header!P2
+Y16: TRIM(Header!C4)
+Y18: Header!C5
+BT18: Header!C6
+Y20: Header!C7
+BH20: Header!C8
+CO20: Header!C9
+AN22: TRIM(Header!V6)
+AJ24: MID(TRIM(Header!V5),1,1)
+AM24: MID(TRIM(Header!V5),2,1)
+AP24: MID(TRIM(Header!V5),3,1)
+AS24: MID(TRIM(Header!V5),4,1)
+AV24: MID(TRIM(Header!V5),5,1)
+AY24: MID(TRIM(Header!V5),6,1)
+BB24: MID(TRIM(Header!V5),7,1)
+BE24: MID(TRIM(Header!V5),8,1)
+BH24: MID(TRIM(Header!V5),9,1)
+BK24: MID(TRIM(Header!V5),10,1)
+BQ24: MID(TRIM(Header!V5),11,1)
+BT24: MID(TRIM(Header!V5),12,1)
+BW24: MID(TRIM(Header!V5),13,1)
+Y26: TRIM(Header!V7)
+Y28: TRIM(Header!V8)
+BT28: TRIM(Header!V9)
+Y30: TRIM(Header!V10)
+BH30: TRIM(Header!V11)
+CO30: TRIM(Header!V12)
+AG32: TRIM(Header!V13)
+BH32: TRIM(Header!V14)
+CT46: BW46*0.05
+CT47: BW47*0.1
+BV65: "  Ngày " & MID(TRIM(C64),1,2) &" tháng " &MID(TRIM(C64),4,2) & " năm " & MID(TRIM(C64),7,4)
+--- Sheet "01_5" ---
+C3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+C4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+W27: "   "& TRIM(01!BV68)
+--- Sheet "01_6" ---
+B3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+I4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+F5: Header!C3
+F7: Header!C2
+G7: Header!D2
+H7: Header!E2
+I7: Header!F2
+J7: Header!G2
+K7: Header!H2
+L7: Header!I2
+M7: Header!J2
+N7: Header!K2
+O7: Header!L2
+Q7: Header!N2
+R7: Header!O2
+S7: Header!P2
+F9: TRIM(Header!V6)
+F11: MID(TRIM(Header!V5),1,1)
+G11: MID(TRIM(Header!V5),2,1)
+H11: MID(TRIM(Header!V5),3,1)
+I11: MID(TRIM(Header!V5),4,1)
+J11: MID(TRIM(Header!V5),5,1)
+K11: MID(TRIM(Header!V5),6,1)
+L11: MID(TRIM(Header!V5),7,1)
+M11: MID(TRIM(Header!V5),8,1)
+N11: MID(TRIM(Header!V5),9,1)
+O11: MID(TRIM(Header!V5),10,1)
+Q11: MID(TRIM(Header!V5),11,1)
+R11: MID(TRIM(Header!V5),12,1)
+S11: MID(TRIM(Header!V5),13,1)
+K13: U26
+U15: U28
+B22: B21+1
+W22: U22+V22
+X24: SUM(X21:X23)
+Y24: SUM(Y21:Y23)
+U26: 01!CT58
+U28: 01!BW49
+W31: U26-X24
+W33: U26-Y24
+V35: "      Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+H36: 01!U66
+H38: 01!U67
+V40: "        "&TRIM(01!BV68)
+--- Sheet "01_7" ---
+G3: "(Kèm theo Tờ khai thuế giá trị gia tăng mẫu số 01/GTGT)"
+G4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+U27: "   "& TRIM(01!BV68)
+--- Sheet "01_1_TD" ---
+H4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+Q18: IF(SUM(Q15:Q17)<>0,SUM(Q15:Q17),"")
+V18: IF(SUM(V15:V17)<>0,SUM(V15:V17),"")
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+R20: "   Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+J22: TRIM(01!U66)
+J23: TRIM(01!U67)
+R27: TRIM(01!BV68)
+--- Sheet "01_2_TD" ---
+K7:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+H9: TRIM(Header!C3)
+F10: Header!C2
+G10: Header!D2
+H10: Header!E2
+I10: Header!F2
+J10: Header!G2
+K10: Header!H2
+L10: Header!I2
+M10: Header!J2
+N10: Header!K2
+O10: Header!L2
+P10: Header!M2
+Q10: Header!N2
+R10: Header!O2
+S10: Header!P2
+H11: TRIM(Header!V6)
+F12: MID(TRIM(Header!V5),1,1)
+G12: MID(TRIM(Header!V5),2,1)
+H12: MID(TRIM(Header!V5),3,1)
+I12: MID(TRIM(Header!V5),4,1)
+J12: MID(TRIM(Header!V5),5,1)
+K12: MID(TRIM(Header!V5),6,1)
+L12: MID(TRIM(Header!V5),7,1)
+M12: MID(TRIM(Header!V5),8,1)
+N12: MID(TRIM(Header!V5),9,1)
+O12: MID(TRIM(Header!V5),10,1)
+P12: TRIM(Header!M2)
+Q12: MID(TRIM(Header!V5),11,1)
+R12: MID(TRIM(Header!V5),12,1)
+S12: MID(TRIM(Header!V5),13,1)
+R53: TRIM(01!BV65)
+E55: TRIM(01!U66)
+G56: TRIM(01!U67)
+R58: TRIM(01!BV68)
+--- Sheet "KHBS" ---
+D7: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:" & IF(Header!V30<>"M", " Quý " & Header!V47," Tháng " & Header!V46) & "/" & Header!V48 &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: Header!C4
+AA16: Header!C5
+CK16: Header!C6
+AA18: Header!C7
+BD18: Header!C8
+CK18: Header!C9
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU47-BB47
+CP48: BU48-BB48
+BL72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
+N74: TRIM(01!U66)
+AA75: TRIM(01!U67)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 289 cell công thức trong file này
+
+=== FILE: 01_GTGT_v2.4.0_mau.xls ===
+--- Sheet "01" ---
+D1: "TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)
+(Dành cho người nộp thuế khai thuế GTGT theo phương pháp khấu trừ)"
+D2: TRIM(M14)
+B3: IF(TRIM(Header!V47)="","Kỳ tính thuế: Tháng "&TRIM(Header!V46)&" năm "&Header!V48,"Kỳ tính thuế: Quý "&TRIM(Header!V47)&" năm "&Header!V48)
+I4: IF(Header!V29="","[X]","")
+K4: IF(Header!V29<>"",Header!V29,"")
+D5: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+D6: TRIM(Header!C3)
+D7: TRIM(Header!V6)
+D8: TRIM(Header!V5)
+J31: J32+J33+J34+J35
+L31: L33+L34
+L33: ROUND(J33*5/100,0)
+L34: ROUND(J34*10/100,0)
+J36: J30+J31
+L36: L31
+L37: L36-L28
+L41: M54
+L43: IF(L37-L24+L39-L40-L41>0,L37-L24+L39-L40-L41,0)
+L45: L43-L44
+L46: IF(L37-L24+L39-L40-L41<0,ABS(L37-L24+L39-L40-L41),0)
+L48: L46-L47
+D50: TRIM(Header!V15)
+K50: TRIM(Header!V41)
+D51: TRIM(Header!V16)
+K51: TRIM(Header!V42)
+K53: IF(Header!V29="",1,"")
+L53: IF(Header!V29<>"",1,"")
+N53: IF(TRIM(Header!V47)="",0,1)
+O53: IF(Header!V29="","",Header!V29)
+M54: ROUND(01_5!I9,0)
+D55: ROUND(01_5!I9,0)
+--- Sheet "01_5" ---
+H3: I9
+I9: SUM(I7:I8)
+--- Sheet "01_6" ---
+G5: G12
+H5: G14
+J5: J10
+L5: J10
+M5: K10
+I8: G8+H8
+J8: ROUND((G8*1/100),0)+ROUND((H8*2/100),0)
+K8: IF(AND($G$5-$J$5<0,$H$5<>0),ROUND($G$5*I8/$H$5,0),0)
+I9: G9+H9
+J9: (G9*1/100)+(H9*2/100)
+J10: SUM(J7:J9)
+K10: SUM(K7:K9)
+G12: 01!L45
+G14: 01!J36
+I17: IF(G12-J10>0,G12-J10,0)
+I19: IF(G12-J10>0,0,G12-K10)
+--- Sheet "01_7" ---
+H7: ROUND(D7*G7/100*2/100,0)
+H9: SUM(H7:H8)
+--- Sheet "01_1_TD" ---
+I7: IF(F7-H7>0,F7-H7,0)
+F9: SUM(F6:F8)
+H9: SUM(H6:H8)
+I9: SUM(I6:I8)
+--- Sheet "01_2_TD" ---
+(không có cell công thức)
+--- Sheet "KHBS" ---
+B3: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:"&IF(Header!V47=""," Tháng "&Header!V46&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4)," Quý "&Header!V47&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4)) &")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BF17: BJ5
+BG17: BK5
+BH17: BL5
+BF18: BJ6
+BG18: BK6
+BH18: BL6
+BE20: BD5
+BE21: BF5
+BI27: IFERROR(VLOOKUP("42",BE7:BH26,4,0),0)
+BG45: TRIM(01!K50)
+BG46: TRIM(01!K51)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)="","","  - ")
+S7: " "&IF(TRIM(N2)=""," ",TRIM(N2))&IF(TRIM(O2)=""," ",TRIM(O2))&IF(TRIM(P2)=""," ",TRIM(P2))&" "
+T8: CONCATENATE(1)
+C12: 01!G13
+C13: 01!G13
+C14: 01!G13
+B15: IF(AND(ABS(ROUND(01!J33*0.05-01!L33,0))-1000000<=0,ABS(ROUND(01!J33*0.05-01!L33,0))-ABS(ROUND(01!J33*0.0001,0))<=0),"1","0")
+C15: 01!L33
+B16: IF(AND(ABS(ROUND(01!J34*0.1-01!L34,0))-1000000<=0,ABS(ROUND(01!J34*0.1-01!L34,0))-ABS(ROUND(01!J34*0.0001,0))<=0),"1","0")
+C16: 01!L34
+C21: 01!J30
+C22: 01!J32
+C23: 01!J33
+C24: 01!L33
+C25: 01!J34
+C26: 01!L34
+B38: IF(AND(01!L47>01!L46, 01!K53=1),"0","1")
+C38: 01!L47
+B39: IF(LEN(01!K51)=0,"0","1")
+C39: 01!K51
+B47: IF(01_6!K10>01_6!G12,"0","1")
+C47: 01_6!K10
+C48: 01_6!F8
+B53: IF(01!L44<=01!L43,"1","0")
+C53: 01!L44
+C56: 01!L28
+B61: IF(AND(LEN(01!D50)>0,LEN(01!D51)=0),"0","1")
+C61: 01!D51
+B86: IF(01_1_TD!I9<>0,IF(01_1_TD!I9<>01_2_TD!U45,"0","1"),"1")
+C86: 01_1_TD!I9
+B87: IF(01_2_TD!U45<>0,IF(01_1_TD!I9<>01_2_TD!U45,"0","1"),"1")
+C87: 01_2_TD!U45
+B90: IF(AND(01!P24<>01!L24, Header!V29 = ""), "0","1")
+C90: 01!L24
+B91: IF(AND(01!L45<>0, 01!L46<>0),0, 1)
+C91: 01!L46
+B92: IF(AND(01!L45<>0, 01!L48<>0),0, 1)
+C92: 01!L48
+B93: IF(OR(B91=0, B92=0), 0, 1)
+C93: 01!L45
+B100: IF(AND(01!K4 < 2, KHBS!BE27 < 0), 0, 1)
+C100: KHBS!BE27
+B101: IF(AND(01!K4 > 1, KHBS!BE27<> 0), IF(KHBS!BE27<>-KHBS!BI27, 0, 1), 1)
+C101: KHBS!BE27
+B102: IF(AND(01!K4 = 1, KHBS!BE27 <>  -KHBS!BI27, KHBS!BE27 <> 0), 0, 1)
+C102: KHBS!BE27
+=> 120 cell công thức trong file này
+
+=== FILE: 01_GTGT_v2.4.0_mau.xls1 ===
+--- Sheet "01" ---
+P4: TRIM(DL64)
+P5: IF(Header!V30<>"M","[01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, "[01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+BA8: IF(Header!V29="","[X]","")
+CH8: IF(Header!V29="","",Header!V29)
+AJ12: Header!C3
+AJ14: Header!C2
+AM14: Header!D2
+AP14: Header!E2
+AS14: Header!F2
+AV14: Header!G2
+AY14: Header!H2
+BB14: Header!I2
+BE14: Header!J2
+BH14: Header!K2
+BK14: Header!L2
+BQ14: Header!N2
+BT14: Header!O2
+BW14: Header!P2
+Y16: TRIM(Header!C4)
+Y18: Header!C5
+BT18: Header!C6
+Y20: Header!C7
+BH20: Header!C8
+CO20: Header!C9
+AN22: TRIM(Header!V6)
+AJ24: MID(TRIM(Header!V5),1,1)
+AM24: MID(TRIM(Header!V5),2,1)
+AP24: MID(TRIM(Header!V5),3,1)
+AS24: MID(TRIM(Header!V5),4,1)
+AV24: MID(TRIM(Header!V5),5,1)
+AY24: MID(TRIM(Header!V5),6,1)
+BB24: MID(TRIM(Header!V5),7,1)
+BE24: MID(TRIM(Header!V5),8,1)
+BH24: MID(TRIM(Header!V5),9,1)
+BK24: MID(TRIM(Header!V5),10,1)
+BQ24: MID(TRIM(Header!V5),11,1)
+BT24: MID(TRIM(Header!V5),12,1)
+BW24: MID(TRIM(Header!V5),13,1)
+Y26: TRIM(Header!V7)
+Y28: TRIM(Header!V8)
+BT28: TRIM(Header!V9)
+Y30: TRIM(Header!V10)
+BH30: TRIM(Header!V11)
+CO30: TRIM(Header!V12)
+AG32: TRIM(Header!V13)
+BH32: TRIM(Header!V14)
+CT46: BW46*0.05
+CT47: BW47*0.1
+BV65: "  Ngày " & MID(TRIM(C64),1,2) &" tháng " &MID(TRIM(C64),4,2) & " năm " & MID(TRIM(C64),7,4)
+--- Sheet "01_5" ---
+C3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+C4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+W27: "   "& TRIM(01!BV68)
+--- Sheet "01_6" ---
+B3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+I4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+F5: Header!C3
+F7: Header!C2
+G7: Header!D2
+H7: Header!E2
+I7: Header!F2
+J7: Header!G2
+K7: Header!H2
+L7: Header!I2
+M7: Header!J2
+N7: Header!K2
+O7: Header!L2
+Q7: Header!N2
+R7: Header!O2
+S7: Header!P2
+F9: TRIM(Header!V6)
+F11: MID(TRIM(Header!V5),1,1)
+G11: MID(TRIM(Header!V5),2,1)
+H11: MID(TRIM(Header!V5),3,1)
+I11: MID(TRIM(Header!V5),4,1)
+J11: MID(TRIM(Header!V5),5,1)
+K11: MID(TRIM(Header!V5),6,1)
+L11: MID(TRIM(Header!V5),7,1)
+M11: MID(TRIM(Header!V5),8,1)
+N11: MID(TRIM(Header!V5),9,1)
+O11: MID(TRIM(Header!V5),10,1)
+Q11: MID(TRIM(Header!V5),11,1)
+R11: MID(TRIM(Header!V5),12,1)
+S11: MID(TRIM(Header!V5),13,1)
+K13: U26
+U15: U28
+B22: B21+1
+W22: U22+V22
+X24: SUM(X21:X23)
+Y24: SUM(Y21:Y23)
+U26: 01!CT58
+U28: 01!BW49
+W31: U26-X24
+W33: U26-Y24
+V35: "      Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+H36: 01!U66
+H38: 01!U67
+V40: "        "&TRIM(01!BV68)
+--- Sheet "01_7" ---
+G3: "(Kèm theo Tờ khai thuế giá trị gia tăng mẫu số 01/GTGT)"
+G4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+U27: "   "& TRIM(01!BV68)
+--- Sheet "01_1_TD" ---
+H4:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+Q18: IF(SUM(Q15:Q17)<>0,SUM(Q15:Q17),"")
+V18: IF(SUM(V15:V17)<>0,SUM(V15:V17),"")
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+R20: "   Ngày " & MID(TRIM(01!C64),1,2) &" tháng " &MID(TRIM(01!C64),4,2) & " năm " & MID(TRIM(01!C64),7,4)
+J22: TRIM(01!U66)
+J23: TRIM(01!U67)
+R27: TRIM(01!BV68)
+--- Sheet "01_2_TD" ---
+K7:  IF(Header!V30<>"M", " [01] Kỳ tính thuế: Quý " & Header!V47 & " năm " & Header!V48, " [01] Kỳ tính thuế: Tháng " & Header!V46 & " năm " & Header!V48)
+H9: TRIM(Header!C3)
+F10: Header!C2
+G10: Header!D2
+H10: Header!E2
+I10: Header!F2
+J10: Header!G2
+K10: Header!H2
+L10: Header!I2
+M10: Header!J2
+N10: Header!K2
+O10: Header!L2
+P10: Header!M2
+Q10: Header!N2
+R10: Header!O2
+S10: Header!P2
+H11: TRIM(Header!V6)
+F12: MID(TRIM(Header!V5),1,1)
+G12: MID(TRIM(Header!V5),2,1)
+H12: MID(TRIM(Header!V5),3,1)
+I12: MID(TRIM(Header!V5),4,1)
+J12: MID(TRIM(Header!V5),5,1)
+K12: MID(TRIM(Header!V5),6,1)
+L12: MID(TRIM(Header!V5),7,1)
+M12: MID(TRIM(Header!V5),8,1)
+N12: MID(TRIM(Header!V5),9,1)
+O12: MID(TRIM(Header!V5),10,1)
+P12: TRIM(Header!M2)
+Q12: MID(TRIM(Header!V5),11,1)
+R12: MID(TRIM(Header!V5),12,1)
+S12: MID(TRIM(Header!V5),13,1)
+R53: TRIM(01!BV65)
+E55: TRIM(01!U66)
+G56: TRIM(01!U67)
+R58: TRIM(01!BV68)
+--- Sheet "KHBS" ---
+D7: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:" & IF(Header!V30<>"M", " Quý " & Header!V47," Tháng " & Header!V46) & "/" & Header!V48 &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: Header!C4
+AA16: Header!C5
+CK16: Header!C6
+AA18: Header!C7
+BD18: Header!C8
+CK18: Header!C9
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU47-BB47
+CP48: BU48-BB48
+BL72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
+N74: TRIM(01!U66)
+AA75: TRIM(01!U67)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 290 cell công thức trong file này
+
+=== FILE: 01_GTGT_v2.5.0_mau.xls ===
+--- Sheet "01" ---
+D1: "TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)
+(Dành cho người nộp thuế khai thuế GTGT theo phương pháp khấu trừ)"
+D2: TRIM(M14)
+B3: IF(TRIM(Header!V47)="","Kỳ tính thuế: Tháng "&TRIM(Header!V46)&" năm "&Header!V48,"Kỳ tính thuế: Quý "&TRIM(Header!V47)&" năm "&Header!V48)
+I4: IF(Header!V29="","[X]","")
+K4: IF(Header!V29<>"",Header!V29,"")
+D5: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+D6: TRIM(Header!C3)
+D7: TRIM(Header!V6)
+D8: TRIM(Header!V5)
+J31: J32+J33+J34+J35
+L31: L33+L34
+L33: ROUND(J33*5/100,0)
+L34: ROUND(J34*10/100,0)
+J36: J30+J31
+L36: L31
+L37: L36-L28
+L41: M54
+L43: IF(L37-L24+L39-L40-L41>0,L37-L24+L39-L40-L41,0)
+L45: L43-L44
+L46: IF(L37-L24+L39-L40-L41<0,ABS(L37-L24+L39-L40-L41),0)
+L48: L46-L47
+D50: TRIM(Header!V15)
+K50: TRIM(Header!V41)
+D51: TRIM(Header!V16)
+K51: TRIM(Header!V42)
+K53: IF(Header!V29="",1,"")
+L53: IF(Header!V29<>"",1,"")
+N53: IF(TRIM(Header!V47)="",0,1)
+O53: IF(Header!V29="","",Header!V29)
+M54: ROUND(01_5!I9,0)
+D55: ROUND(01_5!I9,0)
+--- Sheet "01_5" ---
+H3: I9
+I9: SUM(I7:I8)
+--- Sheet "01_6" ---
+G5: G12
+H5: G14
+J5: J10
+L5: J10
+M5: K10
+I8: G8+H8
+J8: ROUND((G8*1/100),0)+ROUND((H8*2/100),0)
+K8: IF(AND($G$5-$J$5<0,$H$5<>0),ROUND($G$5*I8/$H$5,0),0)
+N8: IF(J8<>0,"[15]","[17]")
+O8: IF(J8<>0,J8,K8)
+I9: G9+H9
+J9: (G9*1/100)+(H9*2/100)
+J10: SUM(J7:J9)
+K10: SUM(K7:K9)
+G12: 01!L45
+G14: 01!J36
+I17: IF(G12-J10>0,G12-J10,0)
+I19: IF(G12-J10>0,0,G12-K10)
+--- Sheet "01_7" ---
+H7: ROUND(D7*G7/100*2/100,0)
+H9: SUM(H7:H8)
+--- Sheet "01_1_TD" ---
+I7: IF(F7-H7>0,F7-H7,0)
+F9: SUM(F6:F8)
+H9: SUM(H6:H8)
+I9: SUM(I6:I8)
+--- Sheet "01_2_TD" ---
+(không có cell công thức)
+--- Sheet "01_8" ---
+D5: 01!D6
+D7: 01!D5
+D9: 01!D7
+D11: 01!D8
+F17: ROUND(I17*70/100,1)
+G17: ROUND(D17*(I17-F17)/100,0)
+D19: SUM(D16:D18)
+G19: SUM(G16:G18)
+--- Sheet "01_KHBS" ---
+B3: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:"&IF(Header!V47=""," Tháng "&Header!V46&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4)," Quý "&Header!V47&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4))&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BF17: BJ5
+BG17: BK5
+BH17: BL5
+BF18: BJ6
+BG18: BK6
+BH18: BL6
+BE20: BD5
+BE21: BF5
+BI27: IFERROR(VLOOKUP("42",BE7:BH26,4,0),0)
+BG45: TRIM(01!K50)
+BG46: TRIM(01!K51)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "01_1_KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)="","","  - ")
+S7: " "&IF(TRIM(N2)=""," ",TRIM(N2))&IF(TRIM(O2)=""," ",TRIM(O2))&IF(TRIM(P2)=""," ",TRIM(P2))&" "
+T8: CONCATENATE(1)
+C12: 01!G13
+C13: 01!G13
+C14: 01!G13
+C21: 01!J30
+C22: 01!J32
+C23: 01!J33
+C24: 01!L33
+C25: 01!J34
+C26: 01!L34
+B38: IF(AND(01!L47>01!L46,01!K53=1),"0","1")
+C38: 01!L47
+B39: IF(LEN(01!K51)=0,"0","1")
+C39: 01!K51
+B47: IF(01_6!K10>01_6!G12,"0","1")
+C47: 01_6!K10
+C48: 01_6!F8
+B53: IF(01!L44<=01!L43,"1","0")
+C53: 01!L44
+C56: 01!L28
+B61: IF(AND(LEN(01!D50)>0,LEN(01!D51)=0),"0","1")
+C61: 01!D51
+B86: IF(01_1_TD!I9<>0,IF(01_1_TD!I9<>01_2_TD!U45,"0","1"),"1")
+C86: 01_1_TD!I9
+B87: IF(01_2_TD!U45<>0,IF(01_1_TD!I9<>01_2_TD!U45,"0","1"),"1")
+C87: 01_2_TD!U45
+B90: IF(AND(01!P24<>01!L24,Header!V29=""),"0","1")
+C90: 01!L24
+B91: IF(AND(01!L45<>0,01!L46<>0),0,1)
+C91: 01!L46
+B92: IF(AND(01!L45<>0,01!L48<>0),0,1)
+C92: 01!L48
+B93: IF(OR(B91=0,B92=0),0,1)
+C93: 01!L45
+B100: IF(AND(01!K4<2,01_KHBS!BE27<0),0,1)
+C100: 01_KHBS!BE27
+B101: IF(AND(01!K4>1,01_KHBS!BE27<>0),IF(01_KHBS!BE27<>-01_KHBS!BI27,0,1),1)
+C101: 01_KHBS!BE27
+B102: IF(AND(01!K4=1,01_KHBS!BE27<>-01_KHBS!BI27,01_KHBS!BE27<>0),0,1)
+C102: 01_KHBS!BE27
+A105: 01_7!E7
+B105: IF(TRIM(01_7!E7)="",0,1)
+C105: 01_7!E7
+A106: 01_7!F7
+B106: IF(TRIM(01_7!F7)="",0,1)
+C106: 01_7!F7
+A107: 01_7!E7
+B107: IF(AND(TRIM(01_7!E7)<>"",TRIM(01_7!J7)=""),0,1)
+C107: 01_7!E7
+A108: 01_7!F7
+B108: IF(AND(TRIM(01_7!F7)<>"",TRIM(01_7!J7)=""),0,1)
+C108: 01_7!F7
+=> 138 cell công thức trong file này
+
+=== FILE: 01_GTGT_v2.5.0_mau.xls1 ===
+--- Sheet "01" ---
+P4: TRIM(DL64)
+P5: IF(Header!V30<>"M","[01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48,"[01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+BA8: IF(Header!V29="","[X]","")
+CH8: IF(Header!V29="","",Header!V29)
+AJ12: Header!C3
+AJ14: Header!C2
+AM14: Header!D2
+AP14: Header!E2
+AS14: Header!F2
+AV14: Header!G2
+AY14: Header!H2
+BB14: Header!I2
+BE14: Header!J2
+BH14: Header!K2
+BK14: Header!L2
+BQ14: Header!N2
+BT14: Header!O2
+BW14: Header!P2
+Y16: TRIM(Header!C4)
+Y18: Header!C5
+BT18: Header!C6
+Y20: Header!C7
+BH20: Header!C8
+CO20: Header!C9
+AN22: TRIM(Header!V6)
+AJ24: MID(TRIM(Header!V5),1,1)
+AM24: MID(TRIM(Header!V5),2,1)
+AP24: MID(TRIM(Header!V5),3,1)
+AS24: MID(TRIM(Header!V5),4,1)
+AV24: MID(TRIM(Header!V5),5,1)
+AY24: MID(TRIM(Header!V5),6,1)
+BB24: MID(TRIM(Header!V5),7,1)
+BE24: MID(TRIM(Header!V5),8,1)
+BH24: MID(TRIM(Header!V5),9,1)
+BK24: MID(TRIM(Header!V5),10,1)
+BQ24: MID(TRIM(Header!V5),11,1)
+BT24: MID(TRIM(Header!V5),12,1)
+BW24: MID(TRIM(Header!V5),13,1)
+Y26: TRIM(Header!V7)
+Y28: TRIM(Header!V8)
+BT28: TRIM(Header!V9)
+Y30: TRIM(Header!V10)
+BH30: TRIM(Header!V11)
+CO30: TRIM(Header!V12)
+AG32: TRIM(Header!V13)
+BH32: TRIM(Header!V14)
+CT46: BW46*0.05
+CT47: BW47*0.1
+BV65: "  Ngày "&MID(TRIM(C64),1,2)&" tháng "&MID(TRIM(C64),4,2)&" năm "&MID(TRIM(C64),7,4)
+--- Sheet "01_5" ---
+C3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+C4: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày "&MID(TRIM(01!C64),1,2)&" tháng "&MID(TRIM(01!C64),4,2)&" năm "&MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+W27: "   "&TRIM(01!BV68)
+--- Sheet "01_6" ---
+B3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+I4: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+F5: Header!C3
+F7: Header!C2
+G7: Header!D2
+H7: Header!E2
+I7: Header!F2
+J7: Header!G2
+K7: Header!H2
+L7: Header!I2
+M7: Header!J2
+N7: Header!K2
+O7: Header!L2
+Q7: Header!N2
+R7: Header!O2
+S7: Header!P2
+F9: TRIM(Header!V6)
+F11: MID(TRIM(Header!V5),1,1)
+G11: MID(TRIM(Header!V5),2,1)
+H11: MID(TRIM(Header!V5),3,1)
+I11: MID(TRIM(Header!V5),4,1)
+J11: MID(TRIM(Header!V5),5,1)
+K11: MID(TRIM(Header!V5),6,1)
+L11: MID(TRIM(Header!V5),7,1)
+M11: MID(TRIM(Header!V5),8,1)
+N11: MID(TRIM(Header!V5),9,1)
+O11: MID(TRIM(Header!V5),10,1)
+Q11: MID(TRIM(Header!V5),11,1)
+R11: MID(TRIM(Header!V5),12,1)
+S11: MID(TRIM(Header!V5),13,1)
+K13: U26
+U15: U28
+B22: B21+1
+W22: U22+V22
+X24: SUM(X21:X23)
+Y24: SUM(Y21:Y23)
+U26: 01!CT58
+U28: 01!BW49
+W31: U26-X24
+W33: U26-Y24
+V35: "      Ngày "&MID(TRIM(01!C64),1,2)&" tháng "&MID(TRIM(01!C64),4,2)&" năm "&MID(TRIM(01!C64),7,4)
+H36: 01!U66
+H38: 01!U67
+V40: "        "&TRIM(01!BV68)
+--- Sheet "01_7" ---
+G3: "(Kèm theo Tờ khai thuế giá trị gia tăng mẫu số 01/GTGT)"
+G4: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày "&MID(TRIM(01!C64),1,2)&" tháng "&MID(TRIM(01!C64),4,2)&" năm "&MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+U27: "   "&TRIM(01!BV68)
+--- Sheet "01_1_TD" ---
+H4: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+Q18: IF(SUM(Q15:Q17)<>0,SUM(Q15:Q17),"")
+V18: IF(SUM(V15:V17)<>0,SUM(V15:V17),"")
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+R20: "   Ngày "&MID(TRIM(01!C64),1,2)&" tháng "&MID(TRIM(01!C64),4,2)&" năm "&MID(TRIM(01!C64),7,4)
+J22: TRIM(01!U66)
+J23: TRIM(01!U67)
+R27: TRIM(01!BV68)
+--- Sheet "01_2_TD" ---
+K7: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+H9: TRIM(Header!C3)
+F10: Header!C2
+G10: Header!D2
+H10: Header!E2
+I10: Header!F2
+J10: Header!G2
+K10: Header!H2
+L10: Header!I2
+M10: Header!J2
+N10: Header!K2
+O10: Header!L2
+P10: Header!M2
+Q10: Header!N2
+R10: Header!O2
+S10: Header!P2
+H11: TRIM(Header!V6)
+F12: MID(TRIM(Header!V5),1,1)
+G12: MID(TRIM(Header!V5),2,1)
+H12: MID(TRIM(Header!V5),3,1)
+I12: MID(TRIM(Header!V5),4,1)
+J12: MID(TRIM(Header!V5),5,1)
+K12: MID(TRIM(Header!V5),6,1)
+L12: MID(TRIM(Header!V5),7,1)
+M12: MID(TRIM(Header!V5),8,1)
+N12: MID(TRIM(Header!V5),9,1)
+O12: MID(TRIM(Header!V5),10,1)
+P12: TRIM(Header!M2)
+Q12: MID(TRIM(Header!V5),11,1)
+R12: MID(TRIM(Header!V5),12,1)
+S12: MID(TRIM(Header!V5),13,1)
+R53: TRIM(01!BV65)
+E55: TRIM(01!U66)
+G56: TRIM(01!U67)
+R58: TRIM(01!BV68)
+--- Sheet "01_8" ---
+C3: "(Kèm theo Tờ khai thuế GTGT kỳ tính thuế )"
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+R21: 01!BV65
+J23: 01!U66
+J24: 01!U67
+R28: 01!BV68
+--- Sheet "01_KHBS" ---
+D7: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:"&IF(Header!V30<>"M"," Quý "&Header!V47," Tháng "&Header!V46)&"/"&Header!V48&"  ngày "&MID(E70,1,2)&" tháng "&MID(E70,4,2)&" năm "&MID(E70,7,4)&")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: Header!C4
+AA16: Header!C5
+CK16: Header!C6
+AA18: Header!C7
+BD18: Header!C8
+CK18: Header!C9
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU47-BB47
+CP48: BU48-BB48
+BL72: "Ngày "&MID(TRIM(C70),1,2)&" tháng "&MID(TRIM(C70),4,2)&" năm "&MID(TRIM(C70),7,4)
+N74: TRIM(01!U66)
+AA75: TRIM(01!U67)
+--- Sheet "01_1_KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 324 cell công thức trong file này
+
+=== FILE: 01_GTGT_v2.6.2_mau.xls ===
+--- Sheet "01" ---
+D1: "TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)
+(Dành cho người nộp thuế khai thuế GTGT theo phương pháp khấu trừ)"
+D2: TRIM(M14)
+B3: IF(TRIM(Header!V47)="","Kỳ tính thuế: Tháng "&TRIM(Header!V46)&" năm "&Header!V48,"Kỳ tính thuế: Quý "&TRIM(Header!V47)&" năm "&Header!V48)
+I4: IF(Header!V29="","[X]","")
+K4: IF(Header!V29<>"",Header!V29,"")
+D5: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+D6: TRIM(Header!C3)
+D7: TRIM(Header!V6)
+D8: TRIM(Header!V5)
+J31: J32+J33+J34+J35
+L31: L33+L34
+L33: ROUND(J33*5/100,0)
+L34: ROUND(J34*10/100,0)
+J36: J30+J31
+L36: L31
+L37: L36-L28
+L41: M54
+L43: IF(L37-L24+L39-L40-L41>0,L37-L24+L39-L40-L41,0)
+L45: L43-L44
+L46: IF(L37-L24+L39-L40-L41<0,ABS(L37-L24+L39-L40-L41),0)
+L48: L46-L47
+D50: TRIM(Header!V15)
+K50: TRIM(Header!V41)
+D51: TRIM(Header!V16)
+K51: TRIM(Header!V42)
+K53: IF(Header!V29="",1,"")
+L53: IF(Header!V29<>"",1,"")
+N53: IF(TRIM(Header!V47)="",0,1)
+O53: IF(Header!V29="","",Header!V29)
+M54: ROUND(01_5!I9,0)
+D55: ROUND(01_5!I9,0)
+--- Sheet "01_5" ---
+H3: I9
+I9: SUM(I7:I8)
+--- Sheet "01_6" ---
+M2: SUM(I7:I9)
+G5: G12
+H5: G14
+J5: J10
+L5: J10
+M5: K10
+V5: SUM(V7:V9)
+W5: SUM(W7:W9)
+I8: G8+H8
+N8: IF(J8<>0,"[15]","[17]")
+O8: IF(J8<>0,J8,K8)
+V8: ROUND((G8*1/100),0)+ROUND((H8*2/100),0)
+W8: IF($H$5<>0,ROUND($G$5*I8/$H$5,0),0)
+I9: G9+H9
+J9: (G9*1/100)+(H9*2/100)
+J10: SUM(J7:J9)
+K10: SUM(K7:K9)
+G12: 01!L45
+I17: IF(G12>=V5,G12-J10,0)
+I19: IF(G12>=V5,0,G12-K10)
+--- Sheet "01_7" ---
+H7: ROUND(D7*G7/100*2/100,0)
+H9: SUM(H7:H8)
+--- Sheet "01_1_TD" ---
+I7: IF(F7-H7>0,F7-H7,0)
+F9: SUM(F6:F8)
+H9: SUM(H6:H8)
+I9: SUM(I6:I8)
+--- Sheet "01_2_TD" ---
+AK4: Header!V43
+--- Sheet "01_8" ---
+D5: 01!D6
+D7: 01!D5
+D9: 01!D7
+D11: 01!D8
+F17: ROUND(I17*70/100,1)
+G17: ROUND(D17*(I17-F17)/100,0)
+D19: SUM(D16:D18)
+G19: SUM(G16:G18)
+--- Sheet "01_KHBS" ---
+B3: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:"&IF(Header!V47=""," Tháng "&Header!V46&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4)," Quý "&Header!V47&"/"&Header!V48&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4))&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BF17: BJ5
+BG17: BK5
+BH17: BL5
+BF18: BJ6
+BG18: BK6
+BH18: BL6
+BE20: BD5
+BE21: BF5
+BI27: IFERROR(VLOOKUP("42",BE7:BH26,4,0),0)
+BG45: TRIM(01!K50)
+BG46: TRIM(01!K51)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "01_1_KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)="","","  - ")
+S7: " "&IF(TRIM(N2)=""," ",TRIM(N2))&IF(TRIM(O2)=""," ",TRIM(O2))&IF(TRIM(P2)=""," ",TRIM(P2))&" "
+T8: CONCATENATE(1)
+C12: 01!G13
+C13: 01!G13
+C14: 01!G13
+C21: 01!J30
+C22: 01!J32
+C23: 01!J33
+C24: 01!L33
+C25: 01!J34
+C26: 01!L34
+B38: IF(AND(01!L47>01!L46,01!K53=1),"0","1")
+C38: 01!L47
+B39: IF(LEN(01!K51)=0,"0","1")
+C39: 01!K51
+B47: IF(01_6!K10>01_6!G12,"0","1")
+C47: 01_6!K10
+C48: 01_6!F8
+B53: IF(01!L44<=01!L43,"1","0")
+C53: 01!L44
+C56: 01!L28
+B61: IF(AND(LEN(01!D50)>0,LEN(01!D51)=0),"0","1")
+C61: 01!D51
+A86: 01_2_TD!U45
+B86: IF(AND(01!N14="00",01!Q5=0,01!R5=1,01_2_TD!U45<>0),0,1)
+C86: 01_2_TD!U45
+A87: 01_2_TD!U45
+B87: IF(AND(01!Q5=1,01_2_TD!U45<>0),IF(AND(01!N14="00",01_1_TD!I9<>01_2_TD!U45),"0","1"),"1")
+C87: 01_2_TD!U45
+B90: IF(AND(01!P24<>01!L24,Header!V29=""),"0","1")
+C90: 01!L24
+B91: IF(AND(01!L45<>0,01!L46<>0),0,1)
+C91: 01!L46
+B92: IF(AND(01!L45<>0,01!L48<>0),0,1)
+C92: 01!L48
+B93: IF(OR(B91=0,B92=0),0,1)
+C93: 01!L45
+B100: IF(AND(01!K4<2,01_KHBS!BE27<0),0,1)
+C100: 01_KHBS!BE27
+B101: IF(AND(01!K4>1,01_KHBS!BE27<>0),IF(01_KHBS!BE27<>-01_KHBS!BI27,0,1),1)
+C101: 01_KHBS!BE27
+B102: IF(AND(01!K4=1,01_KHBS!BE27<>-01_KHBS!BI27,01_KHBS!BE27<>0),0,1)
+C102: 01_KHBS!BE27
+A105: 01_7!E7
+B105: IF(TRIM(01_7!E7)="",0,1)
+C105: 01_7!E7
+A106: 01_7!F7
+B106: IF(TRIM(01_7!F7)="",0,1)
+C106: 01_7!F7
+A107: 01_7!E7
+B107: IF(AND(TRIM(01_7!E7)<>"",TRIM(01_7!J7)=""),0,1)
+C107: 01_7!E7
+A108: 01_7!F7
+B108: IF(AND(TRIM(01_7!F7)<>"",TRIM(01_7!J7)=""),0,1)
+C108: 01_7!F7
+A109: 01_6!G14
+B109: IF(01_6!G14>01!J31,0,1)
+C109: 01_6!G14
+A110: 01!L28
+B110: IF(AND(V46<>12,V47<>4,01!L28>01!L27),0,1)
+C110: 01!L28
+A111: 01!L33
+B111: IF(AND(01!L33>01!J33,01!J33>=0),0,1)
+C111: 01!L33
+A112: 01!L34
+B112: IF(AND(01!L34>01!J34,01!J34>=0),0,1)
+C112: 01!L34
+A114: 01_6!G14
+B114: IF(01_6!M2<>01_6!G14,0,1)
+C114: 01_6!G14
+=> 158 cell công thức trong file này
+
+=== FILE: 01_GTGT_v2.6.2_mau.xls1 ===
+--- Sheet "01" ---
+P4: TRIM(DL64)
+P5: IF(Header!V30<>"M","[01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48,"[01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+BA8: IF(Header!V29="","[X]","")
+CH8: IF(Header!V29="","",Header!V29)
+AJ12: Header!C3
+AJ14: Header!C2
+AM14: Header!D2
+AP14: Header!E2
+AS14: Header!F2
+AV14: Header!G2
+AY14: Header!H2
+BB14: Header!I2
+BE14: Header!J2
+BH14: Header!K2
+BK14: Header!L2
+BQ14: Header!N2
+BT14: Header!O2
+BW14: Header!P2
+Y16: TRIM(Header!C4)
+Y18: Header!C5
+BT18: Header!C6
+Y20: Header!C7
+BH20: Header!C8
+CO20: Header!C9
+AN22: TRIM(Header!V6)
+AJ24: MID(TRIM(Header!V5),1,1)
+AM24: MID(TRIM(Header!V5),2,1)
+AP24: MID(TRIM(Header!V5),3,1)
+AS24: MID(TRIM(Header!V5),4,1)
+AV24: MID(TRIM(Header!V5),5,1)
+AY24: MID(TRIM(Header!V5),6,1)
+BB24: MID(TRIM(Header!V5),7,1)
+BE24: MID(TRIM(Header!V5),8,1)
+BH24: MID(TRIM(Header!V5),9,1)
+BK24: MID(TRIM(Header!V5),10,1)
+BQ24: MID(TRIM(Header!V5),11,1)
+BT24: MID(TRIM(Header!V5),12,1)
+BW24: MID(TRIM(Header!V5),13,1)
+Y26: TRIM(Header!V7)
+Y28: TRIM(Header!V8)
+BT28: TRIM(Header!V9)
+Y30: TRIM(Header!V10)
+BH30: TRIM(Header!V11)
+CO30: TRIM(Header!V12)
+AG32: TRIM(Header!V13)
+BH32: TRIM(Header!V14)
+CT46: BW46*0.05
+CT47: BW47*0.1
+BV65: "  Ngày "&MID(TRIM(C64),1,2)&" tháng "&MID(TRIM(C64),4,2)&" năm "&MID(TRIM(C64),7,4)
+--- Sheet "01_5" ---
+C3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+C4: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày "&MID(TRIM(01!C64),1,2)&" tháng "&MID(TRIM(01!C64),4,2)&" năm "&MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+W27: "   "&TRIM(01!BV68)
+--- Sheet "01_6" ---
+B3: "(Kèm theo tờ khai thuế GTGT theo mẫu 01/GTGT )"
+I4: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+F5: Header!C3
+F7: Header!C2
+G7: Header!D2
+H7: Header!E2
+I7: Header!F2
+J7: Header!G2
+K7: Header!H2
+L7: Header!I2
+M7: Header!J2
+N7: Header!K2
+O7: Header!L2
+Q7: Header!N2
+R7: Header!O2
+S7: Header!P2
+F9: TRIM(Header!V6)
+F11: MID(TRIM(Header!V5),1,1)
+G11: MID(TRIM(Header!V5),2,1)
+H11: MID(TRIM(Header!V5),3,1)
+I11: MID(TRIM(Header!V5),4,1)
+J11: MID(TRIM(Header!V5),5,1)
+K11: MID(TRIM(Header!V5),6,1)
+L11: MID(TRIM(Header!V5),7,1)
+M11: MID(TRIM(Header!V5),8,1)
+N11: MID(TRIM(Header!V5),9,1)
+O11: MID(TRIM(Header!V5),10,1)
+Q11: MID(TRIM(Header!V5),11,1)
+R11: MID(TRIM(Header!V5),12,1)
+S11: MID(TRIM(Header!V5),13,1)
+K13: U26
+U15: U28
+B22: B21+1
+W22: U22+V22
+X24: SUM(X21:X23)
+Y24: SUM(Y21:Y23)
+U26: 01!CT58
+U28: 01!BW49
+W31: U26-X24
+W33: U26-Y24
+V35: "      Ngày "&MID(TRIM(01!C64),1,2)&" tháng "&MID(TRIM(01!C64),4,2)&" năm "&MID(TRIM(01!C64),7,4)
+H36: 01!U66
+H38: 01!U67
+V40: "        "&TRIM(01!BV68)
+--- Sheet "01_7" ---
+G3: "(Kèm theo Tờ khai thuế giá trị gia tăng mẫu số 01/GTGT)"
+G4: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+T20: " Ngày "&MID(TRIM(01!C64),1,2)&" tháng "&MID(TRIM(01!C64),4,2)&" năm "&MID(TRIM(01!C64),7,4)
+J22: 01!U66
+J23: 01!U67
+U27: "   "&TRIM(01!BV68)
+--- Sheet "01_1_TD" ---
+H4: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+Q18: IF(SUM(Q15:Q17)<>0,SUM(Q15:Q17),"")
+V18: IF(SUM(V15:V17)<>0,SUM(V15:V17),"")
+AG18: IF(SUM(AG15:AG17)<>0,SUM(AG15:AG17),"")
+R20: "   Ngày "&MID(TRIM(01!C64),1,2)&" tháng "&MID(TRIM(01!C64),4,2)&" năm "&MID(TRIM(01!C64),7,4)
+J22: TRIM(01!U66)
+J23: TRIM(01!U67)
+R27: TRIM(01!BV68)
+--- Sheet "01_2_TD" ---
+K7: IF(Header!V30<>"M"," [01] Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48," [01] Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48)
+H9: TRIM(Header!C3)
+F10: Header!C2
+G10: Header!D2
+H10: Header!E2
+I10: Header!F2
+J10: Header!G2
+K10: Header!H2
+L10: Header!I2
+M10: Header!J2
+N10: Header!K2
+O10: Header!L2
+P10: Header!M2
+Q10: Header!N2
+R10: Header!O2
+S10: Header!P2
+H11: TRIM(Header!V6)
+F12: MID(TRIM(Header!V5),1,1)
+G12: MID(TRIM(Header!V5),2,1)
+H12: MID(TRIM(Header!V5),3,1)
+I12: MID(TRIM(Header!V5),4,1)
+J12: MID(TRIM(Header!V5),5,1)
+K12: MID(TRIM(Header!V5),6,1)
+L12: MID(TRIM(Header!V5),7,1)
+M12: MID(TRIM(Header!V5),8,1)
+N12: MID(TRIM(Header!V5),9,1)
+O12: MID(TRIM(Header!V5),10,1)
+P12: TRIM(Header!M2)
+Q12: MID(TRIM(Header!V5),11,1)
+R12: MID(TRIM(Header!V5),12,1)
+S12: MID(TRIM(Header!V5),13,1)
+R53: TRIM(01!BV65)
+E55: TRIM(01!U66)
+G56: TRIM(01!U67)
+R58: TRIM(01!BV68)
+--- Sheet "01_8" ---
+C3: "(Kèm theo Tờ khai thuế GTGT kỳ tính thuế )"
+I6: Header!C3
+I8: Header!C2
+J8: Header!D2
+K8: Header!E2
+L8: Header!F2
+M8: Header!G2
+N8: Header!H2
+O8: Header!I2
+P8: Header!J2
+Q8: Header!K2
+R8: Header!L2
+T8: Header!N2
+U8: Header!O2
+V8: Header!P2
+I10: TRIM(Header!V6)
+I11: MID(TRIM(Header!V5),1,1)
+J11: MID(TRIM(Header!V5),2,1)
+K11: MID(TRIM(Header!V5),3,1)
+L11: MID(TRIM(Header!V5),4,1)
+M11: MID(TRIM(Header!V5),5,1)
+N11: MID(TRIM(Header!V5),6,1)
+O11: MID(TRIM(Header!V5),7,1)
+P11: MID(TRIM(Header!V5),8,1)
+Q11: MID(TRIM(Header!V5),9,1)
+R11: MID(TRIM(Header!V5),10,1)
+T11: MID(TRIM(Header!V5),11,1)
+U11: MID(TRIM(Header!V5),12,1)
+V11: MID(TRIM(Header!V5),13,1)
+C16: C15+1
+R21: 01!BV65
+J23: 01!U66
+J24: 01!U67
+R28: 01!BV68
+--- Sheet "01_KHBS" ---
+D7: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:"&IF(Header!V30<>"M"," Quý "&Header!V47," Tháng "&Header!V46)&"/"&Header!V48&"  ngày "&MID(E70,1,2)&" tháng "&MID(E70,4,2)&" năm "&MID(E70,7,4)&")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: Header!C4
+AA16: Header!C5
+CK16: Header!C6
+AA18: Header!C7
+BD18: Header!C8
+CK18: Header!C9
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU47-BB47
+CP48: BU48-BB48
+BL72: "Ngày "&MID(TRIM(C70),1,2)&" tháng "&MID(TRIM(C70),4,2)&" năm "&MID(TRIM(C70),7,4)
+N74: TRIM(01!U66)
+AA75: TRIM(01!U67)
+--- Sheet "01_1_KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 324 cell công thức trong file này
+
+=== FILE: bang_ke_01_giamthue_gtgt_23_ ===
+--- Sheet "Bang ke" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+(không có cell công thức)
+=> 0 cell công thức trong file này
+
+=== FILE: bang_ke_01_giamthue_gtgt_23_1 ===
+--- Sheet "Bang ke" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+(không có cell công thức)
+--- Sheet "DATA" ---
+(không có cell công thức)
+=> 0 cell công thức trong file này
+
+=== FILE: bang_ke_01_giamthue_gtgt_23_2 ===
+--- Sheet "Bang ke" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+(không có cell công thức)
+=> 0 cell công thức trong file này
+
+=== FILE: bang_ke_01_giamthue_gtgt_nq1 ===
+--- Sheet "Bang ke" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+(không có cell công thức)
+--- Sheet "DATA" ---
+(không có cell công thức)
+=> 0 cell công thức trong file này
+
+=== FILE: bang_ke_01_giamthue_gtgt_nq11 ===
+--- Sheet "Bang ke" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+(không có cell công thức)
+=> 0 cell công thức trong file này
+
+=== FILE: bang_ke_01_giamthue_gtgt_nq12 ===
+--- Sheet "Bang ke" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+(không có cell công thức)
+=> 0 cell công thức trong file này
+
+
+TỔNG CỘNG: 2164 cell công thức trong 16 file

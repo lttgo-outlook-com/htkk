@@ -1,0 +1,98 @@
+CÔNG THỨC TÍNH (human-readable) — Tờ khai 01/TBAC-BLP — phát hành biên lai (ban hành kèm TT 303/2016/TT-BTC)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Folder có 1 phiên bản 01_TBAC_BLP_v2.0.0_mau.xls + .xls1 (bản có dữ liệu). 3 sheet mỗi file: 01 (tờ khai chính), KKBS (KHÔNG PHẢI KHBS ở form này), Header. Đây là tờ khai phát hành biên lai: công thức gồm đếm số tờ, cờ kiểm tra và prefill/nối chuỗi.
+
+## File 01_TBAC_BLP_v2.0.0_mau.xls (template)
+
+### Sheet "01" (tờ khai chính)
+- [J4] "1. Tên đơn vị phát hành Biên lai" = Header!C3; [J7] "2. Mã số thuế (nếu có)" = nối 13 ký tự Header!C2..P2 kiểu IF(ISBLANK," ",TRIM)
+- Cờ kiểm tra: [AH35] "cbo | Kiểm tra từ số" = IF(P35=0, 1, 0); [AI35] "cbo | kiểm tra đến số" = IF(R35=0, 1, 0); [AK35] "cbo | Kiểm tra số lượng" = IF(N35<=0, 1, 0)
+- [N35] "5" (số lượng) = IF(AND(ISBLANK(P35),ISBLANK(R35)), 0, IF(AND(ISBLANK(P35),ISBLANK(R35)=FALSE), VALUE(R35)-VALUE(P35), VALUE(R35)-VALUE(P35)+1)) (đếm số tờ trong khoảng từ/đến, +1 nếu cả hai đều có)
+- [AN35] "cbo | Số .. Ngày" = CONCATENATE(W35, IF(AA35<>""," - ",""), AA35)
+- Không có nhãn lân cận: [AA26] = AA46, [AH46] = AA46, [AH48] = AA48 (kéo giá trị từ dòng tổng/ký tên lên)
+- [AA48] "Thủ trưởng đơn vị" = TRIM(Header!V41)
+
+### Sheet "KKBS"
+- [B6] STT = B5+1; [G6] = F6−E6; [E8, F8, G8] "Tổng cộng" = SUM(E5:E7)/SUM(F5:F7)/SUM(G5:G7)
+
+### Sheet "Header"
+- [M2] = IF(TRIM(N2&O2&P2)=""," "," - ") (phân cách " - " cho nhóm ký tự MST 12 số); [T8] = CONCATENATE(1); [M11] = IF(TRIM(N11&O11&P11)=""," "," - ")
+- Cờ: [B37] = 1 nếu 01!K44 khác rỗng (OR("", ISBLANK)); [C37] = 01!K44
+
+## File 01_TBAC_BLP_v2.0.0_mau.xls1 (bản có dữ liệu)
+
+### Sheet "01"
+- [B7] = "1. Tên đơn vị phát hành Biên lai: "&TRIM(Header!C3); [B10] = "2. Mã số thuế (nếu có): "&nối 13 ký tự IF(ISBLANK,"",TRIM)(C2..P2)
+- [B13] = "3. Địa chỉ trụ sở: "&TRIM(C4)&" - "&TRIM(C5)&" - "&TRIM(C6); [B16] = "4. Số điện thoại: "&TRIM(C7)
+- [B38] STT = B37+1
+- [E43] "- Tên đơn vị" = I49; [E45] "- Mã số thuế" = I51; [I49] = IF(REPLACE(TRIM(E7),11,1,"")=TRIM(E51)," ",TRIM(E49)); [I51] = IF(REPLACE(TRIM(E7),11,1,"")=TRIM(E51)," ",TRIM(E51)) (bỏ dòng trùng dòng trên — so 11 ký tự)
+- [X54] "  Ngày ..." = "  Ngày "&MID(TRIM(Z49),1,2)&"  tháng "&MID(TRIM(Z49),4,2)&"  năm "&MID(TRIM(Z49),7,4)
+
+### Sheet "KKBS"
+- [B6] STT = B5+1; [G6] = F6−E6; [E8, F8, G8] "Tổng cộng" = SUM(E5:E7)/SUM(F5:F7)/SUM(G5:G7)
+
+### Sheet "Header"
+- [M2] = IF(TRIM(N2&O2&P2)=""," "," - "); [T8] = CONCATENATE(1); [M11] = IF(TRIM(N11&O11&P11)=""," "," - ") (KHÔNG có bộ cờ B37/C37 như template)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_TBAC_BLP
+Thư mục: 16_BIEN_LAI/01_TBAC_BLP (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_TBAC_BLP_v2.0.0_mau.xls ===
+--- Sheet "01" ---
+J4: Header!C3
+J7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&TRIM(Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+AA26: AA46
+N35: IF(AND(ISBLANK(P35),ISBLANK(R35)),0,IF(AND(ISBLANK(P35),ISBLANK(R35)=FALSE),VALUE(R35)-VALUE(P35),VALUE(R35)-VALUE(P35)+1))
+AH35: IF(P35=0,1,0)
+AI35: IF(R35=0,1,0)
+AK35: IF(N35<=0,1,0)
+AN35: CONCATENATE(W35,IF(AA35<>""," - ",""),AA35)
+AH46: AA46
+AA48: TRIM(Header!V41)
+AH48: AA48
+--- Sheet "KKBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+M11: IF(TRIM(N11&O11&P11)=""," "," - ")
+B37: IF(OR(01!K44="", ISBLANK(01!K44)), 0, 1)
+C37: 01!K44
+=> 21 cell công thức trong file này
+
+=== FILE: 01_TBAC_BLP_v2.0.0_mau.xls1 ===
+--- Sheet "01" ---
+B7: "1. Tên đơn vị phát hành Biên lai: "&TRIM(Header!C3)
+B10: "2. Mã số thuế (nếu có): "&TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&(IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&(IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&(IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&(IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&(IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&(IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&(IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&(IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&(IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&(IF(ISBLANK(Header!M2),"",TRIM(Header!M2))&(IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&(IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&(IF(ISBLANK(Header!P2),"",TRIM(Header!P2))))))))))))))))
+B13: "3. Địa chỉ trụ sở: "&TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
+B16: "4. Số điện thoại: "&TRIM(Header!C7)
+B38: B37+1
+E43: I49
+E45: I51
+I49: IF(REPLACE(TRIM(E7),11,1,"")=TRIM(E51)," ",TRIM(E49))
+I51: IF(REPLACE(TRIM(E7),11,1,"")=TRIM(E51)," ",TRIM(E51))
+X54: "  Ngày  "& MID(TRIM(Z49),1,2)& "  tháng  "&MID(TRIM(Z49),4,2)&"  năm  "&MID(TRIM(Z49),7,4)
+--- Sheet "KKBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+M11: IF(TRIM(N11&O11&P11)=""," "," - ")
+=> 18 cell công thức trong file này
+
+
+TỔNG CỘNG: 39 cell công thức trong 2 file

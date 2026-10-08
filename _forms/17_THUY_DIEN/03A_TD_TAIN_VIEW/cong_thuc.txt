@@ -1,0 +1,121 @@
+CÔNG THỨC TÍNH (human-readable) — 03A_TD_TAIN_VIEW (Tờ khai thuế TÀI NGUYÊN 03A/TĐ-TAIN theo năm, nhóm Thu viện)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Một file 03A_TD_TAIN_VIEW_v2.0.5_mau, có sheet "03" (tờ khai), "03-1" (bảng phụ), "KHBS", "Header".
+
+### Sheet "03" (tờ khai chính)
+- [I6] [01] Kỳ tính thuế: "Năm <V48>"
+- [K7] Lần đầu = "[X]" nếu Header!V29 trống; [P7] Bổ sung lần thứ = V29
+- [F8] Tên người nộp thuế = TRIM(C3); [F9] MST = nối 13 ô từ Header (ô trống để " ")
+- [G10..T12] Địa chỉ/quận/tỉnh/điện thoại/fax/email = C4..C9
+- [F13] Tên đại lý thuế (nếu có) = TRIM(V6); [F14] MST đại lý = TRIM(V5)
+- [G15..T17] Địa chỉ/liên hệ đại lý = V7..V12; [M18] Số hợp đồng = TRIM(V13); [T18] Ngày hợp đồng = TRIM(V14)
+- [C27] Cờ "Chính thức" = "1" nếu V29 trống; [G27] Cờ "Bổ sung" = "1" nếu V29 có giá trị; [J27] Số lần = TRIM(V29)
+- [M27] Từ tháng = TRIM(V34); [N27] Đến tháng = TRIM(V35)
+- [O37]/[O46] Cột O = SUM(O43:O45); [R37]/[R46] = SUM(R43:R45); [V37]/[V46] = SUM(V43:V45); [W37]/[W46] = SUM(W43:W45); [X37]/[X46] = SUM(X43:X45) (tổng 3 dòng chi tiết ở 2 khối)
+- [O44] [27] = [25] × [26] × [22] = ROUND(I44 × K44 × $E$25 / 100, 0) — sản lượng × thuế suất × thuế suất chung E25
+- [V44] [29] = [27] − [28] = nếu (O44 − R44 < 0) thì 0, khác thì O44 − R44 (không âm)
+- [X44] [31] = [29] − [30] = V44 − W44
+- [R58] "Ngày <MID S56> tháng … năm …"
+- [G61] Họ và tên = TRIM(V15); [P61] Người ký = TRIM(V41); [G63] Chứng chỉ = TRIM(V16); [P63] Ngày ký = TRIM(V42)
+
+### Sheet "03-1" (bảng phụ)
+- [U35] = U45 (lấy ô bên dưới)
+- [AB43] = nếu G43 = 1 thì 0, khác thì R43 (ô R43 = 1 làm tắt công thức)
+- [AI43] = G43
+- [AB45] = SUM(AB41:AB44)
+
+### Sheet "KHBS" (bảng khấu trừ)
+- [B3] "Tờ khai thuế tài nguyên mẫu số 03A/TĐ-TAIN kỳ tính thuế: Năm <V48> ngày <MID BG5>)" — lưu ý công thức dùng MID(BG5) 3 lần (ngày/tháng/năm đều lấy từ BG5, đặc thù template)
+- [BF5] = ROUND(BH15 × BE20 × 0,05 / 100, 0)
+- [B9] STT I. = B8 + 1; [B13] II. = B12 + 1; [B17] III. = B16 + 1
+- [BH17] Số thuế = BI5; [BE20] Số ngày nộp chậm = BD5
+- [BE21] Số tiền chậm nộp = nếu ((BH17 × BE20 × 0,05/100) > 0) thì ROUND(..., 0), khác thì 0
+- [BG45] Người ký = TRIM(03!P61); [BG46] Ngày ký = TRIM(03!P63)
+- [B47] = BG5; [BD47] Tổng I = SUM(BH8:BH10); [BF47] Tổng II = SUM(BH12:BH14)
+
+### Sheet "Header"
+- [M2] ký hiệu MST (3 ô N2..P2 trống → " ", khác → " - "); [T8] "nguoi ky" = CONCATENATE(1)
+- [B18] Cờ "trùng khớp bảng phụ" = "0" nếu '03-1'!U35 ≠ 03!V37, khác thì "1"
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 03A_TD_TAIN_VIEW
+Thư mục: 17_THUY_DIEN/03A_TD_TAIN_VIEW (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 03A_TD_TAIN_VIEW_v2.0.5_mau.xls ===
+--- Sheet "03" ---
+I6: "Kỳ tính thuế: Năm "&Header!V48
+K7: IF(Header!V29="","[X]","")
+P7: IF(Header!V29="","",Header!V29)
+F8: TRIM(Header!C3)
+F9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G10: TRIM(Header!C4)
+G11: TRIM(Header!C5)
+Q11: TRIM(Header!C6)
+G12: TRIM(Header!C7)
+N12: TRIM(Header!C8)
+T12: TRIM(Header!C9)
+F13: TRIM(Header!V6)
+F14: TRIM(Header!V5)
+G15: TRIM(Header!V7)
+G16: TRIM(Header!V8)
+Q16: TRIM(Header!V9)
+G17: TRIM(Header!V10)
+N17: TRIM(Header!V11)
+T17: TRIM(Header!V12)
+M18: TRIM(Header!V13)
+T18: TRIM(Header!V14)
+C27: IF(Header!V29="","1","")
+G27: IF(Header!V29="","","1")
+J27: TRIM(Header!V29)
+M27: TRIM(Header!V34)
+N27: TRIM(Header!V35)
+O37: SUM(O43:O45)
+R37: SUM(R43:R45)
+V37: SUM(V43:V45)
+W37: SUM(W43:W45)
+X37: SUM(X43:X45)
+O44: ROUND(I44*K44*$E$25/100,0)
+V44: IF(O44-R44<0,0,O44-R44)
+X44: V44-W44
+O46: SUM(O43:O45)
+R46: SUM(R43:R45)
+V46: SUM(V43:V45)
+W46: SUM(W43:W45)
+X46: SUM(X43:X45)
+R58: "Ngày "&MID(TRIM(S56),1,2)&" tháng "&MID(TRIM(S56),4,2)&" năm "&MID(TRIM(S56),7,4)
+G61: TRIM(Header!V15)
+P61: TRIM(Header!V41)
+G63: TRIM(Header!V16)
+P63: TRIM(Header!V42)
+--- Sheet "03-1" ---
+U35: U45
+AB43: IF(G43=1,0,R43)
+AI43: G43
+AB45: SUM(AB41:AB44)
+--- Sheet "KHBS" ---
+B3: "Tờ khai thuế tài nguyên mẫu số 03A/TĐ-TAIN kỳ tính thuế: Năm "&Header!V48&" ngày  "&MID(BG5,1,2)&" tháng "&MID(BG5,4,2)&" năm "&MID(BG5,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BH17: BI5
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: TRIM(03!P61)
+BG46: TRIM(03!P63)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B18: IF('03-1'!U35<>03!V37,"0","1")
+=> 64 cell công thức trong file này
+
+
+TỔNG CỘNG: 64 cell công thức trong 1 file

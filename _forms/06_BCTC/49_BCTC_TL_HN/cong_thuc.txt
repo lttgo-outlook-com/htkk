@@ -1,0 +1,226 @@
+CÔNG THỨC TÍNH (human-readable) — Báo cáo tài chính hợp nhất, Dạng tóm lược (quý) — 49_BCTC_TL_HN
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Folder có 1 phiên bản 49_BCTC_TL_HN_v2.2.6_mau.xls + .xls1 (bản có dữ liệu). 5 sheet mỗi file: 01 (bảng cân đối kế toán — dạng tóm lược), 01-1 (báo cáo kết quả hoạt động), 01-2 (lưu chuyển tiền tệ), KHBS, Header. Kỳ luôn dạng "Quý ... năm ..." (Header!V47/V48).
+
+## File 49_BCTC_TL_HN_v2.2.6_mau.xls (template)
+
+### Sheet "01" (bảng cân đối kế toán, tóm lược — 2 cột R/W = 2 kỳ)
+- [N3] "Quý "&Header!V47&" năm "&Header!V48; [L4] "Tại ngày "&MID(Header!V33) (lấy ngày từ V33 — tách d/m/n bằng MID)
+- prefill NNT (G6 = TRIM(Header!C3)), MST nối ký tự ISBLANK (G5)
+- [R86] (tổng tài sản) = R40+R41+R42+R46+R49+R50+R56+R60+R66+R79+R80 (dạng tóm lược: ít nhóm hơn bản đầy đủ; cột W hệt)
+- [R101] = R88+R89+R92+R93+R94+R95+R96
+- [R117] (tổng cộng nguồn vốn) = R88+R89+R92+R93+R94+R95+R96+R102+R103 (Header so R86 = R117, W86 = W117)
+- Chữ ký: [R130] = Header!V41 (người đại diện); [R132] = Header!V42 (ngày lập)
+
+### Sheet "01-1" (báo cáo kết quả hoạt động — cột I/J = 2 kỳ, M/N = (5) = I+R)
+- [H3] kỳ = 01!N3; prefill NNT (D5) / MST (D4); [I7] "Quý "&Header!V47
+- Cột (5) theo nhóm la mã: [M11] (I), [M14] (II), [M15] (III), [M16] (IV), [M17] (V), [M20] (VI), [M21] (VII), [M22] (VIII), [M23] (IX), [M24] (X), [M25] (XI), [M28] (XII) — tất cả = I+hàng tương ứng+R+cột
+- [J29] Lợi nhuận sau thuế (XI − XII) = J25−J28; [M29] = M25−M28
+- Chữ ký: [D33] "Lập bảng" = TRIM(01!E130); [I33] = 01!R130; [D36] "Kế toán trưởng" = TRIM(01!E132); [I36] = 01!R132
+
+### Sheet "01-2" (lưu chuyển tiền tệ)
+- [N3] kỳ = 01!N3; prefill NNT (G5) / MST (G4)
+- [R48] tổng = #REF!+R41+R42+R43+R44+R45+R46+R47 (artifact #REF! còn sót — cộng 7 dòng R41..R47)
+- [R85] = R65+R76+R84; [R88] = R85+R86+R87 (cột W hệt)
+- Chữ ký: [E90] = TRIM(01!E130); [R90] = 01!R130; [E92] = TRIM(01!E132); [R92] = 01!R132
+
+### Sheet "KHBS"
+- [B6] STT = B5+1; [G6] = F6−E6; [E8, F8, G8] "Tổng cộng" = SUM(E5:E7) / SUM(F5:F7) / SUM(G5:G7)
+
+### Sheet "Header"
+- [M2] định dạng MST; [T8] = CONCATENATE(1)
+- Bộ cờ kiểm tra (0/1, cột C lưu giá trị tham chiếu):
+  - [B15] đủ 4 trường người nộp thuế = 1 nếu LEN(C3),LEN(C4),LEN(C5),LEN(C6) đều ≠ 0
+  - [B16] = 1 nếu 01!R102 ≠ 0 (C16 = 01!R102); [B17] = 1 nếu 01!W102 ≠ 0 (C17 = 01!W102)
+  - [B18] = 1 nếu 01!R132 (ngày lập) ≠ rỗng (C18 = 01!R132)
+  - [B21, B22] = 1 nếu 01!R86 = 01!R117 (đóng sổ: tổng tài sản = tổng nguồn vốn, C21/C22 = R86/R117)
+  - [B23, B24] = 1 nếu 01!W86 = 01!W117 (C23/C24 = W86/W117)
+  - [B25] = 1 nếu 01!R117 ≠ 0
+
+## File 49_BCTC_TL_HN_v2.2.6_mau.xls1 (bản có dữ liệu — số liệu lưu tĩnh, chỉ còn prefill)
+- Sheet 01: [B5] "BẢNG CÂN ĐỐI KẾ TOÁN GIỮA NIÊN ĐỘ (HỢP NHẤT) Dạng tóm lược" = "Quý "&V47&" "&V48; [A6] "Tại ngày "&MID(Header!V33); prefill NNT (F7 = TRIM(C3)), MST 13 ký tự tách ô (F8..S8 = C2..P2), địa chỉ (F9 = C4, F10 = C5, R10 = C6), điện thoại (F11 = C7), Fax (L11 = C8), Email (R11 = C9); [S133] "………., ngày "&MID(TRIM(R132)) (ngày ký tách d/m/n)
+- Sheet 01-1: [A6] kỳ; prefill NNT (D7) / MST 13 ký tự (D8..R8) / địa chỉ / điện thoại / Fax / Email; [Z12] "Đơn vị tiền: Triệu Đồng VN" (cố định); [P13] "Quý "&V47; [R43] = 01!S133 (ngày ký)
+- Sheet 01-2: prefill NNT / MST 13 ký tự / địa chỉ / điện thoại / Fax / Email; [R93] = 01!S133; [C100] = 01!C140; [K100] = 01!K140; [S100] = 01!S140 (kéo các ô dòng 140 của 01 xuống)
+- Sheet KHBS: [B6] = B5+1; [G6] = F6−E6; [E8, F8, G8] = SUM(E5:E7)/SUM(F5:F7)/SUM(G5:G7)
+- Sheet Header: [M2] định dạng MST + [T8] = CONCATENATE(1) (không có bộ cờ)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 49_BCTC_TL_HN
+Thư mục: 06_BCTC/49_BCTC_TL_HN (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 49_BCTC_TL_HN_v2.2.6_mau.xls ===
+--- Sheet "01" ---
+N3: "Quý "&Header!V47&" năm "&Header!V48
+L4: "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4)
+G5: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G6: TRIM(Header!C3)
+R86: R40+R41+R42+R46+R49+R50+R56+R60+R66+R79+R80
+W86: W40+W41+W42+W46+W49+W50+W56+W60+W66+W79+W80
+R101: R88+R89+R92+R93+R94+R95+R96
+W101: W88+W89+W92+W93+W94+W95+W96
+R117: R88+R89+R92+R93+R94+R95+R96+R102+R103
+W117: W88+W89+W92+W93+W94+W95+W96+W102+W103
+R130: Header!V41
+R132: Header!V42
+--- Sheet "01-1" ---
+H3: 01!N3
+D4: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+D5: TRIM(Header!C3)
+I7: "Quý "&Header!V47
+M11: I11+R11
+M14: I14+R14
+M15: I15+R15
+M16: I16+R16
+M17: I17+R17
+M20: I20+R20
+M21: I21+R21
+M22: I22+R22
+M23: I23+R23
+M24: I24+R24
+M25: I25+R25
+M28: I28+R28
+J29: J25-J28
+M29: M25-M28
+D33: TRIM(01!E130)
+I33: 01!R130
+D36: TRIM(01!E132)
+I36: 01!R132
+--- Sheet "01-2" ---
+N3: 01!N3
+G4: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+G5: TRIM(Header!C3)
+R48: #REF!+R41+R42+R43+R44+R45+R46+R47
+W48: #REF!+W41+W42+W43+W44+W45+W46+W47
+R85: R65+R76+R84
+W85: W65+W76+W84
+R88: R85+R86+R87
+W88: W85+W86+W87
+E90: TRIM(01!E130)
+R90: 01!R130
+E92: TRIM(01!E132)
+R92: 01!R132
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B15: IF(OR(LEN(C3)=0,LEN(C4)=0,LEN(C5)=0,LEN(C6)=0),"0","1")
+B16: IF(01!R102=0,"0","1")
+C16: 01!R102
+B17: IF(01!W102=0,"0","1")
+C17: 01!W102
+B18: IF(LEN(01!R132)=0,"0","1")
+C18: 01!R132
+B21: IF(01!R86<>01!R117,"0","1")
+C21: 01!R86
+B22: IF(01!R86<>01!R117,"0","1")
+C22: 01!R117
+B23: IF(01!W86<>01!W117,"0","1")
+C23: 01!W86
+B24: IF(01!W86<>01!W117,"0","1")
+C24: 01!W117
+B25: IF(01!R117=0,"0","1")
+C25: 01!R117
+=> 71 cell công thức trong file này
+
+=== FILE: 49_BCTC_TL_HN_v2.2.6_mau.xls1 ===
+--- Sheet "01" ---
+B5: "Quý "&Header!V47&" năm "&Header!V48
+A6: "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4)
+F7: TRIM(Header!C3)
+F8: Header!C2
+G8: Header!D2
+H8: Header!E2
+I8: Header!F2
+J8: Header!G2
+K8: Header!H2
+L8: Header!I2
+M8: Header!J2
+N8: Header!K2
+O8: Header!L2
+P8: Header!M2
+Q8: Header!N2
+R8: Header!O2
+S8: Header!P2
+F9: TRIM(Header!C4)
+F10: TRIM(Header!C5)
+R10: TRIM(Header!C6)
+F11: TRIM(Header!C7)
+L11: TRIM(Header!C8)
+R11: TRIM(Header!C9)
+S133: "………., ngày " & MID(TRIM(R132),1,2) & " tháng " & MID(TRIM(R132),4,2) & " năm " & MID(TRIM(R132),7,4)
+--- Sheet "01-1" ---
+A6: "Quý "&Header!V47&" năm "&Header!V48
+D7: TRIM(Header!C3)
+D8: Header!C2
+E8: Header!D2
+F8: Header!E2
+G8: Header!F2
+H8: Header!G2
+I8: Header!H2
+J8: Header!I2
+K8: Header!J2
+L8: Header!K2
+M8: Header!L2
+N8: Header!M2
+P8: Header!N2
+Q8: Header!O2
+R8: Header!P2
+D9: TRIM(Header!C4)
+D10: TRIM(Header!C5)
+S10: TRIM(Header!C6)
+D11: TRIM(Header!C7)
+L11: TRIM(Header!C8)
+S11: TRIM(Header!C9)
+Z12: "                     Đơn vị tiền: Triệu Đồng VN "
+P13: "Quý " &Header!V47
+R43: 01!S133
+--- Sheet "01-2" ---
+A6: "Quý "&Header!V47&" năm "&Header!V48
+F7: TRIM(Header!C3)
+F8: Header!C2
+G8: Header!D2
+H8: Header!E2
+I8: Header!F2
+J8: Header!G2
+K8: Header!H2
+L8: Header!I2
+M8: Header!J2
+N8: Header!K2
+O8: Header!L2
+P8: Header!M2
+Q8: Header!N2
+R8: Header!O2
+S8: Header!P2
+F9: TRIM(Header!C4)
+F10: TRIM(Header!C5)
+R10: TRIM(Header!C6)
+F11: TRIM(Header!C7)
+L11: TRIM(Header!C8)
+R11: TRIM(Header!C9)
+R93: 01!S133
+C100: 01!C140
+K100: 01!K140
+S100: 01!S140
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 82 cell công thức trong file này
+
+
+TỔNG CỘNG: 153 cell công thức trong 2 file

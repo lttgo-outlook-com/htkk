@@ -1,0 +1,331 @@
+CÔNG THỨC TÍNH (human-readable) — Tờ khai 01/DK-TDKTT (TT80) — đổi kỳ tính thuế
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Folder có 4 phiên bản (v2.5.1, v2.7.2, v2.8.3, v3.0.8) × 2 file (.xls template / .xls1 bản có dữ liệu). Mỗi file 2 sheet: 01 (tờ khai), Header. v2.7.2 ≡ v2.8.3 ≡ v3.0.8 (md5 hệt nhau ở mọi sheet); chỉ v2.5.1 khác (đảo kiểu sheet 01 giữa .xls và .xls1).
+
+## File 01_DK_TDKTT_TT80_v3.0.8_mau.xls (template — = v2.7.2, v2.8.3)
+
+### Sheet "01" (tờ khai — prefill từ Header)
+- [H6] "Kính gửi" = TRIM(Header!V37); [AE6] = TRIM(Header!V36); [H7] NNT = TRIM(Header!C3)
+- [H8] MST nối ký tự ISBLANK từ Header (C2..P2); [F10] "Địa chỉ" = TRIM(Header!P38); [H10] = Header!C4&" "&Header!C5&" "&Header!C6
+- Cờ ngành nghề (GTGT/TNCN): [AE26] = IF(I26=TRUE, J26, "") và [AF26] = IF(I26=TRUE, "01", ""); [AE28] = IF(I28=TRUE, J28, "") và [AF28] = IF(I28=TRUE, "02", "")
+- [AE32] = YEAR(TODAY()) (năm hiện hành); [J33] "theo Quý kể từ kỳ tính thuế Quý I năm" = Header!V48
+- [D51] "chi tieu 34" = ROUND(#REF!×0,1, 0); [M51] "chi tieu 35" = ROUND(#REF!×0,2, 0) (artifact #REF! còn sót — tham chiếu nguồn đã hỏng)
+- Chữ ký: [T54] "Người ký" = TRIM(Header!V41); [T56] "Ngày ký" = IF(Header!V42<>"", Header!V42, "")
+- Cờ: [C60] "Chinh thuc" = IF(V29="","1",""); [F60] "Bo sung" = IF(V29="","","1"); [I60] "Lan" = IF(V29="","",V29); [U60] "Tờ khai tháng/quý" = IF(V30="M","1","0")
+
+### Sheet "Header"
+- [M2] định dạng MST; [T8] = CONCATENATE(1)
+- Bộ cờ kiểm tra (0/1, cột C lưu giá trị tham chiếu):
+  - [B12] "Function" = 1 nếu TRIM(01!C24) ≠ "" VÀ TRIM(01!AE24) ≠ "" (C12 = 01!C24)
+  - [B13, B14] = 1 nếu 01!I26 = FALSE VÀ 01!I28 = FALSE (không chọn ngành nào — C13 = 01!I26, C14 = 01!I28)
+  - [C16] = 01!J33 (kỳ áp dụng)
+  - [V53] "GTGT | VND" = IF(01!R26=TRUE, x, ""); [V54] "TNCN" = IF(01!R28=TRUE, x, "") (cờ theo ngành chọn)
+
+## File 01_DK_TDKTT_TT80_v3.0.8_mau.xls1 (bản có dữ liệu — = v2.7.2, v2.8.3)
+- Sheet 01: [I6] "Kính gửi" = TRIM(Header!V37); [H10] NNT = TRIM(Header!C3); MST tách ký tự [H11..U11] = Header!C2..P2; [F12] "Địa chỉ" = TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
+- Ngành nghề (ô "MA NGANH NGHE"): [AE16] = IF(OR(AC16="1",AC16="x"), "Giá trị gia tăng", ""); [AG16] = IF(OR(AD16="1",AD16="x"), "Thu nhập cá nhân", "")
+- [O16, P37] nối ngành = IF(AND(đã chọn AC16, đã chọn AD16), AE16&", "&AG16, IF(đã chọn AC16, AE16, IF(đã chọn AD16, AG16, "")))
+- [B38] "theo Quý kể từ kỳ tính thuế Quý I năm "&AC38
+- [N63] "Ngày ..." = MID(TRIM(R61)) (tách d/m/n)
+- Sheet Header: [M2] định dạng MST + [T8] = CONCATENATE(1) (không có bộ cờ)
+
+## File 01_DK_TDKTT_TT80_v2.5.1_mau.xls (template — khác v3.0.8)
+- Sheet 01 (kiểu bản có dữ liệu): [I6] "Kính gửi" = TRIM(Header!V37); [H10] NNT = TRIM(Header!C3); MST tách ký tự [H11..U11] = Header!C2..P2; [F12] "Địa chỉ" = TRIM(C4)&" - "&TRIM(C5)&" - "&TRIM(C6)
+- [O16] ngành = IF(TRIM(AE16)<>"", AE16, AG16); [O37] "áp dụng kỳ tính thuế" = IF(TRIM(AE16)<>"", LOWER(AE16), LOWER(AG16))
+- [N63] "Ngày ..." = MID(TRIM(R61))
+- Sheet Header: [M2] + [T8] = CONCATENATE(1) (không có bộ cờ)
+
+## File 01_DK_TDKTT_TT80_v2.5.1_mau.xls1 (bản có dữ liệu — khác v3.0.8)
+- Sheet 01 (kiểu prefill): [H6] "Kính gửi" = TRIM(Header!V37); [AE6] = TRIM(Header!V36); [H7] NNT; [H8] MST nối ký tự; [F10] = TRIM(Header!P38); [H10] = C4&" "&C5&" "&C6
+- Cờ GTGT/TNCN: [AE26] = IF(I26=TRUE, J26, ""), [AF26] = IF(I26=TRUE, "01", ""); [AE28] = IF(I28=TRUE, J28, ""), [AF28] = IF(I28=TRUE, "02", "")
+- [AE30] = YEAR(TODAY()); [D51] "chi tieu 34" = ROUND(#REF!×0,1, 0); [M51] "chi tieu 35" = ROUND(#REF!×0,2, 0) (artifact #REF!)
+- [T54] = TRIM(V41); [T56] = IF(V42<>"",V42,""); cờ [C60]/[F60]/[I60]/[U60] như v3.0.8
+- Sheet Header: [M2] + [T8] + bộ cờ:
+  - [A12, C12] = 01!C24; [B12] "cbo | Function" = 1 nếu TRIM(01!C24) ≠ ""
+  - [A13, C13] = 01!I26; [A14, C14] = 01!I28; [B13, B14] = 1 nếu 01!I26 = FALSE VÀ 01!I28 = FALSE
+  - [A15, C15, A16, C16] = 01!I30; [B15] = 1 nếu 01!I30 ≠ ""; [B16] = 1 nếu 01!I30 ≥ YEAR(TODAY()+1) (năm áp dụng không trước năm tới)
+  - [V53] GTGT = IF(01!R26=TRUE, x, ""); [V54] TNCN = IF(01!R28=TRUE, x, "")
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_DK_TDKTT_TT80
+Thư mục: 33_DOI_KY_TINH_THUE/01_DK_TDKTT_TT80 (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_DK_TDKTT_TT80_v2.5.1_mau.xls ===
+--- Sheet "01" ---
+I6: TRIM(Header!V37)
+H10: TRIM(Header!C3)
+H11: Header!C2
+I11: Header!D2
+J11: Header!E2
+K11: Header!F2
+L11: Header!G2
+M11: Header!H2
+N11: Header!I2
+O11: Header!J2
+P11: Header!K2
+Q11: Header!L2
+S11: Header!N2
+T11: Header!O2
+U11: Header!P2
+F12: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
+O16: IF(TRIM(AE16)<>"",AE16,AG16)
+O37: IF(TRIM(AE16)<>"",LOWER(AE16),LOWER(AG16))
+N63: "       Ngày "&MID(TRIM(R61),1,2)&" tháng "&MID(TRIM(R61),4,2)&" năm "&MID(TRIM(R61),7,4)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 21 cell công thức trong file này
+
+=== FILE: 01_DK_TDKTT_TT80_v2.5.1_mau.xls1 ===
+--- Sheet "01" ---
+H6: TRIM(Header!V37)
+AE6: TRIM(Header!V36)
+H7: TRIM(Header!C3)
+H8: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+F10: TRIM(Header!P38)
+H10: Header!C4&" "&Header!C5&" "&Header!C6
+AE26: IF(I26=TRUE,J26,"")
+AF26: IF(I26=TRUE,"01","")
+AE28: IF(I28=TRUE,J28,"")
+AF28: IF(I28=TRUE,"02","")
+AE30: YEAR(TODAY())
+D51: ROUND(#REF!*0.1,0)
+M51: ROUND(#REF!*0.2,0)
+T54: TRIM(Header!V41)
+T56: IF(Header!V42<>"",Header!V42,"")
+C60: IF(Header!V29="","1","")
+F60: IF(Header!V29="","","1")
+I60: IF(Header!V29="","",Header!V29)
+U60: IF(Header!V30="M","1","0")
+--- Sheet "KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+A12: 01!C24
+B12: IF(TRIM(01!C24)="",0,1)
+C12: 01!C24
+A13: 01!I26
+B13: IF(AND(01!I26=FALSE,01!I28=FALSE),0,1)
+C13: 01!I26
+A14: 01!I28
+B14: IF(AND(01!I26=FALSE,01!I28=FALSE),0,1)
+C14: 01!I28
+A15: 01!I30
+B15: IF(01!I30="",0,1)
+C15: 01!I30
+A16: 01!I30
+B16: IF(01!I30<YEAR(TODAY()+1),0,1)
+C16: 01!I30
+V53: IF(01!R26=TRUE,x,"")
+V54: IF(01!R28=TRUE,x,"")
+=> 38 cell công thức trong file này
+
+=== FILE: 01_DK_TDKTT_TT80_v2.7.2_mau.xls ===
+--- Sheet "01" ---
+H6: TRIM(Header!V37)
+AE6: TRIM(Header!V36)
+H7: TRIM(Header!C3)
+H8: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+F10: TRIM(Header!P38)
+H10: Header!C4&" "&Header!C5&" "&Header!C6
+AE26: IF(I26=TRUE,J26,"")
+AF26: IF(I26=TRUE,"01","")
+AE28: IF(I28=TRUE,J28,"")
+AF28: IF(I28=TRUE,"02","")
+AE32: YEAR(TODAY())
+J33: Header!V48
+D51: ROUND(#REF!*0.1,0)
+M51: ROUND(#REF!*0.2,0)
+T54: TRIM(Header!V41)
+T56: IF(Header!V42<>"",Header!V42,"")
+C60: IF(Header!V29="","1","")
+F60: IF(Header!V29="","","1")
+I60: IF(Header!V29="","",Header!V29)
+U60: IF(Header!V30="M","1","0")
+--- Sheet "KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B12: IF(OR(TRIM(01!C24)="",TRIM(01!AE24)=""),0,1)
+C12: 01!C24
+B13: IF(AND(01!I26=FALSE,01!I28=FALSE),0,1)
+C13: 01!I26
+B14: IF(AND(01!I26=FALSE,01!I28=FALSE),0,1)
+C14: 01!I28
+C16: 01!J33
+V53: IF(01!R26=TRUE,x,"")
+V54: IF(01!R28=TRUE,x,"")
+=> 31 cell công thức trong file này
+
+=== FILE: 01_DK_TDKTT_TT80_v2.7.2_mau.xls1 ===
+--- Sheet "01" ---
+I6: TRIM(Header!V37)
+H10: TRIM(Header!C3)
+H11: Header!C2
+I11: Header!D2
+J11: Header!E2
+K11: Header!F2
+L11: Header!G2
+M11: Header!H2
+N11: Header!I2
+O11: Header!J2
+P11: Header!K2
+Q11: Header!L2
+S11: Header!N2
+T11: Header!O2
+U11: Header!P2
+F12: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
+O16: IF(AND(OR(AC16="1",AC16="x"),OR(AD16="1",AD16="x")),AE16&", "&AG16,IF(OR(AC16="1",AC16="x"),AE16,IF(OR(AD16="1",AD16="x"),AG16,"")))
+AE16: IF(OR(AC16="1",AC16="x"),"Giá trị gia tăng","")
+AG16: IF(OR(AD16="1",AD16="x"),"Thu nhập cá nhân","")
+P37: IF(AND(OR(AC16="1",AC16="x"),OR(AD16="1",AD16="x")),AE16&", "&AG16,IF(OR(AC16="1",AC16="x"),AE16,IF(OR(AD16="1",AD16="x"),AG16,"")))
+B38: "theo Quý kể từ kỳ tính thuế Quý I năm "&AC38
+N63: "       Ngày "&MID(TRIM(R61),1,2)&" tháng "&MID(TRIM(R61),4,2)&" năm "&MID(TRIM(R61),7,4)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 24 cell công thức trong file này
+
+=== FILE: 01_DK_TDKTT_TT80_v2.8.3_mau.xls ===
+--- Sheet "01" ---
+H6: TRIM(Header!V37)
+AE6: TRIM(Header!V36)
+H7: TRIM(Header!C3)
+H8: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+F10: TRIM(Header!P38)
+H10: Header!C4&" "&Header!C5&" "&Header!C6
+AE26: IF(I26=TRUE,J26,"")
+AF26: IF(I26=TRUE,"01","")
+AE28: IF(I28=TRUE,J28,"")
+AF28: IF(I28=TRUE,"02","")
+AE32: YEAR(TODAY())
+J33: Header!V48
+D51: ROUND(#REF!*0.1,0)
+M51: ROUND(#REF!*0.2,0)
+T54: TRIM(Header!V41)
+T56: IF(Header!V42<>"",Header!V42,"")
+C60: IF(Header!V29="","1","")
+F60: IF(Header!V29="","","1")
+I60: IF(Header!V29="","",Header!V29)
+U60: IF(Header!V30="M","1","0")
+--- Sheet "KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B12: IF(OR(TRIM(01!C24)="",TRIM(01!AE24)=""),0,1)
+C12: 01!C24
+B13: IF(AND(01!I26=FALSE,01!I28=FALSE),0,1)
+C13: 01!I26
+B14: IF(AND(01!I26=FALSE,01!I28=FALSE),0,1)
+C14: 01!I28
+C16: 01!J33
+V53: IF(01!R26=TRUE,x,"")
+V54: IF(01!R28=TRUE,x,"")
+=> 31 cell công thức trong file này
+
+=== FILE: 01_DK_TDKTT_TT80_v2.8.3_mau.xls1 ===
+--- Sheet "01" ---
+I6: TRIM(Header!V37)
+H10: TRIM(Header!C3)
+H11: Header!C2
+I11: Header!D2
+J11: Header!E2
+K11: Header!F2
+L11: Header!G2
+M11: Header!H2
+N11: Header!I2
+O11: Header!J2
+P11: Header!K2
+Q11: Header!L2
+S11: Header!N2
+T11: Header!O2
+U11: Header!P2
+F12: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
+O16: IF(AND(OR(AC16="1",AC16="x"),OR(AD16="1",AD16="x")),AE16&", "&AG16,IF(OR(AC16="1",AC16="x"),AE16,IF(OR(AD16="1",AD16="x"),AG16,"")))
+AE16: IF(OR(AC16="1",AC16="x"),"Giá trị gia tăng","")
+AG16: IF(OR(AD16="1",AD16="x"),"Thu nhập cá nhân","")
+P37: IF(AND(OR(AC16="1",AC16="x"),OR(AD16="1",AD16="x")),AE16&", "&AG16,IF(OR(AC16="1",AC16="x"),AE16,IF(OR(AD16="1",AD16="x"),AG16,"")))
+B38: "theo Quý kể từ kỳ tính thuế Quý I năm "&AC38
+N63: "       Ngày "&MID(TRIM(R61),1,2)&" tháng "&MID(TRIM(R61),4,2)&" năm "&MID(TRIM(R61),7,4)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 24 cell công thức trong file này
+
+=== FILE: 01_DK_TDKTT_TT80_v3.0.8_mau.xls ===
+--- Sheet "01" ---
+H6: TRIM(Header!V37)
+AE6: TRIM(Header!V36)
+H7: TRIM(Header!C3)
+H8: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+F10: TRIM(Header!P38)
+H10: Header!C4&" "&Header!C5&" "&Header!C6
+AE26: IF(I26=TRUE,J26,"")
+AF26: IF(I26=TRUE,"01","")
+AE28: IF(I28=TRUE,J28,"")
+AF28: IF(I28=TRUE,"02","")
+AE32: YEAR(TODAY())
+J33: Header!V48
+D51: ROUND(#REF!*0.1,0)
+M51: ROUND(#REF!*0.2,0)
+T54: TRIM(Header!V41)
+T56: IF(Header!V42<>"",Header!V42,"")
+C60: IF(Header!V29="","1","")
+F60: IF(Header!V29="","","1")
+I60: IF(Header!V29="","",Header!V29)
+U60: IF(Header!V30="M","1","0")
+--- Sheet "KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B12: IF(OR(TRIM(01!C24)="",TRIM(01!AE24)=""),0,1)
+C12: 01!C24
+B13: IF(AND(01!I26=FALSE,01!I28=FALSE),0,1)
+C13: 01!I26
+B14: IF(AND(01!I26=FALSE,01!I28=FALSE),0,1)
+C14: 01!I28
+C16: 01!J33
+V53: IF(01!R26=TRUE,x,"")
+V54: IF(01!R28=TRUE,x,"")
+=> 31 cell công thức trong file này
+
+=== FILE: 01_DK_TDKTT_TT80_v3.0.8_mau.xls1 ===
+--- Sheet "01" ---
+I6: TRIM(Header!V37)
+H10: TRIM(Header!C3)
+H11: Header!C2
+I11: Header!D2
+J11: Header!E2
+K11: Header!F2
+L11: Header!G2
+M11: Header!H2
+N11: Header!I2
+O11: Header!J2
+P11: Header!K2
+Q11: Header!L2
+S11: Header!N2
+T11: Header!O2
+U11: Header!P2
+F12: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
+O16: IF(AND(OR(AC16="1",AC16="x"),OR(AD16="1",AD16="x")),AE16&", "&AG16,IF(OR(AC16="1",AC16="x"),AE16,IF(OR(AD16="1",AD16="x"),AG16,"")))
+AE16: IF(OR(AC16="1",AC16="x"),"Giá trị gia tăng","")
+AG16: IF(OR(AD16="1",AD16="x"),"Thu nhập cá nhân","")
+P37: IF(AND(OR(AC16="1",AC16="x"),OR(AD16="1",AD16="x")),AE16&", "&AG16,IF(OR(AC16="1",AC16="x"),AE16,IF(OR(AD16="1",AD16="x"),AG16,"")))
+B38: "theo Quý kể từ kỳ tính thuế Quý I năm "&AC38
+N63: "       Ngày "&MID(TRIM(R61),1,2)&" tháng "&MID(TRIM(R61),4,2)&" năm "&MID(TRIM(R61),7,4)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 24 cell công thức trong file này
+
+
+TỔNG CỘNG: 224 cell công thức trong 8 file

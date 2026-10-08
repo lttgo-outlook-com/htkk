@@ -1,0 +1,344 @@
+CÔNG THỨC TÍNH (human-readable) — 01_TKTT_IIR (01-TKTT/IIR — Tờ khai thông tin thuế tối thiểu toàn cầu (IIR))
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+
+## File 01_TKTT_IIR_v2.8.8_mau.xls
+
+### Sheet "01" (tờ khai chính)
+- [AD20] [01] Năm tài chính = "Năm "&Header!V31&" Từ "&Header!V32&" đến "&Header!V33 — nối 3 trường từ Header
+- [AC22] [02] Lần đầu = IF(Header!V29="","X",""); [AN22] Số lần bổ sung = IF(Header!V29<>"",Header!V29,"")
+- [U29] Tên người nộp thuế = TRIM(Header!C3); [V31] Mã số thuế = nối 12 ký tự từng ô (Header!C2..P2)
+- [O33] Tên đại lý thuế (nếu có) = TRIM(Header!V6); [L35] [07] MST đại lý = TRIM(Header!V5); [N37] Hợp đồng đại lý thuế số = TRIM(Header!V13); [AG37] Ngày = TRIM(Header!V14)
+- [U54] 2. Tên đơn vị hợp thành chịu trách nhiệm kê khai = U29 (sao chép ô tên)
+- [AH54] 3. Mã số thuế của đơn vị hợp thành chịu trách nhiệm kê khai = V31 (sao chép ô MST)
+- [AX74] 3. Đơn vị tiền tệ sử dụng trong BCTC hợp nhất = AS37 (sao chép ô tiền tệ)
+- [FT74] = FS37 — sao chép ô tiền tệ (không có nhãn)
+- [BU316] 6. Tổng giá trị tài sản hữu hình và tiền lương được giảm trừ = ROUND((AQ316*(FU316/100))+(BG316*(FV316/100)),4) — làm tròn 4 số lẻ (tiền lương × tỷ lệ + tài sản × tỷ lệ)
+- [CG328] 9. Chi tiền lương hợp lệ sau khi phân bổ của công ty chính = IF(FS328="02",AQ328-BQ328,0) — chỉ tính khi cờ loại đơn vị FS328="02" (công ty chính)
+- [CO328] 10. Giá trị tài sản hữu hình hợp lệ sau khi phân bổ của công ty chính = IF(FS328="02",AZ328-BY328,0)
+- [CG341] 9. Chi tiền lương hợp lệ sau phân bổ của đơn vị trung chuyển = IF(FS341="02",AQ341-BQ341,0) — cùng công thức cho dòng đơn vị trung chuyển
+- [CO341] 10. Giá trị tài sản hữu hình hợp lệ sau phân bổ của đơn vị trung chuyển = IF(FS341="02",AZ341-BY341,0)
+- [CG393] 9. Tổng thuế hoãn lại sau khi tính lại theo mức thuế suất tối thiểu đã điều chỉnh [F] = AZ393+BY393
+- Các dòng bảng [4] (10 cột) nhãn "Giá trị được phân bổ cho năm tài chính" = "Giá trị được phân bổ cho năm tài chính "&(Header!V31−n) với n=1..10 (các ô [Z415], [AD415], [AH415], [AL415], [AP415], [AT415], [AX415], [BB415], [BF415], [BJ415] và cột [BQ415]..[CS415] tương ứng)
+- [BN417] Tổng giá trị = Z417+AD417+AH417+AL417+AP417+AT417+AX417+BB417+BF417+BJ417; [CW417] Tổng giá trị = BQ417+BU417+BY417+CC417+CG417+CK417+CO417+CP417+CQ417+CS417
+- [CM430] 6.6. Tổng cộng = BI430+BO430+BT430+BZ430+CF430
+- [CP430] 7. Khoản thuế hoãn lại phải trả không được thu hồi = BC430-CM430
+- [BL461] 4.4. Tài sản thuế hoãn lại được ghi nhận theo quy định về thuế tối thiểu toàn cầu = IF(AX461<>0,AX461-BE461,AQ461-BE461) — trừ BE461, lấy AX461 khi khác 0 bằng không AQ461
+- [CF537] 6.5. Tổng cộng = BI537+BO537+BT537+BZ537
+- [CM537] 7. Số dư còn lại của tài khoản thu hồi khoản thuế đối với các khoản được xác định là lợi nhuận = BC537-CF537
+- [BR560] 8. Thuế suất thực tế (%) = IF(AX560=0,0,ROUND(((BL560/AX560)*100),4)) — làm tròn 4 số lẻ
+- [BY606] 9. Thuế bổ sung = ROUND((BE606*(AQ606/100)+BL606-BR606),4)
+- Các ô tổng [O652], [V652], [AC652], [AJ652], [AQ652], [AX652], [BE652] = SUM(3 dòng 649..651) — (không có nhãn)
+- [CL676] 11. Thu nhập hoặc lỗ ròng tại BCTC của công ty chính sau khi phân bổ = IF(FS676="03",AX676-CC676,0) — chỉ tính khi cờ loại đơn vị FS676="03"
+- [CL689] 11. Thu nhập hoặc lỗ ròng tại BCTC của đơn vị trung chuyển sau khi phân bổ = IF(FS689="03",AX689-CC689,0)
+- [BS812] 6.4. Thu nhập vận tải quốc tế = BM812-BF812
+- [CP812] 7.4. Thu nhập vận tải quốc tế phụ trợ đạt chuẩn = CO812-CH812
+- [AQ825] 5. Giới hạn 50% đối với tổng thu nhập vận tải quốc tế [5] = 0.5*AI825
+- [BF825] 7. Phần vượt mức giới hạn [7] = AX825-AQ825
+- Các ô prefill từ sheet Header: [I874] Họ và tên = TRIM(Header!V15); [AN874] Người ký = TRIM(Header!V41); [M876] Chứng chỉ hành nghề = TRIM(Header!V16); [AN876] Ngày ký = TRIM(Header!V42)
+
+### Sheet "01-1" (phụ lục 01-1)
+- [G4] [01] Năm tài chính báo cáo = 01!AD20 (sao chép từ sheet 01)
+- [F6] [02] Lần đầu = IF(Header!V29="","X"," "); [N6] [03] Bổ sung lần thứ = IF(Header!V29<>"",Header!V29," ")
+- [H15] [04] Tên đơn vị hợp thành chịu trách nhiệm kê khai = 01!U29; [H17] [05] MST theo quy định thuế tối thiểu toàn cầu = 01!V31
+- [E19] Cờ lần đầu = IF(TRIM(Header!V29)="",1,""); [F19] Cờ bổ sung = IF(TRIM(Header!V29)<>"",1,""); [I19] Lần = TRIM(Header!V29)
+- [M19] và [N19] = #REF! — công thức THAM CHIẾU HƯ trong bản gốc (lỗi sẵn)
+- [E20] [06] Tên đại lý thuế (nếu có) = TRIM(Header!V6); [E22] [07] MST đại lý = TRIM(Header!V5); [E24] [08] Hợp đồng đại lý thuế số = TRIM(Header!V13); [O24] ngày = TRIM(Header!V14)
+- [F26] [09] Đồng tiền khai Tờ khai thông tin = 01!AS37; [AA26] = 01!FS37 (sao chép ô tiền tệ)
+- Các ô "Đơn vị tiền" [L41], [T54], [N74], [N75], [N76] = F26 (sao chép đồng tiền); [AA41], [AA54] = AA26
+- [F46] Tổng cộng = SUM(F43:F45)
+- [O74] (5) = T60 (sao chép ô)
+- [O76] (5) = IF(O74-O75<0,0,IF(N76<>"Việt Nam đồng",ROUND(O74-O75,2),ROUND(O74-O75,0))) — (4)−(5), không âm; làm tròn 2 số lẻ nếu đơn vị tiền không phải VND, bằng không làm tròn 0
+- [O77] Việt Nam đồng = ROUND(C31*O76,0) — quy đổi về VND theo tỷ giá C31
+- [AA77] = IF(AND(AA26<>"VND",M29=TRUE),ROUND(O77,0),ROUND(O76,2)) — hiển thị giá trị đã quy đổi hoặc chưa
+- [AB77] = IF(AND(AA26<>"VND",G29=TRUE),F26,"Việt Nam đồng") — hiển thị đơn vị tiền
+- [AC77] Việt Nam đồng = IF(AND(AA26<>"VND",G29=TRUE),AA26,"VND")
+
+### Sheet "01-2" (phụ lục 01-2)
+- [R3] [01] Năm tài chính báo cáo = 01!AD20 (sao chép)
+- [R5] [02] Lần đầu = 01!AC22; [Y5] [03] Bổ sung lần thứ = 01!AN22
+- [Q7] [02] Lần đầu (nhãn) = 01!U29 (sao chép tên); [Q9] cmc = 01!V31 (sao chép MST)
+- [O11] Tên đại lý thuế = TRIM(Header!V6); [O12] MST đại lý = 01!L35; [O13] Hợp đồng đại lý thuế số = TRIM(Header!V13); [T13] ngày = TRIM(Header!V14)
+- [S15] ngày = 01!AS37 (sao chép ô tiền tệ)
+- [AD27] và [BA27] (8) = (7) - (6) = X27-T27 — chênh lệch (7)−(6)
+
+### Sheet "01-KHBS" (Khai bổ sung)
+- [BD3] Nổi tiêu đề = "Tờ khai thuế TNDN mẫu số 03/TNDN kỳ tính thuế: Năm V48 ngày D tháng M năm Y)" — ngày từ ô B47 qua MID
+- [BF5] Số tiền chậm nộp = ROUND(BH15*BE20*0.05/100,0) — thuế × số ngày × 0,05%
+- [BH17] = BI5; [BH18] = BI6 (sao chép ô)
+- [BE20] Số ngày nộp chậm = BD5; [BE21] Số tiền chậm nộp = IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+- [BG45] Người ký = 03!N139 — tham chiếu đến SHEET "03" (KHÔNG TỒN TẠI trong workbook, tham chiếu hư)
+- [BG46] Ngày ký = 03!N141 — tham chiếu đến sheet "03" (không tồn tại)
+- [B47] = BG5 (sao chép ngày); [BD47] Tổng điều chỉnh tăng = SUM(BH8:BH10); [BF47] Tổng điều chỉnh giảm = SUM(BH12:BH14)
+
+### Sheet "01-1-KHBS" (Khai bổ sung phụ lục 01-1)
+- CÙNG 11 công thức như sheet "01-KHBS" (nổi tiêu đề, BF5, BH17, BH18, BE20, BE21, BG45/03!N139, BG46/03!N141, B47, BD47, BF47) — tham chiếu sheet "03" cũng hư ở đây
+
+### Sheet "Header"
+- [M2] Ký hiệu gạch nối = IF(TRIM(N2&O2&P2)=""," "," - ")
+- [T8] = CONCATENATE(1) — ô nháp
+- [A12]/[C12] = '01-2'!E27; [A17]/[C17] = '01-2'!AD27; [B17] Cờ = IF('01-2'!AD27<>'01-2'!BA27,0,1)
+- [A18]/[C18] = 01!AS37; [B18] Cờ = IF(TRIM(01!FS37)="",0,1)
+- [A19] = 01!E55; [B19] Cờ = IF(AND(01!E55=FALSE,01!E57=FALSE),0,1); [C19] = 01!E55&01!E57
+- [A20]/[C20] = 01!U54; [B20] Cờ = IF(TRIM(01!U54)="",0,1)
+- [A21]/[C21] = 01!D67; [B21] Cờ = IF(TRIM(01!D67)="",0,1)
+- [A22]/[C22] = 01!AH67; [B22] Cờ = IF(TRIM(01!AH67)="",0,1)
+- [A23]/[C23] = 01!AT67; [B23] Cờ = IF(TRIM(01!AT67)="",0,1)
+- [A24]/[C24] = 01!D74; [B24] Cờ = IF(TRIM(01!FS74)="",0,1)
+- [A25]/[C25] = 01!AE74; [B25] Cờ = IF(TRIM(01!AE74)="",0,1)
+- [A27]/[C27] = 01!D86; [B27] Cờ = IF(TRIM(01!D86)="",0,1)
+- [A28]/[C28]/[A29]/[C29] = 01!X86; [B28] Cờ = IF(TRIM(01!X86)="",0,1)
+- [A30]/[C30] = 01!AH86; [B30] Cờ = IF(TRIM(01!FS86)="",0,1)
+- [A32] = 01!AF92; [B32] Cờ = IF(AND(01!AF92=FALSE,01!AF94=FALSE),0,1); [C32] = 01!AF92&01!AF94
+- [A33]/[C33] = 01!D102; [B33] Cờ = IF(TRIM(01!FS102)="",0,1)
+- [A34]/[C34] = 01!Z102; [B34] Cờ = IF(TRIM(01!FT102)="",0,1)
+- [A35]/[C35] = 01!AR282; [B35] Cờ = IF(01!AR282>=7,0,1)
+- [A36]/[C36] = '01-1'!C31; [B36] Cờ = IF(AND('01-1'!AA26<>"VND",'01-1'!M29=TRUE,'01-1'!C31=0),0,1)
+- [A37]/[C37] = '01-1'!F31; [B37] Cờ = IF(AND(VALUE(SUBSTITUTE('01-1'!C31,",","."))<>0,TRIM('01-1'!F31)=""),0,1)
+- [A38]/[C38] = 01!D110; [B38] Cờ = IF(TRIM(01!FS110)="",0,1)
+- [A39]/[C39] = 01!L110; [B39] Cờ = IF(AND(TRIM(01!FS110)="01",TRIM(01!FT110)=""),0,1)
+- [A40]/[C40] = 01!S110; [B40] Cờ = IF(AND(TRIM(01!FS110)="02",TRIM(01!S110)=""),0,1)
+- [A41]/[C41] = 01!AC110; [B41] Cờ = IF(AND(TRIM(01!FS110)="02",TRIM(01!AC110)=""),0,1)
+- [A43]/[C43] = 01!AI110; [A44]/[C44] = 01!AO110; [B44] Cờ = IF(AND(TRIM(01!FS110)="02",TRIM(01!FU110)=""),0,1)
+- [A45]/[C45] = 01!AY110; [B45] Cờ = IF(AND(TRIM(01!FS110)="03",TRIM(01!AY110)=""),0,1)
+- [A46]/[C46] = 01!BK110; [B46] Cờ = IF(AND(TRIM(01!FS110)="03",TRIM(01!FV110)=""),0,1)
+- [A47]/[C47] = 01!BT110; [B47] Cờ = IF(AND(TRIM(01!FS110)="03",TRIM(01!BT110)=""),0,1)
+- [A48]/[C48] = 01!CB110; [B48] Cờ = IF(AND(TRIM(01!FS110)="03",01!CB110=0),0,1)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_TKTT_IIR
+Thư mục: 36_THUE_TOI_THIEU_TOAN_CAU/01_TKTT_IIR (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_TKTT_IIR_v2.8.8_mau.xls ===
+--- Sheet "01" ---
+AD20: "Năm "&Header!V31&" Từ "&Header!V32&" đến "&Header!V33
+AC22: IF(Header!V29="","X","")
+AN22: IF(Header!V29<>"",Header!V29,"")
+U29: TRIM(Header!C3)
+V31: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+O33: TRIM(Header!V6)
+L35: TRIM(Header!V5)
+N37: TRIM(Header!V13)
+AG37: TRIM(Header!V14)
+U54: U29
+AH54: V31
+AX74: AS37
+FT74: FS37
+BU316: ROUND((AQ316*(FU316/100))+(BG316*(FV316/100)),4)
+CG328: IF(FS328="02",AQ328-BQ328,0)
+CO328: IF(FS328="02",AZ328-BY328,0)
+CG341: IF(FS341="02",AQ341-BQ341,0)
+CO341: IF(FS341="02",AZ341-BY341,0)
+CG393: AZ393+BY393
+Z415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-1)
+AD415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-2)
+AH415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-3)
+AL415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-4)
+AP415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-5)
+AT415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-6)
+AX415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-7)
+BB415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-8)
+BF415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-9)
+BJ415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-10)
+BQ415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-1)
+BU415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-2)
+BY415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-3)
+CC415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-4)
+CG415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-5)
+CK415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-6)
+CO415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-7)
+CP415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-8)
+CQ415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-9)
+CS415: "Giá trị được phân bổ cho năm tài chính "&(Header!V31-10)
+BN417: Z417+AD417+AH417+AL417+AP417+AT417+AX417+BB417+BF417+BJ417
+CW417: BQ417+BU417+BY417+CC417+CG417+CK417+CO417+CP417+CQ417+CS417
+CM430: BI430+BO430+BT430+BZ430+CF430
+CP430: BC430-CM430
+BL461: IF(AX461<>0,AX461-BE461,AQ461-BE461)
+CF537: BI537+BO537+BT537+BZ537
+CM537: BC537-CF537
+BR560: IF(AX560=0,0,ROUND(((BL560/AX560)*100),4))
+BY606: ROUND((BE606*(AQ606/100)+BL606-BR606),4)
+O652: SUM(O649:O651)
+V652: SUM(V649:V651)
+AC652: SUM(AC649:AC651)
+AJ652: SUM(AJ649:AJ651)
+AQ652: SUM(AQ649:AQ651)
+AX652: SUM(AX649:AX651)
+BE652: SUM(BE649:BE651)
+CL676: IF(FS676="03",AX676-CC676,0)
+CL689: IF(FS689="03",AX689-CC689,0)
+BS812: BM812-BF812
+CP812: CO812-CH812
+AQ825: 0.5*AI825
+BF825: AX825-AQ825
+I874: TRIM(Header!V15)
+AN874: TRIM(Header!V41)
+M876: TRIM(Header!V16)
+AN876: TRIM(Header!V42)
+--- Sheet "01-1" ---
+G4: 01!AD20
+F6: IF(Header!V29="","X"," ")
+N6: IF(Header!V29<>"",Header!V29," ")
+H15: 01!U29
+H17: 01!V31
+E19: IF(TRIM(Header!V29)="",1,"")
+F19: IF(TRIM(Header!V29)<>"",1,"")
+I19: TRIM(Header!V29)
+M19: #REF!
+N19: #REF!
+E20: TRIM(Header!V6)
+E22: TRIM(Header!V5)
+E24: TRIM(Header!V13)
+O24: TRIM(Header!V14)
+F26: 01!AS37
+AA26: 01!FS37
+L41: F26
+AA41: AA26
+F46: SUM(F43:F45)
+T54: F26
+AA54: AA26
+N74: F26
+O74: T60
+N75: F26
+N76: F26
+O76: IF(O74-O75<0,0,IF(N76<>"Việt Nam đồng",ROUND(O74-O75,2),ROUND(O74-O75,0)))
+O77: ROUND(C31*O76,0)
+AA77: IF(AND(AA26<>"VND",M29=TRUE),ROUND(O77,0),ROUND(O76,2))
+AB77: IF(AND(AA26<>"VND",G29=TRUE),F26,"Việt Nam đồng")
+AC77: IF(AND(AA26<>"VND",G29=TRUE),AA26,"VND")
+--- Sheet "01-2" ---
+R3: 01!AD20
+R5: 01!AC22
+Y5: 01!AN22
+Q7: 01!U29
+Q9: 01!V31
+O11: TRIM(Header!V6)
+O12: 01!L35
+O13: TRIM(Header!V13)
+T13: TRIM(Header!V14)
+S15: 01!AS37
+AD27: X27-T27
+BA27: X27-T27
+--- Sheet "01-KHBS" ---
+BD3: "                                           Tờ khai thuế TNDN mẫu số 03/TNDN kỳ tính thuế: Năm "&Header!V48&" ngày "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+BH17: BI5
+BH18: BI6
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: 03!N139
+BG46: 03!N141
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "01-1-KHBS" ---
+BD3: "                                           Tờ khai thuế TNDN mẫu số 03/TNDN kỳ tính thuế: Năm "&Header!V48&" ngày "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+BH17: BI5
+BH18: BI6
+BE20: BD5
+BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
+BG45: 03!N139
+BG46: 03!N141
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+A12: '01-2'!E27
+C12: '01-2'!E27
+A17: '01-2'!AD27
+B17: IF('01-2'!AD27<>'01-2'!BA27,0,1)
+C17: '01-2'!AD27
+A18: 01!AS37
+B18: IF(TRIM(01!FS37)="",0,1)
+C18: 01!AS37
+A19: 01!E55
+B19: IF(AND(01!E55=FALSE,01!E57=FALSE),0,1)
+C19: 01!E55&01!E57
+A20: 01!U54
+B20: IF(TRIM(01!U54)="",0,1)
+C20: 01!U54
+A21: 01!D67
+B21: IF(TRIM(01!D67)="",0,1)
+C21: 01!D67
+A22: 01!AH67
+B22: IF(TRIM(01!AH67)="",0,1)
+C22: 01!AH67
+A23: 01!AT67
+B23: IF(TRIM(01!AT67)="",0,1)
+C23: 01!AT67
+A24: 01!D74
+B24: IF(TRIM(01!FS74)="",0,1)
+C24: 01!D74
+A25: 01!AE74
+B25: IF(TRIM(01!AE74)="",0,1)
+C25: 01!AE74
+A27: 01!D86
+B27: IF(TRIM(01!D86)="",0,1)
+C27: 01!D86
+A28: 01!X86
+B28: IF(TRIM(01!X86)="",0,1)
+C28: 01!X86
+A29: 01!X86
+C29: 01!X86
+A30: 01!AH86
+B30: IF(TRIM(01!FS86)="",0,1)
+C30: 01!AH86
+A32: 01!AF92
+B32: IF(AND(01!AF92=FALSE,01!AF94=FALSE),0,1)
+C32: 01!AF92&01!AF94
+A33: 01!D102
+B33: IF(TRIM(01!FS102)="",0,1)
+C33: 01!D102
+A34: 01!Z102
+B34: IF(TRIM(01!FT102)="",0,1)
+C34: 01!Z102
+A35: 01!AR282
+B35: IF(01!AR282>=7,0,1)
+C35: 01!AR282
+A36: '01-1'!C31
+B36: IF(AND('01-1'!AA26<>"VND",'01-1'!M29=TRUE,'01-1'!C31=0),0,1)
+C36: '01-1'!C31
+A37: '01-1'!F31
+B37: IF(AND(VALUE(SUBSTITUTE('01-1'!C31,",","."))<>0,TRIM('01-1'!F31)=""),0,1)
+C37: '01-1'!F31
+A38: 01!D110
+B38: IF(TRIM(01!FS110)="",0,1)
+C38: 01!D110
+A39: 01!L110
+B39: IF(AND(TRIM(01!FS110)="01",TRIM(01!FT110)=""),0,1)
+C39: 01!L110
+A40: 01!S110
+B40: IF(AND(TRIM(01!FS110)="02",TRIM(01!S110)=""),0,1)
+C40: 01!S110
+A41: 01!AC110
+B41: IF(AND(TRIM(01!FS110)="02",TRIM(01!AC110)=""),0,1)
+C41: 01!AC110
+A43: 01!AI110
+C43: 01!AI110
+A44: 01!AO110
+B44: IF(AND(TRIM(01!FS110)="02",TRIM(01!FU110)=""),0,1)
+C44: 01!AO110
+A45: 01!AY110
+B45: IF(AND(TRIM(01!FS110)="03",TRIM(01!AY110)=""),0,1)
+C45: 01!AY110
+A46: 01!BK110
+B46: IF(AND(TRIM(01!FS110)="03",TRIM(01!FV110)=""),0,1)
+C46: 01!BK110
+A47: 01!BT110
+B47: IF(AND(TRIM(01!FS110)="03",TRIM(01!BT110)=""),0,1)
+C47: 01!BT110
+A48: 01!CB110
+B48: IF(AND(TRIM(01!FS110)="03",01!CB110=0),0,1)
+C48: 01!CB110
+=> 218 cell công thức trong file này
+
+
+TỔNG CỘNG: 218 cell công thức trong 1 file

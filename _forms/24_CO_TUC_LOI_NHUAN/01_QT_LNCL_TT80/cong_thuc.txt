@@ -1,0 +1,372 @@
+CÔNG THỨC TÍNH (human-readable) — Tờ khai quyết toán lợi nhuận sau thuế còn lại sau khi trích lập các quỹ phải nộp ngân sách mẫu 01/QT-LNCL (TT80)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Folder có 2 phiên bản (v2.5.1, v2.8.3) × 2 file (.xls template / .xls1 bản có dữ liệu). 3 sheet mỗi file: 01 (tờ khai), 01-1 (bảng phân bổ lợi nhuận), Header. Hai phiên bản giống nhau 100% ở sheet 01, 01-1 và cả 2 file .xls1 (md5); v2.8.3 chỉ thêm 1 cờ trong Header (ô AI52/CF52).
+
+## File 01_QT_LNCL_TT80_v2.8.3_mau.xls (đại diện)
+
+### Sheet "01" (tờ khai chính)
+- [B2] "Áp dụng đối với: "&AB2; [A3] [01] kỳ = "[01] Kỳ tính lợi nhuận sau thuế còn lại sau khi trích lập các quỹ: "&Header!V48
+- [I4] "Từ ... đến ..." = Header!V32/V33
+- [L5] lần đầu = IF(Header!V29 = "", "X", ""); [R5] bổ sung = IF(V29 ≠ "", V29, "")
+- prefill NNT (I6), MST nối ký tự ISBLANK (I7), đại lý (I14/I16), hợp đồng (I24/U24 = V13/V14)
+- Khối tính (cột U):
+  - [U55] [11] (4) = U56+U57+U58+U59+U60 (tổng 5 dòng trích lập quỹ)
+  - [U61] [17] = IF(U54−U55 < 0, 0, U54−U55) (LN còn lại = (3) − (4), chặn dưới 0)
+  - [U64] [20] = U61−U63 (trừ dòng (5))
+  - [U65] [21] = U61−U62−U63
+- Chữ ký: [H81] = TRIM(V15); [R81] = TRIM(V41); [H83] = TRIM(V16); [R83] = TRIM(V42)
+- [C87, F87] cờ = IF(Header!V28 = "C", "1"/"", ""/"1"); [I87] = TRIM(V29); [Y87, Z87] = V32/V33
+
+### Sheet "01-1" (bảng phân bổ lợi nhuận sau thuế — 5 cột khối AZ/BE/BJ/BO/BT)
+- [J11] tiêu đề = 01!A3; prefill NNT (O28) / MST (O30); "Đồng" cố định (AS35/AE37)
+- [CB37] tổng = SUM(AP51:AT53); [CC37] tổng = SUM(AU51:AY53) (cột % và tiền)
+- [AU52] [13] = [12]/[05]×100 = IF($U$37 = 0, 0, ROUND(AP52/$U$37×100, 2)) (tỷ lệ % trên lợi nhuận)
+- [AZ52] [14] = [04]×[13] = ROUND($AL$35×AU52/100, 0) (số tiền được hưởng)
+- [BO52] [17] = [14]−[16] = AZ52−BJ52
+- [BT52] [18] = [14]−[15]−[16] = IF(AZ52−BE52−BJ52 < 0, 0, AZ52−BE52−BJ52)
+- Dòng tổng (67:69 → 71): [AZ71] = SUM(AZ67:AZ69); [BE71, BJ71, BO71, BT71] tương tự
+- Dòng còn lại (74): [AZ74] = $AL$35−AZ71 (mỗi cột: số còn lại = AL35 − tổng cột)
+
+### Sheet "Header"
+- [M2] định dạng MST; [T8] = CONCATENATE(1)
+- [AK2] "Detect" = 01!U56; [AL2] "Function lock" = IF(01!U54 < 0, 0, 1); [AM2] "Cell lock" = nối U56..U60 & U62 & U63
+- Bộ cờ kiểm tra (0/1):
+  - [B16] = 1 nếu '01-1'!$CB$37 ≤ '01-1'!$U$37 (A16/C16 tham chiếu AP52)
+  - [B17] = 1 nếu '01-1'!$CC$37 ≤ 100 (tỷ lệ tổng không vượt 100%)
+  - [B18] = 1 nếu '01-1'!AL35 ≠ 0; [B19] = 1 nếu '01-1'!U37 ≠ 0 (C18/C19 tham chiếu)
+  - [B20] = 1 nếu (01!U61 = 0 VÀ 01!AC5 = 1); [B23] = 1 nếu (01!U61 > 0, 01!AC5 = 0, TRIM(01!AC2) = "01") (A20/C20/A23/C23 tham chiếu 01!U61)
+  - Cặp "có tên thì phải có số" 01-1: [B24] W52 & CC52; [B25] AD52 & CD52; [B26] AM52 & CF52; [B27] C52 & CB52 (A24/A25/A26/A27 tham chiếu)
+  - v2.8.3 thêm: [B28] = 1 nếu (TRIM('01-1'!AI52) ≠ "" VÀ TRIM('01-1'!CF52) ≠ "") (A28 tham chiếu AI52) — v2.5.1 không có cờ này
+
+## File 01_QT_LNCL_TT80_v2.8.3_mau.xls1 (bản có dữ liệu — = v2.5.1)
+- Sheet 01: [D6] "Áp dụng đối với: "&DK6; [J7] kỳ = Header!V48; [J8] " Từ ... đến ..." V32/V33; lần đầu/bổ sung (AN10/BX10); NNT/MST tách theo ký tự (AD12..CL14); đại lý (AD22 + MID V5 13 ký tự); hợp đồng AE32/CK32; [BK73] "Ngày ..." = MID(TRIM(BD71)) — các giá trị U54..U65 lưu tĩnh
+- Sheet 01-1: [AW11] năm = Header!V48; prefill NNT; MST tách MID (O30..AO30); chữ ký ngày = TRIM(01!BK73) (AY74), họ tên = TRIM(01!O75) (H76), M77 = TRIM(01!U76), AY82 = TRIM(01!BL79)
+- Sheet Header: [M2] + CONCATENATE
+
+## Khác biệt v2.5.1 (so v2.8.3)
+- Chỉ khác 1 chỗ trong Header (template): KHÔNG có [B28] (cờ AI52/CF52) và ô tham chiếu A28; mọi sheet và file .xls1 giống hệt
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_QT_LNCL_TT80
+Thư mục: 24_CO_TUC_LOI_NHUAN/01_QT_LNCL_TT80 (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_QT_LNCL_TT80_v2.5.1_mau.xls ===
+--- Sheet "01" ---
+B2: "Áp dụng đối với: "&AB2
+A3: "[01] Kỳ tính lợi nhuận sau thuế còn lại sau khi trích lập các quỹ: "&Header!V48
+I4: "Từ "&Header!V32&" đến "&Header!V33
+L5: IF(Header!V29="","X","")
+R5: IF(Header!V29<>"",Header!V29,"")
+I6: TRIM(Header!C3)
+I7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+I14: TRIM(Header!V6)
+I16: TRIM(Header!V5)
+I24: TRIM(Header!V13)
+U24: TRIM(Header!V14)
+U55: U56+U57+U58+U59+U60
+U61: IF(U54-U55<0,0,U54-U55)
+U64: U61-U63
+U65: U61-U62-U63
+H81: TRIM(Header!V15)
+R81: TRIM(Header!V41)
+H83: TRIM(Header!V16)
+R83: TRIM(Header!V42)
+C87: IF(Header!V28="C","1","")
+F87: IF(Header!V28="C","","1")
+I87: TRIM(Header!V29)
+Y87: Header!V32
+Z87: Header!V33
+--- Sheet "01-1" ---
+J11: 01!A3
+O28: TRIM(Header!C3)
+O30: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+AS35: "Đồng"
+AE37: "Đồng"
+CB37: SUM(AP51:AT53)
+CC37: SUM(AU51:AY53)
+AU52: IF($U$37=0,0,ROUND(AP52/$U$37*100,2))
+AZ52: ROUND($AL$35*AU52/100,0)
+BO52: AZ52-BJ52
+BT52: IF(AZ52-BE52-BJ52<0,0,AZ52-BE52-BJ52)
+AZ71: SUM(AZ67:AZ69)
+BE71: SUM(BE67:BE69)
+BJ71: SUM(BJ67:BJ69)
+BO71: SUM(BO67:BO69)
+BT71: SUM(BT67:BT69)
+AZ74: $AL$35-AZ71
+BE74: $AL$35-BE71
+BJ74: $AL$35-BJ71
+BO74: $AL$35-BO71
+BT74: $AL$35-BT71
+--- Sheet "01-KHBS" ---
+(không có cell công thức)
+--- Sheet "01-1-KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+AK2: 01!U56
+AL2: IF(01!U54<0,0,1)
+AM2: 01!U56&01!U57&01!U58&01!U59&01!U60&01!U62&01!U63
+T8: CONCATENATE(1)
+A16: '01-1'!AP52
+B16: IF('01-1'!$CB$37>'01-1'!$U$37,0,1)
+C16: '01-1'!AP52
+A17: '01-1'!AU52
+B17: IF('01-1'!$CC$37>100,0,1)
+C17: '01-1'!AU52
+B18: IF('01-1'!AL35=0,"0","1")
+C18: '01-1'!AL35
+B19: IF('01-1'!U37=0,"0","1")
+C19: '01-1'!U37
+A20: 01!U61
+B20: IF(AND(01!U61=0,01!AC5=1),0,1)
+C20: 01!U61
+A23: 01!U61
+B23: IF(AND(01!U61>0,01!AC5=0,TRIM(01!AC2)="01"),0,1)
+C23: 01!U61
+A24: '01-1'!W52
+B24: IF(OR(TRIM('01-1'!W52)="",TRIM('01-1'!CC52)=""),0,1)
+C24: '01-1'!W52
+A25: '01-1'!AC52
+B25: IF(OR(TRIM('01-1'!AC52)="",TRIM('01-1'!CD52)=""),0,1)
+C25: '01-1'!AC52
+A26: '01-1'!AM52
+B26: IF(OR(TRIM('01-1'!AM52)="",TRIM('01-1'!CF52)=""),0,1)
+C26: '01-1'!AM52
+A27: '01-1'!C52
+B27: IF(OR(TRIM('01-1'!C52)="",TRIM('01-1'!CB52)=""),0,1)
+C27: '01-1'!C52
+=> 78 cell công thức trong file này
+
+=== FILE: 01_QT_LNCL_TT80_v2.5.1_mau.xls1 ===
+--- Sheet "01" ---
+D6: "Áp dụng đối với: "&DK6
+J7: "[01] Kỳ tính lợi nhuận sau thuế còn lại sau khi trích lập các quỹ: "&Header!V48
+J8: " Từ "&Header!V32&" đến "&Header!V33
+AN10: IF(Header!V29="","X","")
+BX10: IF(Header!V29="","",Header!V29)
+AD12: Header!C3
+AA14: Header!C2
+AF14: Header!D2
+AK14: Header!E2
+AP14: Header!F2
+AU14: Header!G2
+AZ14: Header!H2
+BE14: Header!I2
+BJ14: Header!J2
+BO14: Header!K2
+BT14: Header!L2
+CB14: Header!N2
+CG14: Header!O2
+CL14: Header!P2
+AD22: TRIM(Header!V6)
+AA24: MID(TRIM(Header!V5),1,1)
+AF24: MID(TRIM(Header!V5),2,1)
+AK24: MID(TRIM(Header!V5),3,1)
+AP24: MID(TRIM(Header!V5),4,1)
+AU24: MID(TRIM(Header!V5),5,1)
+AZ24: MID(TRIM(Header!V5),6,1)
+BE24: MID(TRIM(Header!V5),7,1)
+BJ24: MID(TRIM(Header!V5),8,1)
+BO24: MID(TRIM(Header!V5),9,1)
+BT24: MID(TRIM(Header!V5),10,1)
+CB24: MID(TRIM(Header!V5),11,1)
+CG24: MID(TRIM(Header!V5),12,1)
+CL24: MID(TRIM(Header!V5),13,1)
+AE32: TRIM(Header!V13)
+CK32: TRIM(Header!V14)
+BK73: "Ngày "&MID(TRIM(BD71),1,2)&" tháng "&MID(TRIM(BD71),4,2)&" năm "&MID(TRIM(BD71),7,4)
+--- Sheet "01-1" ---
+AW11: Header!V48
+O28: Header!C3
+O30: MID(TRIM(Header!C2),1,1)
+Q30: MID(TRIM(Header!D2),1,1)
+S30: MID(TRIM(Header!E2),1,1)
+U30: MID(TRIM(Header!F2),1,1)
+W30: MID(TRIM(Header!G2),1,1)
+Y30: MID(TRIM(Header!H2),1,1)
+AA30: MID(TRIM(Header!I2),1,1)
+AC30: MID(TRIM(Header!J2),1,1)
+AE30: MID(TRIM(Header!K2),1,1)
+AG30: MID(TRIM(Header!L2),1,1)
+AK30: MID(TRIM(Header!N2),1,1)
+AM30: MID(TRIM(Header!O2),1,1)
+AO30: MID(TRIM(Header!P2),1,1)
+AY74: TRIM(01!BK73)
+H76: TRIM(01!O75)
+M77: TRIM(01!U76)
+AY82: TRIM(01!BL79)
+--- Sheet "01-KHBS" ---
+(không có cell công thức)
+--- Sheet "01-1-KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 57 cell công thức trong file này
+
+=== FILE: 01_QT_LNCL_TT80_v2.8.3_mau.xls ===
+--- Sheet "01" ---
+B2: "Áp dụng đối với: "&AB2
+A3: "[01] Kỳ tính lợi nhuận sau thuế còn lại sau khi trích lập các quỹ: "&Header!V48
+I4: "Từ "&Header!V32&" đến "&Header!V33
+L5: IF(Header!V29="","X","")
+R5: IF(Header!V29<>"",Header!V29,"")
+I6: TRIM(Header!C3)
+I7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+I14: TRIM(Header!V6)
+I16: TRIM(Header!V5)
+I24: TRIM(Header!V13)
+U24: TRIM(Header!V14)
+U55: U56+U57+U58+U59+U60
+U61: IF(U54-U55<0,0,U54-U55)
+U64: U61-U63
+U65: U61-U62-U63
+H81: TRIM(Header!V15)
+R81: TRIM(Header!V41)
+H83: TRIM(Header!V16)
+R83: TRIM(Header!V42)
+C87: IF(Header!V28="C","1","")
+F87: IF(Header!V28="C","","1")
+I87: TRIM(Header!V29)
+Y87: Header!V32
+Z87: Header!V33
+--- Sheet "01-1" ---
+J11: 01!A3
+O28: TRIM(Header!C3)
+O30: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+AS35: "Đồng"
+AE37: "Đồng"
+CB37: SUM(AP51:AT53)
+CC37: SUM(AU51:AY53)
+AU52: IF($U$37=0,0,ROUND(AP52/$U$37*100,2))
+AZ52: ROUND($AL$35*AU52/100,0)
+BO52: AZ52-BJ52
+BT52: IF(AZ52-BE52-BJ52<0,0,AZ52-BE52-BJ52)
+AZ71: SUM(AZ67:AZ69)
+BE71: SUM(BE67:BE69)
+BJ71: SUM(BJ67:BJ69)
+BO71: SUM(BO67:BO69)
+BT71: SUM(BT67:BT69)
+AZ74: $AL$35-AZ71
+BE74: $AL$35-BE71
+BJ74: $AL$35-BJ71
+BO74: $AL$35-BO71
+BT74: $AL$35-BT71
+--- Sheet "01-KHBS" ---
+(không có cell công thức)
+--- Sheet "01-1-KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+AK2: 01!U56
+AL2: IF(01!U54<0,0,1)
+AM2: 01!U56&01!U57&01!U58&01!U59&01!U60&01!U62&01!U63
+T8: CONCATENATE(1)
+A16: '01-1'!AP52
+B16: IF('01-1'!$CB$37>'01-1'!$U$37,0,1)
+C16: '01-1'!AP52
+A17: '01-1'!AU52
+B17: IF('01-1'!$CC$37>100,0,1)
+C17: '01-1'!AU52
+B18: IF('01-1'!AL35=0,"0","1")
+C18: '01-1'!AL35
+B19: IF('01-1'!U37=0,"0","1")
+C19: '01-1'!U37
+A20: 01!U61
+B20: IF(AND(01!U61=0,01!AC5=1),0,1)
+C20: 01!U61
+A23: 01!U61
+B23: IF(AND(01!U61>0,01!AC5=0,TRIM(01!AC2)="01"),0,1)
+C23: 01!U61
+A24: '01-1'!W52
+B24: IF(OR(TRIM('01-1'!W52)="",TRIM('01-1'!CC52)=""),0,1)
+C24: '01-1'!W52
+A25: '01-1'!AD52
+B25: IF(OR(TRIM('01-1'!AD52)="",TRIM('01-1'!CD52)=""),0,1)
+C25: '01-1'!AD52
+A26: '01-1'!AM52
+B26: IF(OR(TRIM('01-1'!AM52)="",TRIM('01-1'!CF52)=""),0,1)
+C26: '01-1'!AM52
+A27: '01-1'!C52
+B27: IF(OR(TRIM('01-1'!C52)="",TRIM('01-1'!CB52)=""),0,1)
+C27: '01-1'!C52
+A28: '01-1'!AI52
+B28: IF(OR(TRIM('01-1'!AI52)="",TRIM('01-1'!CF52)=""),0,1)
+C28: '01-1'!AM52
+=> 81 cell công thức trong file này
+
+=== FILE: 01_QT_LNCL_TT80_v2.8.3_mau.xls1 ===
+--- Sheet "01" ---
+D6: "Áp dụng đối với: "&DK6
+J7: "[01] Kỳ tính lợi nhuận sau thuế còn lại sau khi trích lập các quỹ: "&Header!V48
+J8: " Từ "&Header!V32&" đến "&Header!V33
+AN10: IF(Header!V29="","X","")
+BX10: IF(Header!V29="","",Header!V29)
+AD12: Header!C3
+AA14: Header!C2
+AF14: Header!D2
+AK14: Header!E2
+AP14: Header!F2
+AU14: Header!G2
+AZ14: Header!H2
+BE14: Header!I2
+BJ14: Header!J2
+BO14: Header!K2
+BT14: Header!L2
+CB14: Header!N2
+CG14: Header!O2
+CL14: Header!P2
+AD22: TRIM(Header!V6)
+AA24: MID(TRIM(Header!V5),1,1)
+AF24: MID(TRIM(Header!V5),2,1)
+AK24: MID(TRIM(Header!V5),3,1)
+AP24: MID(TRIM(Header!V5),4,1)
+AU24: MID(TRIM(Header!V5),5,1)
+AZ24: MID(TRIM(Header!V5),6,1)
+BE24: MID(TRIM(Header!V5),7,1)
+BJ24: MID(TRIM(Header!V5),8,1)
+BO24: MID(TRIM(Header!V5),9,1)
+BT24: MID(TRIM(Header!V5),10,1)
+CB24: MID(TRIM(Header!V5),11,1)
+CG24: MID(TRIM(Header!V5),12,1)
+CL24: MID(TRIM(Header!V5),13,1)
+AE32: TRIM(Header!V13)
+CK32: TRIM(Header!V14)
+BK73: "Ngày "&MID(TRIM(BD71),1,2)&" tháng "&MID(TRIM(BD71),4,2)&" năm "&MID(TRIM(BD71),7,4)
+--- Sheet "01-1" ---
+AW11: Header!V48
+O28: Header!C3
+O30: MID(TRIM(Header!C2),1,1)
+Q30: MID(TRIM(Header!D2),1,1)
+S30: MID(TRIM(Header!E2),1,1)
+U30: MID(TRIM(Header!F2),1,1)
+W30: MID(TRIM(Header!G2),1,1)
+Y30: MID(TRIM(Header!H2),1,1)
+AA30: MID(TRIM(Header!I2),1,1)
+AC30: MID(TRIM(Header!J2),1,1)
+AE30: MID(TRIM(Header!K2),1,1)
+AG30: MID(TRIM(Header!L2),1,1)
+AK30: MID(TRIM(Header!N2),1,1)
+AM30: MID(TRIM(Header!O2),1,1)
+AO30: MID(TRIM(Header!P2),1,1)
+AY74: TRIM(01!BK73)
+H76: TRIM(01!O75)
+M77: TRIM(01!U76)
+AY82: TRIM(01!BL79)
+--- Sheet "01-KHBS" ---
+(không có cell công thức)
+--- Sheet "01-1-KHBS" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 57 cell công thức trong file này
+
+
+TỔNG CỘNG: 273 cell công thức trong 4 file

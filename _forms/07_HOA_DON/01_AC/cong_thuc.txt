@@ -1,0 +1,115 @@
+CÔNG THỨC TÍNH (human-readable) — 01_AC
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Báo cáo về việc nhận in/cung cấp phần mềm tự in hóa đơn (BC01/AC, mã mẫu 01/AC), kỳ tính thuế theo quý. Folder gồm 1 cặp file .xls (báo cáo + tính toán) và .xls1 (pre-fill XML).
+
+## File 01_AC_v2.1.2_mau.xls
+
+### Sheet "01" (báo cáo chính)
+- [D5] Kỳ tính thuế = "Kì <Header!V47> năm <Header!V48>"
+- [D6] "( Từ <V32> đến <V33> )" — khoảng thời gian
+- [E7] Tên tổ chức = TRIM(Header!C3); [E9] Mã số thuế = TRIM(nối từng ký tự TRIM của Header!C2:…)
+- [E11] Địa chỉ = TRIM(C4) & " - " & TRIM(C5) & " - " & TRIM(C6) (nối 3 phần: đường/quận/tỉnh)
+- [D17, E17] Từ/đến = TRIM(Header!V32/V33)
+- Ô "Chọn" (dòng 17) copy từ dòng Tổng cộng (dòng 24): [F17] = F24, [I17] = I24, [J17] = J24, [K17] = K24, [L17] = L24
+- Dòng "Tổng cộng": [F24] = SUM(F21:F23) (tổng 3 dòng); [I24, J24, K24, L24, M24] = SUM(chính dòng 23) (SUM 1 ô — chỉ 1 dòng dữ liệu); [O24] = SUM(O21:O23)
+- [J30] Người đại diện theo pháp luật = Header!V41; [J32] Ngày lập báo cáo = Header!V38; [O32] Ngày lập báo cáo = Header!V42
+
+### Sheet "KHBS" (bổ sung, điều chỉnh)
+- [B6] Số thứ tự STT = B5 + 1
+- [G6] Chênh lệch = F6 − E6
+- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
+
+### Sheet "Header" (cờ kiểm tra nội bộ)
+- [M2] Dấu "-" nếu N2:P2 trống; [T8] CONCATENATE(1)
+
+## File 01_AC_v2.1.2_mau.xls1 (pre-fill XML)
+
+### Sheet "01"
+- [D6] "Kỳ <V47> năm <V48>" — cùng logic file chính
+- [D7] Tên tổ chức = TRIM(Header!C3); [D9] MST = TRIM(nối từng ký tự); [D11] Địa chỉ = TRIM(C4) & " - " & TRIM(C5) & " - " & TRIM(C6)
+- [F17, I17, J17, K17, L17] Ô "Chọn" = copy F24/I24/J24/K24/L24
+- [B22] Số thứ tự (1) = B21 + 1
+- [K24, L24, M24] Tổng cộng = SUM(K21:K23), SUM(L21:L23), SUM(M21:M23)
+- [J30] "Ngày dd tháng mm năm yyyy" (định dạng lại K26)
+- [J35] = L26 (copy ô cuối bảng)
+
+### Sheet "KHBS"
+- Cùng công thức sheet "KHBS" (STT, chênh lệch, tổng cộng 3 cột)
+
+### Sheet "Header"
+- [M2] Dấu nối; [T8] "nguoi ky" CONCATENATE(1)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_AC
+Thư mục: 07_HOA_DON/01_AC (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_AC_v2.1.2_mau.xls ===
+--- Sheet "01" ---
+D5: "Kỳ tính thuế: Kì "&Header!V47&" năm "&Header!V48
+D6: "("&" Từ "&Header!V32&" đến "&Header!V33&")"
+E7: TRIM(Header!C3)
+E9: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+E11: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
+D17: TRIM(Header!V32)
+E17: TRIM(Header!V33)
+F17: F24
+I17: I24
+J17: J24
+K17: K24
+L17: L24
+F24: SUM(F21:F23)
+I24: SUM(I23:I23)
+J24: SUM(J23:J23)
+K24: SUM(K23:K23)
+L24: SUM(L23:L23)
+M24: SUM(M23:M23)
+O24: SUM(O21:O23)
+J30: Header!V41
+J32: Header!V38
+O32: Header!V42
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)="","","-")
+T8: CONCATENATE(1)
+=> 29 cell công thức trong file này
+
+=== FILE: 01_AC_v2.1.2_mau.xls1 ===
+--- Sheet "01" ---
+D6: "Kỳ " &Header!V47&" năm " &Header!V48
+D7: TRIM(Header!C3)
+D9: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2)) & IF(ISBLANK(Header!M2),"",Header!M2) & IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+D11: TRIM(Header!C4) & " - " & TRIM(Header!C5) & " - " & TRIM(Header!C6)
+F17: F24
+I17: I24
+J17: J24
+K17: K24
+L17: L24
+B22: B21+1
+K24: SUM(K21:K23)
+L24: SUM(L21:L23)
+M24: SUM(M21:M23)
+J30: "Ngày " & MID(TRIM(K26),1,2) &" tháng " &MID(TRIM(K26),4,2) & " năm " & MID(TRIM(K26),7,4)
+J35: L26
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)="","","-")
+T8: CONCATENATE(1)
+=> 22 cell công thức trong file này
+
+
+TỔNG CỘNG: 51 cell công thức trong 2 file

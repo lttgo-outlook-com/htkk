@@ -1,0 +1,26 @@
+<PLuc_01_BK_HTK>
+				<HHoaSPhamTonKho>
+					<CTietHHoaSPham id="String">
+						<ct03/>
+						<ct04/>
+						<ct05/>
+						<ct06/>
+						<ct07/>
+					</CTietHHoaSPham>
+					<ct08/>
+					<ct09/>
+				</HHoaSPhamTonKho>
+				<MayMocThietBi>
+					<CTietMayMocThietBi id="String">
+						<ct03/>
+						<ct04/>
+						<ct05/>
+						<ct06/>
+						<ct07/>
+					</CTietMayMocThietBi>
+					<ct10/>
+					<ct11/>
+				</MayMocThietBi>
+				<ct12/>
+				<ct13/>
+			</PLuc_01_BK_HTK>

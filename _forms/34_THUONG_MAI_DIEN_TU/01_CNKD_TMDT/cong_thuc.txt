@@ -1,0 +1,505 @@
+CÔNG THỨC TÍNH (human-readable) — 01_CNKD_TMDT (TNCN/TNDN của hộ CNKD từ nền tảng TMĐT, nhóm Thương mại điện tử — TT308)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Gồm 4 nhóm file: tờ khai 01_CNKD_TMDT (v2.8.2, bản .xls/.xls1), bảng kê nộp ngân sách 1_bknt_tmdt_308, tờ khai CNKD nhà cung cấp nước ngoài 1_cnkd_nccnn_tmdt_308, và 3 bảng kê kèm theo.
+
+## File 01_CNKD_TMDT_v2.8.2_mau.xls / .xls1
+
+### Sheet "01" (tờ khai chính)
+- [B6] "[01] Kỳ tính thuế: Tháng <m> năm <y>" = prefill tháng/năm từ Header (V46, V48)
+- [B7] "[02] Lần đầu [x] / [03] Bổ sung lần thứ: <n>" = tự gắn [x] nếu Header!V29 trống, khác thì hiển thị số bổ sung
+- [B10] Tên tổ chức quản lý nền tảng TMĐT = prefill từ Header (tên NNT C3)
+- [B12] Mã số thuế khấu trừ, nộp thay = nối 13 ô chữ số MST từ Header (C2:...)
+- [Y33:Y37] Cột (7) = (5) + (6) = R(dòng) + U(dòng) (bản .xls1: Y37:Y41)
+- [H43] Họ tên người ký, [R43] Người ký, [H45] Số chứng chỉ hành nghề, [R45] Ngày ký = prefill từ Header (V15, V41, V16, V42)
+- [C49] cờ "Chính thức" = 1 nếu chưa bổ sung; [F49] "Bổ sung" = 1 nếu có; [I49] số lần; [U49] cờ tờ khai tháng/quý = 1 nếu Header!V30="M"
+
+### Sheet "01-1" (tờ khai kèm: chi tiết thuế TT308)
+- [F5], [F6] Dòng kỳ tính thuế/lần đầu = lấy từ 01!B6, 01!B7; [B14]–[B16] = lấy từ 01!B18/B19/B21 (MST chính thức, tên đại lý, MST đại lý)
+- [B10] Tên tổ chức quản lý nền tảng, [B12] MST khấu trừ nộp thay = prefill từ Header (như sheet 01)
+- (bản .xls1 sheet "01-1"): [Q5] kỳ tính thuế = "Tháng ... năm ..." từ Header!X41/X43; [P6]/[W6] lần đầu/bổ sung từ Header!X24; [C12] tên nền tảng từ Header!D1; [J14] MST nối 13 ô
+
+### Sheet "KHBS" (bản .xls1)
+- [D7] Dòng mô tả "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế: Quý/Tháng .../năm ... ngày ..." = chuỗi ghép từ Header (V30, V47, V46, V48) + ngày E70 (MID)
+- [D39], [D43], [D47] STT các phần I/II/III = STT dòng trên + 1
+- [CP39], [CP43], [CP47], [CP48] Cột (6) = (5) − (4) = BU(dòng) − BB(dòng)
+- [BL72] "Ngày … tháng … năm" = chuỗi ghép bằng MID từ C70
+- [N74] = TRIM(01!R49); [AA75] = TRIM(01!R54) (lấy chỉ tiêu từ tờ khai về)
+
+### Sheet "Header"
+- [M2] ký hiệu MST (trống → " ", khác → " - "); [T8] "nguoi ky" = CONCATENATE(1)
+
+## File 1_bknt_tmdt_308.xls / .xls1 (bảng kê nộp ngân sách nhà nước)
+
+### Sheet "01"
+- [D50]/[D51] "[01] Ngày lập: <ngày>" (tiếng Việt + dòng tiếng Anh "Date of preparation:") = prefill Header!V31; [E50]/[E51] "[02] Lần gửi thứ: <n>" = lấy từ O50
+- [B56]/[B57] "[03] Tên tổ chức quản lý nền tảng TMĐT" (VN/EN) = prefill Header!C3
+- [B61]/[B62] "[04] MST khấu trừ, nộp thay" (VN/EN) = nối 13 ô từ Header
+- [B82]/[B83] Tên đại lý thuế (VN/EN) = Header!V6; [B87]/[B88] MST đại lý (VN/EN) = Header!V5
+- [B92]/[B93] "[09] Hợp đồng đại lý thuế: Số ... ngày ..." (VN/EN) = Header!V5 + Header!V14
+- [G114] Tiểu mục 1749 = SUM(G107:G109); [G115] Tiểu mục 1099 = SUM(G111:G113); [G116] Tổng cộng = G114 + G115
+- [G150] Tiểu mục 1701 = SUM(G143:G145); [G151] Tiểu mục 1003 = SUM(G147:G149); [G152] Tổng cộng = G150 + G151
+- [F158] Người ký, [F161] Ngày ký = prefill từ Header (V41, V42)
+- (bản .xls1): [C7] dòng "(Kèm theo chứng từ nộp NSNN: Số <AV7>, số tham chiếu <AW7>, ngày <AX7>)"; [R9] Ngày lập; [P14] tên NNT; [P16:AD16] 13 ô MST; [O24] tên đại lý; [P25:AD25] 13 ô MST đại lý (MID); [K28] số hợp đồng (V13); [Z28] ngày hợp đồng (V14); [S48] "Ngày ..." từ T50
+
+### Sheet "Header" (bản .xls)
+- Ngoài [M2], [T8]: nhóm cờ kiểm tra [A14:B16] — lấy giá trị từ 01!E42, 01!D77, 01!D79 và sinh cờ 0/1 theo ô có trống hay không
+
+### Sheet "KHBS"
+- [B6] STT = +1; [G6] Chênh lệch = F6 − E6; [E8],[F8],[G8] Tổng cộng = SUM 3 dòng (E5:E7, F5:F7, G5:G7)
+
+## File 1_cnkd_nccnn_tmdt_308.xls / .xls1 (tờ khai CNKD – nhà cung cấp nước ngoài)
+
+### Sheet "01" (bản .xls)
+- [E14]/[E17] Kỳ tính thuế, lần đầu/bổ sung = prefill từ Header (V46, V48, V29)
+- [B22]–[B41] Các dòng [04] Tên nền tảng, [05] MST khấu trừ, [06] Tên đại lý, [07] MST đại lý, [08] Hợp đồng = prefill từ Header (mỗi dòng có bản tiếng Anh song song)
+- Bảng thuế 4 dòng (64–67): [AG64:AG67] (7) = (5) + (6) = Y(dòng) + AC(dòng); hai cột thuế suất tính tự động từ doanh thu cột U: [AR] = U × 1%, 5%, 3%, 5%; [AS] = U × 0.5%, 2%, 1.5%, 2% (các mức thuế suất theo loại dịch vụ)
+- [Y68] Tổng (5) doanh thu = SUM(Y64:AB67); [AC68] Tổng (6) thuế = SUM(AC64:AF67); [AG68] Tổng (7) = SUM(AG64:AJ67)
+- Bảng thứ hai (dòng 73–77) cùng cấu trúc: [AG73:AG76] (7)=(5)+(6); [AR/AS73:76] thuế suất 1%/0.5%, 5%/2%, 3%/1.5%, 5%/2%; [Y77], [AC77], [AG77] = SUM 4 dòng
+- [C100]–[U100] Các cờ chính thức/bổ sung/lần/tháng-quý như sheet 01 của tờ khai chính
+
+### Sheet "01-1" (bản .xls)
+- [B27] Tên nền tảng, [B31] MST khấu trừ = prefill từ Header
+- [U83] (11) = (9) + (10) = Q83 + R83; [U87] = Q87 + R87; [Q89] "Hàng hóa" = SUM(Q82:Q88)
+
+### Sheet "KHBS" / "Header"
+- Cùng cấu trúc chuẩn: STT +1, (6)=(5)-(4), Tổng cộng SUM 3 dòng; Header có [M2], [T8]
+- (bản .xls1 sheet "KHBS"): kèm đầy đủ ô prefill NNT (tên, 13 ô MST, địa chỉ, điện thoại...) và đại lý (tên, 13 ô MST, địa chỉ, hợp đồng) từ Header, cùng các công thức D39/D43/D47 (STT), CP39/CP43/CP47/CP48 ((6)=(5)−(4)), BL72 (ngày), N74/AA75 (lấy từ 01)
+
+## File bang_ke_01_1_cnkd_nccnn_tmdt (bảng kê kèm tờ khai NNCCNN)
+
+### Sheet "01-1-CNKD-TMDT"
+- [L6:L10] Cột (11) = (9) + (10) = J(dòng) + K(dòng)
+- [M6:M10] Tên loại = VLOOKUP mã H(dòng) trong bảng Data!A6:B9 (trống nếu không tìm thấy)
+- [N16:N26] Cột (12) = (10) + (11) = L(dòng) + M(dòng)
+- [O16:O26] Tên loại 2 = VLOOKUP mã J(dòng) trong Data!A6:B9; [P16:P26] Tên loại 3 = VLOOKUP mã G(dòng) trong Data!A14:B17
+
+## File bang_ke_01_1_cnkd_tmdt.xlsx (bảng kê)
+
+### Sheet "01-1-CNKD-TMDT"
+- [N6:N13] Tên = VLOOKUP mã G(dòng) trong Data!A14:B17; [O6:O13] Tên = VLOOKUP mã J(dòng) trong Data!A6:B9 (đều IF(ISNA(...)) trả "")
+
+## File bang_ke_01_bknt_tmdt.xls (bảng kê chứng từ nộp NSNN)
+
+### Sheet "01"
+- [H7:H33] Tên loại giấy tờ = VLOOKUP mã C(dòng) trong Data!B4:C7 (trống nếu không tìm thấy)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_CNKD_TMDT
+Thư mục: 34_THUONG_MAI_DIEN_TU/01_CNKD_TMDT (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_CNKD_TMDT_v2.8.2_mau.xls ===
+--- Sheet "01" ---
+B6: "[01] Kỳ tính thuế:  Tháng "&Header!V46&" năm "&Header!V48
+B7: IF(Header!V29="","[02] Lần đầu [x]      [03] Bổ sung lần thứ:","[02] Lần đầu      [03] Bổ sung lần thứ:"&Header!V29)
+B10: "[04]  Tên của tổ chức quản lý nền tảng thương mại điện tử:  "&TRIM(Header!C3)
+B12: "[05]  Mã số thuế khấu trừ, nộp thay:  "&TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+Y33: R33+U33
+Y34: R34+U34
+Y35: R35+U35
+Y36: R36+U36
+Y37: R37+U37
+H43: TRIM(Header!V15)
+R43: TRIM(Header!V41)
+H45: TRIM(Header!V16)
+R45: IF(Header!V42<>"",Header!V42,"")
+C49: IF(Header!V29="","1","")
+F49: IF(Header!V29="","","1")
+I49: IF(Header!V29="","",Header!V29)
+U49: IF(Header!V30="M","1","0")
+--- Sheet "01-1" ---
+F5: 01!B6
+F6: 01!B7
+B10: "[04] Tên của tổ chức quản lý nền tảng thương mại điện tử:   "&TRIM(Header!C3)
+B12: "[05] Mã số thuế khấu trừ, nộp thay:   "&TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+B14: 01!B18
+B15: 01!B19
+B16: 01!B21
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 26 cell công thức trong file này
+
+=== FILE: 01_CNKD_TMDT_v2.8.2_mau.xls1 ===
+--- Sheet "01" ---
+O10: "Tháng "&Header!V46&" năm "&Header!V48
+N11: IF(Header!V29="","X","")
+U11: IF(Header!V29="","",Header!V29)
+C14: "Tên của tổ chức quản lý nền tảng thương mại điện tử:  "&TRIM(Header!C3)
+I16: TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+H22: TRIM(Header!V6)
+Y37: R37+U37
+Y38: R38+U38
+Y39: R39+U39
+Y40: R40+U40
+Y41: R41+U41
+N52: "       Ngày "&MID(TRIM(N51),1,2)&" tháng "&MID(TRIM(N51),4,2)&" năm "&MID(TRIM(N51),7,4)
+D54: TRIM(Header!V15)
+G55: TRIM(Header!V16)
+--- Sheet "01-1" ---
+Q5: "Tháng "&Header!X41&" năm "&Header!X43
+P6: IF(Header!X24="","X","")
+W6: IF(Header!X24="","",Header!X24)
+C12: "Tên của tổ chức quản lý nền tảng thương mại điện tử:  "&TRIM(Header!D1)
+J14: TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+--- Sheet "KHBS" ---
+D7: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:" & IF(Header!V30<>"M", " Quý " & Header!V47," Tháng " & Header!V46) & "/" & Header!V48 &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU47-BB47
+CP48: BU48-BB48
+BL72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
+N74: TRIM(01!R49)
+AA75: TRIM(01!R54)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 32 cell công thức trong file này
+
+=== FILE: 1_bknt_tmdt_308.xls ===
+--- Sheet "01" ---
+D50: "[01] Ngày lập:  "&Header!V31
+E50: "[02] Lần gửi thứ: "&O50
+D51: "Date of preparation: "&Header!V31
+E51: "Submission No.: "&O50
+B56: "[03] Tên của tổ chức quản lý nền tảng thương mại điện tử: "&TRIM(Header!C3)
+B57: "Name of the e-commerce platform operator: "&TRIM(Header!C3)
+B61: "[04] Mã số thuế khấu trừ, nộp thay: "&TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+B62: "Tax Identification Number (TIN) for withholding and payment on behalf: "&TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+B82: "[07] Tên tổ chức, cá nhân làm thủ tục về thuế, tổ chức được ủy quyền (nếu có): "&TRIM(Header!V6)
+B83: "Name of the tax agent (if any) "&TRIM(Header!V6)
+B87: "[08] Mã số thuế: "&TRIM(Header!V5)
+B88: "Tax Identification Number (TIN) "&TRIM(Header!V5)
+B92: "[09] Hợp đồng đại lý thuế: Số:  "&TRIM(Header!V5)&"                      ngày "&TRIM(Header!V14)
+B93: "Tax agency agreement: No. "&TRIM(Header!V5)&"                      date "&TRIM(Header!V14)
+G114: SUM(G107:G109)
+G115: SUM(G111:G113)
+G116: G114+G115
+G150: SUM(G143:G145)
+G151: SUM(G147:G149)
+G152: G150+G151
+F158: TRIM(Header!V41)
+F161: TRIM(Header!V42)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)="","","-")
+T8: CONCATENATE(1)
+A14: 01!E42
+B14: IF(01!E42="",0,1)
+C14: 01!E42
+A15: 01!D77
+B15: IF(01!D77="",0,1)
+C15: 01!D77
+A16: 01!D79
+B16: IF(01!D79="",0,1)
+C16: 01!D79
+=> 38 cell công thức trong file này
+
+=== FILE: 1_bknt_tmdt_308.xls1 ===
+--- Sheet "01" ---
+C7: "(Kèm theo chứng từ nộp ngân sách nhà nước: Số "&AV7 &" , số tham chiếu: "& AW7&" , ngày "&AX7 &")"
+R9: Header!V31
+P14: Header!C3
+P16: Header!C2
+Q16: Header!D2
+R16: Header!E2
+S16: Header!F2
+T16: Header!G2
+U16: Header!H2
+V16: Header!I2
+W16: Header!J2
+X16: Header!K2
+Y16: Header!L2
+Z16: TRIM(Header!M2)
+AA16: Header!N2
+AC16: Header!O2
+AD16: Header!P2
+O24: TRIM(Header!V6)
+P25: MID(TRIM(Header!V5),1,1)
+Q25: MID(TRIM(Header!V5),2,1)
+R25: MID(TRIM(Header!V5),3,1)
+S25: MID(TRIM(Header!V5),4,1)
+T25: MID(TRIM(Header!V5),5,1)
+U25: MID(TRIM(Header!V5),6,1)
+V25: MID(TRIM(Header!V5),7,1)
+W25: MID(TRIM(Header!V5),8,1)
+X25: MID(TRIM(Header!V5),9,1)
+Y25: MID(TRIM(Header!V5),10,1)
+AA25: MID(TRIM(Header!V5),11,1)
+AC25: MID(TRIM(Header!V5),12,1)
+AD25: MID(TRIM(Header!V5),13,1)
+K28: TRIM(Header!V13)
+Z28: TRIM(Header!V14)
+S48: "  Ngày "&MID(TRIM(T50),1,2)&" tháng "&MID(TRIM(T50),4,2)&" năm "&MID(TRIM(T50),7,4)
+--- Sheet "KHBS" ---
+D7: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:" & IF(Header!V30<>"M", " Quý " & Header!V47," Tháng " & Header!V46) & "/" & Header!V48 &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: Header!C4
+AA16: Header!C5
+CK16: Header!C6
+AA18: Header!C7
+BD18: Header!C8
+CK18: Header!C9
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU47-BB47
+CP48: BU48-BB48
+BL72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
+N74: TRIM(01!R49)
+AA75: TRIM(01!R54)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 87 cell công thức trong file này
+
+=== FILE: 1_cnkd_nccnn_tmdt_308.xls ===
+--- Sheet "01" ---
+E14: "[01] Kỳ tính thuế:  Tháng "&Header!V46&" năm "&Header!V48
+E17: IF(Header!V29="","[02] Lần đầu [x]      [03] Bổ sung lần thứ:","[02] Lần đầu      [03] Bổ sung lần thứ:"&Header!V29)
+B22: "[04] Tên của tổ chức quản lý nền tảng thương mại điện tử:  "&TRIM(Header!C3)
+B26: "[05] Mã số thuế khấu trừ, nộp thay:  "&TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+B32: "[06] Tên tổ chức, cá nhân cung cấp dịch vụ làm thủ tục về thuế, tổ chức được ủy quyền (nếu có): "&TRIM(Header!V6)
+B36: "[07] Mã số thuế:  "&TRIM(Header!V5)
+B40: "[08] Hợp đồng cung cấp dịch vụ dịch vụ làm thủ tục về thuế: Số: "&TRIM(Header!V5)&"                      ngày "&TRIM(Header!V14)
+B41: "Contract to tax agent, authorized organization: Number: "&TRIM(Header!V5)&"                      date "&TRIM(Header!V14)
+AG64: Y64+AC64
+AR64: U64*0.01
+AS64: U64*0.005
+AG65: Y65+AC65
+AR65: U65*0.05
+AS65: U65*0.02
+AG66: Y66+AC66
+AR66: U66*0.03
+AS66: U66*0.015
+AG67: Y67+AC67
+AR67: U67*0.05
+AS67: U67*0.02
+Y68: SUM(Y64:AB67)
+AC68: SUM(AC64:AF67)
+AG68: SUM(AG64:AJ67)
+AG73: Y73+AC73
+AR73: U73*0.01
+AS73: U73*0.005
+AG74: Y74+AC74
+AR74: U74*0.05
+AS74: U74*0.02
+AG75: Y75+AC75
+AR75: U75*0.03
+AS75: U75*0.015
+AG76: Y76+AC76
+AR76: U76*0.05
+AS76: U76*0.02
+Y77: SUM(Y73:AB76)
+AC77: SUM(AC73:AF76)
+AG77: SUM(AG73:AJ76)
+C100: IF(Header!V29="","1","")
+F100: IF(Header!V29="","","1")
+I100: IF(Header!V29="","",Header!V29)
+U100: IF(Header!V30="M","1","0")
+--- Sheet "01-1" ---
+B27: "[03] Tên của tổ chức quản lý nền tảng thương mại điện tử:  "&TRIM(Header!C3)
+B31: "[04] Mã số thuế khấu trừ, nộp thay:   "&TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+U83: Q83+R83
+U87: Q87+R87
+Q89: SUM(Q82:Q88)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 54 cell công thức trong file này
+
+=== FILE: 1_cnkd_nccnn_tmdt_308.xls1 ===
+--- Sheet "01" ---
+O10: "Tháng "&Header!V46&" năm "&Header!V48
+N11: IF(Header!V29="","X","")
+U11: IF(Header!V29="","",Header!V29)
+C14: "Tên của tổ chức quản lý nền tảng thương mại điện tử:  "&TRIM(Header!C3)
+I16: TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+H22: TRIM(Header!V6)
+Y37: R37+U37
+Y38: R38+U38
+Y39: R39+U39
+Y40: R40+U40
+Y41: R41+U41
+N52: "       Ngày "&MID(TRIM(N51),1,2)&" tháng "&MID(TRIM(N51),4,2)&" năm "&MID(TRIM(N51),7,4)
+D54: TRIM(Header!V15)
+G55: TRIM(Header!V16)
+--- Sheet "01-1" ---
+Q5: "Tháng "&Header!X41&" năm "&Header!X43
+P6: IF(Header!X24="","X","")
+W6: IF(Header!X24="","",Header!X24)
+C12: "Tên của tổ chức quản lý nền tảng thương mại điện tử:  "&TRIM(Header!D1)
+J14: TRIM(IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+--- Sheet "KHBS" ---
+D7: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:" & IF(Header!V30<>"M", " Quý " & Header!V47," Tháng " & Header!V46) & "/" & Header!V48 &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU47-BB47
+CP48: BU48-BB48
+BL72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
+N74: TRIM(01!R49)
+AA75: TRIM(01!R54)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 32 cell công thức trong file này
+
+=== FILE: bang_ke_01_1_cnkd_nccnn_tmdt ===
+--- Sheet "01-1-CNKD-TMDT" ---
+L6: J6+K6
+M6: IF(ISNA(""&VLOOKUP(H6,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(H6,Data!$A$6:$B$9,2,FALSE))
+L7: J7+K7
+M7: IF(ISNA(""&VLOOKUP(H7,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(H7,Data!$A$6:$B$9,2,FALSE))
+L8: J8+K8
+M8: IF(ISNA(""&VLOOKUP(H8,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(H8,Data!$A$6:$B$9,2,FALSE))
+L9: J9+K9
+M9: IF(ISNA(""&VLOOKUP(H9,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(H9,Data!$A$6:$B$9,2,FALSE))
+L10: J10+K10
+M10: IF(ISNA(""&VLOOKUP(H10,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(H10,Data!$A$6:$B$9,2,FALSE))
+N16: L16+M16
+O16: IF(ISNA(""&VLOOKUP(J16,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J16,Data!$A$6:$B$9,2,FALSE))
+P16: IF(ISNA(""&VLOOKUP(G16,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G16,Data!$A$14:$B$17,2,FALSE))
+N17: L17+M17
+O17: IF(ISNA(""&VLOOKUP(J17,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J17,Data!$A$6:$B$9,2,FALSE))
+P17: IF(ISNA(""&VLOOKUP(G17,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G17,Data!$A$14:$B$17,2,FALSE))
+N18: L18+M18
+O18: IF(ISNA(""&VLOOKUP(J18,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J18,Data!$A$6:$B$9,2,FALSE))
+P18: IF(ISNA(""&VLOOKUP(G18,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G18,Data!$A$14:$B$17,2,FALSE))
+N19: L19+M19
+O19: IF(ISNA(""&VLOOKUP(J19,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J19,Data!$A$6:$B$9,2,FALSE))
+P19: IF(ISNA(""&VLOOKUP(G19,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G19,Data!$A$14:$B$17,2,FALSE))
+N20: L20+M20
+O20: IF(ISNA(""&VLOOKUP(J20,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J20,Data!$A$6:$B$9,2,FALSE))
+P20: IF(ISNA(""&VLOOKUP(G20,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G20,Data!$A$14:$B$17,2,FALSE))
+N22: L22+M22
+O22: IF(ISNA(""&VLOOKUP(J22,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J22,Data!$A$6:$B$9,2,FALSE))
+P22: IF(ISNA(""&VLOOKUP(G22,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G22,Data!$A$14:$B$17,2,FALSE))
+N23: L23+M23
+O23: IF(ISNA(""&VLOOKUP(J23,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J23,Data!$A$6:$B$9,2,FALSE))
+P23: IF(ISNA(""&VLOOKUP(G23,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G23,Data!$A$14:$B$17,2,FALSE))
+N24: L24+M24
+O24: IF(ISNA(""&VLOOKUP(J24,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J24,Data!$A$6:$B$9,2,FALSE))
+P24: IF(ISNA(""&VLOOKUP(G24,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G24,Data!$A$14:$B$17,2,FALSE))
+N25: L25+M25
+O25: IF(ISNA(""&VLOOKUP(J25,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J25,Data!$A$6:$B$9,2,FALSE))
+P25: IF(ISNA(""&VLOOKUP(G25,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G25,Data!$A$14:$B$17,2,FALSE))
+N26: L26+M26
+O26: IF(ISNA(""&VLOOKUP(J26,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J26,Data!$A$6:$B$9,2,FALSE))
+P26: IF(ISNA(""&VLOOKUP(G26,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G26,Data!$A$14:$B$17,2,FALSE))
+--- Sheet "HDSD" ---
+(không có cell công thức)
+--- Sheet "Data" ---
+(không có cell công thức)
+=> 40 cell công thức trong file này
+
+=== FILE: bang_ke_01_1_cnkd_tmdt.xlsx ===
+--- Sheet "01-1-CNKD-TMDT" ---
+N6: IF(ISNA(""&VLOOKUP(G6,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G6,Data!$A$14:$B$17,2,FALSE))
+O6: IF(ISNA(""&VLOOKUP(J6,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J6,Data!$A$6:$B$9,2,FALSE))
+N7: IF(ISNA(""&VLOOKUP(G7,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G7,Data!$A$14:$B$17,2,FALSE))
+O7: IF(ISNA(""&VLOOKUP(J7,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J7,Data!$A$6:$B$9,2,FALSE))
+N8: IF(ISNA(""&VLOOKUP(G8,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G8,Data!$A$14:$B$17,2,FALSE))
+O8: IF(ISNA(""&VLOOKUP(J8,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J8,Data!$A$6:$B$9,2,FALSE))
+N9: IF(ISNA(""&VLOOKUP(G9,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G9,Data!$A$14:$B$17,2,FALSE))
+O9: IF(ISNA(""&VLOOKUP(J9,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J9,Data!$A$6:$B$9,2,FALSE))
+N11: IF(ISNA(""&VLOOKUP(G11,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G11,Data!$A$14:$B$17,2,FALSE))
+O11: IF(ISNA(""&VLOOKUP(J11,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J11,Data!$A$6:$B$9,2,FALSE))
+N12: IF(ISNA(""&VLOOKUP(G12,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G12,Data!$A$14:$B$17,2,FALSE))
+O12: IF(ISNA(""&VLOOKUP(J12,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J12,Data!$A$6:$B$9,2,FALSE))
+N13: IF(ISNA(""&VLOOKUP(G13,Data!$A$14:$B$17,2,FALSE)),"",""&VLOOKUP(G13,Data!$A$14:$B$17,2,FALSE))
+O13: IF(ISNA(""&VLOOKUP(J13,Data!$A$6:$B$9,2,FALSE)),"",""&VLOOKUP(J13,Data!$A$6:$B$9,2,FALSE))
+--- Sheet "HDSD" ---
+(không có cell công thức)
+--- Sheet "Data" ---
+(không có cell công thức)
+=> 14 cell công thức trong file này
+
+=== FILE: bang_ke_01_bknt_tmdt.xls ===
+--- Sheet "01" ---
+H7: IF(ISNA(VLOOKUP(C7,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C7,Data!$B$4:$C$7,2,FALSE))
+H8: IF(ISNA(VLOOKUP(C8,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C8,Data!$B$4:$C$7,2,FALSE))
+H9: IF(ISNA(VLOOKUP(C9,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C9,Data!$B$4:$C$7,2,FALSE))
+H10: IF(ISNA(VLOOKUP(C10,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C10,Data!$B$4:$C$7,2,FALSE))
+H11: IF(ISNA(VLOOKUP(C11,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C11,Data!$B$4:$C$7,2,FALSE))
+H13: IF(ISNA(VLOOKUP(C13,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C13,Data!$B$4:$C$7,2,FALSE))
+H14: IF(ISNA(VLOOKUP(C14,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C14,Data!$B$4:$C$7,2,FALSE))
+H15: IF(ISNA(VLOOKUP(C15,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C15,Data!$B$4:$C$7,2,FALSE))
+H16: IF(ISNA(VLOOKUP(C16,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C16,Data!$B$4:$C$7,2,FALSE))
+H17: IF(ISNA(VLOOKUP(C17,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C17,Data!$B$4:$C$7,2,FALSE))
+H23: IF(ISNA(VLOOKUP(C23,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C23,Data!$B$4:$C$7,2,FALSE))
+H24: IF(ISNA(VLOOKUP(C24,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C24,Data!$B$4:$C$7,2,FALSE))
+H25: IF(ISNA(VLOOKUP(C25,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C25,Data!$B$4:$C$7,2,FALSE))
+H26: IF(ISNA(VLOOKUP(C26,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C26,Data!$B$4:$C$7,2,FALSE))
+H27: IF(ISNA(VLOOKUP(C27,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C27,Data!$B$4:$C$7,2,FALSE))
+H29: IF(ISNA(VLOOKUP(C29,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C29,Data!$B$4:$C$7,2,FALSE))
+H30: IF(ISNA(VLOOKUP(C30,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C30,Data!$B$4:$C$7,2,FALSE))
+H31: IF(ISNA(VLOOKUP(C31,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C31,Data!$B$4:$C$7,2,FALSE))
+H32: IF(ISNA(VLOOKUP(C32,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C32,Data!$B$4:$C$7,2,FALSE))
+H33: IF(ISNA(VLOOKUP(C33,Data!$B$4:$C$7,2,FALSE)),"",VLOOKUP(C33,Data!$B$4:$C$7,2,FALSE))
+--- Sheet "Data" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+(không có cell công thức)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 20 cell công thức trong file này
+
+
+TỔNG CỘNG: 343 cell công thức trong 9 file

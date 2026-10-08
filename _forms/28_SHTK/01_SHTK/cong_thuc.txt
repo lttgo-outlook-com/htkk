@@ -1,0 +1,168 @@
+CÔNG THỨC TÍNH (human-readable) — Tờ khai 01/SHTK — ngân hàng thương mại cung cấp danh sách số hiệu tài khoản thanh toán của người nộp thuế
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Folder có 1 phiên bản 01_SHTK_v2.1.6_mau.xls + .xls1 (bản có dữ liệu) + bang_ke_01_shtk.xls (bảng kê phụ). 3 sheet trong .xls: 01 (tờ khai chính), KHBS, Header.
+
+## File 01_SHTK_v2.1.6_mau.xls (template)
+
+### Sheet "01" (tờ khai chính)
+- [E8] "1. Tên ngân hàng thương mại" = TRIM(Header!C3)
+- [E10] "2. Mã số thuế" = MST nối ký tự ISBLANK từ Header
+- [E12] "3. Địa chỉ" = Header!C4
+- [E20, K63] "4. Ngày gửi" = TRIM(Header!V42)
+- [E36] "5. Kỳ gửi" = IF(O36="LD", "Lần đầu - "&P36, "Định kỳ - Tháng "&P36) (P36 do người dùng điền)
+- [L36] "Định kỳ - Tháng" = TRIM(Header!R6); [L38] = TRIM(Header!R7)
+- [O40] tổng = SUM(Q49:Q51)
+- [C42] "7. Mã ngân hàng" = "Ngân hàng cung cấp danh sách số hiệu tài khoản thanh toán của khách hàng là người nộp thuế, cụ thể như sau:" (chuỗi nhãn)
+- [Q50] "cbo" = IF(H50="", 0, 1); [T50] "cbo" = IF(OR(C50, D50, F50, H50, I50, K50, M50, N50 bất kỳ có chữ), 1, 0) (cờ "dòng có dữ liệu")
+- [K61] "Người ký" = TRIM(Header!V41)
+
+### Sheet "KHBS"
+- [B6] STT = B5+1; [G6] = F6−E6; [E8, F8, G8] "Tổng cộng" = SUM(E5:E7)/SUM(F5:F7)/SUM(G5:G7)
+
+### Sheet "Header"
+- [M2] định dạng MST (rỗng → "-"); [T8] = CONCATENATE(1)
+- [B29] = 1 nếu 01!E14 ≠ rỗng (C29 = 01!E14); [C30] "cbo" = 01!E16; [B34] = 1 nếu 01!E18 ≠ rỗng (C34 = 01!E18)
+
+## File 01_SHTK_v2.1.6_mau.xls1 (bản có dữ liệu — số liệu lưu tĩnh, chỉ còn prefill)
+- Sheet 01: [AG7] = Header!C3 (tên ngân hàng); [AG9] "ABC" = Header!C2&Header!D2&...&Header!P2 (nối 12 ký tự MST, bỏ ô M2); [V11] = Header!C4
+- [B21] "7. Mã ngân hàng" = "Ngân hàng "&AG7&" cung cấp danh sách số hiệu tài khoản thanh toán của khách hàng là người nộp thuế, cụ thể như sau:"
+- [BJ32] "  Ngày ..." = MID(TRIM(CQ31)) (tách d/m/n)
+- Sheet KHBS: [D7] tiêu đề = "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:"&IF(V30<>"M"," Quý "&V47," Tháng "&V46)&"/"&V48&"  ngày "&MID(E70)... (nhiên liệu chữ cứng của mẫu 01/GTGT)
+- prefill đầy đủ NNT/MST/địa chỉ (AF10..CK18 = C3..C9), đại lý (AK20 = TRIM(V6), MST tách MID [AA22..CL22] = MID(TRIM(V5))), địa chỉ đại lý (AA24..CK28 = TRIM(V7..V12)), [AI30] = TRIM(V13), [BP30] = TRIM(V14)
+- [D39] mục I = D38+1; [D43] mục II = D42+1; [D47] mục III = D46+1
+- [CP39] (6) = (5)−(4) = BU39−BB39; [CP43] = BU43−BB43; [CP47] = BU47−BB47; [CP48] = BU48−BB48 (cùng công thức)
+- [BL72] "Ngày ..." = MID(TRIM(C70)); [N74] = TRIM(01!R33); [AA75] = TRIM(01!R36)
+- Sheet Header: không có công thức (toàn tĩnh)
+
+## File bang_ke_01_shtk.xls (bảng kê phụ — tra mã từ sheet Data)
+### Sheet "01_SHTK"
+- [M40] "(2) - Mã" = IF(ISNA(VLOOKUP(D40, Data!A11:B15, 2, FALSE)), "", VLOOKUP(D40, Data!A11:B15, 2, FALSE)) — lặp dòng 40..44
+- [N40] "(9) - Mã" = IF(ISNA(VLOOKUP(K40, Data!A4:B5, 2, FALSE)), "", VLOOKUP(K40, Data!A4:B5, 2, FALSE)) — lặp dòng 40..44
+### Sheet "Data", "HDSD"
+- Không có công thức (toàn dữ liệu tĩnh)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_SHTK
+Thư mục: 28_SHTK/01_SHTK (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_SHTK_v2.1.6_mau.xls ===
+--- Sheet "01" ---
+E8: TRIM(Header!C3)
+E10: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
+E12: Header!C4
+E20: TRIM(Header!V42)
+E36: IF(O36="LD","Lần đầu -  "&P36,"Định kỳ - Tháng "&P36)
+L36: TRIM(Header!R6)
+L38: TRIM(Header!R7)
+O40: SUM(Q49:Q51)
+C42: "Ngân hàng cung cấp danh sách số hiệu tài khoản thanh toán của khách hàng là người nộp thuế, cụ thể như sau:"
+Q50: IF(H50="",0,1)
+T50: IF(OR(TRIM(C50)<>"",TRIM(D50)<>"",TRIM(F50)<>"",TRIM(H50)<>"",TRIM(I50)<>"",TRIM(K50)<>"",TRIM(M50)<>"",TRIM(N50)<>""),1,0)
+K61: TRIM(Header!V41)
+K63: TRIM(Header!V42)
+--- Sheet "KHBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)="","","-")
+T8: CONCATENATE(1)
+B29: IF(01!E14="","0","1")
+C29: 01!E14
+C30: 01!E16
+B34: IF(01!E18="","0","1")
+C34: 01!E18
+=> 25 cell công thức trong file này
+
+=== FILE: 01_SHTK_v2.1.6_mau.xls1 ===
+--- Sheet "01" ---
+AG7: Header!C3
+AG9: Header!C2&Header!D2&Header!E2&Header!F2&Header!G2&Header!H2&Header!I2&Header!J2&Header!K2&Header!L2&Header!N2&Header!O2&Header!P2
+V11: Header!C4
+B21: "Ngân hàng " &AG7&" cung cấp danh sách số hiệu tài khoản thanh toán của khách hàng là người nộp thuế, cụ thể như sau:"
+BJ32: "  Ngày " & MID(TRIM(CQ31),1,2) &" tháng " &MID(TRIM(CQ31),4,2) & " năm " & MID(TRIM(CQ31),7,4)
+--- Sheet "KHBS" ---
+D7: "Tờ khai thuế GTGT mẫu số 01/GTGT kỳ tính thuế:" & IF(Header!V30<>"M", " Quý " & Header!V47," Tháng " & Header!V46) & "/" & Header!V48 &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
+AF10: Header!C3
+AA12: Header!C2
+AF12: Header!D2
+AK12: Header!E2
+AP12: Header!F2
+AU12: Header!G2
+AZ12: Header!H2
+BE12: Header!I2
+BJ12: Header!J2
+BO12: Header!K2
+BT12: Header!L2
+CB12: Header!N2
+CG12: Header!O2
+CL12: Header!P2
+AA14: Header!C4
+AA16: Header!C5
+CK16: Header!C6
+AA18: Header!C7
+BD18: Header!C8
+CK18: Header!C9
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+CP39: BU39-BB39
+D43: D42+1
+CP43: BU43-BB43
+D47: D46+1
+CP47: BU47-BB47
+CP48: BU48-BB48
+BL72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
+N74: TRIM(01!R33)
+AA75: TRIM(01!R36)
+--- Sheet "Header" ---
+(không có cell công thức)
+=> 58 cell công thức trong file này
+
+=== FILE: bang_ke_01_shtk.xls ===
+--- Sheet "01_SHTK" ---
+M40: IF(ISNA(VLOOKUP(D40,Data!$A$11:$B$15,2,FALSE)),"",VLOOKUP(D40,Data!$A$11:$B$15,2,FALSE))
+N40: IF(ISNA(VLOOKUP(K40,Data!$A$4:$B$5,2,FALSE)),"",VLOOKUP(K40,Data!$A$4:$B$5,2,FALSE))
+M41: IF(ISNA(VLOOKUP(D41,Data!$A$11:$B$15,2,FALSE)),"",VLOOKUP(D41,Data!$A$11:$B$15,2,FALSE))
+N41: IF(ISNA(VLOOKUP(K41,Data!$A$4:$B$5,2,FALSE)),"",VLOOKUP(K41,Data!$A$4:$B$5,2,FALSE))
+M42: IF(ISNA(VLOOKUP(D42,Data!$A$11:$B$15,2,FALSE)),"",VLOOKUP(D42,Data!$A$11:$B$15,2,FALSE))
+N42: IF(ISNA(VLOOKUP(K42,Data!$A$4:$B$5,2,FALSE)),"",VLOOKUP(K42,Data!$A$4:$B$5,2,FALSE))
+M43: IF(ISNA(VLOOKUP(D43,Data!$A$11:$B$15,2,FALSE)),"",VLOOKUP(D43,Data!$A$11:$B$15,2,FALSE))
+N43: IF(ISNA(VLOOKUP(K43,Data!$A$4:$B$5,2,FALSE)),"",VLOOKUP(K43,Data!$A$4:$B$5,2,FALSE))
+M44: IF(ISNA(VLOOKUP(D44,Data!$A$11:$B$15,2,FALSE)),"",VLOOKUP(D44,Data!$A$11:$B$15,2,FALSE))
+N44: IF(ISNA(VLOOKUP(K44,Data!$A$4:$B$5,2,FALSE)),"",VLOOKUP(K44,Data!$A$4:$B$5,2,FALSE))
+--- Sheet "Data" ---
+(không có cell công thức)
+--- Sheet "HDSD" ---
+(không có cell công thức)
+=> 10 cell công thức trong file này
+
+
+TỔNG CỘNG: 93 cell công thức trong 3 file

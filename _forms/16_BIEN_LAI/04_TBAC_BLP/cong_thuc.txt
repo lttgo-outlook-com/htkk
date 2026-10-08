@@ -1,0 +1,97 @@
+CÔNG THỨC TÍNH (human-readable) — 04_TBAC_BLP
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Thông báo thay đổi thông tin phát hành biên lai thu phí, lệ phí (04/TBAC-BLP). Tờ khai dạng văn bản — KHÔNG có công thức tính thuế, chỉ pre-fill + văn bản ghép + số thứ tự + cờ nội bộ. Folder gồm 1 cặp file .xls và .xls1 (pre-fill XML).
+
+## File 04_TBAC_BLP_v2.3.4_mau.xls
+
+### Sheet "01" (thông báo chính)
+- [F4] 1. Tên cơ quan phát hành biên lai = Header!C3
+- [F7] 2. Mã số thuế (nếu có) = nối từng ký tự TRIM của Header!C2:… (ô trống thay bằng dấu cách)
+- [B35] Số thứ tự STT = B34 + 1
+- [Q47] Ngày thông báo điều chỉnh = Header!V31
+- [Q49] Thủ trưởng đơn vị = Header!V41
+
+### Sheet "KKBS" (bổ sung, điều chỉnh)
+- [B6] Số thứ tự STT = B5 + 1
+- [G6] Chênh lệch = F6 − E6
+- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
+
+### Sheet "Header" (cờ kiểm tra nội bộ)
+- [M2] Dấu " - " nếu N2:P2 trống; [T8] CONCATENATE(1)
+- [M11] Dấu " - " nếu N11:P11 trống
+- [B20] Cờ 0/1: Thủ trưởng đơn vị (01!Q49) có điền chưa; [C20] giá trị 01!Q49
+
+## File 04_TBAC_BLP_v2.3.4_mau.xls1 (pre-fill XML)
+
+### Sheet "01"
+- [K8] Tên cơ quan = TRIM(Header!C3); [K11] MST = TRIM(nối từng ký tự)
+- [K14] Địa chỉ = TRIM(C4) & " - " & TRIM(C5) & " - " & TRIM(C6) (nối 3 phần)
+- [B34] Văn bản thông báo = "Ngày dd/tháng/năm" (định dạng lại N30) & ", " & C3 & " đã có thông báo phát hành biên lai. Nay " & C3 & " đăng ký thông tin thay đổi như sau:" (ghép tên cơ quan 2 lần)
+- [B39] Số thứ tự STT = B38 + 1
+- [W45] Ngày ký = Header!V42
+- [I49] Tên đơn vị (cũ) = TRIM(E49) nếu REPLACE(K11, 11, 1, "") ≠ E51, nếu không dấu cách — so sánh MST bỏ ký tự thứ 11 với giá trị E51 để quyết định in hay bỏ trống
+- [I51] Mã số thuế (cũ) = TRIM(E51) cùng điều kiện (nếu bằng REPLACE(MST,11,1,"") thì dấu cách)
+- [R52] "…………, ngày dd/tháng/năm" (định dạng lại W45)
+
+### Sheet "KKBS"
+- Cùng công thức sheet "KKBS" (STT, chênh lệch, tổng cộng 3 cột)
+
+### Sheet "Header"
+- [M2] Dấu nối; [T8] "nguoi ky" CONCATENATE(1)
+- [M11] Dấu " - " nếu N11:P11 trống
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 04_TBAC_BLP
+Thư mục: 16_BIEN_LAI/04_TBAC_BLP (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 04_TBAC_BLP_v2.3.4_mau.xls ===
+--- Sheet "01" ---
+F4: Header!C3
+F7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&TRIM(Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+B35: B34+1
+Q47: Header!V31
+Q49: Header!V41
+--- Sheet "KKBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+M11: IF(TRIM(N11&O11&P11)=""," "," - ")
+B20: IF(OR(ISBLANK(01!Q49), 01!Q49=""), 0, 1)
+C20: 01!Q49
+=> 15 cell công thức trong file này
+
+=== FILE: 04_TBAC_BLP_v2.3.4_mau.xls1 ===
+--- Sheet "01" ---
+K8: TRIM(Header!C3)
+K11: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&(IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&(IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&(IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&(IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&(IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&(IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&(IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&(IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&(IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&(IF(ISBLANK(Header!M2),"",TRIM(Header!M2))&(IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&(IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&(IF(ISBLANK(Header!P2),"",TRIM(Header!P2))))))))))))))))
+K14: TRIM(Header!C4) & " - " & TRIM(Header!C5) & " - " & TRIM(Header!C6)
+B34: "Ngày  "& MID(TRIM(N30),1,2)& "  tháng  "&MID(TRIM(N30),4,2)&"  năm  "&MID(TRIM(N30),7,4) & ", "& " "& Header!C3 &" đã có thông báo phát hành biên lai. Nay "& Header!C3 &" đăng ký thông tin thay đổi như sau:"
+B39: B38+1
+W45: Header!V42
+I49: IF(REPLACE(TRIM(K11),11,1,"")=TRIM(E51)," ",TRIM(E49))
+I51: IF(REPLACE(TRIM(K11),11,1,"")=TRIM(E51)," ",TRIM(E51))
+R52: "……………………, ngày  "& MID(TRIM(W45),1,2)& "  tháng  "&MID(TRIM(W45),4,2)&"  năm  "&MID(TRIM(W45),7,4)
+--- Sheet "KKBS" ---
+B6: B5+1
+G6: F6-E6
+E8: SUM(E5:E7)
+F8: SUM(F5:F7)
+G8: SUM(G5:G7)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+M11: IF(TRIM(N11&O11&P11)=""," "," - ")
+=> 17 cell công thức trong file này
+
+
+TỔNG CỘNG: 32 cell công thức trong 2 file

@@ -1,0 +1,223 @@
+CÔNG THỨC TÍNH (human-readable) — 01_CTLNDC (Tờ khai cổ tức, lợi nhuận được chia cho phần vốn nhà nước, mẫu 01/CTLNĐC)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+
+## File 01_CTLNDC_v2.2.7_mau.xls
+
+### Sheet "01" (tờ khai chính)
+- [D6] (chữ tĩnh trong file 2) Tiêu đề kỳ: "[01] Kỳ: Cổ tức, lợi nhuận được chia của năm"
+- [L10] Hạch "[X]" vào ô "Lần đầu" khi chưa khai bổ sung: IF(Header!V29="", "[X]", "")
+- [R10] Số lần bổ sung = giá trị Header!V29 (rỗng thì để trống): IF(Header!V29<>"", Header!V29, "")
+- [I11, I13, I14, H55, R55, H57, R57] Prefill từ sheet Header: tên NNT (Header!C3), tên đại lý thuế (Header!V6), mã số thuế đại lý (Header!V5), họ tên người đại diện (Header!V15), người ký (Header!V41), chứng chỉ hành nghề số (Header!V16), ngày ký (Header!V42) — đều qua TRIM
+- [I12] Mã số thuế = nối các ô Header!C2..K2 (và các ô tiếp theo), mỗi ô TRIM, ô rỗng lấy khoảng trắng (chained IF+ISBLANK+TRIM, công thức dài bị cắt trong dump)
+- [C61] Cờ "Chinh thuc" (ký hiệu ô gốc trong file 2 là D145): bằng "1" khi Header!V29 rỗng, ngược lại trống: IF(Header!V29="","1","")
+- [F61] Cờ "Bo sung" = "1" khi Header!V29 khác rỗng, ngược lại trống: IF(Header!V29="","","1")
+- [I61] "Lan" = TRIM(Header!V29)
+- [U61] Cờ tờ khai tháng/quý = Header!V31
+
+### Sheet "KHBS" (khai bổ sung)
+- [B3] Dòng mở đầu: "Tờ khai thuế mẫu số 01/CTLNĐC kỳ tính thuế: ngày " & Header!V32 & " tại ngày " + ngày tháng năm tách từ ô BG5 bằng LEFT/MID/RIGHT (múi 2-4-4)
+- [BF5] Số tiền chậm nộp = ROUND(BH15 × BE20 × 0.05 / 100, 0) — thuế đã khai ban nhân số ngày chậm nhân 0,05%/ngày làm tròn số nguyên
+- [B9, B13, B17] Số thứ tự 3 khối điều chỉnh (tăng / giảm / tổng hợp) = dòng cuối khối trên cộng 1 (B8+1, B12+1, B16+1)
+- [BH17] Thuế ban (ô tham chiếu cho tính chậm nộp) = BI5
+- [BE20] Số ngày nộp chậm = BD5
+- [BE21] Số tiền chậm nộp (hiển thị) = BF5
+- [BG45, BG46] Người ký / ngày ký = TRIM(01!R55) / TRIM(01!R57) (lấy từ sheet 01)
+- [B47] Ngày khai ban (ô tham chiếu) = BG5
+- [BD47] Tổng chỉ tiêu điều chỉnh tăng = SUM(BH8:BH10)
+- [BF47] (ô kề dòng Tổng hợp) = SUM(BH12:BH14) — tổng chỉ tiêu điều chỉnh giảm
+
+### Sheet "Header"
+- [M2] Cờ nối địa chỉ: nếu 3 ô N2, O2, P2 cùng rỗng trả " ", ngược lại " - " (IF(TRIM(N2&O2&P2)=""," "," - "))
+- [T8] Cờ người ký: CONCATENATE(1)
+- [B15] Cờ hợp lệ: bằng 0 nếu 01!U46 lớn hơn 01!U45, ngược lại 1 (IF(01!U46>01!U45,0,1))
+- [B23, B24, B25] Cờ có dữ liệu: bằng 0 nếu ô nguồn rỗng, ngược lại 1 (IF(ISBLANK(01!M3),0,1); IF(ISBLANK(01!Y3),0,1); IF(ISBLANK(01!Y5),0,1))
+- [C23, C24, C25] Giá trị tương ứng = 01!M3 / 01!Y3 / 01!Y5
+
+## File 01_CTLNDC_v2.2.7_mau.xls1
+
+### Sheet "01" (bản in/bản 2)
+- [D6] Tiêu đề: "[01] Kỳ: Cổ tức, lợi nhuận được chia của năm"
+- [AN10] Hạch "[X]" vào ô "Lần đầu" khi chưa bổ sung: IF(Header!V29="","[X]","")
+- [BX10] Số lần bổ sung = Header!V29 (rỗng thì trống)
+- [AD12] Tên NNT (ô "Lần đầu:") = Header!C3
+- [AA14, AF14, AK14, AP14, AU14, AZ14, BE14, BJ14, BO14, BT14] Tách 10 ký tự đầu mã số thuế (Header!C2..L2), mỗi ô 1 ký tự: MID(TRIM(...),1,1)
+- [CB14, CG14, CL14] Tách 3 ký tự tiếp theo (Header!N2, O2, P2): MID(TRIM(...),1,1)
+- [AA16, AA18, CK18, AA20, BD20, CK20] Prefill từ Header!C4..C9 (địa chỉ, điện thoại...), các ô C7, V6 qua TRIM
+- [AD22] Tên đại lý thuế = TRIM(Header!V6)
+- [AA24, AF24, AK24, AP24, AU24, AZ24, BE24, BJ24, BO24, BT24, CB24, CG24, CL24] Tách 13 ký tự mã số thuế đại lý (Header!V5) thành các ô riêng: MID(TRIM(Header!V5),n,1)
+- [AA26, AA28, CK28, AA30, BD30, CK30, BD32, CK32] Prefill từ Header!V7..V14 (thông tin đại lý: địa chỉ, điện thoại...), đều qua TRIM
+- [BK59] Dòng ngày in: "Ngày " + ngày + " tháng " + tháng + " năm " + năm tách từ BD57 bằng MID (múi 2-2-4)
+
+### Sheet "KHBS" (khai bổ sung, bản 2)
+- [E7] Dòng mở đầu: "Tờ khai thuế mẫu số 01/CTLNĐC kỳ tính thuế: Ngày " & Header!V32 & " ngày " + ngày tháng năm tách từ E70 bằng MID (múi 2-4-4)
+- [AF10] Tên NNT = TRIM(Header!C3)
+- [AA12, AF12, AK12, AP12, AU12, AZ12, BE12, BJ12, BO12, BT12, CB12, CG12, CL12] Tách 13 ký tự mã số thuế (Header!C2..L2, N2, O2, P2): MID(TRIM(...),1,1)
+- [AA14, AA16, CK16, AA18, BD18, CK18] Prefill từ Header!C4..C9, đều qua TRIM
+- [AK20] Tên đại lý thuế = TRIM(Header!V6)
+- [AA22, AF22, AK22, AP22, AU22, AZ22, BE22, BJ22, BO22, BT22, CB22, CG22, CL22] Tách 13 ký tự mã số thuế đại lý (Header!V5): MID(TRIM(Header!V5),n,1)
+- [AA24, AA26, CK26, AA28, BD28, CK28, AI30, BP30] Prefill từ Header!V7..V14, đều qua TRIM
+- [D39, D43, D47] Số thứ tự 3 khối điều chỉnh (tăng / giảm / tổng hợp) = D38+1 / D42+1 / D46+1
+- [BH72] Dòng ngày ký: "Ngày " + ngày + " tháng " + tháng + " năm " + năm tách từ C70 bằng MID (múi 2-4-4)
+- [N74] Giá trị tham chiếu = 01!O61
+- [AA75] Giá trị tham chiếu = 01!U62
+
+### Sheet "Header"
+- [M2] Cờ nối địa chỉ: nếu N2, O2, P2 cùng rỗng trả " ", ngược lại " - " (IF(TRIM(N2&O2&P2)=""," "," - "))
+- [T8] Cờ người ký: CONCATENATE(1)
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 01_CTLNDC
+Thư mục: 24_CO_TUC_LOI_NHUAN/01_CTLNDC (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 01_CTLNDC_v2.2.7_mau.xls ===
+--- Sheet "01" ---
+L10: IF(Header!V29="","[X]","")
+R10: IF(Header!V29<>"",Header!V29,"")
+I11: TRIM(Header!C3)
+I12: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+I13: TRIM(Header!V6)
+I14: TRIM(Header!V5)
+H55: TRIM(Header!V15)
+R55: TRIM(Header!V41)
+H57: TRIM(Header!V16)
+R57: TRIM(Header!V42)
+C61: IF(Header!V28="C","1","")
+F61: IF(Header!V28="C","","1")
+I61: TRIM(Header!V29)
+U61: Header!V31
+--- Sheet "KHBS" ---
+B3: "Tờ khai thuế mẫu số 01/CTLNĐC kỳ tính thuế: ngày "&Header!V32&" tại ngày "&LEFT(BG5,2)&" tháng "&MID(BG5,4,2)&" năm "&RIGHT(BG5,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BH17: BI5
+BE20: BD5
+BE21: BF5
+BG45: TRIM(01!R55)
+BG46: TRIM(01!R57)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B15: IF(01!U46>01!U45,0,1)
+B23: IF(ISBLANK(01!M3),0,1)
+C23: 01!M3
+B24: IF(ISBLANK(01!Y3),0,1)
+C24: 01!Y3
+B25: IF(ISBLANK(01!Y5),0,1)
+C25: 01!Y5
+=> 36 cell công thức trong file này
+
+=== FILE: 01_CTLNDC_v2.2.7_mau.xls1 ===
+--- Sheet "01" ---
+D6: "[01] Kỳ: Cổ tức, lợi nhuận được chia của năm"
+AN10: IF(Header!V29="","[X]","")
+BX10: IF(Header!V29="","",Header!V29)
+AD12: Header!C3
+AA14: MID(TRIM(Header!C2),1,1)
+AF14: MID(TRIM(Header!D2),1,1)
+AK14: MID(TRIM(Header!E2),1,1)
+AP14: MID(TRIM(Header!F2),1,1)
+AU14: MID(TRIM(Header!G2),1,1)
+AZ14: MID(TRIM(Header!H2),1,1)
+BE14: MID(TRIM(Header!I2),1,1)
+BJ14: MID(TRIM(Header!J2),1,1)
+BO14: MID(TRIM(Header!K2),1,1)
+BT14: MID(TRIM(Header!L2),1,1)
+CB14: MID(TRIM(Header!N2),1,1)
+CG14: MID(TRIM(Header!O2),1,1)
+CL14: MID(TRIM(Header!P2),1,1)
+AA16: Header!C4
+AA18: Header!C5
+CK18: Header!C6
+AA20: TRIM(Header!C7)
+BD20: Header!C8
+CK20: Header!C9
+AD22: TRIM(Header!V6)
+AA24: MID(TRIM(Header!V5),1,1)
+AF24: MID(TRIM(Header!V5),2,1)
+AK24: MID(TRIM(Header!V5),3,1)
+AP24: MID(TRIM(Header!V5),4,1)
+AU24: MID(TRIM(Header!V5),5,1)
+AZ24: MID(TRIM(Header!V5),6,1)
+BE24: MID(TRIM(Header!V5),7,1)
+BJ24: MID(TRIM(Header!V5),8,1)
+BO24: MID(TRIM(Header!V5),9,1)
+BT24: MID(TRIM(Header!V5),10,1)
+CB24: MID(TRIM(Header!V5),11,1)
+CG24: MID(TRIM(Header!V5),12,1)
+CL24: MID(TRIM(Header!V5),13,1)
+AA26: TRIM(Header!V7)
+AA28: TRIM(Header!V8)
+CK28: TRIM(Header!V9)
+AA30: TRIM(Header!V10)
+BD30: TRIM(Header!V11)
+CK30: TRIM(Header!V12)
+BD32: TRIM(Header!V13)
+CK32: TRIM(Header!V14)
+BK59: "Ngày "& MID(TRIM(BD57),1,2) & " tháng " & MID(TRIM(BD57),4,2) & " năm " & MID(TRIM(BD57),7,4)
+--- Sheet "KHBS" ---
+E7: "Tờ khai thuế mẫu số 01/CTLNĐC kỳ tính thuế: Ngày " & Header!V32&" ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
+AF10: TRIM(Header!C3)
+AA12: MID(TRIM(Header!C2),1,1)
+AF12: MID(TRIM(Header!D2),1,1)
+AK12: MID(TRIM(Header!E2),1,1)
+AP12: MID(TRIM(Header!F2),1,1)
+AU12: MID(TRIM(Header!G2),1,1)
+AZ12: MID(TRIM(Header!H2),1,1)
+BE12: MID(TRIM(Header!I2),1,1)
+BJ12: MID(TRIM(Header!J2),1,1)
+BO12: MID(TRIM(Header!K2),1,1)
+BT12: MID(TRIM(Header!L2),1,1)
+CB12: MID(TRIM(Header!N2),1,1)
+CG12: MID(TRIM(Header!O2),1,1)
+CL12: MID(TRIM(Header!P2),1,1)
+AA14: TRIM(Header!C4)
+AA16: TRIM(Header!C5)
+CK16: TRIM(Header!C6)
+AA18: TRIM(Header!C7)
+BD18: TRIM(Header!C8)
+CK18: TRIM(Header!C9)
+AK20: TRIM(Header!V6)
+AA22: MID(TRIM(Header!V5),1,1)
+AF22: MID(TRIM(Header!V5),2,1)
+AK22: MID(TRIM(Header!V5),3,1)
+AP22: MID(TRIM(Header!V5),4,1)
+AU22: MID(TRIM(Header!V5),5,1)
+AZ22: MID(TRIM(Header!V5),6,1)
+BE22: MID(TRIM(Header!V5),7,1)
+BJ22: MID(TRIM(Header!V5),8,1)
+BO22: MID(TRIM(Header!V5),9,1)
+BT22: MID(TRIM(Header!V5),10,1)
+CB22: MID(TRIM(Header!V5),11,1)
+CG22: MID(TRIM(Header!V5),12,1)
+CL22: MID(TRIM(Header!V5),13,1)
+AA24: TRIM(Header!V7)
+AA26: TRIM(Header!V8)
+CK26: TRIM(Header!V9)
+AA28: TRIM(Header!V10)
+BD28: TRIM(Header!V11)
+CK28: TRIM(Header!V12)
+AI30: TRIM(Header!V13)
+BP30: TRIM(Header!V14)
+D39: D38+1
+D43: D42+1
+D47: D46+1
+BH72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
+N74: 01!O61
+AA75: 01!U62
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+=> 97 cell công thức trong file này
+
+
+TỔNG CỘNG: 133 cell công thức trong 2 file

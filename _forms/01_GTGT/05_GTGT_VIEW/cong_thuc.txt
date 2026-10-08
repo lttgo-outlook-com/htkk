@@ -1,0 +1,104 @@
+CÔNG THỨC TÍNH (human-readable) — 05_GTGT_VIEW (Tờ khai thuế GTGT mẫu 05/GTGT (VIEW), nhóm GTGT)
+Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
+Một file 05_GTGT_VIEW_v2.0.0_mau, có sheet "01" (tờ khai), "KHBS", "Header".
+
+### Sheet "01" (tờ khai chính)
+- [K5] [01] "Lần phát sinh: Ngày <MID M54>" nếu ô ẩn J54="1", khác thì "[ ] Lần phát sinh"
+- [K6] "Tháng ..." nếu J54="1", khác thì "[x] Tháng <V46> năm <V48>" (kỳ tính thuế theo tháng)
+- [L7] Lần đầu = "[X]" nếu Header!V29 trống; [R7]/[I54] Bổ sung lần thứ = V29
+- [I8] [02] Tên người nộp thuế = TRIM(C3); [I9] [03] MST = nối 13 ô từ Header (ô trống để " ")
+- [F10..S12] Địa chỉ/quận/tỉnh/điện thoại/fax/email = C4..C9
+- [I13] Tên đại lý thuế (nếu có) = TRIM(V6); [I14] MST đại lý = TRIM(V5)
+- [F15..S17] Địa chỉ/liên hệ đại lý = V7..V12; [L18] Số hợp đồng = TRIM(V13); [S18] Ngày hợp đồng = TRIM(V14)
+- [T37] "Tổng" = SUM(U44:AA45) (tổng khối bảng chi tiết 2 dòng × 3 cột)
+- [K45] [25] = ROUND(K43 × 1/100, 0) — 1% của giá trị K43
+- [R45] [26] = ROUND(R43 × 2/100, 0) — 2% của giá trị R43
+- [J48] "Tổng số thuế phải nộp [27] = [25] + [26]" = K45 + R45
+- [C54] Cờ "Chính thức" = "1" nếu V29 trống; [F54] Cờ "Bổ sung" = "1" nếu V29 có giá trị
+- [J54] Cờ "Lần phát sinh" = "1" nếu V30="D", khác thì "0"; [M54] Ngày phát sinh = V31 nếu V30="D"
+- [C55] "Họ và tên:" (chuỗi tĩnh); [H55] = TRIM(V15); [R55] Người ký = TRIM(V41)
+- [C57] "Chứng chỉ hành nghề số:" (chuỗi tĩnh); [H57] = TRIM(V16); [R57] Ngày ký = V42 (trống → "")
+
+### Sheet "KHBS" (bảng khấu trừ)
+- [B3] "Tờ khai thuế GTGT mẫu số 05/GTGT kỳ tính thuế: <'Ngày <MID 01!M54>' nếu 01!J54='1', khác 'Tháng <V46>/<V48>'> ngày <MID B47>)"
+- [BF5] = ROUND(BH15 × BE20 × 0,05 / 100, 0) — 0,05%/ngày
+- [B9] STT I. (điều chỉnh tăng) = B8 + 1; [B13] II. = B12 + 1; [B17] III. = B16 + 1
+- [BH17] Số thuế = BI5; [BE20] Số ngày nộp chậm = BD5; [BE21] Số tiền chậm nộp = BE5 (lấy ô bên trên)
+- [BG45] Người ký = TRIM(01!R55); [BG46] Ngày ký = TRIM(01!R57)
+- [B47] = BG5; [BD47] Tổng I = SUM(BH8:BH10); [BF47] Tổng II = SUM(BH12:BH14)
+
+### Sheet "Header"
+- [M2] ký hiệu MST (3 ô N2..P2 trống → " ", khác → " - "); [T8] "nguoi ky" = CONCATENATE(1)
+- [B15] Cờ "có ngày ký" = "0" nếu độ dài 01!R57 = 0, khác thì "1"; [C15] = 01!R57
+
+==============================================================================
+DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
+==============================================================================
+
+CÔNG THỨC TÍNH — 05_GTGT_VIEW
+Thư mục: 01_GTGT/05_GTGT_VIEW (HTKK 5.7.9, _forms/)
+Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
+Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
+
+=== FILE: 05_GTGT_VIEW_v2.0.0_mau.xls ===
+--- Sheet "01" ---
+K5: IF(J54="1"," [x] Lần phát sinh: Ngày "&MID(M54,1,2)&" tháng "&MID(M54,4,2)&" năm "&MID(M54,7,4)," [ ] Lần phát sinh")
+K6: IF(J54="1"," [ ] Tháng ... năm ..."," [x] Tháng "&Header!V46&" năm "&Header!V48)
+L7: IF(Header!V29="","[X]","")
+R7: IF(Header!V29="","",Header!V29)
+I8: TRIM(Header!C3)
+I9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
+F10: TRIM(Header!C4)
+F11: TRIM(Header!C5)
+P11: TRIM(Header!C6)
+F12: TRIM(Header!C7)
+M12: TRIM(Header!C8)
+S12: TRIM(Header!C9)
+I13: TRIM(Header!V6)
+I14: TRIM(Header!V5)
+F15: TRIM(Header!V7)
+F16: TRIM(Header!V8)
+P16: TRIM(Header!V9)
+F17: TRIM(Header!V10)
+M17: TRIM(Header!V11)
+S17: TRIM(Header!V12)
+L18: TRIM(Header!V13)
+S18: TRIM(Header!V14)
+T37: SUM(U44:AA45)
+K45: ROUND(K43*1/100,0)
+R45: ROUND(R43*2/100,0)
+J48: K45+R45
+C54: IF(Header!V29="","1","")
+F54: IF(Header!V29="","","1")
+I54: IF(Header!V29="","",Header!V29)
+J54: IF(Header!V30="D","1","0")
+M54: IF(Header!V30="D",Header!V31,"")
+C55: "   Họ và tên:"
+H55: TRIM(Header!V15)
+R55: TRIM(Header!V41)
+C57: "   Chứng chỉ hành nghề số:"
+H57: TRIM(Header!V16)
+R57: IF(Header!V42<>"",Header!V42,"")
+--- Sheet "KHBS" ---
+B3: "Tờ khai thuế GTGT mẫu số 05/GTGT kỳ tính thuế:"&IF(01!J54="1","Ngày "&MID(01!M54,1,2)&"/"&MID(01!M54,4,2)&"/"&MID(01!M54,7,4),"Tháng "&Header!V46&"/"&Header!V48)&" ngày "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")"
+BF5: ROUND(BH15*BE20*0.05/100,0)
+B9: B8+1
+B13: B12+1
+B17: B16+1
+BH17: BI5
+BE20: BD5
+BE21: BE5
+BG45: TRIM(01!R55)
+BG46: TRIM(01!R57)
+B47: BG5
+BD47: SUM(BH8:BH10)
+BF47: SUM(BH12:BH14)
+--- Sheet "Header" ---
+M2: IF(TRIM(N2&O2&P2)=""," "," - ")
+T8: CONCATENATE(1)
+B15: IF(LEN(01!R57)=0,"0","1")
+C15: 01!R57
+=> 54 cell công thức trong file này
+
+
+TỔNG CỘNG: 54 cell công thức trong 1 file
