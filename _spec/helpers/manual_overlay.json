@@ -1,0 +1,519 @@
+{
+ "GeneralFunctions.IsNumeric": {
+  "purpose": "Kiểm tra chuỗi có phân tích được thành số thập phân (decimal) hay không.",
+  "semantics": {
+   "precondition": "input chuỗi bất kỳ, phân tích theo culture hiện hành.",
+   "effects": "Không có.",
+   "returns": "true nếu decimal.TryParse thành công, ngược lại false. Chuỗi null hoặc rỗng cho false.",
+   "exceptions": "Không ném."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetQuyNamByThangNam": {
+  "purpose": "Ánh xạ từng quý (1 đến 4) của năm tài chính sang năm dương lịch tương ứng, dựa trên tháng bắt đầu năm tài chính.",
+  "semantics": {
+   "precondition": "ngayBatDauTC dạng ngày/tháng chứa dấu gạch chéo, tháng bắt đầu lấy ở phần tử thứ hai. thang, nam là tháng và năm tham chiếu.",
+   "effects": "Không đổi ô. Nếu thang nhỏ hơn tháng bắt đầu thì lùi nam một năm. Sau đó điền từ điển khóa quý, giá trị năm: tháng bắt đầu 10 đến 12 thì quý 4 thuộc nam, quý 1 đến 3 thuộc nam+1. Tháng bắt đầu 7 đến 9 thì quý 3 và 4 thuộc nam, quý 1 và 2 thuộc nam+1. Tháng bắt đầu 4 đến 6 thì quý 2 đến 4 thuộc nam, quý 1 thuộc nam+1. Tháng bắt đầu 1 đến 3 thì cả bốn quý thuộc nam.",
+   "returns": "Dictionary quý sang năm (chuỗi). Trả null nếu ngày bắt đầu rỗng hoặc không có dấu gạch chéo.",
+   "exceptions": "Bắt và ghi log, trả từ điển điền dở dang."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetRowOnSViewCreateDictionary": {
+  "purpose": "Tạo danh sách khóa nhận dạng dòng của bảng từ các cột chỉ định, dùng để dò trùng.",
+  "semantics": {
+   "precondition": "cols là danh sách cột 1-based. table có TableName và TableID.",
+   "effects": "Chỉ đọc sheet. Với mỗi dòng dữ liệu, nối giá trị của các cột không thuộc kiểu ô số hoặc tiền tệ, bỏ ô null. Nếu chuỗi nối khác rỗng thì tạo khóa gồm tên bảng, mã bảng và chuỗi nối, thêm vào danh sách nếu chưa có.",
+   "returns": "danh sách khóa không trùng, theo thứ tự dòng.",
+   "exceptions": "Bắt và ghi log, trả danh sách hiện có."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.SetCellTypeTheoKieuKy": {
+  "purpose": "Đặt kiểu ô mặt nạ (MaskCellType) cho ô kỳ kê khai theo kiểu kỳ.",
+  "semantics": {
+   "precondition": "typeKeKhai là Y, Q, M, D hoặc khác. iRow, iCol 1-based.",
+   "effects": "Ký tự giữ chỗ là dấu chấm. Mặt nạ: Y là 4 số (năm), Q là 1 số, gạch chéo, 4 số, M là 2 số, gạch chéo, 4 số, D là ngày 2/2/4. Giá trị khác dùng mặt nạ như Q.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["đặt kiểu ô (mặt nạ)"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetHanNopToKhai": {
+  "purpose": "Tính hạn nộp tờ khai theo kỳ kê khai (tháng, quý, năm, từng lần phát sinh...) và các tham số kỳ.",
+  "semantics": {
+   "precondition": "periodInfo có Nam, Thang, KieuKy (M, Q, Y, D, D_D...), menuID và một số trường khác. headerInfo có thể null. Ngày tính từ ngày cuối kỳ cộng thêm số ngày quy định, có xử lý ngày cuối tuần (CountWeekendDays) ở phần cuối.",
+   "effects": "Đọc XML dữ liệu tờ khai (GetValueInXml) cho kiểu D. Không đổi ô. Quy tắc cụ thể từng kiểu kỳ và từng loại tờ khai (hằng 90, 45, 10 ngày, ngày 20 hằng tháng, ngoại lệ tháng 4, 5 và 12) chưa kiểm hết từng nhánh. Số ngày và ngày hạn là quy định pháp luật, cần đối chiếu văn bản gốc trước khi dùng.",
+   "returns": "DateTime hạn nộp.",
+   "exceptions": "Bắt, ghi log và ném lại."
+  },
+  "side_effects": ["IO đọc XML", "ghi log khi lỗi", "ném ngoại lệ"],
+  "confidence": "thấp"
+ },
+ "GeneralFunctions.ThayDoiTinhTheoCQT2Cap": {
+  "purpose": "Khóa hoặc mở khóa các ô địa bàn (tỉnh, xã, địa chỉ, tên đơn vị) và điền giá trị tỉnh, xã theo cơ quan thuế hai cấp.",
+  "semantics": {
+   "precondition": "Hai overload. (1) header, sView, PeriodInfo, sInfo, khoảng dòng, ô bỏ qua. (2) mã CQT cấp cục và nơi nộp của trụ sở chính, các tọa độ ô tên tỉnh, xã, địa chỉ, đơn vị.",
+   "effects": "Overload (1): khóa mọi ô tĩnh trong khoảng dòng (trừ ô bỏ qua). Mở khóa nếu tỉnh của người nộp thuế bằng tỉnh kỳ kê khai (điều kiện đầy đủ chưa đọc hết). Nếu tỉnh khác thì ghi tên tỉnh, tên xã và mã vào ô loại điều khiển 100 và 101, rồi khóa. Overload (2): với mã CQT cấp cục 82500 thì mở khóa ô tên tỉnh. Trường hợp đơn vị phụ thuộc trụ sở chính thì khóa ô xã, tỉnh, địa chỉ, tên đơn vị. Quy đổi mã tỉnh cũ sang mới qua GetMaTinhMoiByMaTinhCu. Nhiều nhánh chưa đọc hết.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["khóa/mở khóa ô", "ghi giá trị ô"],
+  "confidence": "thấp"
+ },
+ "HTKKFile.SetNodeBackGroundPink": {
+  "purpose": "Đánh dấu ô lỗi bằng nền hồng kèm ghi chú thông điệp, đồng thời ghi nhật ký lỗi dữ liệu lớn.",
+  "semantics": {
+   "precondition": "sView hợp lệ, rowIndex và colIndex theo chỉ số 0-based của FarPoint (khác GeneralFunctions dùng 1-based). rowSTT mặc định 0, chỉ dùng cho dòng nhật ký.",
+   "effects": "Đặt BackColor của ô thành hồng, gắn ghi chú msg dạng popup, kích thước chỉ báo ghi chú 5x5. Gọi LogErrorBigData với chuỗi gồm tên sheet, rowSTT, msg và nội dung ô.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt mọi ngoại lệ và ghi log, không ném lại. Không kiểm tra trước màu hiện có, luôn ghi đè."
+  },
+  "side_effects": ["đánh dấu màu nền ô (hồng)", "ghi chú ô", "IO nhật ký (LogErrorBigData)"],
+  "confidence": "cao"
+ },
+ "HTKKFile.GetMessage": {
+  "purpose": "Lấy nội dung thông điệp: theo ID trong Message.xml, hoặc đọc từ ô chứa thông điệp của sheet cuối/sheet Header.",
+  "semantics": {
+   "precondition": "Ba overload. (1) IDmsg: tệp ../Project/Message.xml tồn tại. (2) sView và cell[]: cell[0] là cột, cell[1] là dòng (0-based), đọc ở sheet cuối của FpSpread. (3) winFpSpread, idxRow, idxCol: đọc ở sheet tên Header.",
+   "effects": "Chỉ đọc. Overload (1) nạp XMLMessage rồi tra ID. Overload (2) lấy Value của ô, null thành chuỗi rỗng. Overload (3) lấy Text của ô.",
+   "returns": "chuỗi thông điệp. Khi lỗi: overload (1) và (3) trả nội dung ngoại lệ dạng chuỗi (lẫn vào kết quả như một thông điệp), overload (2) trả chuỗi rỗng.",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, không ném lại."
+  },
+  "side_effects": ["IO đọc Message.xml", "ghi log khi lỗi"],
+  "confidence": "cao"
+ },
+ "ConvertHelpers.ConvertToDateTime": {
+  "purpose": "Chuyển giá trị bất kỳ sang DateTime theo định dạng cho trước bằng culture hiện hành.",
+  "semantics": {
+   "precondition": "obj có thể null hoặc DBNull. format là chuỗi định dạng DateTime (ví dụ dd/MM/yyyy).",
+   "effects": "Không ảnh hưởng ô hay dữ liệu.",
+   "returns": "DateTime đã phân tích. Khi obj null, DBNull hoặc không khớp định dạng thì trả giá trị mặc định 01/01/0001 (không báo lỗi).",
+   "exceptions": "Không ném ngoại lệ (dùng TryParseExact, culture hiện hành CurrentCulture)."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.HaveToValidateRow": {
+  "purpose": "Quyết định một dòng bảng có phải kiểm tra hay không: trả true nếu có ô khác giá trị mặc định.",
+  "semantics": {
+   "precondition": "rowsInfo mô tả cột (DefaultValue, Controltype), lstRowValue là giá trị dòng theo thứ tự cột.",
+   "effects": "Với cột kiểu số (Controltype 16) đổi cả mặc định lẫn giá trị sang số rồi ghi ngược số đã chuẩn hóa vào lstRowValue (sửa mảng đầu vào). Cột checkbox (Controltype 2) so với mặc định False. Bỏ qua cột có mặc định NA và cột vượt độ dài mảng.",
+   "returns": "true nếu tồn tại ô không rỗng và khác mặc định, ngược lại false (dòng trống/mặc định thì bỏ qua kiểm tra).",
+   "exceptions": "Bắt, ghi log rồi ném lại."
+  },
+  "side_effects": ["ghi vào mảng đầu vào lstRowValue", "ghi log khi lỗi", "ném ngoại lệ"],
+  "confidence": "cao"
+ },
+ "HTKKFile.RemoveValidate": {
+  "purpose": "Xóa dấu hiệu lỗi của ô: khôi phục màu nền và gỡ ghi chú.",
+  "semantics": {
+   "precondition": "Chỉ số 0-based. testColor mặc định false.",
+   "effects": "Nếu ô đang khóa và testColor là true thì nền xanh nhạt (233,245,254), ngược lại nền trắng. Ẩn và xóa ghi chú ô.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["đặt màu nền ô", "xóa ghi chú ô"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.SaveAllCellTypeOfSheet": {
+  "purpose": "Lưu kiểu ô (CellType) của mọi ô dữ liệu bảng và ô tĩnh của một sheet vào bộ nhớ đệm kiểu ô.",
+  "semantics": {
+   "precondition": "sInfo có thể null (khi đó thoát ngay). sheetIndex là chỉ số sheet.",
+   "effects": "Duyệt từng dòng dữ liệu của mọi bảng và từng ô tĩnh, gọi UpsertCellType để ghi kiểu ô. Ô tĩnh lỗi thì ghi log nhắc kiểm tra đường dẫn KHBS.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["ghi bộ nhớ đệm kiểu ô (UpsertCellType)", "ghi log"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.SetLaiDongCon": {
+  "purpose": "Gán lại giá trị cột dòng con bằng giá trị ô ở dòng tiêu đề của bảng.",
+  "semantics": {
+   "precondition": "Tọa độ cột và dòng 1-based. tableIndex nhỏ hơn 0 nghĩa là áp cho mọi bảng có tiêu đề tĩnh. indexRowHeader chọn ô tiêu đề trong Header.StaticCells.",
+   "effects": "Nếu iRow nhỏ hơn 0 thì chép giá trị ô (dòng tiêu đề, cột colHeader) vào cột colChilden của mọi dòng dữ liệu bảng. Nếu iRow bằng hoặc lớn hơn 0 thì chỉ chép vào dòng iRow. Điều kiện lọc bảng đọc từ dòng bị cắt nên chưa kiểm hết.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["ghi giá trị ô"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.FormatSoHD": {
+  "purpose": "Định dạng số hóa đơn thành chuỗi số đủ 7 chữ số, đệm số 0 bên trái.",
+  "semantics": {
+   "precondition": "str là chuỗi số hoặc rỗng. Dấu chấm và phẩy bị bỏ khi đổi sang số nguyên.",
+   "effects": "Không đổi ô hay dữ liệu.",
+   "returns": "Chuỗi rỗng nếu đầu vào rỗng. Ngược lại số nguyên (ConvertToInt) đệm số 0 đến 7 ký tự. Giá trị không phân tích được thành số 0 nên cho kết quả 7 chữ số 0. Chuỗi số dài hơn 7 ký tự giữ nguyên. Điều kiện nhánh đệm luôn đúng với chuỗi khác rỗng.",
+   "exceptions": "Bắt, ghi log rồi ném lại."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.checkLockUnLockCells": {
+  "purpose": "Áp quy tắc khóa/mở khóa ô theo bảng cấu hình công thức ở sheet cuối (cột AK đến AN, cờ BA_1).",
+  "semantics": {
+   "precondition": "Ô BA_1 của sheet cuối phải bằng 1, nếu không thoát ngay. Sheet cuối chứa các công thức quy tắc: cột AK nêu bảng đích, AL điều kiện, AM danh sách ô bị khóa, AN cờ mở/khóa.",
+   "effects": "Tính lại toàn bộ sheet, nạp công thức. Với mỗi dòng cấu hình: xác định sheet và bảng đích (DetectIndexOfSheet, DetectIndexOfTable), tính điều kiện cho từng dòng dữ liệu (FormulaToTemplate, SetFormulaNextRow) rồi gọi LockUnLockCol trên các ô liệt kê. Chỉ xử lý bảng khớp tableIndexCheck nếu tableIndexCheck lớn hơn hoặc bằng 0. Phần cuối thân hàm chưa đọc hết.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt (cấu trúc try/catch lồng nhau, chưa đọc chi tiết)."
+  },
+  "side_effects": ["tính lại công thức sheet", "ghi công thức vào ô cấu hình", "khóa/mở khóa ô"],
+  "confidence": "thấp"
+ },
+ "GeneralFunctions.InsertNumberCell": {
+  "purpose": "Đặt kiểu ô số cho một ô: có dấu phân cách nghìn, âm trong ngoặc, số chữ số thập phân suy từ giá trị mặc định.",
+  "semantics": {
+   "precondition": "iRow, iCol 1-based. validate chứa MinValue và MaxValue dạng chuỗi.",
+   "effects": "Nếu min hoặc max vượt ngưỡng 15 chữ số thì chuyển sang InsertCurrencyCell. Ngược lại tạo NumberCellType: mặc định rỗng hoặc 0 thì 0 thập phân, dấu thập phân phẩy, nghìn chấm. Mặc định có dấu chấm thì thập phân là độ dài phần sau dấu chấm, kiểu Anh. Mặc định có phẩy thì tương tự kiểu Việt. Min/max qua getMinNumber/getMaxNumber. Có xử lý thêm khi ô có công thức ở phần cuối chưa đọc hết.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["đặt kiểu ô (số)"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.changFormatCell": {
+  "purpose": "Đổi số chữ số thập phân của các ô số theo loại tiền (USD 2 chữ số, còn lại 0).",
+  "semantics": {
+   "precondition": "cellFormat là danh sách mã ô (ví dụ D_12) ngăn cách bằng dấu ba thăng. maLoaiTien là mã tiền tệ.",
+   "effects": "Với mỗi ô trong danh sách mà kiểu ô là NumberCellType thì đặt DecimalPlaces bằng 2 nếu USD, bằng 0 nếu khác. Ô kiểu khác không đổi.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["đặt kiểu ô (số chữ số thập phân)"],
+  "confidence": "cao"
+ },
+ "ConvertHelpers.ConvertToDouble1": {
+  "purpose": "Chuyển giá trị sang double sau khi bỏ hết dấu chấm và dấu phẩy (coi như số nguyên nhân 10^số chữ số thập phân).",
+  "semantics": {
+   "precondition": "obj có thể null hoặc DBNull.",
+   "effects": "Không ảnh hưởng ô hay dữ liệu.",
+   "returns": "double. Null, DBNull hoặc không phân tích được thì 0. Lưu ý: bỏ cả dấu thập phân nên 1.5 thành 15.",
+   "exceptions": "Không ném (TryParse)."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "HTKKFile.SetNodeBackGroundYellow": {
+  "purpose": "Đánh dấu ô cảnh báo nền vàng nhạt kèm ghi chú, không ghi đè ô đang hồng.",
+  "semantics": {
+   "precondition": "Chỉ số 0-based.",
+   "effects": "Nếu nền ô chưa phải hồng thì đặt nền LemonChiffon, gắn ghi chú popup, chỉ báo 5x5. Ô hồng thì giữ nguyên.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["đặt màu nền ô (vàng)", "ghi chú ô"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.DetectIndexOfTable": {
+  "purpose": "Tìm chỉ số bảng trong sheet chứa một dòng cho trước.",
+  "semantics": {
+   "precondition": "row theo số dòng mẫu 1-based của sheet. sInfo có thể null.",
+   "effects": "Chỉ đọc. Bảng có tiêu đề: khoảng từ dòng bắt đầu mẫu bảng đến đó cộng độ dài bảng và số dòng dữ liệu. Bảng không tiêu đề: từ dòng dữ liệu đến cộng số dòng dữ liệu. Biên gồm cả hai đầu.",
+   "returns": "chỉ số bảng đầu tiên chứa row, hoặc -1 nếu sInfo null, không có bảng, không khớp hoặc lỗi.",
+   "exceptions": "Bắt và ghi log, trả -1."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.LockUnLockCol2": {
+  "purpose": "Khóa hoặc mở khóa một ô, đổi màu nền theo trạng thái, tùy chọn ghi giá trị xóa.",
+  "semantics": {
+   "precondition": "row, colHide 1-based.",
+   "effects": "Đặt Locked, đặt nền theo hằng MA_COLOR_LOCKED hoặc MA_COLOR_UNLOCK. Nếu deleteData thì ghi deleteToData vào ô.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["khóa/mở khóa ô", "đặt màu nền ô", "ghi giá trị ô"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.fpSpReindexingTableTemplate": {
+  "purpose": "Đánh lại số thứ tự (STT) cột STT của mọi dòng dữ liệu trong một bảng.",
+  "semantics": {
+   "precondition": "tableInfo.iColumnSTT là cột STT 1-based. CellTableSTT có thể null.",
+   "effects": "Tạm dừng layout, rồi với mỗi dòng: xóa công thức ô STT, ghi nhãn. Không có CellTableSTT thì nhãn là 1, 2, 3. Có CellTableSTT thì nhãn là tiền tố, dấu chấm, số thứ tự. Nếu tiền tố là abc thì dùng chữ cái a, b, c, d, đ... (chỉ số kẹp tối đa 22). Khôi phục layout.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log (không ResumeLayout nếu lỗi giữa chừng)."
+  },
+  "side_effects": ["ghi giá trị ô (STT)", "xóa công thức ô", "tạm dừng layout"],
+  "confidence": "cao"
+ },
+ "ConvertHelpers.ConvertToString": {
+  "purpose": "Chuyển giá trị bất kỳ sang chuỗi, null hoặc DBNull thành chuỗi rỗng.",
+  "semantics": {
+   "precondition": "obj tùy ý.",
+   "effects": "Không có.",
+   "returns": "ToString của obj hoặc chuỗi rỗng.",
+   "exceptions": "Không ném với null (có thể ném nếu ToString của obj ném)."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "ConvertHelpers.ConvertToDouble": {
+  "purpose": "Chuyển giá trị bất kỳ sang double, mặc định 0.",
+  "semantics": {
+   "precondition": "obj tùy ý. Chuỗi phân tích theo culture hiện hành (giữ nguyên dấu phân cách).",
+   "effects": "Không có.",
+   "returns": "double. Null, DBNull hoặc không phân tích được thì 0.",
+   "exceptions": "Không ném (TryParse)."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetNgayDauQuy": {
+  "purpose": "Tính ngày đầu của một quý trong năm tài chính có ngày và tháng bắt đầu tùy ý.",
+  "semantics": {
+   "precondition": "iQuy từ 1 đến 4. iNgayBdNamTc và iThangBdNamTc là ngày, tháng bắt đầu năm tài chính.",
+   "effects": "Không có.",
+   "returns": "DateTime(năm, tháng, ngày) với tháng bằng (quý trừ 1) nhân 3 cộng tháng bắt đầu. Nếu tháng vượt 12 thì trừ 12 và năm cộng 1. Lỗi (ngày không hợp lệ) trả 01/01/0001.",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetHeaderInfo": {
+  "purpose": "Đọc thông tin chung của người nộp thuế (cơ quan thuế, tỉnh, huyện, xã) từ tệp HEADER.xml của mã số thuế.",
+  "semantics": {
+   "precondition": "Tệp ../DataFiles/<mst>/HEADER.xml tồn tại, các ô định danh theo thuộc tính Path (p17, p18, p28, p29 ...).",
+   "effects": "Chỉ đọc XML. Nếu removeMaCQT (mặc định true) thì cắt phần mã trước dấu ' - ' khỏi tên cơ quan thuế cấp cục.",
+   "returns": "đối tượng HTKKCMCTTinChungInfo gồm tên và mã cơ quan thuế cấp cục, nơi nộp, tỉnh, huyện, xã của người nộp thuế và đại lý thuế. Lỗi thì trả đối tượng điền dở dang.",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["IO đọc XML (HEADER.xml)", "ghi log khi lỗi"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.LockUnLockColsInTable": {
+  "purpose": "Khóa hoặc mở khóa các cột chỉ định trên mọi dòng dữ liệu của một bảng, tùy chọn cả ô tiêu đề.",
+  "semantics": {
+   "precondition": "cacCotAn là danh sách cột 1-based phải có trong RowsInfo của bảng.",
+   "effects": "Nếu lockAllHeader thì gọi LockUnLockCol cho mọi ô tiêu đề tĩnh. Với mỗi dòng và mỗi cột: đặt Locked, nền theo hằng khóa/mở, và nếu deleteData thì ghi giá trị mặc định của cột.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["khóa/mở khóa ô", "đặt màu nền ô", "ghi giá trị ô"],
+  "confidence": "cao"
+ },
+ "ConvertHelpers.ConvertCellValueToText": {
+  "purpose": "Lấy nội dung ô dạng chuỗi, dùng Value với ô số hoặc tiền tệ và Text với các ô còn lại.",
+  "semantics": {
+   "precondition": "Chỉ số row, col 0-based.",
+   "effects": "Chỉ đọc.",
+   "returns": "chuỗi. Ô null hoặc lỗi thì rỗng. Ô không có CellType dùng Text.",
+   "exceptions": "Nuốt mọi ngoại lệ, trả chuỗi rỗng."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetMaTieuMucByMaHH": {
+  "purpose": "Tra mã tiểu mục (MaTM) từ mã hàng hóa (MaHH) theo loại danh mục trong DM_MAP_MAHH_MA_TM.xml.",
+  "semantics": {
+   "precondition": "Tệp danh mục tồn tại dưới thư mục giao diện (HTKKConfig.INTERFACE_INI).",
+   "effects": "Chỉ đọc XML. Tìm nút Items có Type bằng loaiDM, rồi nút con có MaHH khớp.",
+   "returns": "MaTM khớp đầu tiên, chuỗi rỗng nếu không thấy.",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["IO đọc XML"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.ShowBangKe": {
+  "purpose": "Mở tệp Excel bảng kê mẫu bằng chương trình ngoài sau khi chép sang thư mục tạm.",
+  "semantics": {
+   "precondition": "Tệp có trong thư mục templates\\excel của giao diện.",
+   "effects": "Chép tệp sang thư mục tạm (ghi đè), khởi chạy bằng Process.Start. Lỗi thì ghi log và hiện hộp thoại frmMessage mã 0433.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt, ghi log và hiện hộp thoại."
+  },
+  "side_effects": ["IO chép tệp", "khởi chạy tiến trình ngoài", "hộp thoại khi lỗi"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.lockUnlockMultiCellsStatic": {
+  "purpose": "Khóa hoặc mở khóa mọi ô tĩnh của sheet nằm trong khoảng dòng cho trước.",
+  "semantics": {
+   "precondition": "startRow, endRow 1-based, biên gồm cả hai đầu (so sánh lớn hơn hoặc bằng, nhỏ hơn hoặc bằng).",
+   "effects": "Với mỗi ô tĩnh trong khoảng: đặt Locked, nếu isDeleteData thì ghi giá trị mặc định, đặt nền theo hằng khóa/mở.",
+   "returns": "không trả giá trị",
+   "exceptions": "Không bắt ngoại lệ."
+  },
+  "side_effects": ["khóa/mở khóa ô", "đặt màu nền ô", "ghi giá trị ô"],
+  "confidence": "cao"
+ },
+ "ConvertHelpers.ConvertToDateTime2": {
+  "purpose": "Như ConvertToDateTime nhưng dùng culture bất biến (InvariantCulture).",
+  "semantics": {
+   "precondition": "obj có thể null. format là chuỗi định dạng.",
+   "effects": "Không có.",
+   "returns": "DateTime, hoặc 01/01/0001 nếu null hoặc không khớp.",
+   "exceptions": "Không ném."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.SetRowHeight": {
+  "purpose": "Đặt chiều cao dòng: tự khớp chiều cao ưa thích (overload 2 tham số) hoặc theo giá trị chỉ định (overload 3 tham số).",
+  "semantics": {
+   "precondition": "row1 1-based.",
+   "effects": "Overload (sView, row1): chỉ đổi khi chiều cao hiện tại lệch quá 5 đơn vị so với chiều cao ưa thích. Overload (sView, row1, height): đặt thẳng height.",
+   "returns": "không trả giá trị",
+   "exceptions": "Không bắt ngoại lệ."
+  },
+  "side_effects": ["đổi chiều cao dòng"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.ThayDoiCQTTheoTinhDynamic2": {
+  "purpose": "Cập nhật cặp ô tên và mã cơ quan thuế cấp cục và chi cục trên một dòng khi đổi địa bàn, kèm combobox chi cục.",
+  "semantics": {
+   "precondition": "Cột 1-based. Danh mục HTKKWinDictionaryDiaDanh._cqtDiaBan đã nạp.",
+   "effects": "Xóa bốn ô tên/mã và mở khóa ô tên. Nếu maCQTCapCuc rỗng thì dừng. Ngược lại ghi tên và mã cục, tạo combobox chi cục từ các CQT cùng điều kiện lọc, ghi tên và mã chi cục, khóa ô tên nếu đã có giá trị.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt (phần cuối chưa đọc hết)."
+  },
+  "side_effects": ["ghi giá trị ô", "khóa/mở khóa ô", "đặt kiểu ô (combobox)"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.CopyTableToTable2": {
+  "purpose": "Sao chép dữ liệu từ bảng nguồn sang bảng đích theo ánh xạ cột, tùy chọn xóa dữ liệu cũ và loại trừ dòng trùng.",
+  "semantics": {
+   "precondition": "dicInfo ánh xạ cột nguồn sang cột đích (1-based). checkExists dùng để loại dòng đã tồn tại.",
+   "effects": "Nếu deleteDataOld thì xóa các dòng dữ liệu cũ (RemoveDataRows) rồi đặt lại dòng đầu về mặc định. Duyệt từng dòng nguồn, ghép nội dung các ô không phải số/tiền tệ làm khóa kiểm tra, rồi chép sang đích. Phần cuối thân hàm chưa đọc hết.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["ghi giá trị ô", "xóa dòng", "thêm dòng", "đặt kiểu ô"],
+  "confidence": "thấp"
+ },
+ "GeneralFunctions.RemoveDataRows": {
+  "purpose": "Xóa một số dòng dữ liệu của bảng khỏi sheet và cập nhật lại vị trí các bảng và ô tĩnh phía sau.",
+  "semantics": {
+   "precondition": "frRow là chỉ số dòng 0-based bắt đầu xóa. rowCount nhỏ hơn hoặc bằng 0 thì thoát.",
+   "effects": "Xóa rowCount dòng khỏi sheet. Các bảng có dòng dữ liệu bắt đầu sau frRow+1 được dịch lên rowCount. Ô tĩnh cũng dịch. Bỏ rowCount phần tử cuối của RowsValues bảng tableIndex.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["xóa dòng sheet", "cập nhật HTKKCMCSheetInfo (vị trí bảng, ô tĩnh, RowsValues)"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetValueCustom": {
+  "purpose": "Đọc giá trị ô và chuẩn hóa thành chuỗi theo loại điều khiển (checkbox, ngày, giờ, ngày giờ...).",
+  "semantics": {
+   "precondition": "iRow, iCol 1-based và không âm. controlType là mã kiểu điều khiển.",
+   "effects": "Chỉ đọc. Loại 2: True/False. Loại 14 (ngày): 8 ký tự ddMMyyyy thành dd/MM/yyyy, 10 ký tự giữ nguyên, khác thì rỗng. Loại 96 (giờ): 6 ký tự thành hh:mm:ss. Loại 94 (ngày giờ) xử lý tương tự. Các loại khác chưa đọc hết.",
+   "returns": "chuỗi đã chuẩn hóa, chuỗi rỗng nếu ô null hoặc tọa độ không hợp lệ.",
+   "exceptions": "Chưa đọc hết."
+  },
+  "side_effects": [],
+  "confidence": "vừa"
+ },
+ "ValidateBase.CheckMaSoThue": {
+  "purpose": "Kiểm tra mã số thuế hợp lệ về độ dài, ký tự và chữ số kiểm tra.",
+  "semantics": {
+   "precondition": "strMST chuỗi, độ dài chỉ được 10, 13 hoặc 14.",
+   "effects": "Không có.",
+   "returns": "false nếu độ dài khác 10, 13, 14 hoặc không khớp mẫu số (10 chữ số, hoặc 10 chữ số kèm 3 chữ số có/không dấu gạch ở dạng 14 ký tự). Ngược lại so chữ số thứ 10 với 10 trừ phần dư mod 11 của tổng có trọng số 9 chữ số đầu. Đối chiếu quy định chính thức về cách tính chữ số kiểm tra cần thực hiện riêng.",
+   "exceptions": "Chưa đọc phần xử lý lỗi."
+  },
+  "side_effects": [],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.getMaxNumber": {
+  "purpose": "Đổi chuỗi giới hạn trên thành số nguyên dài, mặc định 999999999999999.",
+  "semantics": {
+   "precondition": "strNumber có thể rỗng.",
+   "effects": "Không có.",
+   "returns": "Giá trị phân tích được, hoặc 999999999999999 nếu rỗng hoặc lỗi.",
+   "exceptions": "Nuốt lỗi."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.getMinNumber": {
+  "purpose": "Đổi chuỗi giới hạn dưới thành số nguyên dài, mặc định -999999999999999.",
+  "semantics": {
+   "precondition": "strNumber có thể rỗng.",
+   "effects": "Không có.",
+   "returns": "Giá trị phân tích được, hoặc -999999999999999 nếu rỗng hoặc lỗi.",
+   "exceptions": "Nuốt lỗi."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetValue": {
+  "purpose": "Đọc giá trị ô dạng chuỗi theo mã ô (ví dụ D_12) hoặc theo dòng và cột.",
+  "semantics": {
+   "precondition": "Overload (sView, index): index dạng cột_dòng, ví dụ D_12. Overload (sView, iRow, iCol): 1-based.",
+   "effects": "Chỉ đọc.",
+   "returns": "Chuỗi giá trị, rỗng nếu ô null, null nếu tọa độ sai hoặc lỗi.",
+   "exceptions": "Nuốt lỗi, trả null."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.InsertCombobox": {
+  "purpose": "Đặt kiểu combobox cho ô, từ từ điển mã-tên hoặc từ mảng chuỗi.",
+  "semantics": {
+   "precondition": "Tọa độ 1-based. deleteText mặc định true.",
+   "effects": "Tạo ComboBoxCellType (tối đa 10 dòng thả, rộng 500). Overload từ từ điển: Items là giá trị, ItemData là khóa, cho nhập tay, tìm nhiều ký tự. Overload mảng: chỉ Items, bỏ qua nếu tọa độ nhỏ hơn 1. Nếu xóa văn bản thì ô về rỗng.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["đặt kiểu ô (combobox)", "ghi giá trị ô"],
+  "confidence": "cao"
+ },
+ "HTKKFile.RemoveValidateBackGround": {
+  "purpose": "Xóa ghi chú và màu nền lỗi của ô, đặt nền xanh nhạt (ô khóa).",
+  "semantics": {
+   "precondition": "Chỉ số 0-based.",
+   "effects": "Ẩn và xóa ghi chú, reset màu nền, đặt nền (233,245,254).",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt và ghi log."
+  },
+  "side_effects": ["đặt màu nền ô", "xóa ghi chú ô"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.UpdateFromSViewToSInfo": {
+  "purpose": "Đồng bộ giá trị ô trên sheet vào mô hình dữ liệu bảng (RowsValues) của dòng và cột chỉ định.",
+  "semantics": {
+   "precondition": "row 1-based, phải nằm trong bảng (nhỏ hơn dòng bắt đầu thì thoát). col lớn hơn hoặc bằng 0 thì chỉ cập nhật một cột, ngược lại cập nhật cả dòng.",
+   "effects": "Ghi vào RowsValues: cột số (Controltype 16) bỏ đuôi .0, null thành 0. Checkbox (2) thành 1 hoặc 0. Cột khác ghi chuỗi, null thành rỗng.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt (chưa đọc hết)."
+  },
+  "side_effects": ["ghi mô hình dữ liệu bảng (RowsValues)"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.GetCatalogueFileName": {
+  "purpose": "Chọn hai tệp giao diện danh mục theo kỳ từ nút Menu 100_7 trong Menu.xml.",
+  "semantics": {
+   "precondition": "Tệp Menu.xml ở thư mục chạy, nút Root/Menu có ID 100_7 và thuộc tính StartDate dạng dd/MM/yyyy.",
+   "effects": "Chỉ đọc XML. Duyệt các nút con và lấy InterfaceIni của hai nút con đầu của nút phù hợp với dtPeriod (điều kiện so sánh ở phần cắt, chưa đọc hết).",
+   "returns": "mảng 2 chuỗi.",
+   "exceptions": "Bắt, ghi log và ném lại."
+  },
+  "side_effects": ["IO đọc XML"],
+  "confidence": "thấp"
+ },
+ "ConvertHelpers.ConvertToInt": {
+  "purpose": "Chuyển giá trị sang int sau khi bỏ dấu chấm và phẩy, có giá trị mặc định.",
+  "semantics": {
+   "precondition": "def mặc định 0.",
+   "effects": "Không có.",
+   "returns": "int. Null, DBNull hoặc không phân tích được thì trả def (với TryParse thất bại thì trả 0, không phải def).",
+   "exceptions": "Không ném."
+  },
+  "side_effects": [],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.GetRowIndexInSViewByCompare": {
+  "purpose": "Liệt kê chỉ số dòng trong sheet của bảng mà giá trị ở cột kiểm tra thỏa điều kiện so sánh.",
+  "semantics": {
+   "precondition": "table có thể null. colCheck 1-based.",
+   "effects": "Chỉ đọc. Duyệt các dòng dữ liệu của bảng không vượt quá số dòng của sheet. Điều kiện so sánh nằm ở dòng bị cắt nên chưa kiểm hết.",
+   "returns": "danh sách chỉ số dòng 1-based, rỗng nếu table null.",
+   "exceptions": "Bắt (chưa đọc hết)."
+  },
+  "side_effects": [],
+  "confidence": "vừa"
+ }
+}
