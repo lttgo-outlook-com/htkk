@@ -391,8 +391,9 @@ class Expander:
         dd = decl.doc or occ.doc
         if dd:
             e["doc"] = dd
-        if decl.attrs.get("nillable") == "true":
-            e["nillable"] = True
+        nd = decl.attrs.get("nillable")
+        e["nillable"] = (nd == "true") if nd in ("true", "false") else None
+        e["nillable_effective"] = nd == "true"
         for k in ("default", "fixed"):
             if k in decl.attrs:
                 e[k] = decl.attrs[k]
@@ -473,8 +474,10 @@ class Expander:
         e["type"] = None
         e["base"] = None
         if kind == "element":
-            e["minOccurs"] = occ.attrs.get("minOccurs", "1")
-            e["maxOccurs"] = occ.attrs.get("maxOccurs", "1")
+            e["minOccurs"] = occ.attrs.get("minOccurs")
+            e["maxOccurs"] = occ.attrs.get("maxOccurs")
+            e["minOccurs_effective"] = occ.attrs.get("minOccurs", "1")
+            e["maxOccurs_effective"] = occ.attrs.get("maxOccurs", "1")
         return e
 
     # ---------------- noi dung complexType
@@ -598,8 +601,10 @@ class Expander:
         dd = decl.doc or node.doc
         if dd:
             e["doc"] = dd
-        use = node.attrs.get("use", decl.attrs.get("use", "optional"))
-        e["use"] = use
+        declared_use = node.attrs.get("use", decl.attrs.get("use"))
+        use = declared_use or "optional"
+        e["use"] = declared_use
+        e["use_effective"] = use
         e["required"] = bool(req and use == "required")
         if use == "required":
             self.reach["use_required"].add(node.uid())
@@ -914,6 +919,9 @@ def main(argv):
     doc_tot = {"elements": 0, "elements_doc": 0, "attributes": 0, "attributes_doc": 0, "types": 0, "types_doc": 0}
     paths_by_json = {}
     uniq_el = set()
+    dflt = {"attr_use_khai_bao": 0, "attr_use_mac_dinh": 0, "elem_minOccurs_khai_bao": 0, "elem_minOccurs_mac_dinh": 0,
+            "elem_maxOccurs_khai_bao": 0, "elem_maxOccurs_mac_dinh": 0, "elem_nillable_khai_bao": 0,
+            "elem_nillable_mac_dinh": 0}
     uniq_el_doc = set()
     for nm in roots:
         sc = repo.schemas[nm]
@@ -986,6 +994,12 @@ def main(argv):
         stats["types"] = len(types_list)
         stats["types_with_doc"] = sum(1 for t in types_list if t.get("doc"))
         for e in entries:
+            if e["kind"] == "attribute" and "use" in e:
+                dflt["attr_use_khai_bao" if e["use"] is not None else "attr_use_mac_dinh"] += 1
+            if e["kind"] == "element" and "minOccurs" in e:
+                dflt["elem_minOccurs_khai_bao" if e["minOccurs"] is not None else "elem_minOccurs_mac_dinh"] += 1
+                dflt["elem_maxOccurs_khai_bao" if e["maxOccurs"] is not None else "elem_maxOccurs_mac_dinh"] += 1
+                dflt["elem_nillable_khai_bao" if e.get("nillable") is not None else "elem_nillable_mac_dinh"] += 1
             if e["kind"] == "element":
                 uniq_el.add(e["source"])
                 if e.get("doc"):
@@ -1097,7 +1111,7 @@ def main(argv):
         "json_map_suy_ra_ten_tep": mapped_infer, "json_map_khbs_menu": mapped_khbs_menu,
         "json_map_khbs_suy_ra": mapped_khbs_infer,
         "json_map_tong": mapped_menu + mapped_forms + mapped_infer + mapped_khbs_menu + mapped_khbs_infer,
-        "doc": dict(doc_tot, khai_bao_phan_tu_duy_nhat=len(uniq_el), khai_bao_phan_tu_duy_nhat_co_doc=len(uniq_el_doc)), "doi_chieu_path_xml_mau": {"cap": len(path_check), "path_khop": pc_match, "path_khong_khop": pc_miss, "khong_khop_bat_dau_tu_goc": pc_rooted, "khong_khop_duong_dan_tuong_doi": pc_miss - pc_rooted, "chi_tiet": path_check}, "tong_entry": total_entries,
+        "khai_bao_vs_mac_dinh": dflt, "doc": dict(doc_tot, khai_bao_phan_tu_duy_nhat=len(uniq_el), khai_bao_phan_tu_duy_nhat_co_doc=len(uniq_el_doc)), "doi_chieu_path_xml_mau": {"cap": len(path_check), "path_khop": pc_match, "path_khong_khop": pc_miss, "khong_khop_bat_dau_tu_goc": pc_rooted, "khong_khop_duong_dan_tuong_doi": pc_miss - pc_rooted, "chi_tiet": path_check}, "tong_entry": total_entries,
         "menu_khong_tim_thay_xsd": ["%s_%s" % (m["MaFile"], m["VersionXML"]) for m in menu_missing],
         "menu_co_mafile_versionxml": len(menus),
         "nguon_regex_tren_tep_xsd": raw_re,
@@ -1106,7 +1120,13 @@ def main(argv):
         "tham_chieu_khong_giai_duoc_mau": ["%s|%s|%s" % t for t in unres_sorted[:10]],
         "loi_expand": fail_expand,
     }
-    idx = {"header": {"generator": GENERATOR, "version": VERSION}, "summary": {
+    conv = {
+        "khai_bao_vs_mac_dinh": "Truong use, minOccurs, maxOccurs, nillable la gia tri KHAI BAO trong XSD (null neu khong khai bao). "
+                                "Gia tri dung thuc te nam o use_effective, minOccurs_effective, maxOccurs_effective, "
+                                "nillable_effective (mac dinh XSD: optional, 1, 1, false).",
+        "required": "required=true neu phan tu/thuoc tinh bat buoc theo ca duong dan cha (minOccurs_effective>=1, khong thuoc nhanh choice).",
+    }
+    idx = {"header": {"generator": GENERATOR, "version": VERSION, "conventions": conv}, "summary": {
         k: v for k, v in summary.items()}, "files": index,
         "unresolved_refs": ["%s|%s|%s" % t for t in unres_sorted],
         "unreached_by_kind": {k: by_file(unreached[k]) for k in unreached},
@@ -1135,6 +1155,7 @@ def main(argv):
           % (mapped_menu, mapped_forms, mapped_infer, mapped_khbs_menu, mapped_khbs_infer,
              len(index) - mapped_menu - mapped_forms - mapped_infer - mapped_khbs_menu - mapped_khbs_infer))
     print("Doc: %s" % json.dumps(doc_tot))
+    print("Khai bao vs mac dinh: %s" % json.dumps(dflt))
     print("Doi chieu path XML mau: %d cap; khop %d; khong khop %d (bat dau tu goc %d, tuong doi/khong phai XPath goc %d)"
           % (len(path_check), pc_match, pc_miss, pc_rooted, pc_miss - pc_rooted))
     print("Doc duy nhat: %d khai bao phan tu, %d co doc" % (len(uniq_el), len(uniq_el_doc)))
