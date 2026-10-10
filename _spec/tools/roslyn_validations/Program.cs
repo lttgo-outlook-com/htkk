@@ -440,7 +440,7 @@ class MethodCtx
                 }
             case ObjectCreationExpressionSyntax odt when odt.Type.ToString() == "DateTime" && odt.ArgumentList != null:
                 return "date(" + string.Join(", ", odt.ArgumentList.Arguments.Select(a => R(a.Expression))) + ")";
-            case ObjectCreationExpressionSyntax oc: return "new " + oc.Type + "(" + string.Join(", ", (oc.ArgumentList?.Arguments ?? default).Select(a => R(a.Expression))) + ")";
+            case ObjectCreationExpressionSyntax oc: return "create(" + string.Join(", ", new[] { oc.Type.ToString() }.Concat((oc.ArgumentList?.Arguments ?? default).Select(a => R(a.Expression)))) + ")";
             case ArrayCreationExpressionSyntax ac: return ac.Initializer == null ? "new_array(" + string.Join(", ", ac.Type.RankSpecifiers.SelectMany(r => r.Sizes).Select(R)) + ")" : "[" + string.Join(", ", ac.Initializer.Expressions.Select(R)) + "]";
             case ImplicitArrayCreationExpressionSyntax ic: return "[" + string.Join(", ", ic.Initializer.Expressions.Select(R)) + "]";
             case InterpolatedStringExpressionSyntax isx: return "format(" + JsonSerializer.Serialize(isx.ToString()) + ")";
