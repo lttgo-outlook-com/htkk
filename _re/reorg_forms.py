@@ -59,7 +59,7 @@ GROUP_SLUGS = {
     '101_36': '36_THUE_TOI_THIEU_TOAN_CAU', '101_37': '37_HO_CN_KINH_DOANH',
     '101_38': '38_TAI_SAN_MA_HOA',
     'KHBS': 'KHBS', 'BANG_KE': 'BANG_KE', 'PHU_LUC': 'PHU_LUC', '99_KHAC': '99_KHAC',
-    '_shared': '_shared',
+    '_shared': '_shared', '_ngoai_menu': '_ngoai_menu',
 }
 
 def cabkey(name):
@@ -116,6 +116,8 @@ def _caption_codes(cap):
 def _tt(x):
     return set(re.findall(r'tt\d+|nd\d+', x.lower()))
 
+SBK_TRUNC = 28   # Data1.cab keeps the first 28 chars of a lower-cased name (+1 digit on collision)
+
 def sbk_scan():
     calls = []    # (file_stem_lower, src_rel, line, kind, key)
     for dp, dn, fn in os.walk(DECOMP):
@@ -135,7 +137,7 @@ def sbk_scan():
                 m = re.search(r'ShowBangKe\("([^"]+)"\)', ln)
                 if not m or 'void ShowBangKe' in ln:
                     continue
-                stem = os.path.splitext(m.group(1))[0].lower()
+                stem = m.group(1).lower()   # full file name as called (lower)
                 rel = os.path.relpath(path, DECOMP)
                 if f == 'frmHTKKSystems.cs':
                     calls.append((stem, rel, i, 'menu', case))
@@ -171,13 +173,16 @@ def sbk_resolve(stem, kind, key):
         es = es2 or es
     return es, 'menu %s "%s"' % (key, cap)
 
-SBK = {}   # file stem lower -> dict(entries, evidence, standalone)
+SBK = {}   # cab-truncated lower file name -> dict(cands, ev, menus, full)
 for stem, rel, line, kind, key in sbk_scan():
-    es, ev = sbk_resolve(stem, kind, key)
-    d = SBK.setdefault(stem, {'cands': {}, 'ev': [], 'menus': []})
+    es, ev = sbk_resolve(os.path.splitext(stem)[0], kind, key)
+    d = SBK.setdefault(stem[:SBK_TRUNC], {'cands': {}, 'ev': [], 'menus': [], 'full': set()})
+    d['full'].add(stem)
     d['ev'].append('%s:%d ShowBangKe; %s' % (rel, line, ev))
     for e in es:
         d['cands'][e['folder']] = e
+        d.setdefault('byf', {}).setdefault(stem, {})[e['folder']] = e
+    d.setdefault('byf', {}).setdefault(stem, {})
     if kind == 'menu':
         d['menus'].append(key)
 BACKUP = []
@@ -497,9 +502,66 @@ def place_hit(name, hit, how, ver, rule_override=None):
 
 deferred = []   # truncated / stem-only names, resolved after full names (need known_vers)
 
+SBK_PREFIX = re.compile(r'^(bang_?ke_|bao_cao_|bangkekhautru_|pl_|khbs_)')
+sbk_note = {}   # extracted name -> ShowBangKe evidence when no menu form resolves (falls to R5x)
+
+def sbk_match(name):
+    """extracted name -> (key, entry) when it is a ShowBangKe target: equal to the 28-char cab
+    name, or (only when the called name is longer than 28) that name + 1 collision digit."""
+    low = name.lower()
+    if low in SBK:
+        return low, SBK[low]
+    k = low[:SBK_TRUNC]
+    if len(low) == SBK_TRUNC + 1 and low[-1].isdigit() and k in SBK \
+            and all(len(f) > SBK_TRUNC for f in SBK[k]['full']):
+        return k, SBK[k]
+    return None, None
+
+def sbk_place(name, sb):
+    """True when the file was placed (R1b) or sent to pending; False = fall through."""
+    ev = ' | '.join(sorted(set(sb['ev'])))
+    fulls = sorted(sb['full'])
+    if len(fulls) > 1:   # cab collision: several called names share one 28-char cab name
+        cl = ['%s -> %s' % (f, ','.join(sorted(sb['byf'][f])) or 'khong co form trong menu') for f in fulls]
+        to_pending(name, 'ShowBangKe: ten cab bi cat trung %d ten goi, khong xac dinh tep nao' % len(fulls),
+                   '; '.join(cl) + ' | ' + ev)
+        return True
+    fstem = os.path.splitext(fulls[0])[0]
+    cands, how = dict(sb['cands']), ''
+    if len(cands) > 1:   # same Class shared by variants: drop _VIEW, then keep equal tt/nd tokens
+        nv = {k: v for k, v in cands.items() if not k.upper().endswith('_VIEW')} or cands
+        tt = {k: v for k, v in nv.items() if _tt(k) == _tt(fstem)} or nv
+        if len(tt) < len(cands):
+            how = ' (loai bien the _VIEW/khac tt)'
+        cands = tt
+    if len(cands) > 1:
+        rest = SBK_PREFIX.sub('', fstem)
+        ex = {k: v for k, v in cands.items() if cabkey(k) in (rest, cabkey(rest))}
+        tok = set(fstem.split('_'))
+        sub = {k: v for k, v in cands.items()
+               if set(k.lower().split('_')) <= tok and _tt(k) == _tt(fstem)}
+        if len(ex) == 1:
+            cands, how = ex, how + '; ten goi bo tien to == FolderName %s' % list(ex)[0]
+        elif len(sub) == 1:
+            cands, how = sub, how + '; chi FolderName %s co moi token (ke ca tt/nd) nam trong ten goi' % list(sub)[0]
+    if len(cands) == 1:
+        e = list(cands.values())[0]
+        add(name, e['group'], e['folder'].upper(), None, 'R1b',
+            ev + how + ' -> FolderName=%s (menu %s)' % (e['folder'], e['id']), True)
+        return True
+    if len(cands) > 1:
+        to_pending(name, 'ShowBangKe: nhieu ung vien form', ','.join(sorted(cands)) + ' | ' + ev)
+        return True
+    sbk_note[name] = ev + ('; goi tu menu he thong %s, khong co FolderName' % ','.join(sorted(set(sb['menus'])))
+                           if sb['menus'] else '; Class khong co menu MaFile/FolderName trong menu.xml')
+    return False
+
 for name in files:
+    key_, sb = sbk_match(name)          # (C) ShowBangKe target: looked up before in_scope
+    if sb is not None and sbk_place(name, sb):
+        continue
     ok, why = in_scope(name)
-    if not ok:
+    if not ok and name not in sbk_note:
         excluded[why] += 1
         continue
     magic, root, stem0, ext = meta[name]
@@ -509,24 +571,6 @@ for name in files:
             'tep dung chung, khong gan ma form' + ('; HEADER.xls WinFnProcess.cs:864' if low == 'header' else ''),
             True)
         continue
-    sb = SBK.get(re.sub(r'\.(xls1?|xlsx|xl|doc)$', '', name.lower()))
-    if sb is not None:
-        ev = ' | '.join(sorted(set(sb['ev'])))
-        if len(sb['cands']) > 1:   # same Class shared by variants: drop _VIEW, then match tt/nd tokens
-            nv = {k: v for k, v in sb['cands'].items() if not k.upper().endswith('_VIEW')} or sb['cands']
-            tt = {k: v for k, v in nv.items() if _tt(k) == _tt(name)} or nv
-            if len(tt) == 1:
-                sb = dict(sb, cands=tt)
-                ev += ' (loai bien the _VIEW/khac tt)'
-        if len(sb['cands']) == 1:
-            e = list(sb['cands'].values())[0]
-            add(name, e['group'], e['folder'].upper(), None, 'R1b',
-                ev + ' -> FolderName=%s (menu %s)' % (e['folder'], e['id']), True)
-        elif not sb['cands'] and sb['menus']:
-            to_pending(name, 'ShowBangKe tu menu %s; khong form nao co SheetName/Caption trung ma' % ','.join(sb['menus']), ev)
-        else:
-            to_pending(name, 'ShowBangKe: nhieu/khong ung vien form', ','.join(sorted(sb['cands'])) + ' | ' + ev)
-        continue
     if low in SHARED_XSD:
         add(name, '_shared', 'XSD_CHUNG', None, 'SHARED', 'schema goc import boi XSD tung mau (NOTES.md muc 2)', True)
         continue
@@ -534,7 +578,7 @@ for name in files:
     if prefix:
         rest0 = low[len(prefix):]
         m = FULL_RE.match(rest0)
-        ver, rest = (m.group('ver'), m.group('stem')) if m else (None, rest0)
+        ver, rest = (m.group('ver'), m.group('stem')) if m else (None, re.sub(r'_xml\d?$', '', rest0))
         hits = lookup_any(rest)
         if hits:
             h, how = pick(hits, ver, sheets_of(name))
@@ -571,7 +615,8 @@ for name in files:
         continue
     deferred.append((name, '', None, None))
 
-# R4 truncated + R5 backup + R6 stem-only + OVR
+# R4 truncated + R5 backup, then R5n / R5x for names that carry a stem but no menu form
+VER2_RE = re.compile(r'^(?P<stem>.+?)(?:_xml\d?)?_(?P<ver>\d{2})_?$')
 r6_cands = []
 for name, prefix, stem, ver in deferred:
     magic, root, stem0, ext = meta[name]
@@ -605,48 +650,89 @@ for name, prefix, stem, ver in deferred:
                 k, ', version %s tu %s' % (v, part) if v else ''), v, rule_override='R4/' + h[0])
             done = True
             break
-        if not done:
-            to_pending(name, 'khong khop khoa nao (FolderName/MaFile/Sheet DataFile, ke ca dang ten bi cat)', '')
+        if done:
+            continue
+        m2 = VER2_RE.match(low)
+        if m2:                               # 2-digit version suffix
+            r6_cands.append((name, '', m2.group('stem'), m2.group('ver')))
+        else:                                # versionless, no key: R5x only next to a versioned sibling
+            r6_cands.append((name, '', low, None))
         continue
     key = cabkey(stem) if not prefix else None
     # R5: older catalogue
     bhits = BK.get(key or '', []) or (BK.get(stem.lower(), []) + BK.get(cabkey(stem), []) if prefix else [])
     if bhits and len({b['folder'] for b in bhits}) == 1 and bhits[0]['group'] in GROUP_SLUGS:
         b = bhits[0]
-        add(name, b['group'], b['folder'], ver, 'R5',
-            '%s menu %s FolderName=%s' % (b['source'], b['id'], b['folder']), True)
-        continue
-    low_rest = stem.lower()
-    if low_rest in BANGKE_OVERRIDES:
-        gid, folder = BANGKE_OVERRIDES[low_rest]
-        to_pending(name, 'chi co BANGKE_OVERRIDES (thu cong), khong co bang chung menu/ShowBangKe/DataFile', folder)
+        add(name, b['group'], b['folder'], ver, 'R5', '%s menu %s FolderName=%s' % (b['source'], b['id'], b['folder']), True)
         continue
     r6_cands.append((name, prefix, stem, ver))
 
-# R6: own stem folder (filename only). One folder per cab stem; prefixed files join the
-# folder of an unprefixed file with the same cab stem, else keep their own rest name.
-def kw_group(stem, prefix):
-    sl = stem.lower()
-    if any(k in sl for k in BCTC_KW) or sl.lstrip('_').startswith('00_'):
-        return '101_6'
-    g = next((g for kw, g in TAX_KW if kw in sl.split('_')), None)
-    return g or {'khbs_': 'KHBS', 'bang_ke_': 'BANG_KE', 'bangke_': 'BANG_KE', 'pl_': 'PHU_LUC'}.get(prefix or '', '99_KHAC')
-base_r6 = {}
+# R5n: stem == exactly one FolderName/MaFile (cab key; trailing "_" dropped), only the version is not in menu.
+# R5x: stem + version recognised but no menu form -> _forms/_ngoai_menu/<STEM>/ (one folder per stem).
+NEAR_KEYS = {}
+for e in CAT:
+    NEAR_KEYS.setdefault(cabkey(e['folder']), e['folder'])
+    NEAR_KEYS.setdefault(cabkey(e['mafile']), e['folder'])
+
+def nearest(stem):
+    import difflib
+    k = cabkey(stem)
+    base = re.sub(r'_(tt|nd)\d+', '', k)
+    out = [NEAR_KEYS[x] for x in NEAR_KEYS if re.sub(r'_(tt|nd)\d+', '', x) == base]
+    out += [NEAR_KEYS[x] for x in difflib.get_close_matches(k, list(NEAR_KEYS), n=3, cutoff=0.8)]
+    return ','.join(sorted(dict.fromkeys(out)))
+
+def x_folder(stem):
+    return stem.strip('_').upper()
+
+r5n_cnt = 0
+base_x = {}       # cab stem -> folder name under _ngoai_menu
+later = []
 for name, prefix, stem, ver in r6_cands:
-    if not prefix:
-        base_r6[cabkey(stem)] = (kw_group(stem, None), cabkey(stem).lstrip('_').upper())
-for name, prefix, stem, ver in r6_cands:
-    to_pending(name, 'khong co trong menu.xml/backup/ShowBangKe/DataFile; khong tao thu muc theo stem',
-               PENDING_HINTS.get(name.lower(), ''))
-for name, prefix, stem, ver in []:
-    ck = cabkey(stem)
-    if ck in base_r6:
-        gid, folder = base_r6[ck]
-        how = 'cung stem voi tep goc' if prefix else ''
+    if prefix:
+        later.append((name, prefix, stem, ver))
+        continue
+    s2 = stem.rstrip('_')
+    fol = sorted({e['folder'] for k in {stem, s2} for e in FK.get(k, []) + MK.get(k, [])})
+    if len(fol) == 1 and ver:
+        e = (FK.get(s2) or FK.get(stem) or MK.get(s2) or MK.get(stem))[0]
+        if ver != e['ver']:
+            add(name, e['group'], e['folder'].upper(), ver, 'R5n',
+                'R5n: stem=%s, phien_ban=%s ngoai menu; menu %s FolderName=%s VersionXML=%s'
+                % (s2, ver_str(ver), e['id'], e['folder'], e['ver']), True)
+            r5n_cnt += 1
+            continue
+    if len(fol) > 1:
+        to_pending(name, 'stem khop nhieu form', ','.join(fol))
+        continue
+    if ver or name in sbk_note:
+        base_x.setdefault(cabkey(s2), x_folder(s2))
+    later.append((name, prefix, stem, ver))
+
+for name, prefix, stem, ver in later:
+    s2 = stem.rstrip('_')
+    if prefix:
+        rk = cabkey(s2)
+        if rk in base_x:
+            folder, how = base_x[rk], 'tien to %s + stem cua thu muc %s' % (prefix, base_x[rk])
+        elif s2 in ('', 'xml'):
+            to_pending(name, 'ten chung (%s + %s), khong mang stem form' % (prefix, s2 or '""'), '')
+            continue
+        else:
+            folder, how = x_folder(prefix + s2), 'stem gom tien to'
+    elif cabkey(s2) in base_x:
+        folder = base_x[cabkey(s2)]
+        how = '' if ver or name in sbk_note else 'khong phien ban, cung stem voi tep co phien ban'
     else:
-        gid, folder, how = kw_group(stem, prefix), stem.lstrip('_').upper(), ''
-    add(name, gid, folder, ver, 'R6', 'khong co trong menu.xml/backup; thu muc theo stem ten tep; nhom theo tu khoa'
-        + ('; ' + how if how else ''), True)
+        to_pending(name, 'khong nhan dang duoc stem/phien ban (khong khop khoa menu, khong co tep cung stem co phien ban)',
+                   PENDING_HINTS.get(name.lower(), '') or nearest(s2))
+        continue
+    ov = BANGKE_OVERRIDES.get(s2)
+    near = nearest(s2) or (ov[1] if ov else '')
+    ev = 'R5x: stem=%s, phien_ban=%s; khong co FolderName/MaFile/DataFile trong menu.xml%s%s%s' % (
+        s2, ver_str(ver) if ver else 'khong', '; ' + how if how else '',
+        '; ung vien gan nhat: ' + near if near else '', '; ' + sbk_note[name] if name in sbk_note else '')
+    add(name, '_ngoai_menu', folder, ver, 'R5x', ev, True)
 
 # ---------------------------------------------------------------- destination names
 plan = collections.defaultdict(lambda: collections.defaultdict(dict))
@@ -686,7 +772,7 @@ def sha(p):
 rule_cnt = collections.Counter(r['rule'].split('/')[0] for r in records)
 print('=' * 78)
 print('catalogue menu.xml: %d menu co MaFile+FolderName; backup: %d' % (len(CAT), len(BACKUP)))
-print('in-scope files: %d placed, %d pending' % (len(records), len(pending)))
+print('in-scope files: %d placed, %d pending; R5n %d' % (len(records), len(pending), r5n_cnt))
 for k, v in sorted(rule_cnt.items()):
     print('  rule %-7s %5d' % (k, v))
 print('excluded:')
