@@ -12,6 +12,7 @@ Dac diem:
 - Dau ra khong co thoi gian, dung thu tu co dinh: hai lan chay cho JSON giong tung byte.
 """
 import hashlib
+import random
 import json
 import os
 import re
@@ -37,7 +38,7 @@ TOP_KIND = {
 
 # ------------------------------------------------------------------ parse
 class Node:
-    __slots__ = ("tag", "attrs", "children", "line", "col", "file", "nsmap", "parent", "top")
+    __slots__ = ("tag", "attrs", "children", "line", "col", "file", "nsmap", "parent", "top", "doc")
 
     def __init__(self, tag, attrs, line, file, nsmap, parent):
         self.tag = tag
@@ -45,6 +46,7 @@ class Node:
         self.children = []
         self.line = line
         self.col = 0
+        self.doc = ""
         self.file = file
         self.nsmap = nsmap
         self.parent = parent
@@ -74,7 +76,7 @@ def parse_schema(path, name):
     p = expat.ParserCreate()
     p.buffer_text = False
     stack = []
-    holder = {"root": None, "skip": 0, "not_schema": False}
+    holder = {"root": None, "skip": 0, "not_schema": False, "buf": None}
 
     def start(qname, attrs):
         if holder["skip"]:
@@ -105,8 +107,10 @@ def parse_schema(path, name):
             node.top = node if parent.tag in ("schema", "redefine") else parent.top
         else:
             holder["root"] = node
-        if tag in ("annotation", "{foreign}appinfo", "{foreign}documentation"):
+        if tag == "appinfo" or tag.startswith("{foreign}"):
             holder["skip"] = 1
+        if tag == "documentation":
+            holder["buf"] = []
         stack.append(node)
 
     def end(qname):
@@ -114,8 +118,19 @@ def parse_schema(path, name):
             holder["skip"] -= 1
             if holder["skip"] > 0:
                 return
-        stack.pop()
+        done = stack.pop()
+        if done.tag == "documentation" and holder["buf"] is not None:
+            txt = " ".join("".join(holder["buf"]).split())
+            holder["buf"] = None
+            gp = done.parent.parent if done.parent is not None else None
+            if txt and gp is not None:
+                gp.doc = (gp.doc + " " + txt) if gp.doc else txt
 
+    def chars(data_):
+        if holder["buf"] is not None:
+            holder["buf"].append(data_)
+
+    p.CharacterDataHandler = chars
     p.StartElementHandler = start
     p.EndElementHandler = end
     p.Parse(data, True)
@@ -258,6 +273,7 @@ class Expander:
         self.unres = []       # (kind, value, loc)
         self.stack = []
         self.roots = []
+        self.types = {}
         self.reach = {"pattern": set(), "use_required": set(), "minOccurs0": set()}
 
     # tra cuu thanh phan; kind = type/element/group/attributeGroup/attribute
@@ -271,10 +287,14 @@ class Expander:
             return ("builtin", local)
         key = (kind, ns, local)
         if base and ctx is not None and ctx.prev is not None and key == (ctx.kind, ctx.ns, ctx.name):
+            if kind == "type":
+                self.types[ctx.prev.node.loc()] = ctx.prev
             return ctx.prev
         comp = self.scope.comps.get(key)
         if comp is None:
             self.unres.append((kind, q, node.loc()))
+        elif kind == "type":
+            self.types[comp.node.loc()] = comp
         return comp
 
     # ---------------- kieu don gian
@@ -368,6 +388,9 @@ class Expander:
         e["source"] = decl.loc()
         if decl is not occ:
             e["ref_at"] = occ.loc()
+        dd = decl.doc or occ.doc
+        if dd:
+            e["doc"] = dd
         if decl.attrs.get("nillable") == "true":
             e["nillable"] = True
         for k in ("default", "fixed"):
@@ -572,6 +595,9 @@ class Expander:
         e["source"] = decl.loc()
         if decl is not node:
             e["ref_at"] = node.loc()
+        dd = decl.doc or node.doc
+        if dd:
+            e["doc"] = dd
         use = node.attrs.get("use", decl.attrs.get("use", "optional"))
         e["use"] = use
         e["required"] = bool(req and use == "required")
@@ -742,7 +768,8 @@ def main(argv):
         if m.get("MaFile") and m.get("VersionXML"):
             menus.append({"MaFile": m.get("MaFile"), "VersionXML": m.get("VersionXML"),
                           "XsdSchema": m.get("XsdSchema") or m.get("MaFile"), "ID": m.get("ID"),
-                          "VersionKHBS": m.get("VersionKHBS", "")})
+                          "VersionKHBS": m.get("VersionKHBS", ""),
+                          "Folders": sorted(set(v.get("FolderName") for v in m.iter("Validity") if v.get("FolderName")))})
 
     def match_file(full):
         if full in repo.schemas:
@@ -810,6 +837,10 @@ def main(argv):
         for st in {m["XsdSchema"].lower(), m["MaFile"].lower()}:
             for variant in {st, "_" + st[1:] if st[0].isdigit() else st, "_" + st}:
                 stem_table.setdefault(variant, set()).add((m["MaFile"], m["XsdSchema"]))
+    khbs_table = {}
+    for m in menus:
+        for st in {m["XsdSchema"].lower(), m["MaFile"].lower()} | set(f.lower() for f in m["Folders"]):
+            khbs_table.setdefault(st, []).append(m)
     mapping = {}
     for nm in roots:
         sc0 = repo.schemas[nm]
@@ -830,6 +861,26 @@ def main(argv):
                    "menu_ids": [], "also": [], "origin": "_forms"}
             mapping[nm] = (key, "%s_%s" % (prim["MaFile"], prim["VersionXML"]), 2)
             continue
+        mk = re.match(r"^khbs_(.+)_(\d{3})(\.\w*)?$", nm)
+        if mk and mk.group(1).lower() in khbs_table:
+            ms = khbs_table[mk.group(1).lower()]
+            dg = mk.group(2)
+            exact = [m for m in ms if m["VersionKHBS"].replace(".", "") == dg]
+            pool = exact or ms
+            prim = sorted(pool, key=lambda x: (x["MaFile"] != x["XsdSchema"], x["MaFile"], x["ID"]))[0]
+            if exact:
+                key = {"kind": "KHBS", "ma_file": prim["MaFile"], "version_khbs": prim["VersionKHBS"],
+                       "version_xml": prim["VersionXML"], "xsd_schema": prim["XsdSchema"],
+                       "menu_ids": sorted(set(m["ID"] for m in exact)), "also": [],
+                       "origin": "menu.xml (VersionKHBS)"}
+                mapping[nm] = (key, "%s_KHBS_%s" % (prim["MaFile"], prim["VersionKHBS"]), 4)
+            else:
+                ver = ".".join(dg)
+                key = {"kind": "KHBS", "ma_file": prim["MaFile"], "version_khbs": ver, "version_xml": None,
+                       "xsd_schema": prim["XsdSchema"], "menu_ids": [], "also": [],
+                       "origin": "suy_ra_tu_ten_tep (VersionKHBS khong co trong menu.xml)"}
+                mapping[nm] = (key, "%s_KHBS_%s" % (prim["MaFile"], ver), 5)
+            continue
         mo = re.match(r"^(.+)_(\d{3})\.xsd$", nm)
         if mo and not nm.startswith("khbs_") and mo.group(1).lower() in stem_table:
             cands = sorted(stem_table[mo.group(1).lower()], key=lambda x: (x[0] != x[1], x[0]))
@@ -841,7 +892,7 @@ def main(argv):
         bn = re.sub(r"[^A-Za-z0-9_.-]", "_", nm)
         if bn.lower().endswith(".xsd"):
             bn = bn[:-4]
-        mapping[nm] = (None, bn.rstrip("."), 4)
+        mapping[nm] = (None, bn.rstrip("."), 6)
     roots = sorted(roots, key=lambda n: (mapping[n][2], n))
 
     # 5. sinh JSON
@@ -858,6 +909,12 @@ def main(argv):
     mapped_menu = 0
     mapped_forms = 0
     mapped_infer = 0
+    mapped_khbs_menu = 0
+    mapped_khbs_infer = 0
+    doc_tot = {"elements": 0, "elements_doc": 0, "attributes": 0, "attributes_doc": 0, "types": 0, "types_doc": 0}
+    paths_by_json = {}
+    uniq_el = set()
+    uniq_el_doc = set()
     for nm in roots:
         sc = repo.schemas[nm]
         scope = repo.build_scope(nm)
@@ -895,6 +952,10 @@ def main(argv):
             mapped_forms += 1
         elif tier == 3:
             mapped_infer += 1
+        elif tier == 4:
+            mapped_khbs_menu += 1
+        elif tier == 5:
+            mapped_khbs_infer += 1
         jname = base_name
         if jname.lower() in used_names:
             jname = base_name + "__" + re.sub(r"[^A-Za-z0-9_]", "_", nm.rstrip("."))
@@ -917,6 +978,26 @@ def main(argv):
             "attributes": sum(1 for e in entries if e["kind"] == "attribute"),
             "patterns": sum(len(e.get("pattern", [])) for e in entries),
         }
+        types_list = [dict({"name": c.name, "kind": c.node.tag, "source": c.node.loc()},
+                           **({"doc": c.node.doc} if c.node.doc else {}))
+                      for _, c in sorted(ex.types.items(), key=lambda kv: (kv[1].name, kv[0]))]
+        stats["elements_with_doc"] = sum(1 for e in entries if e["kind"] == "element" and e.get("doc"))
+        stats["attributes_with_doc"] = sum(1 for e in entries if e["kind"] == "attribute" and e.get("doc"))
+        stats["types"] = len(types_list)
+        stats["types_with_doc"] = sum(1 for t in types_list if t.get("doc"))
+        for e in entries:
+            if e["kind"] == "element":
+                uniq_el.add(e["source"])
+                if e.get("doc"):
+                    uniq_el_doc.add(e["source"])
+        doc_tot["elements"] += stats["elements"]
+        doc_tot["elements_doc"] += stats["elements_with_doc"]
+        doc_tot["attributes"] += stats["attributes"]
+        doc_tot["attributes_doc"] += stats["attributes_with_doc"]
+        doc_tot["types"] += stats["types"]
+        doc_tot["types_doc"] += stats["types_with_doc"]
+        if key is not None and key.get("kind") != "KHBS":
+            paths_by_json[jname] = set(e["path"] for e in entries)
         doc_applied = [dict(a) for a in scope.applied]
         unres_list = sorted(["%s|%s|%s" % t for t in static_unres])
         fa = forms_any.get(sc.sha, [])
@@ -928,6 +1009,8 @@ def main(argv):
                  ",\n".join(json.dumps(a, ensure_ascii=False, separators=(",", ":")) for a in doc_applied),
                  '\n],\n"unresolved_refs":[\n',
                  ",\n".join(json.dumps(u, ensure_ascii=False) for u in unres_list),
+                 '\n],\n"types":[\n',
+                 ",\n".join(json.dumps(t, ensure_ascii=False, separators=(",", ":")) for t in types_list),
                  '\n],\n"elements":[\n',
                  ",\n".join(json.dumps(e, ensure_ascii=False, separators=(",", ":")) for e in entries),
                  "\n]\n}\n"]
@@ -937,6 +1020,50 @@ def main(argv):
                       "key": ({"ma_file": key["ma_file"], "version_xml": key["version_xml"],
                                "menu_ids": key["menu_ids"], "origin": key["origin"]} if key else None),
                       "entries": len(entries), "redefines": len(doc_applied), "unresolved": len(unres_list)})
+
+    # 5b. doi chieu path voi XML mau trong _forms (tep *_mau-xml.xml, thuoc tinh Path)
+    tmpl = {}
+    if os.path.isdir(forms):
+        for g in sorted(os.listdir(forms)):
+            gp = os.path.join(forms, g)
+            if not os.path.isdir(gp):
+                continue
+            for d in sorted(os.listdir(gp)):
+                dp = os.path.join(gp, d)
+                if not os.path.isdir(dp):
+                    continue
+                for f in sorted(os.listdir(dp)):
+                    mo = re.match(r"^(.+)_v([0-9.]+)_mau-xml\.xml$", f)
+                    if mo:
+                        tmpl[(mo.group(1), mo.group(2))] = "%s/%s/%s" % (g, d, f)
+    cands = []
+    for jn in sorted(paths_by_json):
+        k = next(f["key"] for f in index if f["json"] == jn + ".json")
+        if k and (k["ma_file"], k["version_xml"]) in tmpl:
+            cands.append((jn, k["ma_file"], k["version_xml"]))
+    rng = random.Random(20261010)
+    picks = sorted(rng.sample(cands, min(20, len(cands))))
+    path_check = []
+    pc_match = pc_miss = pc_rooted = 0
+    for jn, mf, ver in picks:
+        rel = tmpl[(mf, ver)]
+        with open(os.path.join(forms, rel), "rb") as fh:
+            raw = fh.read()
+        if raw[:2] in (b"\xff\xfe", b"\xfe\xff"):
+            txt = raw.decode("utf-16", "replace")
+        else:
+            txt = raw.decode("utf-8-sig", "replace")
+        xp = sorted(set(re.findall(r'\bPath\s*=\s*"([^"]*)"', txt)))
+        xp = [x.strip() for x in xp if "/" in x]
+        have = paths_by_json[jn]
+        miss = [x for x in xp if "/" + x not in have]
+        rooted = [x for x in miss if x.split("/")[0] in ("HSoThueDTu", "TKhai")]
+        pc_rooted += len(rooted)
+        pc_match += len(xp) - len(miss)
+        pc_miss += len(miss)
+        path_check.append({"json": jn + ".json", "template": rel, "paths": len(xp), "match": len(xp) - len(miss),
+                           "mismatch": len(miss), "mismatch_tu_goc_HSoThueDTu": len(rooted),
+                           "mismatch_sample": (rooted or miss)[:5]})
 
     # 6. doi chieu
     def cnt(s):
@@ -967,7 +1094,10 @@ def main(argv):
         "tep_ung_vien": candidates, "tep_schema_doc_duoc": len(repo.schemas), "tep_duoi_xsd": n_xsd_ext,
         "tep_loi_parse": parse_fail, "tep_dung_chung": libs, "tep_goc": len(roots),
         "json_sinh_ra": len(index), "json_map_menu": mapped_menu, "json_map_forms": mapped_forms,
-        "json_map_suy_ra_ten_tep": mapped_infer, "json_map_tong": mapped_menu + mapped_forms + mapped_infer, "tong_entry": total_entries,
+        "json_map_suy_ra_ten_tep": mapped_infer, "json_map_khbs_menu": mapped_khbs_menu,
+        "json_map_khbs_suy_ra": mapped_khbs_infer,
+        "json_map_tong": mapped_menu + mapped_forms + mapped_infer + mapped_khbs_menu + mapped_khbs_infer,
+        "doc": dict(doc_tot, khai_bao_phan_tu_duy_nhat=len(uniq_el), khai_bao_phan_tu_duy_nhat_co_doc=len(uniq_el_doc)), "doi_chieu_path_xml_mau": {"cap": len(path_check), "path_khop": pc_match, "path_khong_khop": pc_miss, "khong_khop_bat_dau_tu_goc": pc_rooted, "khong_khop_duong_dan_tuong_doi": pc_miss - pc_rooted, "chi_tiet": path_check}, "tong_entry": total_entries,
         "menu_khong_tim_thay_xsd": ["%s_%s" % (m["MaFile"], m["VersionXML"]) for m in menu_missing],
         "menu_co_mafile_versionxml": len(menus),
         "nguon_regex_tren_tep_xsd": raw_re,
@@ -1001,8 +1131,16 @@ def main(argv):
     print("Tham chieu khong giai duoc: %d" % len(unres_sorted))
     for u in summary["tham_chieu_khong_giai_duoc_mau"]:
         print("   ", u)
-    print("JSON map menu.xml: %d; map them qua _forms (sha): %d; suy ra tu ten tep: %d; ten goc (khong map): %d"
-          % (mapped_menu, mapped_forms, mapped_infer, len(index) - mapped_menu - mapped_forms - mapped_infer))
+    print("JSON map menu.xml: %d; _forms (sha): %d; suy ra tu ten tep: %d; KHBS qua menu VersionKHBS: %d; KHBS suy ra: %d; ten goc (khong map): %d"
+          % (mapped_menu, mapped_forms, mapped_infer, mapped_khbs_menu, mapped_khbs_infer,
+             len(index) - mapped_menu - mapped_forms - mapped_infer - mapped_khbs_menu - mapped_khbs_infer))
+    print("Doc: %s" % json.dumps(doc_tot))
+    print("Doi chieu path XML mau: %d cap; khop %d; khong khop %d (bat dau tu goc %d, tuong doi/khong phai XPath goc %d)"
+          % (len(path_check), pc_match, pc_miss, pc_rooted, pc_miss - pc_rooted))
+    print("Doc duy nhat: %d khai bao phan tu, %d co doc" % (len(uniq_el), len(uniq_el_doc)))
+    print("Ten goc khong map: %s" % [f["source_file"] for f in index if f["key"] is None])
+    for c in path_check:
+        print("   %-42s paths=%4d khop=%4d lech=%3d %s" % (c["json"], c["paths"], c["match"], c["mismatch"], c["mismatch_sample"][:2]))
     print("Menu co MaFile+VersionXML: %d; khong tim thay XSD: %d" % (len(menus), len(menu_missing)))
     return 0
 
