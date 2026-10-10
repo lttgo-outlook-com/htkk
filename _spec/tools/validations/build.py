@@ -269,6 +269,7 @@ for c in raw:
                 "condition": k["condition"],
                 "condition_lines": k.get("condition_lines", []),
                 "bindings": k["bindings"],
+                "binding_info": k.get("binding_info", {}),
                 "cells_marked": k["cells_marked"],
                 "level": k["level"],
                 "mark_api": k["api"],
@@ -292,7 +293,7 @@ for c in raw:
             "method": m["method"], "kind": m["kind"], "in_scope": m["in_scope"], "reached_from": m["reached_from"],
             "return_type": m["return_type"], "sheetIndex": m["sheetIndex"],
             "source": {"file": "_decompiled/" + c["file"], "lines": [m["start_line"], m["end_line"]]},
-            "calls": m["calls"], "checks": checks, "note": note,
+            "calls": m["calls"], "checks": checks, "note": note, "binding_method": m.get("binding_method"),
         })
         for u in m.get("unused_messages", []):
             r = resolve_part(u, cname)

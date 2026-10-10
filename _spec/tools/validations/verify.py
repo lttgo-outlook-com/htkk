@@ -177,6 +177,201 @@ for v, hits in V.items():
     else:
         print("   %s: 0 bản ghi" % v)
 
+# (7) kiểm độc lập bindings / định danh thô / ký tự cắt; chỉ đọc JSON và text nguồn .cs (không dùng cờ do công cụ C# tự đặt)
+_src_cache = {}
+
+
+def _clean_lines(path):
+    """Text nguồn với chuỗi/ký tự/chú thích thay bằng khoảng trắng (giữ số dòng)."""
+    if path in _src_cache:
+        return _src_cache[path]
+    t = open(os.path.join(data, path), encoding="utf-8-sig").read()
+    out = []
+    i, n = 0, len(t)
+    while i < n:
+        ch = t[i]
+        if t.startswith("//", i):
+            j = t.find("\n", i)
+            j = n if j < 0 else j
+            out.append(" " * (j - i)); i = j
+        elif t.startswith("/*", i):
+            j = t.find("*/", i + 2)
+            j = n if j < 0 else j + 2
+            out.append(re.sub(r"[^\n]", " ", t[i:j])); i = j
+        elif ch == '"' or (ch in "@$" and i + 1 < n and t[i + 1] in '"@$'):
+            k = i
+            verb = False
+            while t[k] in "@$":
+                verb |= t[k] == "@"; k += 1
+            k += 1
+            while k < n:
+                if verb and t[k] == '"':
+                    if k + 1 < n and t[k + 1] == '"':
+                        k += 2; continue
+                    break
+                if not verb and t[k] == "\\":
+                    k += 2; continue
+                if t[k] == '"' or (not verb and t[k] == "\n"):
+                    break
+                k += 1
+            out.append(re.sub(r"[^\n]", " ", t[i:k + 1])); i = k + 1
+        elif ch == "'":
+            m = re.match(r"'(\\.|[^\\'])[^']*'", t[i:i + 12])
+            if m:
+                out.append(" " * len(m.group(0))); i += len(m.group(0))
+            else:
+                out.append(ch); i += 1
+        else:
+            out.append(ch); i += 1
+    lines = "".join(out).split("\n")
+    # cặp ngoặc nhọn: (dòng mở, dòng đóng), dòng đánh số từ 1
+    pairs, stack = [], []
+    for ln, s in enumerate(lines, 1):
+        for c in s:
+            if c == "{":
+                stack.append(ln)
+            elif c == "}" and stack:
+                pairs.append((stack.pop(), ln))
+    _src_cache[path] = (lines, pairs)
+    return _src_cache[path]
+
+
+def _block_after(pairs, line):
+    """Khối { } mở tại dòng >= line gần nhất (thân của for/foreach/while/using/catch bắt đầu ở line)."""
+    cands = [p for p in pairs if p[0] >= line]
+    return min(cands, key=lambda p: (p[0], -p[1])) if cands else None
+
+
+def _loops(path):
+    lines, pairs = _clean_lines(path)
+    res = []
+    for ln, s in enumerate(lines, 1):
+        if re.match(r"^\s*(for|foreach|while)\s*\(", s) or re.match(r"^\s*do\s*$", s) or re.match(r"^\s*do\s*\{", s):
+            # while(...) đóng của do-while: dòng bắt đầu bằng "}" không khớp mẫu ở trên nên không tính trùng
+            b = _block_after(pairs, ln)
+            if b and b[0] <= ln + 1:
+                end = b[1]
+                if re.match(r"^\s*do\b", s):
+                    end += 1  # dòng while(...) của do-while
+                res.append((ln, end))
+    return res
+
+
+def _decl_scope(path, name, use_line, method_lines):
+    """Khai báo của name (trong method) có phạm vi chứa use_line: trả (dòng khai báo, đầu phạm vi, cuối phạm vi)."""
+    lines, pairs = _clean_lines(path)
+    a, b = method_lines
+    cands = []
+    for ln in range(a, b + 1):
+        s = lines[ln - 1]
+        if re.search(r"\bforeach\s*\(\s*[\w.\[\],?]+(<[^()]*>)?(\.\w+)*\s+" + re.escape(name) + r"\s+in\b", s) or re.search(r"\bfor\s*\(\s*[\w.\[\],?]+\s+" + re.escape(name) + r"\s*=", s):
+            blk = _block_after(pairs, ln)
+            if blk:
+                cands.append((ln, ln, blk[1]))
+            continue
+        if re.search(r"\bcatch\s*\(\s*[\w.]+\s+" + re.escape(name) + r"\s*\)", s) or re.search(r"\busing\s*\(\s*[\w.<>]+\s+" + re.escape(name) + r"\s*=", s):
+            blk = _block_after(pairs, ln)
+            if blk:
+                cands.append((ln, ln, blk[1]))
+            continue
+        decl = re.search(r"(^|[(,;]|\bout\s)\s*(using\s+)?(?!return\b|else\b|new\b|out\b|ref\b|using\b)[A-Za-z_][\w.]*(<[^;=()]*>)?(\.\w+)*(\[\])*\??\s+" + re.escape(name) + r"\s*(=(?!=)|;|,|\))", s)
+        pat = re.search(r"\b(is|out)\s+[A-Za-z_][\w.<>]*\s+" + re.escape(name) + r"\b", s)
+        if decl or pat:
+            inner = [p for p in pairs if p[0] < ln <= p[1] or (p[0] == ln and False)]
+            if not inner:
+                continue
+            blk = min(inner, key=lambda p: p[1] - p[0])
+            cands.append((ln, blk[0], blk[1]))
+    hits = [c for c in cands if c[1] <= use_line <= c[2]]
+    if not hits:
+        return None, cands
+    return min(hits, key=lambda c: c[2] - c[1]), cands
+
+
+b_total = b_multi = b_fb = 0
+after_bad, after_same_line, merge_bad, no_decl, decl_mismatch, defline_noname = [], [], [], [], [], []
+meth_fb = sum(1 for _, m in methods if m.get("binding_method") == "fallback")
+for k, m, c in checks:
+    src = c["source"]["file"]
+    info = c.get("binding_info") or {}
+    if set(info) != set(c["bindings"]):
+        merge_bad.append((k, c["source"]["lines"][0], "binding_info không khớp bindings"))
+    for var, bi in sorted(info.items()):
+        b_total += 1
+        defs = bi.get("def_lines", [])
+        if len(defs) > 1 or "phép gán có thể tới" in c["bindings"].get(var, ""):
+            b_multi += 1
+        if bi.get("method") == "fallback":
+            b_fb += 1
+        name = var.split("@")[0]
+        U = bi["use_line"]
+        loops = _loops(src)
+        for d in defs:
+            if d > U and not any(a0 <= U <= e0 and a0 <= d <= e0 for a0, e0 in loops):
+                after_bad.append((k, c["source"]["lines"][0], var, U, d))
+            elif d == U and len(defs) > 1 and not any(a0 <= U <= e0 for a0, e0 in loops):
+                after_same_line.append((k, c["source"]["lines"][0], var, U, d))
+        lines_src, _ = _clean_lines(src)
+        for d in defs:
+            if not re.search(r"\b" + re.escape(name) + r"\b", lines_src[d - 1]):
+                defline_noname.append((k, c["source"]["lines"][0], var, d))
+        sc, cands = _decl_scope(src, name, U, m["source"]["lines"])
+        if sc is None:
+            no_decl.append((k, c["source"]["lines"][0], var, U, [x[0] for x in cands]))
+            continue
+        if bi.get("decl_line") is not None and bi["decl_line"] != sc[0]:
+            decl_mismatch.append((k, c["source"]["lines"][0], var, bi["decl_line"], sc[0]))
+        for d in defs:
+            if not (sc[1] <= d <= sc[2]) and d != sc[0]:
+                merge_bad.append((k, c["source"]["lines"][0], var, "def L%d ngoài phạm vi khai báo L%d [%d-%d]" % (d, sc[0], sc[1], sc[2])))
+print("== (7) bindings: %d biến (%d nhiều phép gán) trong %d check; binding_method=fallback: %d biến (%.2f%%); method fallback (không dựng được CFG): %d/%d" % (
+    b_total, b_multi, sum(1 for _, _, c in checks if c["bindings"]), b_fb, 100.0 * b_fb / max(1, b_total), meth_fb, len(methods)))
+print("   [kiểm] phép gán sau điểm dùng không qua vòng lặp: %d %s" % (len(after_bad), after_bad[:5]))
+print("   [kiểm] phép gán cùng dòng điểm dùng (nhiều phép gán, ngoài vòng lặp): %d %s" % (len(after_same_line), after_same_line[:3]))
+print("   [kiểm] binding gộp phép gán ngoài phạm vi khai báo (khác ISymbol): %d %s" % (len(merge_bad), merge_bad[:5]))
+print("   [kiểm] decl_line khác khai báo tìm độc lập: %d %s; không tìm được khai báo chứa điểm dùng: %d %s" % (len(decl_mismatch), decl_mismatch[:3], len(no_decl), no_decl[:3]))
+print("   [kiểm] dòng phép gán không chứa tên biến: %d %s" % (len(defline_noname), defline_noname[:3]))
+ell = ell_tpl = gen_fields = 0
+for f in sorted(glob.glob(os.path.join(vdir, "*.json")) + glob.glob(os.path.join(vdir, "_app", "*.json"))):
+    ell += open(f, encoding="utf-8").read().count("…")
+for k, m, c in checks:
+    # text thông điệp chép nguyên văn từ template .xls/message.xml (phần message.text và từng part)
+    for p in c["message"].get("parts", []):
+        ell_tpl += (p.get("text") or "").count("…")
+    ell_tpl += (c["message"].get("text") or "").count("…")
+    gen_fields += json.dumps([c["condition"], c["cells_marked"], c["bindings"], c["message"].get("template"), c["message"].get("expr"), c.get("context")], ensure_ascii=False).count("…")
+print("   [kiểm] ký tự '…': trong trường do công cụ sinh (condition/cells/bindings/template/expr/context) = %d; toàn bộ tệp JSON = %d, trong đó %d nằm trong text thông điệp chép nguyên từ template/message.xml" % (gen_fields, ell, ell_tpl))
+ell = gen_fields + max(0, ell - ell_tpl)
+# định danh C# thô theo (e): biến SheetView/FpSpread (khai báo trong tệp nguồn), lớp tĩnh, .Visible/.Sheets, ColumnLettersToIndex, model cũ
+_typed = {}
+
+
+def _sheet_vars(path):
+    if path not in _typed:
+        lines, _ = _clean_lines(path)
+        t = "\n".join(lines)
+        _typed[path] = set(re.findall(r"\b(?:SheetView|FpSpread)\s+(\w+)\s*[=;,)]", t))
+    return _typed[path]
+
+
+RAW = re.compile(r"\b(GeneralFunctions|HTKKFile|ValidateBase|ConvertHelpers|DateTime|Color)\.\w|\.Visible\b|\.Sheets\b|\bColumnLettersToIndex\b|\btKhaiInfoOld\b")
+raw_bad = collections.Counter()
+raw_ex = {}
+for k, m, c in checks:
+    txt = " ".join([c["condition"]] + c["cells_marked"] + list(c["bindings"].values()))
+    txt = re.sub(r'"(?:[^"\\]|\\.)*"', '""', txt)
+    txt = re.sub(r"S\[\w+\]", "S[]", txt)
+    hit = RAW.search(txt)
+    sv = [v for v in _sheet_vars(c["source"]["file"]) if re.search(r"(?<![\w.])" + re.escape(v) + r"\b", txt)]
+    if hit or sv:
+        key = hit.group(0) if hit else "sheetvar:" + sv[0]
+        raw_bad[key] += 1
+        raw_ex.setdefault(key, (k, c["source"]["lines"][0]))
+print("   [kiểm] check còn định danh C# thô theo (e): %d %s %s" % (sum(1 for _ in raw_bad.elements()), dict(raw_bad.most_common(8)), list(raw_ex.items())[:4]))
+ok7 = not after_bad and not merge_bad and ell == 0 and not raw_bad
+okc = (sum(gm_json.values()) == 4533 and jp == 7241 and jp2 == 5 and jy == 434 and vn == 496 and va == 580)
+print("== (7) KẾT LUẬN: bindings/định danh/ký tự cắt %s; số đếm GetMessage 4533, Pink 7241, Pink2 5, Yellow 434, Validate_N 496, Validate* 580 %s" % ("ĐẠT" if ok7 else "CHƯA ĐẠT", "ĐẠT" if okc else "CHƯA ĐẠT"))
+
 # (6) mẫu đọc tay
 if "--sample" in sys.argv:
     rnd = random.Random(int(os.environ.get("SAMPLE_SEED", "20261010")))

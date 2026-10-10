@@ -1,10 +1,22 @@
 # Bộ đọc BIFF8 tối giản: chỉ đọc text ô (SST/LABELSST/LABEL/FORMULA+STRING/RK/NUMBER) theo thứ tự sheet.
 # Chỉ parse byte; không chạy macro hay mã nào trong tệp.
 import struct
-import olefile
+
+try:
+    import olefile
+except ImportError:  # máy không có olefile: dùng bộ đọc OLE2 tối giản cùng thư mục
+    olefile = None
+    import cfb
 
 
 def _read_stream(path):
+    if olefile is None:
+        c = cfb.CFB(path)
+        for name in ("Workbook", "Book"):
+            s = c.read_stream(name)
+            if s is not None:
+                return s
+        return None
     ole = olefile.OleFileIO(path)
     try:
         for name in ("Workbook", "Book"):

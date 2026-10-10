@@ -1,6 +1,8 @@
 // Trích lệnh kiểm tra dữ liệu (đánh dấu ô Pink/Yellow, lời gọi HTKKFile.GetMessage) từ mã decompile HTKK.
-// Chỉ đọc text .cs và gọi CSharpSyntaxTree.ParseText. Không biên dịch, không chạy mã decompile.
-// Dùng: RoslynValidations <decompiledDir> <out.json>
+// Chỉ đọc text .cs; dựng CSharpCompilation trong bộ nhớ theo lô (một tệp nghiệp vụ + tệp utilities nó tham chiếu, tối đa 50 tệp)
+// để lấy SemanticModel và ControlFlowGraph tính reaching definitions. Không Emit, không chạy mã decompile.
+// Dùng: RoslynValidations <decompiledDir> <out.json> [--log <batch_log.tsv>] [--only <Class>] [--max-batch <n>]
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -8,9 +10,16 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-if (args.Length < 2) { Console.Error.WriteLine("Dùng: RoslynValidations <decompiledDir> <out.json>"); return 2; }
+if (args.Length < 2) { Console.Error.WriteLine("Dùng: RoslynValidations <decompiledDir> <out.json> [--log f] [--only Class] [--max-batch n]"); return 2; }
 string decDir = Path.GetFullPath(args[0]);
 string outPath = args[1];
+string logPath = null, onlyClass = null; int maxBatch = 50;
+for (int ai = 2; ai + 1 < args.Length; ai += 2)
+{
+    if (args[ai] == "--log") logPath = args[ai + 1];
+    else if (args[ai] == "--only") onlyClass = args[ai + 1];
+    else if (args[ai] == "--max-batch") maxBatch = int.Parse(args[ai + 1]);
+}
 
 var files = new List<string>();
 foreach (var sub in new[] { "tax.htkk.business/TAX.HTKK.Business", "htkk" })
@@ -31,10 +40,14 @@ foreach (var rel in files)
     foreach (var td in root.DescendantNodes().OfType<ClassDeclarationSyntax>())
     {
         if (td.Parent is TypeDeclarationSyntax) continue;
-        var cc = new ClassCtx { File = rel, Name = td.Identifier.Text, Decl = td, Assembly = rel.Split('/')[0] };
+        var cc = new ClassCtx { File = rel, Name = td.Identifier.Text, Decl = td, Assembly = rel.Split('/')[0], Tree = tree };
         foreach (var fd in td.Members.OfType<FieldDeclarationSyntax>())
             foreach (var v in fd.Declaration.Variables)
+            {
+                cc.FieldTypes[v.Identifier.Text] = fd.Declaration.Type.ToString();
                 if (v.Initializer != null) cc.Fields[v.Identifier.Text] = v.Initializer.Value;
+            }
+        foreach (var pd in td.Members.OfType<PropertyDeclarationSyntax>()) cc.FieldTypes.TryAdd(pd.Identifier.Text, pd.Type.ToString());
         foreach (var pd in td.Members.OfType<PropertyDeclarationSyntax>())
         {
             if (pd.ExpressionBody != null) cc.Fields[pd.Identifier.Text] = pd.ExpressionBody.Expression;
@@ -112,21 +125,38 @@ while (queue.Count > 0)
         if (nodes.ContainsKey(t) && !inScope.ContainsKey(t)) { inScope[t] = inScope[k]; queue.Enqueue(t); }
 }
 
+// ---- lô biên dịch: tệp utilities (và 3 tệp dùng chung của business) theo tên kiểu khai báo ----
+var batches = new Batches(decDir, classes, maxBatch);
+var mon = new MemMonitor();
+var log = new List<string> { "class\tfiles\tpeak_ws_mb\tmethods\tcfg_ok\tcfg_fail\tms" };
+int totalCfgOk = 0, totalCfgFail = 0;
+long globalPeak = 0;
+
 // ---- xuất ----
 var outClasses = new List<object>();
 foreach (var c in classes.OrderBy(c => c.File, StringComparer.Ordinal).ThenBy(c => c.Name, StringComparer.Ordinal))
 {
+    if (onlyClass != null && c.Name != onlyClass) continue;
     var methods = new List<object>();
-    foreach (var md in c.Methods)
+    var todo = c.Methods.Where(md => { string k0 = c.Name + "::" + md.Identifier.Text; string kd = Kind(md.Identifier.Text); return hasSignal.Contains(k0) || kd == "Validate" || kd == "isValidDuLieuTK" || kd == "checkPL"; }).ToList();
+    if (todo.Count == 0) continue;
+    var sw = Stopwatch.StartNew();
+    mon.Reset();
+    var (comp, nfiles) = batches.Compile(c);
+    var model = comp.GetSemanticModel(c.Tree);
+    int cfgOk = 0, cfgFail = 0;
+    foreach (var md in todo)
     {
         string name = md.Identifier.Text;
         string key = c.Name + "::" + name;
         string kind = Kind(name);
         bool scope = inScope.ContainsKey(key);
         bool signal = hasSignal.Contains(key);
-        bool rootish = kind == "Validate" || kind == "isValidDuLieuTK" || kind == "checkPL";
-        if (!signal && !rootish) continue;
-        var mx = new MethodCtx(c, md);
+        RDResult rd = null;
+        try { rd = FlowRD.Analyze(model, md); } catch (Exception ex) { Console.Error.WriteLine($"CFG lỗi {key}: {ex.GetType().Name}: {ex.Message}"); rd = null; }
+        if (rd != null && rd.Overflow) rd = null;
+        if (rd != null) cfgOk++; else cfgFail++;
+        var mx = new MethodCtx(c, md, rd);
         var span = md.GetLocation().GetLineSpan();
         int bodyLines = 0;
         if (md.Body != null) { var bs = md.Body.GetLocation().GetLineSpan(); bodyLines = bs.EndLinePosition.Line - bs.StartLinePosition.Line + 1; }
@@ -146,8 +176,16 @@ foreach (var c in classes.OrderBy(c => c.File, StringComparer.Ordinal).ThenBy(c 
             ["calls"] = edges[key].Where(nodes.ContainsKey).Select(t => t.StartsWith(c.Name + "::") ? t.Split("::")[1] : t.Replace("::", ".")).OrderBy(x => x, StringComparer.Ordinal).ToList(),
             ["checks"] = mx.Extract(),
             ["unused_messages"] = mx.Unused,
+            ["binding_method"] = rd != null ? "cfg" : "fallback",
         });
     }
+    model = null; comp = null;
+    GC.Collect(2, GCCollectionMode.Forced, true, true);
+    long pk = mon.Peak;
+    globalPeak = Math.Max(globalPeak, pk);
+    totalCfgOk += cfgOk; totalCfgFail += cfgFail;
+    log.Add($"{c.Name}\t{nfiles}\t{pk / 1048576}\t{todo.Count}\t{cfgOk}\t{cfgFail}\t{sw.ElapsedMilliseconds}");
+    if (pk > 3L * 1024 * 1024 * 1024) { batches.Shrink(); Console.Error.WriteLine($"RAM lô {c.Name} = {pk / 1048576} MB > 3 GB: giảm cỡ lô xuống {batches.Max}"); }
     if (methods.Count == 0) continue;
     outClasses.Add(new SortedDictionary<string, object>(StringComparer.Ordinal)
     {
@@ -156,14 +194,76 @@ foreach (var c in classes.OrderBy(c => c.File, StringComparer.Ordinal).ThenBy(c 
 }
 var jo = new JsonSerializerOptions { WriteIndented = false, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 File.WriteAllText(outPath, JsonSerializer.Serialize(new { classes = outClasses }, jo) + "\n", new UTF8Encoding(false));
-Console.WriteLine($"classes_out={outClasses.Count}");
+mon.Stop();
+if (logPath != null) File.WriteAllText(logPath, string.Join("\n", log) + "\n", new UTF8Encoding(false));
+Console.WriteLine($"classes_out={outClasses.Count} cfg_ok={totalCfgOk} cfg_fail={totalCfgFail} peak_ws_mb={globalPeak / 1048576}");
 return 0;
+
+sealed class MemMonitor
+{
+    long peak;
+    readonly Timer t;
+    public MemMonitor() { t = new Timer(_ => Sample(), null, 0, 200); }
+    void Sample() { long w = Environment.WorkingSet; long p; do { p = Interlocked.Read(ref peak); if (w <= p) return; } while (Interlocked.CompareExchange(ref peak, w, p) != p); }
+    public void Reset() { Interlocked.Exchange(ref peak, Environment.WorkingSet); }
+    public long Peak { get { Sample(); return Interlocked.Read(ref peak); } }
+    public void Stop() => t.Dispose();
+}
+
+sealed class Batches
+{
+    readonly List<MetadataReference> refs = new();
+    readonly Dictionary<string, List<SyntaxTree>> typeTrees = new(StringComparer.Ordinal);
+    readonly Dictionary<SyntaxTree, string> treePath = new();
+    public int Max;
+    public Batches(string decDir, List<ClassCtx> classes, int max)
+    {
+        Max = max;
+        string core = Path.GetDirectoryName(typeof(object).Assembly.Location);
+        string ver = Path.GetFileName(core);
+        string refDir = Path.GetFullPath(Path.Combine(core, "..", "..", "..", "packs", "Microsoft.NETCore.App.Ref", ver, "ref", "net8.0"));
+        IEnumerable<string> dlls = Directory.Exists(refDir) ? Directory.EnumerateFiles(refDir, "*.dll") : ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")).Split(Path.PathSeparator);
+        foreach (var d in dlls.OrderBy(x => x, StringComparer.Ordinal)) refs.Add(MetadataReference.CreateFromFile(d));
+        var util = Path.Combine(decDir, "tax.htkk.utilities");
+        var opts = new CSharpParseOptions(LanguageVersion.Latest);
+        foreach (var f in Directory.EnumerateFiles(util, "*.cs", SearchOption.AllDirectories).OrderBy(x => x, StringComparer.Ordinal))
+        {
+            var tr = CSharpSyntaxTree.ParseText(File.ReadAllText(f), opts);
+            treePath[tr] = Path.GetRelativePath(decDir, f);
+            foreach (var td in tr.GetCompilationUnitRoot().DescendantNodes().OfType<BaseTypeDeclarationSyntax>())
+                Add(td.Identifier.Text, tr);
+        }
+        foreach (var c in classes)
+            if (c.Assembly == "tax.htkk.business" && (c.Name is "GeneralFunctions" or "ValidateBase" or "Common"))
+            { treePath[c.Tree] = c.File; Add(c.Name, c.Tree); }
+    }
+    void Add(string n, SyntaxTree t) { if (!typeTrees.TryGetValue(n, out var l)) typeTrees[n] = l = new(); if (!l.Contains(t)) l.Add(t); }
+    public void Shrink() { Max = Math.Max(1, Max / 2); }
+    public (CSharpCompilation, int) Compile(ClassCtx c)
+    {
+        var cnt = new Dictionary<SyntaxTree, int>();
+        foreach (var tk in c.Tree.GetRoot().DescendantTokens())
+        {
+            if (!tk.IsKind(SyntaxKind.IdentifierToken)) continue;
+            if (!typeTrees.TryGetValue(tk.ValueText, out var l)) continue;
+            foreach (var t in l) if (t != c.Tree) cnt[t] = cnt.GetValueOrDefault(t) + 1;
+        }
+        var pick = cnt.OrderByDescending(kv => kv.Value).ThenBy(kv => treePath[kv.Key], StringComparer.Ordinal).Take(Max - 1).Select(kv => kv.Key);
+        var trees = new List<SyntaxTree> { c.Tree };
+        trees.AddRange(pick);
+        var comp = CSharpCompilation.Create("batch_" + c.Name, trees, refs,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, concurrentBuild: false, allowUnsafe: true));
+        return (comp, trees.Count);
+    }
+}
 
 class ClassCtx
 {
     public string File, Name, Assembly;
     public ClassDeclarationSyntax Decl;
+    public SyntaxTree Tree;
     public Dictionary<string, ExpressionSyntax> Fields = new(StringComparer.Ordinal);
+    public Dictionary<string, string> FieldTypes = new(StringComparer.Ordinal);
     public List<MethodDeclarationSyntax> Methods = new();
 }
 
@@ -174,9 +274,10 @@ class MethodCtx
     readonly List<(string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node)> assigns = new();
     readonly HashSet<string> forVars = new(StringComparer.Ordinal);
     readonly HashSet<string> paramNames;
-    public MethodCtx(ClassCtx c, MethodDeclarationSyntax m)
+    readonly RDResult rd;
+    public MethodCtx(ClassCtx c, MethodDeclarationSyntax m, RDResult rd)
     {
-        C = c; M = m;
+        C = c; M = m; this.rd = rd;
         paramNames = m.ParameterList.Parameters.Select(p => p.Identifier.Text).ToHashSet(StringComparer.Ordinal);
         foreach (var n in m.DescendantNodes())
         {
@@ -194,7 +295,7 @@ class MethodCtx
             else if (n is ArgumentSyntax arg && (arg.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) || arg.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)))
             {
                 string k = arg.Expression is DeclarationExpressionSyntax de && de.Designation is SingleVariableDesignationSyntax sv ? sv.Identifier.Text : Norm(arg.Expression.ToString());
-                assigns.Add((k, arg.SpanStart, null, Line(arg), "out", arg));
+                assigns.Add((k, arg.SpanStart, null, Line(arg), arg.RefKindKeyword.IsKind(SyntaxKind.RefKeyword) ? "ref" : "out", arg));
             }
             else if (n is ForEachStatementSyntax fe)
                 assigns.Add((fe.Identifier.Text, fe.SpanStart, null, Line(fe), "foreach", fe));
@@ -213,8 +314,55 @@ class MethodCtx
             if (p is IfStatementSyntax || p is ElseClauseSyntax || p is SwitchSectionSyntax || IsLoop(p) || p is CatchClauseSyntax || p is ConditionalExpressionSyntax || p is LambdaExpressionSyntax || p is BinaryExpressionSyntax) return false;
         return true;
     }
-    // mọi phép gán có thể tới điểm dùng: từ phép gán chắc chắn gần nhất trở đi, cộng phép gán phía sau trong cùng vòng lặp
+    // ---- reaching definitions theo CFG (rd); rơi về phân tích cú pháp cũ khi không có CFG hoặc điểm dùng nằm ngoài CFG ----
+    static bool IsIdentKey(string k) => Regex.IsMatch(k, @"^@?[A-Za-z_][A-Za-z0-9_]*$");
+    public ISymbol SymAt(int pos)
+    {
+        if (rd == null) return null;
+        try { var si = rd.Model.GetSymbolInfo(NodeAt(pos)); return si.Symbol ?? si.CandidateSymbols.FirstOrDefault(); } catch { return null; }
+    }
+    // true nếu điểm dùng có kết quả CFG
+    public bool CfgUse(int pos, out UseInfo u) { u = null; return rd != null && rd.Uses.TryGetValue(pos, out u) && u.Reachable; }
+    (string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node) MapDef(DefSite d, string key)
+    {
+        foreach (var a in assigns) if (a.node == d.Node && a.key == key) return d.Kind == "ref" ? (a.key, a.pos, a.val, a.line, "ref", a.node) : a;
+        for (var p = d.Node.Parent; p != null && p != M; p = p.Parent)
+            foreach (var a in assigns) if (a.node == p && a.key == key && a.kind == "foreach") return a;
+        string kind = d.Kind switch { "compound" or "inc" => d.Node is AssignmentExpressionSyntax ae ? ae.OperatorToken.Text : d.Node is PostfixUnaryExpressionSyntax pu ? pu.OperatorToken.Text : d.Node is PrefixUnaryExpressionSyntax pr ? pr.OperatorToken.Text : d.Kind, "set" => d.Node is AssignmentExpressionSyntax ? "set" : "other", _ => d.Kind };
+        ExpressionSyntax val = d.Node is AssignmentExpressionSyntax ae2 ? ae2.Right : d.Node is VariableDeclaratorSyntax vd ? vd.Initializer?.Value : null;
+        return (key, d.Node.SpanStart, val, Line(d.Node), kind, d.Node);
+    }
+    void Closure(List<int> ids, HashSet<int> seen, List<(string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node)> res, string key)
+    {
+        foreach (var i in ids)
+        {
+            if (!seen.Add(i)) continue;
+            var d = rd.Defs[i];
+            res.Add(MapDef(d, key));
+            if (d.TargetUsePos >= 0 && rd.Uses.TryGetValue(d.TargetUsePos, out var u2)) Closure(u2.Defs, seen, res, key);
+        }
+    }
     public List<(string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node)> ReachingAll(string key, int pos)
+    {
+        if (!M.Span.Contains(pos)) return new();
+        if (rd != null && IsIdentKey(key))
+        {
+            if (CfgUse(pos, out var u) && u.Sym.Name == key.TrimStart('@'))
+            {
+                var res = new List<(string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node)>();
+                Closure(u.Defs, new HashSet<int>(), res, key);
+                return res.OrderBy(a => a.pos).ToList();
+            }
+            if (!rd.Uses.ContainsKey(pos))
+            {
+                var sym = SymAt(pos);
+                if (sym != null && !(sym is ILocalSymbol) && !(sym is IParameterSymbol)) return new();
+            }
+        }
+        return ReachingOld(key, pos);
+    }
+    // phân tích cũ (fallback): từ phép gán chắc chắn gần nhất trở đi, cộng phép gán phía sau trong cùng vòng lặp
+    public List<(string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node)> ReachingOld(string key, int pos)
     {
         // biểu thức nằm ngoài thân hàm (khởi tạo field/thuộc tính): không có biến cục bộ
         if (!M.Span.Contains(pos)) return new();
@@ -237,15 +385,29 @@ class MethodCtx
         return (near.val, near.line, all.Count);
     }
     // giá trị duy nhất tới được (không +=, ++, nhánh hay vòng lặp khác)
-    ExpressionSyntax SingleDef(string key, int pos)
+    // print=true: chỉ thay khi các biến trong vế phải có cùng tập phép gán tại điểm dùng như tại phép gán (tránh in sai ngữ cảnh)
+    ExpressionSyntax SingleDef(string key, int pos, bool print = false)
     {
         var all = ReachingAll(key, pos);
         if (all.Count != 1 || all[0].val == null || !(all[0].kind == "init" || all[0].kind == "set")) return null;
-        if (forVars.Contains(key)) return null;
+        if (IsForVar(key, pos)) return null;
         var use = NodeAt(pos);
         var dl = all[0].node.Ancestors().FirstOrDefault(IsLoop);
         if (dl != null && !use.Ancestors().Contains(dl)) return null;
+        if (print && CfgUse(pos, out var u))
+            foreach (var x in all[0].val.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
+            {
+                if (!rd.Uses.TryGetValue(x.SpanStart, out var xu)) continue;
+                var atUse = rd.ReachingAt(xu.Sym, u.State).Select(d => d.Id).OrderBy(i => i).ToList();
+                if (!atUse.SequenceEqual(xu.Defs.OrderBy(i => i))) return null;
+            }
         return all[0].val;
+    }
+    bool IsForVar(string n, int pos)
+    {
+        if (CfgUse(pos, out var u))
+            return u.Sym.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is VariableDeclaratorSyntax vd && vd.Parent?.Parent is ForStatementSyntax;
+        return forVars.Contains(n);
     }
 
     // ---------- hằng số ----------
@@ -374,6 +536,7 @@ class MethodCtx
             var a = ea.ArgumentList.Arguments[0].Expression;
             var v = Eval(a);
             if (v != null) return "S" + v;
+            if (Regex.IsMatch(Norm(a.ToString()), @"\.Sheets\.Count-1$")) return "S[last]";
             var s = StrOf(a); if (s != null) return s;
             return "S[" + R(a) + "]";
         }
@@ -391,6 +554,13 @@ class MethodCtx
     readonly Dictionary<string, string> bindings = new(StringComparer.Ordinal);
     int inlineDepth = 0;
     public string R(ExpressionSyntax e)
+    {
+        string r0 = R0(e);
+        if (r0 != null && r0.StartsWith(OLD) && !(e.Parent is MemberAccessExpressionSyntax pm0 && pm0.Expression == e) && !(e.Parent is ElementAccessExpressionSyntax pe0 && pe0.Expression == e) && !(e.Parent is ConditionalAccessExpressionSyntax))
+            r0 = r0 == OLD ? "model.old()" : "model.old(" + r0.Substring(OLD.Length).TrimStart('.') + ")";
+        return r0;
+    }
+    string R0(ExpressionSyntax e)
     {
         if (e == null) return "?";
         switch (e)
@@ -511,29 +681,97 @@ class MethodCtx
     {
         string n = id.Identifier.Text;
         var v = Eval(id); if (v != null) return v.Value.ToString();
-        if (paramNames.Contains(n) || forVars.Contains(n)) return n;
+        if (id.Parent is ArgumentSyntax oa && !oa.RefKindKeyword.IsKind(SyntaxKind.None)) return n;
+        if (id.Parent is DeclarationExpressionSyntax) return n;
+        string ty = TypeNameOf(id);
+        if (ty == "SheetView") return "sheet(" + SheetName(id) + ")";
+        if (ty == "FpSpread") return "workbook";
+        if (ty == "HTKKCMCToKhaiInfo" && n != "ToKhaiInfo") return OLD;
+        if (paramNames.Contains(n) || IsForVar(n, id.SpanStart)) return n;
         var all = ReachingAll(n, id.SpanStart);
         if (all.Count == 0)
         {
             if (C.Fields.ContainsKey(n) && StrOf(id) is string fs) return JsonSerializer.Serialize(fs);
             return n;
         }
-        var sd = SingleDef(n, id.SpanStart);
+        string pk = KeyFor(n, id.SpanStart);
+        if (inProgress.Contains(pk)) return pk;
+        var sd = SingleDef(n, id.SpanStart, true);
         if (sd != null && !(sd is ArrayCreationExpressionSyntax ac0 && ac0.Initializer == null) && !(sd is ObjectCreationExpressionSyntax) && inlineDepth < 2)
         {
+            inProgress.Add(pk);
             inlineDepth++; string s1 = R(sd); inlineDepth--;
+            inProgress.Remove(pk);
             if (s1.Length <= 140) return s1.Contains(' ') ? "(" + s1 + ")" : s1;
-            Bind(n, s1, all[0].line);
-            return n;
+            Bind(pk, s1, all[0].line, id);
+            return pk;
         }
-        if (inlineDepth < 2) BindAll(n, all, id);
-        return n;
+        BindAll(pk, all, id);
+        return pk;
+    }
+    const string OLD = "\u0001";
+    // tên kiểu của định danh: theo SemanticModel (kể cả kiểu lỗi), nếu không có thì theo khai báo cú pháp
+    string TypeNameOf(IdentifierNameSyntax id)
+    {
+        string n = id.Identifier.Text;
+        var sym = SymAt(id.SpanStart);
+        ITypeSymbol t = sym switch { ILocalSymbol l => l.Type, IParameterSymbol p => p.Type, IFieldSymbol f => f.Type, IPropertySymbol pp => pp.Type, _ => null };
+        if (t != null && !(t is IErrorTypeSymbol && t.Name == "var") && t.Name != "") return t.Name;
+        if (sym != null && !(sym is ILocalSymbol || sym is IParameterSymbol || sym is IFieldSymbol || sym is IPropertySymbol)) return null;
+        var pd = M.ParameterList.Parameters.FirstOrDefault(x => x.Identifier.Text == n);
+        if (pd != null) return pd.Type?.ToString().Split('.').Last();
+        foreach (var vd in M.DescendantNodes().OfType<VariableDeclaratorSyntax>())
+            if (vd.Identifier.Text == n && vd.Parent is VariableDeclarationSyntax decl)
+            {
+                if (!decl.Type.IsVar) return decl.Type.ToString().Split('.').Last();
+                if (vd.Initializer?.Value is ElementAccessExpressionSyntax ie && ie.Expression is MemberAccessExpressionSyntax im && im.Name.Identifier.Text == "Sheets") return "SheetView";
+                if (vd.Initializer?.Value is MemberAccessExpressionSyntax am && am.Name.Identifier.Text == "ActiveSheet") return "SheetView";
+            }
+        if (C.FieldTypes.TryGetValue(n, out var ft)) return ft.Split('.').Last();
+        return null;
+    }
+    // tên sheet của biến SheetView: S<n> | S[biểu thức] | S[tham số] (giống tiền tố trong cells_marked)
+    string SheetName(ExpressionSyntax e)
+    {
+        string sh = SheetOf(e);
+        if (sh != null && !sh.StartsWith("param:") && sh != "active") return sh;
+        sheetIdxCache ??= SheetIndex() ?? -1;
+        if (sheetIdxCache >= 0) return "S" + sheetIdxCache;
+        if (sh != null && sh.StartsWith("param:")) return "S[" + sh.Substring(6) + "]";
+        if (sh == "active") return "S[active]";
+        return e is IdentifierNameSyntax ii ? "S[" + ii.Identifier.Text + "]" : "Sx";
+    }
+    // khóa binding theo ISymbol: hai biến cùng tên khác phạm vi trong một check có khóa khác nhau (tên@L<dòng khai báo>)
+    readonly Dictionary<ISymbol, string> symKey = new(SymbolEqualityComparer.Default);
+    readonly Dictionary<string, ISymbol> keySym = new(StringComparer.Ordinal);
+    readonly HashSet<string> inProgress = new(StringComparer.Ordinal);
+    readonly SortedDictionary<string, object> bindInfo = new(StringComparer.Ordinal);
+    static int DeclLine(ISymbol s) { var l = s.Locations.FirstOrDefault(); return l == null || !l.IsInSource ? 0 : l.GetLineSpan().StartLinePosition.Line + 1; }
+    string KeyFor(string n, int pos)
+    {
+        if (!CfgUse(pos, out var u)) return n;
+        if (symKey.TryGetValue(u.Sym, out var k)) return k;
+        k = keySym.ContainsKey(n) ? n + "@L" + DeclLine(u.Sym) : n;
+        symKey[u.Sym] = k; keySym[k] = u.Sym;
+        return k;
+    }
+    void Info(string key, SyntaxNode use, IEnumerable<int> defLines)
+    {
+        bool cfg = CfgUse(use.SpanStart, out var u);
+        var d = new SortedDictionary<string, object>(StringComparer.Ordinal)
+        {
+            ["method"] = cfg ? "cfg" : "fallback",
+            ["use_line"] = Line(use),
+            ["def_lines"] = defLines.Distinct().OrderBy(x => x).ToList(),
+        };
+        if (cfg) d["decl_line"] = DeclLine(u.Sym);
+        bindInfo[key] = d;
     }
     // liệt kê mọi phép gán có thể tới điểm dùng, kèm điều kiện riêng của từng phép gán
     void BindAll(string n, List<(string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node)> all, SyntaxNode use)
     {
-        if (bindings.ContainsKey(n)) return;
-        bindings[n] = "…";
+        if (bindings.ContainsKey(n) || inProgress.Contains(n)) return;
+        inProgress.Add(n);
         inlineDepth++;
         var saved = LastCondLines;
         var parts = new List<string>();
@@ -544,24 +782,27 @@ class MethodCtx
             var g = ConditionsUpTo(a.node, stop);
             string val = a.kind switch
             {
-                "init" or "set" => a.val == null ? "?" : R(a.val),
-                "out" => "<gán qua tham số out/ref>",
+                "init" or "set" or "other" => a.val == null ? "?" : R(a.val),
+                "out" or "ref" => "<gán qua tham số out/ref>",
                 "foreach" => "<phần tử vòng lặp>",
+                "pattern" => "<gán khi khớp mẫu kiểu>",
+                "catch" => "<ngoại lệ bắt được>",
+                "decon" => "<gán qua phân rã bộ giá trị>",
+                "param" => "<giá trị tham số khi gọi hàm>",
                 "++" or "--" => a.kind,
                 _ => a.kind + " " + (a.val == null ? "?" : R(a.val)),
             };
-            if (val.Length > 160) val = val.Substring(0, 160) + "…";
             string gs = g.Count == 0 ? "" : " [khi " + string.Join(" AND ", g) + "]";
-            if (gs.Length > 220) gs = gs.Substring(0, 220) + "…]";
             parts.Add("L" + a.line + gs + ": " + val);
         }
         LastCondLines = saved;
         inlineDepth--;
         string sv = all.Count == 1 ? parts[0] : "<" + all.Count + " phép gán có thể tới> " + string.Join(" | ", parts);
-        if (sv.Length > 900) sv = sv.Substring(0, 900) + "…";
         bindings[n] = sv;
+        inProgress.Remove(n);
+        Info(n, use, all.Select(a => a.line));
     }
-    void Bind(string n, string s, int line) { if (s.Length > 400) s = s.Substring(0, 400) + "…"; bindings[n] = s + " @L" + line; }
+    void Bind(string n, string s, int line, SyntaxNode use) { bindings[n] = s + " @L" + line; Info(n, use, new[] { line }); }
 
     string RElement(ElementAccessExpressionSyntax ea)
     {
@@ -571,7 +812,7 @@ class MethodCtx
         if (ea.Expression is MemberAccessExpressionSyntax ms && ms.Name.Identifier.Text == "Sheets" && args.Count == 1)
             return "sheet(" + (SheetOf(ea) ?? R(args[0].Expression)) + ")";
         var v = Eval(ea); if (v != null) return v.Value.ToString();
-        var sdE = SingleDef(Norm(ea.ToString()), ea.SpanStart);
+        var sdE = SingleDef(Norm(ea.ToString()), ea.SpanStart, true);
         if (sdE != null && inlineDepth < 2)
         {
             inlineDepth++; string s = R(sdE); inlineDepth--;
@@ -580,14 +821,15 @@ class MethodCtx
         return R(ea.Expression) + "[" + string.Join(", ", args.Select(a => R(a.Expression))) + "]";
     }
     int? sheetIdxCache;
+    public string LastSheet;
     public string CellRef(ExpressionSyntax sheetExpr, ExpressionSyntax row, ExpressionSyntax col)
     {
-        string sh = SheetOf(sheetExpr);
-        if (sh == null || sh.StartsWith("param:") || sh == "active") { sheetIdxCache ??= SheetIndex() ?? -1; sh = sheetIdxCache >= 0 ? "S" + sheetIdxCache : "Sx"; } // Sx: sheet không xác định tĩnh (tham số của hàm dùng chung)
+        string sh = SheetName(sheetExpr); // S<n>; S[tham số]/S[active]/Sx khi không xác định tĩnh
         string prefix = sh + "!";
         var r = Eval(row); var c = Eval(col);
         string cs = c != null ? ColLetters(c.Value) : "col{" + R(col) + "}";
         string rs = r != null ? (r.Value + 1).ToString() : "{" + R(row) + " +1}";
+        LastSheet = sh; // gán sau khi in hàng/cột (biểu thức hàng/cột có thể chứa ô của sheet khác)
         return prefix + cs + rs;
     }
     string RMember(MemberAccessExpressionSyntax ma)
@@ -598,15 +840,40 @@ class MethodCtx
             string cref = CellRef(cm.Expression, ea.ArgumentList.Arguments[0].Expression, ea.ArgumentList.Arguments[1].Expression);
             return name switch { "Text" => "text(" + cref + ")", "Value" => "value(" + cref + ")", _ => name.ToLowerInvariant() + "(" + cref + ")" };
         }
+        if ((name == "Length" || name == "Count") && ma.Expression is MemberAccessExpressionSyntax sc && sc.Name.Identifier.Text == "Sheets") return "sheet_count()";
         if (name == "Length" || name == "Count") return "length(" + R(ma.Expression) + ")";
-        if (name == "Visible" && ma.Expression is ElementAccessExpressionSyntax) return "visible(" + R(ma.Expression) + ")";
-        if (ma.Expression is PredefinedTypeSyntax || ma.Expression is IdentifierNameSyntax q && char.IsUpper(q.Identifier.Text[0]) && !paramNames.Contains(q.Identifier.Text) && Reaching(q.Identifier.Text, ma.SpanStart) == null && !C.Fields.ContainsKey(q.Identifier.Text))
-            return ma.Expression + "." + name; // hằng/thuộc tính tĩnh (Color.Pink, string.Empty, ...)
+        if (name == "Visible") return "visible(" + R(ma.Expression) + ")";
+        if (name == "ActiveSheet") return "sheet(S[active])";
+        if (name == "Sheets") return "sheets()";
+        if (ma.Expression is PredefinedTypeSyntax || ma.Expression is IdentifierNameSyntax q && char.IsUpper(q.Identifier.Text[0]) && !paramNames.Contains(q.Identifier.Text) && Reaching(q.Identifier.Text, ma.SpanStart) == null && !C.Fields.ContainsKey(q.Identifier.Text) && !(TypeNameOf(q) is "SheetView" or "FpSpread" or "HTKKCMCToKhaiInfo"))
+            return StaticMember(ma.Expression.ToString(), name); // hằng/thuộc tính tĩnh -> ký hiệu trung tính
         var v = Eval(ma); if (v != null) return v.Value.ToString();
         return R(ma.Expression) + "." + name;
     }
+    static string Snake(string n) => Regex.Replace(n, "(?<=[a-z0-9])([A-Z])", "_$1").ToLowerInvariant();
+    // hằng/thuộc tính tĩnh: DateTime.Now -> now(), Color.Pink -> color(pink), GeneralFunctions.KEY_PRESS -> key_press, string.Empty -> ""
+    static string StaticMember(string type, string name)
+    {
+        string t = type.Split('.').Last();
+        switch (t)
+        {
+            case "DateTime":
+                return name switch { "Now" => "now()", "Today" => "today()", "MinValue" => "date_min()", "MaxValue" => "date_max()", _ => "date_" + Snake(name) + "()" };
+            case "Color": case "SystemColors": return "color(" + name.ToLowerInvariant() + ")";
+            case "string": case "String": if (name == "Empty") return "\"\""; break;
+            case "int": case "Int32": case "long": case "Int64": case "decimal": case "Decimal": case "double": case "Double":
+                return name switch { "MaxValue" => "max_value(" + t.ToLowerInvariant() + ")", "MinValue" => "min_value(" + t.ToLowerInvariant() + ")", "Zero" => "0", "One" => "1", _ => Snake(name) };
+            case "Environment": if (name == "NewLine") return "newline()"; break;
+            case "Keys": return "key(" + name.ToLowerInvariant() + ")";
+        }
+        if (t == "ToKhaiInfo" || t == "PeriodInfo" || t == "ToKhaiInfoOld") return type + "." + name; // dữ liệu tờ khai (model)
+        if (char.IsUpper(t[0]) && Regex.IsMatch(t, "^[A-Z][A-Za-z0-9]*$") && (t.EndsWith("Functions") || t.EndsWith("File") || t.EndsWith("Base") || t == "Common" || t.EndsWith("Helpers") || t.EndsWith("Constants") || t.EndsWith("Const") || t == "WinSettings" || t == "HTKKConstants"))
+            return Snake(name);
+        return type + "." + name;
+    }
     static readonly Dictionary<string, string> FnMap = new(StringComparer.Ordinal)
     {
+        ["ColumnLettersToIndex"] = "col_index",
         ["isNullString"] = "is_empty", ["IsNullOrEmpty"] = "is_empty", ["IsNullOrWhiteSpace"] = "is_blank",
         ["ToDouble"] = "to_number", ["ToDecimal"] = "to_number", ["ToInt32"] = "to_int", ["ToInt64"] = "to_int", ["ToString"] = "to_text",
         ["Abs"] = "abs", ["Round"] = "round", ["Max"] = "max", ["Min"] = "min", ["Trim"] = "trim", ["ToUpper"] = "upper", ["ToLower"] = "lower",
@@ -829,7 +1096,7 @@ class MethodCtx
                 }
             case IdentifierNameSyntax id:
                 {
-                    var sd = SingleDef(id.Identifier.Text, id.SpanStart);
+                    var sd = SingleDef(id.Identifier.Text, id.SpanStart, true);
                     if (sd != null) return RTemplate(sd, depth + 1);
                     return "{" + id.Identifier.Text + "}";
                 }
@@ -852,6 +1119,7 @@ class MethodCtx
         return "gán biến " + name + "; dùng tại: " + string.Join(", ", callees);
     }
 
+    void ClearBind() { bindings.Clear(); bindInfo.Clear(); symKey.Clear(); keySym.Clear(); inProgress.Clear(); }
     public List<object> Extract()
     {
         var checks = new List<object>();
@@ -882,7 +1150,7 @@ class MethodCtx
         }
         foreach (var mk in marks)
         {
-            bindings.Clear();
+            ClearBind();
             var notes = new List<string>();
             var msgs = new List<object>();
             if (mk.msg != null)
@@ -908,7 +1176,9 @@ class MethodCtx
                 else { message["kind"] = "dynamic"; message["expr"] = R(mk.msg); }
             }
             if (notes.Count > 0) message["notes"] = notes.Distinct().OrderBy(x => x, StringComparer.Ordinal).ToList();
+            LastSheet = null;
             string cell = mk.row != null && mk.col != null ? CellRef(mk.sheet, mk.row, mk.col) : "?";
+            string cellSheet = LastSheet;
             var cond = Conditions(mk.node);
             var condLines = new List<int>(LastCondLines);
             var sp = mk.node.GetLocation().GetLineSpan();
@@ -917,10 +1187,11 @@ class MethodCtx
                 ["api"] = mk.api, ["level"] = mk.level,
                 ["cells_marked"] = new[] { cell },
                 ["cell_const"] = mk.row != null && Eval(mk.row) != null && Eval(mk.col) != null,
-                ["sheet"] = SheetOf(mk.sheet),
+                ["sheet"] = cellSheet,
                 ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond.Select(x => x.Contains(" OR ") && !x.StartsWith("NOT (") ? "(" + x + ")" : x)),
                 ["condition_lines"] = condLines,
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
+                ["binding_info"] = new SortedDictionary<string, object>(bindInfo, StringComparer.Ordinal),
                 ["message"] = message,
                 ["lines"] = new[] { sp.StartLinePosition.Line + 1, sp.EndLinePosition.Line + 1 },
                 ["col"] = sp.StartLinePosition.Character + 1,
@@ -930,7 +1201,7 @@ class MethodCtx
         foreach (var g in gms)
         {
             if (linked.Contains(g.SpanStart)) continue;
-            bindings.Clear();
+            ClearBind();
             string ctx = "khác";
             for (var p = g.Parent; p != null && p != M; p = p.Parent)
             {
@@ -981,6 +1252,7 @@ class MethodCtx
                 ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond),
                 ["condition_lines"] = condLines,
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
+                ["binding_info"] = new SortedDictionary<string, object>(bindInfo, StringComparer.Ordinal),
                 ["message"] = new SortedDictionary<string, object>(StringComparer.Ordinal) { ["parts"] = new[] { msg } },
                 ["context"] = ctx,
                 ["lines"] = new[] { sp.StartLinePosition.Line + 1, sp.EndLinePosition.Line + 1 },
@@ -991,7 +1263,7 @@ class MethodCtx
         foreach (var oc in C.Assembly == "tax.htkk.business" ? M.DescendantNodes().OfType<ObjectCreationExpressionSyntax>() : Enumerable.Empty<ObjectCreationExpressionSyntax>())
         {
             if (oc.Type.ToString() != "frmMessage" || oc.ArgumentList == null || oc.ArgumentList.Arguments.Count == 0) continue;
-            bindings.Clear();
+            ClearBind();
             var oa = oc.ArgumentList.Arguments.Select(x => x.Expression).ToList();
             var sp = oc.GetLocation().GetLineSpan();
             var part = new SortedDictionary<string, object>(StringComparer.Ordinal)
@@ -1021,6 +1293,7 @@ class MethodCtx
                 ["sheet"] = null,
                 ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond),
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
+                ["binding_info"] = new SortedDictionary<string, object>(bindInfo, StringComparer.Ordinal),
                 ["message"] = new SortedDictionary<string, object>(StringComparer.Ordinal) { ["parts"] = new[] { part } },
                 ["context"] = "hộp thoại frmMessage/" + oa.Count + " tham số",
                 ["condition_lines"] = condLines,
