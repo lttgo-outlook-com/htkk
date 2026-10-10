@@ -196,7 +196,7 @@ var jo = new JsonSerializerOptions { WriteIndented = false, Encoder = System.Tex
 File.WriteAllText(outPath, JsonSerializer.Serialize(new { classes = outClasses }, jo) + "\n", new UTF8Encoding(false));
 mon.Stop();
 if (logPath != null) File.WriteAllText(logPath, string.Join("\n", log) + "\n", new UTF8Encoding(false));
-Console.WriteLine($"classes_out={outClasses.Count} cfg_ok={totalCfgOk} cfg_fail={totalCfgFail} peak_ws_mb={globalPeak / 1048576}");
+Console.WriteLine($"classes_out={outClasses.Count} cfg_ok={totalCfgOk} cfg_fail={totalCfgFail} peak_ws_mb={globalPeak / 1048576} element_key_fallback_sites={MethodCtx.ElemFallback.Count}");
 return 0;
 
 sealed class MemMonitor
@@ -275,6 +275,7 @@ class MethodCtx
     readonly HashSet<string> forVars = new(StringComparer.Ordinal);
     readonly HashSet<string> paramNames;
     readonly RDResult rd;
+    public static readonly HashSet<string> ElemFallback = new(StringComparer.Ordinal);
     public MethodCtx(ClassCtx c, MethodDeclarationSyntax m, RDResult rd)
     {
         C = c; M = m; this.rd = rd;
@@ -695,7 +696,14 @@ class MethodCtx
             return n;
         }
         string pk = KeyFor(n, id.SpanStart);
-        if (inProgress.Contains(pk)) return pk;
+        string dsig = string.Join(",", all.Select(a => a.pos));
+        if (keyDefs.TryGetValue(pk, out var ks) && ks != dsig)
+        {
+            string pk2 = pk + "@L" + Line(id);
+            if (!keyDefs.TryGetValue(pk2, out var ks2) || ks2 == dsig) pk = pk2;
+        }
+        keyDefs.TryAdd(pk, dsig);
+        if (inProgress.Contains(pk)) return Used(pk, id);
         var sd = SingleDef(n, id.SpanStart, true);
         if (sd != null && !(sd is ArrayCreationExpressionSyntax ac0 && ac0.Initializer == null) && !(sd is ObjectCreationExpressionSyntax) && inlineDepth < 2)
         {
@@ -704,10 +712,10 @@ class MethodCtx
             inProgress.Remove(pk);
             if (s1.Length <= 140) return s1.Contains(' ') ? "(" + s1 + ")" : s1;
             Bind(pk, s1, all[0].line, id);
-            return pk;
+            return Used(pk, id);
         }
         BindAll(pk, all, id);
-        return pk;
+        return Used(pk, id);
     }
     const string OLD = "\u0001";
     // tên kiểu của định danh: theo SemanticModel (kể cả kiểu lỗi), nếu không có thì theo khai báo cú pháp
@@ -745,6 +753,20 @@ class MethodCtx
     readonly Dictionary<ISymbol, string> symKey = new(SymbolEqualityComparer.Default);
     readonly Dictionary<string, ISymbol> keySym = new(StringComparer.Ordinal);
     readonly HashSet<string> inProgress = new(StringComparer.Ordinal);
+    readonly Dictionary<string, string> keyDefs = new(StringComparer.Ordinal);
+    readonly Dictionary<string, SortedSet<int>> keyUses = new(StringComparer.Ordinal);
+    string Used(string pk, SyntaxNode id) { if (!keyUses.TryGetValue(pk, out var u)) keyUses[pk] = u = new SortedSet<int>(); u.Add(Line(id)); return pk; }
+    SortedDictionary<string, object> BindInfoOut()
+    {
+        var o = new SortedDictionary<string, object>(StringComparer.Ordinal);
+        foreach (var kv in bindInfo)
+        {
+            var d = new SortedDictionary<string, object>((SortedDictionary<string, object>)kv.Value, StringComparer.Ordinal);
+            if (keyUses.TryGetValue(kv.Key, out var u)) d["use_lines"] = u.ToList();
+            o[kv.Key] = d;
+        }
+        return o;
+    }
     readonly SortedDictionary<string, object> bindInfo = new(StringComparer.Ordinal);
     static int DeclLine(ISymbol s) { var l = s.Locations.FirstOrDefault(); return l == null || !l.IsInSource ? 0 : l.GetLineSpan().StartLinePosition.Line + 1; }
     string KeyFor(string n, int pos)
@@ -815,6 +837,7 @@ class MethodCtx
         var sdE = SingleDef(Norm(ea.ToString()), ea.SpanStart, true);
         if (sdE != null && inlineDepth < 2)
         {
+            ElemFallback.Add(C.Name + ":" + Line(ea) + ":" + Norm(ea.ToString()));
             inlineDepth++; string s = R(sdE); inlineDepth--;
             if (s.Length <= 140) return s.Contains(' ') ? "(" + s + ")" : s;
         }
@@ -1111,7 +1134,7 @@ class MethodCtx
                 }
             case IdentifierNameSyntax id:
                 {
-                    var sd = SingleDef(id.Identifier.Text, id.SpanStart, true);
+                    var sd = SingleDef(id.Identifier.Text, id.SpanStart);
                     if (sd != null) return RTemplate(sd, depth + 1);
                     return "{" + id.Identifier.Text + "}";
                 }
@@ -1134,7 +1157,7 @@ class MethodCtx
         return "gán biến " + name + "; dùng tại: " + string.Join(", ", callees);
     }
 
-    void ClearBind() { bindings.Clear(); bindInfo.Clear(); symKey.Clear(); keySym.Clear(); inProgress.Clear(); }
+    void ClearBind() { bindings.Clear(); bindInfo.Clear(); symKey.Clear(); keySym.Clear(); inProgress.Clear(); keyDefs.Clear(); keyUses.Clear(); }
     public List<object> Extract()
     {
         var checks = new List<object>();
@@ -1206,7 +1229,7 @@ class MethodCtx
                 ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond.Select(WrapOr)),
                 ["condition_lines"] = condLines,
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
-                ["binding_info"] = new SortedDictionary<string, object>(bindInfo, StringComparer.Ordinal),
+                ["binding_info"] = BindInfoOut(),
                 ["message"] = message,
                 ["lines"] = new[] { sp.StartLinePosition.Line + 1, sp.EndLinePosition.Line + 1 },
                 ["col"] = sp.StartLinePosition.Character + 1,
@@ -1267,7 +1290,7 @@ class MethodCtx
                 ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond.Select(WrapOr)),
                 ["condition_lines"] = condLines,
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
-                ["binding_info"] = new SortedDictionary<string, object>(bindInfo, StringComparer.Ordinal),
+                ["binding_info"] = BindInfoOut(),
                 ["message"] = new SortedDictionary<string, object>(StringComparer.Ordinal) { ["parts"] = new[] { msg } },
                 ["context"] = ctx,
                 ["lines"] = new[] { sp.StartLinePosition.Line + 1, sp.EndLinePosition.Line + 1 },
@@ -1308,7 +1331,7 @@ class MethodCtx
                 ["sheet"] = null,
                 ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond.Select(WrapOr)),
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
-                ["binding_info"] = new SortedDictionary<string, object>(bindInfo, StringComparer.Ordinal),
+                ["binding_info"] = BindInfoOut(),
                 ["message"] = new SortedDictionary<string, object>(StringComparer.Ordinal) { ["parts"] = new[] { part } },
                 ["context"] = "hộp thoại frmMessage/" + oa.Count + " tham số",
                 ["condition_lines"] = condLines,

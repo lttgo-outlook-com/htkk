@@ -368,7 +368,23 @@ for k, m, c in checks:
         raw_bad[key] += 1
         raw_ex.setdefault(key, (k, c["source"]["lines"][0]))
 print("   [kiểm] check còn định danh C# thô theo (e): %d %s %s" % (sum(1 for _ in raw_bad.elements()), dict(raw_bad.most_common(8)), list(raw_ex.items())[:4]))
-ok7 = not after_bad and not merge_bad and ell == 0 and not raw_bad
+# mọi dòng in tên biến (binding_info.use_lines: điều kiện, ô, thông điệp, giá trị binding khác): phép gán liệt kê phải tới được từng dòng
+occ_bad, occ_noname, occ_n = [], [], 0
+for k, m, c in checks:
+    src = c["source"]["file"]
+    lines_src, _ = _clean_lines(src)
+    loops = _loops(src)
+    for var, bi in sorted((c.get("binding_info") or {}).items()):
+        name = var.split("@")[0]
+        for L in bi.get("use_lines", [bi["use_line"]]):
+            occ_n += 1
+            if not re.search(r"\b" + re.escape(name) + r"\b", lines_src[L - 1]):
+                occ_noname.append((k, c["source"]["lines"][0], var, L))
+            for d in bi.get("def_lines", []):
+                if d > L and not any(a0 <= L <= e0 and a0 <= d <= e0 for a0, e0 in loops):
+                    occ_bad.append((k, c["source"]["lines"][0], var, L, d))
+print("   [kiểm] %d lượt dùng (use_lines); phép gán liệt kê nằm sau một lượt dùng mà không qua vòng lặp: %d %s; dòng dùng không chứa tên biến: %d %s" % (occ_n, len(occ_bad), occ_bad[:5], len(occ_noname), occ_noname[:3]))
+ok7 = not after_bad and not merge_bad and ell == 0 and not raw_bad and not occ_bad
 okc = (sum(gm_json.values()) == 4533 and jp == 7241 and jp2 == 5 and jy == 434 and vn == 496 and va == 580)
 print("== (7) KẾT LUẬN: bindings/định danh/ký tự cắt %s; số đếm GetMessage 4533, Pink 7241, Pink2 5, Yellow 434, Validate_N 496, Validate* 580 %s" % ("ĐẠT" if ok7 else "CHƯA ĐẠT", "ĐẠT" if okc else "CHƯA ĐẠT"))
 
