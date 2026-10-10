@@ -70,11 +70,13 @@ ROLES = {
 NOTES = {
     "versiontokhai.xml": "Tệp stub (loại khỏi danh mục cấu hình hiệu lực): Root có 0 phần tử con, chỉ chứa 1 chú thích Menu đã vô hiệu.",
     "menu_backup2011.xml": "Không parse được như XML (chỉ có chú thích); lưu dạng raw_text.",
-    "schema.dtd": "Không phải XML (DTD); lưu dạng raw_text.",
+    "schema.dtd": "Không phải XML (DTD); lưu dạng raw_text. Hai vị trí .cs chỉ là chuỗi hằng DOCTYPE chứa 'Schema.dtd' (chuoi_hang), không đọc tệp.",
+    "header.xml9": "Tên bị cắt đuôi; tương ứng Header.xml trong thư mục dữ liệu từng MST (cùng vị trí đọc với header.xml, ref_kind gian_tiep, không tính vào cs_ref_count).",
+    "htkk.exe.config": "Runtime .NET nạp; mã đọc giá trị qua ConfigurationManager.AppSettings (ref_kind config_manager) trong HTKKConfig.cs.",
     "schema.dtd1": "Không phải XML (DTD); lưu dạng raw_text.",
     "network.xml": "Chứa tài khoản/mật khẩu proxy dạng rõ trong nguồn; sao chép nguyên văn.",
     "cvanconfig.xml": "Giá trị IP/Port/ServiceName là chuỗi mã hóa (base64) trong nguồn; sao chép nguyên văn.",
-    "appscheduler.xml": "Mã đọc tệp tên AppSchedulerCf.xml (htkk/HTKK.Forms/frmFormStart.cs:210,298), khác tên tệp này nên không tính là khớp. Có URL máy chủ cập nhật và thông tin proxy trong nguồn; sao chép nguyên văn.",
+    "appscheduler.xml": "Mã đọc dưới tên AppSchedulerCf.xml (ref_kind ten_khac). Có URL máy chủ cập nhật và thông tin proxy trong nguồn; sao chép nguyên văn.",
 }
 
 # Nhóm loại khỏi danh mục cấu hình (không chuyển) kèm lý do.
@@ -211,6 +213,25 @@ def stats(root):
     return c, comments
 
 
+READ_KINDS = ("doc_theo_ten", "ten_khac", "config_manager")  # chỉ các loại này tính vào cs_ref_count
+CONST_REFS = {"schema.dtd", "schema.dtd1"}
+_F = "htkk/HTKK.Forms/frmFormStart.cs"
+_U = "htkk/HTKK/frmConfigUpdate.cs"
+EXTRA_REFS = {
+    # đọc dưới tên khác
+    "appscheduler.xml": [(f"{_F}:210", "ten_khac"), (f"{_F}:298", "ten_khac"), (f"{_F}:420", "ten_khac"),
+                         (f"{_U}:133", "ten_khac"), (f"{_U}:163", "ten_khac")],
+}
+CFG_FILE = "tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKConfig.cs"
+
+
+def config_manager_lines(cs_root):
+    """Dòng ConfigurationManager.AppSettings trong HTKKConfig.cs (đọc htkk.exe.config qua runtime)."""
+    with open(os.path.join(cs_root, CFG_FILE), "rb") as f:
+        lines = f.read().decode("utf-8", errors="replace").splitlines()
+    return [f"{CFG_FILE}:{i}" for i, l in enumerate(lines, 1) if "ConfigurationManager.AppSettings" in l]
+
+
 def find_cs_refs(cs_root, names):
     """Tìm tên tệp trong mọi .cs của _decompiled. Khớp chính xác tên tệp (không dính ký tự chữ/số/_ hai bên)."""
     files = []
@@ -325,10 +346,22 @@ def main():
             json.dump(doc, f, ensure_ascii=False, indent=1)
             f.write("\n")
         converted += 1
-        entry["cs_refs"] = exact[name]
-        entry["cs_ref_count"] = len(exact[name])
+        refs = [{"loc": r, "ref_kind": "doc_theo_ten"} for r in exact[name]]
+        if name in EXTRA_REFS:
+            for r, kind in EXTRA_REFS[name]:
+                refs.append({"loc": r, "ref_kind": kind})
+        if name in CONST_REFS:  # khớp tên nhưng chỉ là chuỗi hằng, không đọc tệp
+            for r in refs:
+                if r["ref_kind"] == "doc_theo_ten":
+                    r["ref_kind"] = "chuoi_hang"
+        if name == "htkk.exe.config":
+            refs += [{"loc": r, "ref_kind": "config_manager"} for r in config_manager_lines(a.cs)]
+        if name == "header.xml9":
+            refs += [{"loc": r, "ref_kind": "gian_tiep"} for r in exact["header.xml"]]
         if indirect[name] and not exact[name]:
-            entry["cs_refs_indirect_stem"] = indirect[name]
+            refs += [{"loc": r, "ref_kind": "gian_tiep"} for r in indirect[name]]
+        entry["cs_refs"] = refs
+        entry["cs_ref_count"] = sum(1 for r in refs if r["ref_kind"] in READ_KINDS)
         index.append(entry)
 
     idx = {"header": {"generator": GENERATOR, "version": VERSION, "source_dir": a.src, "cs_dir": a.cs,
