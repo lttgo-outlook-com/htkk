@@ -423,7 +423,9 @@ public static class Ar
             if (x is VConst kx && kx.Val is string sx && y is VConst ky && ky.Val is string sy) return new VConst(sx.Replace(from, sy));
             if (x is VConst kn && kn.IsNum && y is VConst ky2 && ky2.Val is string sy2) return new VConst(Fmt.Num(kn.Val).Replace(from, sy2));
             var parts = x is VCat c ? c.Parts : new List<V> { x };
-            if (from.Length > 1 && parts.Any(p => !(p is VConst))) return VCat.Make(new[] { Fn("replace", x, a, y) });
+            // mẫu nhiều ký tự chỉ thay từng phần khi không thể vắt qua ranh giới: phần ký hiệu đều là số và mẫu không chứa ký tự số
+            bool safe = from.Length == 1 || SafeSplit(parts, from);
+            if (!safe && parts.Any(p => !(p is VConst))) return VCat.Make(new[] { Fn("replace", x, a, y) });
             var res = new List<V>();
             foreach (var p in parts)
             {
@@ -433,10 +435,28 @@ public static class Ar
                     for (int i = 0; i < segs.Length; i++) { if (i > 0) res.Add(y); res.Add(new VConst(segs[i])); }
                 }
                 else if (p is VConst kn2 && kn2.IsNum && y is VConst ky3 && ky3.Val is string sy3) res.Add(new VConst(Fmt.Num(kn2.Val).Replace(from, sy3)));
+                else if (p is VLin && from.Length > 1 && safe) res.Add(p); // số không chứa mẫu (mẫu có ký tự không phải số)
                 else res.Add(Fn("replace", p, a, y));
             }
             return VCat.Make(res);
         });
+    }
+    static bool NumCh(char ch) => "0123456789+-.,Ee".IndexOf(ch) >= 0;
+    /// Thay từng phần an toàn khi mọi phần ký hiệu là số (VLin), mẫu có ký tự không phải số ở đầu và cuối,
+    /// và không có phần hằng đứng trước kết thúc bằng đoạn đầu của mẫu tới một ký tự số (trường hợp mẫu bao trọn phần số)
+    static bool SafeSplit(List<V> parts, string from)
+    {
+        if (parts.Any(p => !(p is VConst || p is VLin))) return false;
+        if (!from.Any(NumCh)) return true;
+        if (!parts.Any(p => p is VLin)) return true;
+        if (NumCh(from[0]) || NumCh(from[^1])) return false;
+        for (int i = 0; i < parts.Count; i++)
+        {
+            if (parts[i] is not VLin || i == 0) continue;
+            if (parts[i - 1] is not VConst pc || pc.Val is not string ps) return false;
+            for (int j = 1; j < from.Length; j++) if (NumCh(from[j]) && ps.EndsWith(from.Substring(0, j), StringComparison.Ordinal)) return false;
+        }
+        return true;
     }
     /// Hàm trung tính trên ký hiệu: giữ cấu trúc; nếu đối số có phần opaque thì đánh dấu HasOpaque (không bỏ phép)
     public static V Fn(string fn, params V[] a)

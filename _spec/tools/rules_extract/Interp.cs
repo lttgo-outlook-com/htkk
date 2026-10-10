@@ -899,7 +899,8 @@ public sealed class Interp
                 else if (m.ExpressionBody != null) { used = new(); sub.Returns.Add((sst.Path, Eval(m.ExpressionBody.Expression, sst, sub))); }
                 used = savedUsed;
                 foreach (var kv in sst.Env) if (kv.Key.StartsWith("this.", StringComparison.Ordinal)) st.Env[kv.Key] = kv.Value;
-                if (sub.Returns.Count == 0) return VConst.Null;
+                // method có kiểu trả về nhưng không ghi nhận được lệnh return nào (ngoại lệ chắc chắn, vòng lặp): không giả định null
+                if (sub.Returns.Count == 0) return m is MethodDeclarationSyntax rmd && rmd.ReturnType.ToString() != "void" ? new VOpaque("ret:" + name) : VConst.Null;
                 if (sub.Returns.Count == 1) return sub.Returns[0].Val;
                 var alts = sub.Returns.Select(r => ((Cond)C.And(r.Path.Skip(st.Path.Count).Select(p => p.C)), r.Val)).ToList();
                 var cv = Ar.Cases(alts.Select((a, i) => (i == alts.Count - 1 ? null : a.Item1, a.Item2)).ToList());
@@ -1132,7 +1133,7 @@ public sealed class Interp
                         if (a1 == null) return new VConst(s.Substring((int)i0));
                         if (a1 is VConst k1 && k1.Val is long i1 && i1 >= 0 && i0 + i1 <= s.Length) return new VConst(s.Substring((int)i0, (int)i1));
                     }
-                    return Fn("substring", Eval(recv, st, f), a0, a1 ?? VConst.Null);
+                    return a1 == null ? Fn("substring", Eval(recv, st, f), a0) : Fn("substring", Eval(recv, st, f), a0, a1);
                 }
             case "ToBoolean" or "ConvertToBool" or "ToBoolOrDefault" when args.Count >= 1 || recv != null:
                 {
