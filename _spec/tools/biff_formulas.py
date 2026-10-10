@@ -1456,6 +1456,9 @@ def process_xlsx(path, data):
 
 
 # --------------------------------------------------------------- khóa theo menu.xml
+ALIASES = {}   # FolderName (Validity) khác MaFile -> MaFile
+
+
 def load_menu(path):
     mf = {}
     root = ET.parse(path).getroot()
@@ -1463,11 +1466,15 @@ def load_menu(path):
         k = m.get('MaFile')
         if k:
             mf.setdefault(k, set()).add(m.get('VersionXML', ''))
+            for v in m.iter('Validity'):
+                fn = v.get('FolderName')
+                if fn and fn != k:
+                    ALIASES[fn] = k
     return mf
 
 
 class KeyMapper:
-    FORM_RE = re.compile(r'^_?(?P<stem>.+?)(?:_xml)?_(?P<ver>\d{3,5})$')
+    FORM_RE = re.compile(r'^_?(?P<stem>.+?)(?:_xml)?_(?P<ver>\d{2,5})$')
 
     def __init__(self, menu):
         self.stem_keys = {}
@@ -1478,6 +1485,11 @@ class KeyMapper:
                 self.stem_keys.setdefault(k[1:], mf)
             if mf.startswith('200_'):
                 self.stem_keys.setdefault('00_' + k[4:], mf)
+        for fn, mf in ALIASES.items():
+            k = fn.lower()
+            self.stem_keys.setdefault(k, mf)
+            if len(k) > 1 and k[0] == '0' and k[1].isdigit():
+                self.stem_keys.setdefault(k[1:], mf)
         self.menu = menu
 
     def vers_digits(self, mf):
@@ -1507,9 +1519,12 @@ class KeyMapper:
         if mf is None:
             return None
         vd = self.vers_digits(mf)
-        if m.group('ver') not in vd:
-            return None
-        return mf, vd[m.group('ver')]
+        ver = m.group('ver')
+        if ver in vd:
+            return mf, vd[ver], 'menu'
+        if len(ver) in (2, 3):   # phiên bản suy từ hậu tố số: 251 -> 2.5.1, 23 -> 2.3
+            return mf, '.'.join(ver), 'ten_tep'
+        return None
 
 
 def safe_name(s):
@@ -1525,6 +1540,7 @@ def write_result(outdir, key, header, res):
     p = os.path.join(outdir, key + '.json')
     parts = ['{\n"header":' + dumps(header),
              '"key":' + dumps(key),
+             '"key_origin":' + dumps(res['key_origin']),
              '"format":' + dumps(res['format']),
              '"stats":' + dumps(res['stats']),
              '"errors":' + dumps(res['errors']),
@@ -1564,13 +1580,16 @@ def main():
         sha = hashlib.sha256(data).hexdigest()
         mp = km.map(name)
         key = ('%s@v%s@%s' % (mp[0], mp[1], safe_name(name))) if mp else safe_name(name)
+        origin = mp[2] if mp else 'ten_nguon'
         if key.lower() in used:
             raise SystemExit('trùng khóa: %s (%s, %s)' % (key, name, used[key.lower()]))
         used[key.lower()] = name
         entry = {'key': key, 'source_name': name, 'source_path': sp, 'source_sha256': sha,
-                 'mafile': mp[0] if mp else None, 'version_xml': mp[1] if mp else None}
+                 'mafile': mp[0] if mp else None, 'version_xml': mp[1] if mp else None,
+                 'key_origin': origin}
         try:
             res = process_xlsx(sp, data) if kind == 'zip' else process_biff(sp, data)
+            res['key_origin'] = origin
         except Exception as e:
             entry.update({'status': 'skipped', 'reason': '%s: %s' % (type(e).__name__, e)})
             index.append(entry)
