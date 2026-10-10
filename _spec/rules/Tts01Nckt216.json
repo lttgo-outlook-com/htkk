@@ -339,7 +339,7 @@
       },
       "guards": [
         "tk.SheetInfos[1] != null",
-        "opaque(ConvertHelpers.ConvertToDouble1) == 0"
+        "cell(S0!U54).text == 0"
       ],
       "effects": [
         {
@@ -348,12 +348,23 @@
             "sheet": 0,
             "cell": "U54"
           },
-          "value": "{num31}",
+          "value": {
+            "cases": [
+              {
+                "when": "cell(S0!B47).value || period.KieuKy == \"Y\"",
+                "value": "{sum_over(for i from 0 while i < tk.SheetInfos[1].Tables[0].RowsValues.Count, cell(S0!AC{i+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)}"
+              },
+              {
+                "when": "else",
+                "value": "{opaque(accum)}"
+              }
+            ]
+          },
           "params": {
             "prop": "value"
           },
           "at": 158,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -363,8 +374,8 @@
           158
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: num31"
+      "status": "unresolved",
+      "reason": "chưa giải: opaque:accum, sum_over(for i from 0 while i < tk.SheetInfos[1].Tables[0].RowsValues.Count, cell(S0!AC{i+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)"
     },
     {
       "key": {
@@ -604,20 +615,6 @@
           "at": 2944,
           "via": "AddOrUpdateDicArr@2934",
           "status": "opaque"
-        },
-        {
-          "op": "opaque",
-          "target": null,
-          "params": {
-            "args": [
-              "\"{cell(S1!Y{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text}{cell(S1!Z{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text}\"",
-              "[cell(S1!E{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text, cell(S1!AA{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text, cel..."
-            ],
-            "call": "<obj>.Add"
-          },
-          "at": 2944,
-          "via": "AddOrUpdateDicArr@2934",
-          "status": "opaque"
         }
       ],
       "source": {
@@ -648,7 +645,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "opaque(Find) != null",
         "!(isEmpty(opaque(Find)))"
       ],
@@ -673,7 +670,7 @@
             "sheet": 0,
             "cell": "{col=opaque(Find)}{opaque(Find)}"
           },
-          "value": "{text2}",
+          "value": "{opaque(accum)}",
           "params": {
             "prop": "text"
           },
@@ -690,7 +687,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: opaque:Find, opaque:substring, text2"
+      "reason": "chưa giải: opaque:Find, opaque:accum, opaque:substring"
     },
     {
       "key": {
@@ -710,7 +707,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "!(isEmpty(cell(S1!AA{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).value))",
         "opaque(DateTime.Compare) >= 0",
         "opaque(DateTime.Compare) <= 0",
@@ -778,7 +775,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "!(field(isDataVB6))",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
         "loop: for num9 from 0 while num9 < tk.SheetInfos[1].Tables[num5].RowsValues.Count"
@@ -856,7 +853,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "field(isDataVB6)",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
         "loop: for num9 from 0 while num9 < tk.SheetInfos[1].Tables[num5].RowsValues.Count"
@@ -905,7 +902,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "!(isEmpty(cell(S1!AL{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).value))",
         "indexOf(cell(S1!AL{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).value, \".\") > 0",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -943,7 +940,7 @@
             "sheet": 1,
             "cell": "AS{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}"
           },
-          "value": "{round(num11, 0)}",
+          "value": "{round(sum_over(while num10 > 0, cell(S1!AE{num10+num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -957,7 +954,7 @@
             "sheet": 1,
             "cell": "AE{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}"
           },
-          "value": "{round(num11, 0)}",
+          "value": "{round(sum_over(while num10 > 0, cell(S1!AE{num10+num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -974,7 +971,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: num9, round(num11, 0), tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart"
+      "reason": "placeholder: num9, round(sum_over(while num10 > 0, cell(S1!AE{num10+num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).value), 0), tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart"
     },
     {
       "key": {
@@ -994,7 +991,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "!(isEmpty(cell(S1!AL{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).value))",
         "indexOf(cell(S1!AL{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).value, \".\") > 0",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -1045,7 +1042,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "!(isEmpty(cell(S1!AA{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).value))",
         "!(opaque(<obj>.TryGetValue))",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -1058,7 +1055,7 @@
           "params": {
             "args": [
               "\"{cell(S1!E{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).text}{cell(S1!Y{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart...",
-              "[\"{cell(S1!E{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).text}\", cell(S1!AA{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowS..."
+              "[cell(S1!E{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart}).text, cell(S1!AA{num9+tk.SheetInfos[1].Tables[num5].DataLocationTemplateRowStart..."
             ],
             "call": "<obj>.Add"
           },
@@ -1095,7 +1092,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "!(tk.SheetInfos[1].IsReadDataFile)",
         "field(isFirtLoad)",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -1145,7 +1142,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "j == 0",
         "cell(S1!G{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -1210,7 +1207,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "j == 0",
         "!(cell(S1!G{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value)",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -1275,7 +1272,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "cell(S1!G{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value",
         "indexOf(cases(j == 0 && !(isEmpty(cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text)) -> cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text | j == 0 && isEmpty(cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text) -> text | else -> text), \".\") > 0",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -1340,7 +1337,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "cell(S1!G{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value",
         "indexOf(cases(j == 0 && !(isEmpty(cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text)) -> cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text | j == 0 && isEmpty(cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text) -> text | else -> text), \".\") <= 0",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -1416,7 +1413,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "!(cell(S1!G{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value)",
         "indexOf(\"{cell(S1!AL{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text}\", \"_\") > -1",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -1467,7 +1464,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "!(cell(S1!G{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value)",
         "indexOf(cases(j == 0 && !(isEmpty(cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text)) -> cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text | j == 0 && isEmpty(cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text) -> text | else -> text), \".\") > 0",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -1532,7 +1529,7 @@
         "when": []
       },
       "guards": [
-        "isDataVB6",
+        "after_loop(isDataVB6, foreach item in tk.SheetInfos[1].StaticCells)",
         "!(cell(S1!G{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value)",
         "indexOf(cases(j == 0 && !(isEmpty(cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text)) -> cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text | j == 0 && isEmpty(cell(S1!B{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text) -> text | else -> text), \".\") <= 0",
         "loop: for num5 from 0 while num5 < tk.SheetInfos[1].Tables.Count",
@@ -2911,7 +2908,7 @@
           "params": {
             "args": [
               "\"{cell(S1!E{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text}{cell(S1!Y{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value}{ce...",
-              "[\"{cell(S1!E{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text}\", cell(S1!AA{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value..."
+              "[cell(S1!E{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text, cell(S1!AA{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value, ca..."
             ],
             "call": "<obj>.Add"
           },
@@ -2961,7 +2958,7 @@
         ]
       },
       "guards": [
-        "flag",
+        "accum(flag := cases(indexOf(item.Key, \"{cell(S1!E{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Y{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Z{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}\") > -1 -> true | else -> flag), from false, for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count)",
         "item.Value.Length == 4",
         "item.Value[3] != 1",
         "loop: foreach item in field(dicTongCT20a)"
@@ -3023,7 +3020,7 @@
         ]
       },
       "guards": [
-        "flag",
+        "accum(flag := cases(indexOf(item.Key, \"{cell(S1!E{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Y{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Z{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}\") > -1 -> true | else -> flag), from false, for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count)",
         "item.Value.Length == 4",
         "item.Value[3] != 1",
         "!(opaque(<obj>.TryGetValue))",
@@ -3248,7 +3245,7 @@
         ]
       },
       "guards": [
-        "flag",
+        "accum(flag := cases(indexOf(item2.Key, \"{cell(S1!Y{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Z{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}\") > -1 -> true | else -> flag), from false, for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count)",
         "item2.Value.Length == 4",
         "item2.Value[3] != 1",
         "loop: foreach item2 in field(dicTongCT20a)"
@@ -3310,7 +3307,7 @@
         ]
       },
       "guards": [
-        "flag",
+        "accum(flag := cases(indexOf(item2.Key, \"{cell(S1!Y{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Z{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}\") > -1 -> true | else -> flag), from false, for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count)",
         "item2.Value.Length == 4",
         "item2.Value[3] != 1",
         "!(opaque(<obj>.TryGetValue))",
@@ -3746,7 +3743,7 @@
             "sheet": 1,
             "cell": "AS{-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -3760,7 +3757,7 @@
             "sheet": 1,
             "cell": "AE{-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -3777,7 +3774,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: round(num34, 0), split(cell(S1!AL{trigger.row}).value, [\"_\"])[1], trigger.row"
+      "reason": "placeholder: round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0), split(cell(S1!AL{trigger.row}).value, [\"_\"])[1], trigger.row"
     },
     {
       "key": {
@@ -3947,7 +3944,7 @@
             "sheet": 1,
             "cell": "AS{trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -3961,7 +3958,7 @@
             "sheet": 1,
             "cell": "AE{trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -3978,7 +3975,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: (cell(S1!AB{trigger.row}).value*soThang), opaque:ConvertHelpers.ConvertToDateTime, round(num34, 0), trigger.row"
+      "reason": "chưa giải: (cell(S1!AB{trigger.row}).value*soThang), opaque:ConvertHelpers.ConvertToDateTime, round(sum_over(while num33 > 0, cell(S1!AE{num33+trigger.row}).value), 0), trigger.row"
     },
     {
       "key": {
@@ -4576,7 +4573,7 @@
       },
       "guards": [
         "!(cell(S1!G{trigger.row}).value)",
-        "loop: foreach item3 in dictionary3"
+        "loop: foreach item3 in obj(Dictionary)"
       ],
       "effects": [
         {
@@ -4636,9 +4633,9 @@
       },
       "guards": [
         "!(cell(S1!G{trigger.row}).value)",
-        "opaque(ConvertHelpers.ConvertToDateTime) >= dateTime4.Year",
-        "opaque(ConvertHelpers.ConvertToDateTime) <= dateTime5.Year",
-        "loop: foreach item3 in dictionary3",
+        "opaque(ConvertHelpers.ConvertToDateTime) >= opaque(accum)",
+        "opaque(ConvertHelpers.ConvertToDateTime) <= opaque(accum)",
+        "loop: foreach item3 in obj(Dictionary)",
         "loop: for j from item3.Value while value7 > 0 && j < value7 || value7 <= 0 && j < tk.SheetInfos[1].Tables[0].RowsValues.Count"
       ],
       "effects": [
@@ -4648,13 +4645,13 @@
             "sheet": 1,
             "cell": "W{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}"
           },
-          "value": "{round(cases(dateTime4.Year > 1990 && dateTime5.Year > 1990 -> num36 | else -> 0), 0)}",
+          "value": "{opaque(round)}",
           "params": {
             "prop": "value"
           },
           "at": 950,
           "via": "CellChange_1@544",
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -4664,8 +4661,8 @@
           950
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: j, round(cases(dateTime4.Year > 1990 && dateTime5.Year > 1990 -> num36 | else -> 0), 0), tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart"
+      "status": "unresolved",
+      "reason": "chưa giải: j, opaque:round, tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart"
     },
     {
       "key": {
@@ -5009,7 +5006,7 @@
             "sheet": 1,
             "cell": "AS{-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -5023,7 +5020,7 @@
             "sheet": 1,
             "cell": "AE{-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -5040,7 +5037,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: round(num34, 0), split(cell(S1!AL{trigger.row}).value, [\"_\"])[1], trigger.row"
+      "reason": "placeholder: round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0), split(cell(S1!AL{trigger.row}).value, [\"_\"])[1], trigger.row"
     },
     {
       "key": {
@@ -5869,7 +5866,7 @@
             "sheet": 0,
             "cell": "AE54"
           },
-          "value": "{num40}",
+          "value": "{sum_over(foreach item4 in obj(Dictionary), item4.Value)}",
           "params": {
             "prop": "value"
           },
@@ -5908,7 +5905,7 @@
             "sheet": 0,
             "cell": "AE55"
           },
-          "value": "{num41}",
+          "value": "{sum_over(foreach item5 in obj(Dictionary), item5.Value)}",
           "params": {
             "prop": "value"
           },
@@ -5947,7 +5944,7 @@
             "sheet": 0,
             "cell": "AF54"
           },
-          "value": "{num40}",
+          "value": "{sum_over(foreach item6 in obj(Dictionary), item6.Value)}",
           "params": {
             "prop": "value"
           },
@@ -5986,7 +5983,7 @@
             "sheet": 0,
             "cell": "AF55"
           },
-          "value": "{num41}",
+          "value": "{sum_over(for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count, cases(!(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && isEmpty(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value) -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value | !(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && !(isEmpty(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value)) -> 0 | else -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value))}",
           "params": {
             "prop": "value"
           },
@@ -6003,7 +6000,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: num40, num41"
+      "reason": "placeholder: sum_over(for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count, cases(!(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && isEmpty(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value) -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value | !(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && !(isEmpty(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value)) -> 0 | else -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value)), sum_over(foreach item4 in obj(Dictionary), item4.Value), sum_over(foreach item5 in obj(Dictionary), item5.Value), sum_over(foreach item6 in obj(Dictionary), item6.Value)"
     },
     {
       "key": {
@@ -6306,7 +6303,7 @@
             "sheet": 0,
             "cell": "AE54"
           },
-          "value": "{num40}",
+          "value": "{sum_over(foreach item7 in obj(Dictionary), item7.Value)}",
           "params": {
             "prop": "value"
           },
@@ -6356,7 +6353,7 @@
             "sheet": 0,
             "cell": "AE55"
           },
-          "value": "{num41}",
+          "value": "{sum_over(for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count, cases(!(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && (isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text) || cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text == period.Nam) -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value | else -> 0))}",
           "params": {
             "prop": "value"
           },
@@ -6384,7 +6381,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: num40, num41"
+      "reason": "placeholder: sum_over(for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count, cases(!(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && (isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text) || cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text == period.Nam) -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value | else -> 0)), sum_over(foreach item7 in obj(Dictionary), item7.Value)"
     },
     {
       "key": {
@@ -8097,7 +8094,7 @@
           "params": {
             "args": [
               "\"{cell(S1!E{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text}{cell(S1!Y{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value}{ce...",
-              "[\"{cell(S1!E{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text}\", cell(S1!AA{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value..."
+              "[cell(S1!E{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).text, cell(S1!AA{j+tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart}).value, ca..."
             ],
             "call": "<obj>.Add"
           },
@@ -8146,7 +8143,7 @@
         ]
       },
       "guards": [
-        "flag",
+        "accum(flag := cases(indexOf(item.Key, \"{cell(S1!E{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Y{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Z{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}\") > -1 -> true | else -> flag), from false, for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count)",
         "item.Value.Length == 4",
         "item.Value[3] != 1",
         "loop: foreach item in field(dicTongCT20a)"
@@ -8206,7 +8203,7 @@
         ]
       },
       "guards": [
-        "flag",
+        "accum(flag := cases(indexOf(item.Key, \"{cell(S1!E{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Y{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Z{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}\") > -1 -> true | else -> flag), from false, for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count)",
         "item.Value.Length == 4",
         "item.Value[3] != 1",
         "!(opaque(<obj>.TryGetValue))",
@@ -8423,7 +8420,7 @@
         ]
       },
       "guards": [
-        "flag",
+        "accum(flag := cases(indexOf(item2.Key, \"{cell(S1!Y{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Z{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}\") > -1 -> true | else -> flag), from false, for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count)",
         "item2.Value.Length == 4",
         "item2.Value[3] != 1",
         "loop: foreach item2 in field(dicTongCT20a)"
@@ -8483,7 +8480,7 @@
         ]
       },
       "guards": [
-        "flag",
+        "accum(flag := cases(indexOf(item2.Key, \"{cell(S1!Y{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}{cell(S1!Z{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text}\") > -1 -> true | else -> flag), from false, for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count)",
         "item2.Value.Length == 4",
         "item2.Value[3] != 1",
         "!(opaque(<obj>.TryGetValue))",
@@ -8903,7 +8900,7 @@
             "sheet": 1,
             "cell": "AS{-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -8916,7 +8913,7 @@
             "sheet": 1,
             "cell": "AE{-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -8932,7 +8929,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: round(num34, 0), split(cell(S1!AL{trigger.row}).value, [\"_\"])[1], trigger.row"
+      "reason": "placeholder: round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0), split(cell(S1!AL{trigger.row}).value, [\"_\"])[1], trigger.row"
     },
     {
       "key": {
@@ -9094,7 +9091,7 @@
             "sheet": 1,
             "cell": "AS{trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -9107,7 +9104,7 @@
             "sheet": 1,
             "cell": "AE{trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -9123,7 +9120,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: (cell(S1!AB{trigger.row}).value*soThang), opaque:ConvertHelpers.ConvertToDateTime, round(num34, 0), trigger.row"
+      "reason": "chưa giải: (cell(S1!AB{trigger.row}).value*soThang), opaque:ConvertHelpers.ConvertToDateTime, round(sum_over(while num33 > 0, cell(S1!AE{num33+trigger.row}).value), 0), trigger.row"
     },
     {
       "key": {
@@ -9698,7 +9695,7 @@
       },
       "guards": [
         "!(cell(S1!G{trigger.row}).value)",
-        "loop: foreach item3 in dictionary3"
+        "loop: foreach item3 in obj(Dictionary)"
       ],
       "effects": [
         {
@@ -9756,9 +9753,9 @@
       },
       "guards": [
         "!(cell(S1!G{trigger.row}).value)",
-        "opaque(ConvertHelpers.ConvertToDateTime) >= dateTime4.Year",
-        "opaque(ConvertHelpers.ConvertToDateTime) <= dateTime5.Year",
-        "loop: foreach item3 in dictionary3",
+        "opaque(ConvertHelpers.ConvertToDateTime) >= opaque(accum)",
+        "opaque(ConvertHelpers.ConvertToDateTime) <= opaque(accum)",
+        "loop: foreach item3 in obj(Dictionary)",
         "loop: for j from item3.Value while value7 > 0 && j < value7 || value7 <= 0 && j < tk.SheetInfos[1].Tables[0].RowsValues.Count"
       ],
       "effects": [
@@ -9768,12 +9765,12 @@
             "sheet": 1,
             "cell": "W{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}"
           },
-          "value": "{round(cases(dateTime4.Year > 1990 && dateTime5.Year > 1990 -> num36 | else -> 0), 0)}",
+          "value": "{opaque(round)}",
           "params": {
             "prop": "value"
           },
           "at": 950,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -9783,8 +9780,8 @@
           950
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: j, round(cases(dateTime4.Year > 1990 && dateTime5.Year > 1990 -> num36 | else -> 0), 0), tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart"
+      "status": "unresolved",
+      "reason": "chưa giải: j, opaque:round, tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart"
     },
     {
       "key": {
@@ -10112,7 +10109,7 @@
             "sheet": 1,
             "cell": "AS{-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -10125,7 +10122,7 @@
             "sheet": 1,
             "cell": "AE{-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}"
           },
-          "value": "{round(num34, 0)}",
+          "value": "{round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0)}",
           "params": {
             "prop": "value"
           },
@@ -10141,7 +10138,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: round(num34, 0), split(cell(S1!AL{trigger.row}).value, [\"_\"])[1], trigger.row"
+      "reason": "placeholder: round(sum_over(while num33 > 0, cell(S1!AE{num33-split(cell(S1!AL{trigger.row}).value, [\"_\"])[1]+trigger.row}).value), 0), split(cell(S1!AL{trigger.row}).value, [\"_\"])[1], trigger.row"
     },
     {
       "key": {
@@ -10855,7 +10852,7 @@
             "sheet": 0,
             "cell": "AE54"
           },
-          "value": "{num40}",
+          "value": "{sum_over(foreach item4 in obj(Dictionary), item4.Value)}",
           "params": {
             "prop": "value"
           },
@@ -10891,7 +10888,7 @@
             "sheet": 0,
             "cell": "AE55"
           },
-          "value": "{num41}",
+          "value": "{sum_over(foreach item5 in obj(Dictionary), item5.Value)}",
           "params": {
             "prop": "value"
           },
@@ -10927,7 +10924,7 @@
             "sheet": 0,
             "cell": "AF54"
           },
-          "value": "{num40}",
+          "value": "{sum_over(foreach item6 in obj(Dictionary), item6.Value)}",
           "params": {
             "prop": "value"
           },
@@ -10963,7 +10960,7 @@
             "sheet": 0,
             "cell": "AF55"
           },
-          "value": "{num41}",
+          "value": "{sum_over(for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count, cases(!(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && isEmpty(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value) -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value | !(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && !(isEmpty(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value)) -> 0 | else -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value))}",
           "params": {
             "prop": "value"
           },
@@ -10979,7 +10976,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: num40, num41"
+      "reason": "placeholder: sum_over(for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count, cases(!(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && isEmpty(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value) -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value | !(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && !(isEmpty(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value)) -> 0 | else -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value)), sum_over(foreach item4 in obj(Dictionary), item4.Value), sum_over(foreach item5 in obj(Dictionary), item5.Value), sum_over(foreach item6 in obj(Dictionary), item6.Value)"
     },
     {
       "key": {
@@ -11236,7 +11233,7 @@
             "sheet": 0,
             "cell": "AE54"
           },
-          "value": "{num40}",
+          "value": "{sum_over(foreach item7 in obj(Dictionary), item7.Value)}",
           "params": {
             "prop": "value"
           },
@@ -11282,7 +11279,7 @@
             "sheet": 0,
             "cell": "AE55"
           },
-          "value": "{num41}",
+          "value": "{sum_over(for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count, cases(!(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && (isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text) || cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text == period.Nam) -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value | else -> 0))}",
           "params": {
             "prop": "value"
           },
@@ -11308,7 +11305,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: num40, num41"
+      "reason": "placeholder: sum_over(for j from 0 while j < tk.SheetInfos[1].Tables[0].RowsValues.Count, cases(!(isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && (isEmpty(cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text) || cell(S1!AA{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text == period.Nam) -> cell(S1!AE{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).value | else -> 0)), sum_over(foreach item7 in obj(Dictionary), item7.Value)"
     },
     {
       "key": {
@@ -12463,7 +12460,7 @@
       },
       "guards": [
         "indexOf(cell(S1!AL{i+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text, \".\") > -1",
-        "split(cell(S1!AL{i+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text, [\".\"])[1] != num3",
+        "split(cell(S1!AL{i+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text, [\".\"])[1] != sum_over(for j from i+1 while j < tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart, cases(startswith(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text, split(cell(S1!AL{i+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text, [\".\"])[0]) -> 1 | else -> 0))",
         "loop: for i from 0 while i < tk.SheetInfos[1].Tables[0].RowsValues.Count"
       ],
       "effects": [
@@ -12512,7 +12509,7 @@
       },
       "guards": [
         "indexOf(cell(S1!AL{i+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text, \".\") <= -1",
-        "!(flag2)",
+        "!(accum(flag2 := cases(!(isEmpty(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text)) && startswith(cell(S1!AL{j+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text, split(cell(S1!AL{i+tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}).text, [\"_\"])[0]) -> true | else -> flag2), from false, for j from 0 while j < i))",
         "loop: for i from 0 while i < tk.SheetInfos[1].Tables[0].RowsValues.Count"
       ],
       "effects": [

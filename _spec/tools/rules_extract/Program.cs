@@ -109,7 +109,7 @@ var hookCounts = new SortedDictionary<string, int>(StringComparer.Ordinal);
 foreach (var k in HookKinds.OrderBy(x => x, StringComparer.Ordinal)) hookCounts[k] = 0;
 var recStatus = new SortedDictionary<string, int>(StringComparer.Ordinal) { ["resolved"] = 0, ["parametric"] = 0, ["unresolved"] = 0, ["opaque_only"] = 0, ["ui_only"] = 0 };
 var UiCalls = new HashSet<string>(StringComparer.Ordinal) { "SuspendLayout", "ResumeLayout", "SetActiveCell", "Focus", "ShowCell", "ShowActiveCell", "Invalidate", "Select", "BringToFront", "SetViewportTopRow", "SetViewportLeftColumn", "SetActiveSheet", "SetNodeBackGroundPink", "SetRowHeight", "SetColumnWidth", "Refresh", "Update", "PerformLayout", "ScrollTo", "SetFocus" };
-int effStmts = 0, effMatched = 0, effDropped = 0;
+int effStmts = 0, effMatched = 0, effDropped = 0, effRaw = 0, effKept = 0;
 var effOps = new SortedDictionary<string, int>(StringComparer.Ordinal);
 var effStatus = new SortedDictionary<string, int>(StringComparer.Ordinal);
 var truncated = new List<string>();
@@ -246,6 +246,7 @@ Dictionary<string, object> BuildTrigger(List<Cond> trig, string kind)
 List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<string, object> key, string hook, string kind, int sheet, string file, string ctxLabel)
 {
     var groups = new List<(string gk, List<Effect> effs, List<Cond> trig, List<string> guards)>();
+    var effSeen = new HashSet<string>(StringComparer.Ordinal);
     var gidx = new Dictionary<string, int>(StringComparer.Ordinal);
     foreach (var ef in effects)
     {
@@ -261,6 +262,10 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
         foreach (var lp in ef.Loops) guards.Add("loop: " + lp.Desc);
         string gk = string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards);
         if (!gidx.TryGetValue(gk, out var gi)) { gi = groups.Count; gidx[gk] = gi; groups.Add((gk, new List<Effect>(), trig, guards)); }
+        effRaw++;
+        string ek = gk + "\u0003" + ef.Op + "|" + ef.Target?.Key + "|" + ef.Val?.Key + "|" + ef.Line + "|" + ef.Via + "|" + JsonSerializer.Serialize(ef.Params);
+        if (!effSeen.Add(ek)) continue;
+        effKept++;
         groups[gi].effs.Add(ef);
     }
     var recs = new List<Dictionary<string, object>>();
@@ -401,7 +406,7 @@ foreach (var row in classRows)
             if (effLines.Contains(l0)) { effMatched++; continue; }
             effDropped++;
             var why = it.Dropped.FirstOrDefault(d => d.Line == l0).Reason
-                ?? (n.Ancestors().Any(a => a is LambdaExpressionSyntax) ? "nằm trong lambda, không phân tích" : n.Ancestors().Any(a => a is CatchClauseSyntax) ? "nằm trong khối catch, không phân tích" : "không tới được: nhánh điều kiện gấp thành hằng sai, hoặc sau return/throw");
+                ?? (n.Ancestors().Any(a => a is LambdaExpressionSyntax) ? "nằm trong lambda, không phân tích" : n.Ancestors().Any(a => a is CatchClauseSyntax) ? "nằm trong khối catch, không phân tích" : "không tới được: nhánh điều kiện gấp thành hằng sai, hoặc sau lệnh trả về/ném ngoại lệ");
             dropped.Add(new Dictionary<string, object> { ["at"] = l0, ["reason"] = why });
         }
         var r = BuildRecords(it.Effects, key, name, kind, sheet, rel, "hook");
@@ -486,6 +491,7 @@ Write("index.json", new Dictionary<string, object>
     ["hook_counts_T0_index_394_classes"] = t0Biz,
     ["records"] = totalRecords,
     ["record_status"] = recStatus,
+    ["effects_dedup"] = new Dictionary<string, object> { ["before"] = effRaw, ["after"] = effKept },
     ["hook_effect_statements"] = new Dictionary<string, object> { ["total"] = effStmts, ["with_effect"] = effMatched, ["dropped_flagged"] = effDropped },
     ["effect_ops"] = effOps,
     ["effect_status"] = effStatus,

@@ -169,11 +169,12 @@ public sealed class Interp
                     foreach (var ie in fs.Initializers) { used = new(); ExecExpr(ie, st, f); }
                     var assigned = AssignedIn(fs);
                     if (TryUnroll(fs, st, f)) break;
+                    var init0 = Snap(st, assigned);
                     foreach (var n in assigned) st.Env[n] = new Entry(VLin.Atom(n), ImmutableSortedSet<int>.Empty);
                     if (fs.Declaration != null) foreach (var v in fs.Declaration.Variables) st.Env[v.Identifier.Text] = new Entry(VLin.Atom(v.Identifier.Text), ImmutableSortedSet.Create(Line(v)));
                     used = new();
                     string cond = fs.Condition != null ? R.Cond(C.Of(Eval(fs.Condition, st, f)), new Flags()) : "true";
-                    Loop(st, f, fs.Statement, "for " + string.Join(", ", vars) + " while " + cond, Line(fs), assigned);
+                    Loop(st, f, fs.Statement, "for " + string.Join(", ", vars) + " while " + cond, Line(fs), assigned, init0);
                     break;
                 }
             case ForEachStatementSyntax fe:
@@ -181,24 +182,28 @@ public sealed class Interp
                     used = new();
                     var coll = Eval(fe.Expression, st, f);
                     var assigned = AssignedIn(fe);
+                    var init0 = Snap(st, assigned);
+                    foreach (var n in assigned) st.Env[n] = new Entry(VLin.Atom(n), ImmutableSortedSet<int>.Empty);
                     st.Env[fe.Identifier.Text] = new Entry(new VSym(fe.Identifier.Text), ImmutableSortedSet.Create(Line(fe)));
-                    Loop(st, f, fe.Statement, "foreach " + fe.Identifier.Text + " in " + R.Expr(coll, new Flags()), Line(fe), assigned);
+                    Loop(st, f, fe.Statement, "foreach " + fe.Identifier.Text + " in " + R.Expr(coll, new Flags()), Line(fe), assigned, init0);
                     break;
                 }
             case WhileStatementSyntax ws:
                 {
                     var assigned = AssignedIn(ws);
+                    var init0 = Snap(st, assigned);
                     foreach (var n in assigned) st.Env[n] = new Entry(VLin.Atom(n), ImmutableSortedSet<int>.Empty);
                     used = new();
-                    Loop(st, f, ws.Statement, "while " + R.Cond(C.Of(Eval(ws.Condition, st, f)), new Flags()), Line(ws), assigned);
+                    Loop(st, f, ws.Statement, "while " + R.Cond(C.Of(Eval(ws.Condition, st, f)), new Flags()), Line(ws), assigned, init0);
                     break;
                 }
             case DoStatementSyntax ds:
                 {
                     var assigned = AssignedIn(ds);
+                    var init0 = Snap(st, assigned);
                     foreach (var n in assigned) st.Env[n] = new Entry(VLin.Atom(n), ImmutableSortedSet<int>.Empty);
                     used = new();
-                    Loop(st, f, ds.Statement, "do while " + R.Cond(C.Of(Eval(ds.Condition, st, f)), new Flags()), Line(ds), assigned);
+                    Loop(st, f, ds.Statement, "do while " + R.Cond(C.Of(Eval(ds.Condition, st, f)), new Flags()), Line(ds), assigned, init0);
                     break;
                 }
             case SwitchStatementSyntax sw:
@@ -266,6 +271,7 @@ public sealed class Interp
             if (scratch.Env[name].Val is not VConst) { used = savedUsed; return false; }
         }
         used = savedUsed;
+        if (vals.Count == 0) return false; // không kết luận vòng lặp 0 lần, để phân tích ký hiệu
         foreach (var v in vals)
         {
             if (st.Dead) break;
@@ -275,11 +281,64 @@ public sealed class Interp
         return true;
     }
 
-    void Loop(State st, Frame f, StatementSyntax body, string desc, int line, HashSet<string> assigned)
+    static Dictionary<string, V> Snap(State st, HashSet<string> assigned)
+    {
+        var d = new Dictionary<string, V>(StringComparer.Ordinal);
+        foreach (var n in assigned) if (st.Env.TryGetValue(n, out var e)) d[n] = e.Val;
+        return d;
+    }
+
+    void Loop(State st, Frame f, StatementSyntax body, string desc, int line, HashSet<string> assigned, Dictionary<string, V> init0)
     {
         var bs = st.Clone(); bs.Loops = bs.Loops.Add(new LoopInfo(desc, line));
         Exec(body, bs, f);
-        foreach (var n in assigned) st.Env[n] = new Entry(VLin.Atom(n), ImmutableSortedSet.Create(line));
+        foreach (var n in assigned)
+        {
+            V init = init0.GetValueOrDefault(n), fin = null;
+            if (init != null && bs.Env.TryGetValue(n, out var be)) fin = Accum(n, init, be.Val, desc);
+            st.Env[n] = new Entry(fin ?? new VSym("after_loop(" + n + ", " + desc + ")"), ImmutableSortedSet.Create(line));
+        }
+    }
+
+    static bool Mentions(V v, string n) { var fl = new Flags(); R.Expr(v, fl); return fl.Notes.Contains(n); }
+    static V StepOf(string n, V v)
+    {
+        if (v.Key == VLin.Atom(n).Key) return new VConst(0L);
+        if (v is VLin l && l.T.TryGetValue(n, out var c) && c == 1)
+        {
+            var t = new SortedDictionary<string, long>(l.T, StringComparer.Ordinal); t.Remove(n);
+            var r = VLin.Make(t, l.C);
+            return Mentions(r, n) ? null : r;
+        }
+        if (v is VSym y && y.Text.StartsWith("(" + n + "+", StringComparison.Ordinal) && y.Text.EndsWith(")"))
+        {
+            var rest = y.Text.Substring(n.Length + 2, y.Text.Length - n.Length - 3);
+            return rest.Contains(n) ? null : new VSym(rest);
+        }
+        return null;
+    }
+    // biến cục bộ bị gán trong vòng lặp ký hiệu: biểu diễn tích lũy trung tính
+    static V Accum(string n, V init, V body, string desc)
+    {
+        if (body.Key == VLin.Atom(n).Key) return init;
+        V step = StepOf(n, body);
+        if (step == null && body is VCases cs)
+        {
+            var alts = new List<(Cond, V)>();
+            foreach (var (w, v) in cs.Alts) { var s0 = StepOf(n, v); if (s0 == null) { alts = null; break; } alts.Add((w, s0)); }
+            if (alts != null) step = Ar.Cases(alts);
+        }
+        if (step != null)
+        {
+            var fl = new Flags(); var txt = "sum_over(" + desc + ", " + R.Expr(step, fl) + ")";
+            if (fl.Opaque) return new VOpaque("accum");
+            if (init is VConst ik && ik.IsNum && Convert.ToDouble(ik.Val, CultureInfo.InvariantCulture) == 0) return VLin.Atom(txt);
+            return Ar.Add(init, VLin.Atom(txt));
+        }
+        var fl2 = new Flags(); var bt = R.Expr(body, fl2);
+        if (fl2.Opaque) return new VOpaque("accum");
+        if (!Mentions(body, n)) return new VSym("last_in_loop(" + desc + ", " + bt + ")");
+        return new VSym("accum(" + n + " := " + bt + ", from " + R.Expr(init, new Flags()) + ", " + desc + ")");
     }
 
     static HashSet<string> AssignedIn(SyntaxNode n)
@@ -808,9 +867,10 @@ public sealed class Interp
                     if (a is VArr arr) return new VCond(C.Or(arr.Items.Select(i => C.Cmp("==", i, b))));
                     return new VCond(new CAtom(name.ToLowerInvariant(), a, b));
                 }
-            case "Parse" or "ToInt32" or "ToInt64" or "ToInt16" or "ConvertToInt" or "ConvertToLong" or "ToDouble" or "ToDecimal" or "ConvertToDecimal" or "ConvertToDouble" when args.Count >= 1:
+            case "Parse" or "ToInt32" or "ToInt64" or "ToInt16" or "ConvertToInt" or "ConvertToLong" or "ToDouble" or "ToDecimal" or "ConvertToDecimal" or "ConvertToDouble" or "ConvertToDouble1" or "ConvertToDecimal1" when args.Count >= 1:
                 {
                     var v = Arg(inv, 0, st, f);
+                    if (v is VCat vcat && vcat.Parts.Count == 1 && vcat.Parts[0] is not VConst) v = vcat.Parts[0];
                     bool isInt = !(name.Contains("Double") || name.Contains("Decimal")) && rt != "double" && rt != "decimal";
                     if (v is VConst k)
                     {
@@ -874,6 +934,32 @@ public sealed class Interp
                 {
                     var sh = Arg(inv, 0, st, f) as VSheet; var fmt = Arg(inv, 1, st, f); var cur = Arg(inv, 2, st, f);
                     var s = StrConst(fmt);
+                    if (sh != null && s == null && fmt is VCat fcat)
+                    {
+                        var pieces = new List<List<V>> { new() };
+                        foreach (var p in fcat.Parts)
+                        {
+                            if (p is VConst pk && pk.Val is string ps)
+                            {
+                                var seg = ps.Split("###");
+                                for (int i = 0; i < seg.Length; i++) { if (i > 0) pieces.Add(new()); if (seg[i].Length > 0) pieces[^1].Add(new VConst(seg[i])); }
+                            }
+                            else pieces[^1].Add(p);
+                        }
+                        foreach (var pc in pieces)
+                        {
+                            if (pc.Count == 0) continue;
+                            V tgt = null;
+                            if (pc.Count == 1 && pc[0] is VConst pc0) { if (ArrayCellIdOf(pc0) is VArr ar0) tgt = new VCell(sh, "cell", ar0.Items[1], ar0.Items[0]); }
+                            else if (pc.Count == 2 && pc[0] is VConst c0 && c0.Val is string s0 && s0.EndsWith("_") && Fmt.LettersToIndex(s0.TrimEnd('_')) > 0)
+                                tgt = new VCell(sh, "cell", Ar.Add(Ar.ToLin(pc[1]) ?? pc[1], new VConst(-1L)), new VConst(Fmt.LettersToIndex(s0.TrimEnd('_')) - 1));
+                            var e1 = NewEffect(st, f, ln); e1.Op = "changeFormat"; e1.Target = tgt ?? new VOpaque("format-template");
+                            e1.Params["via"] = "changFormatCell"; e1.Params["format"] = R.Template(VCat.Make(pc), new Flags());
+                            e1.Params["decimals"] = "2 nếu " + R.Expr(cur, new Flags()) + " == \"USD\", ngược lại 0";
+                            Effects.Add(e1);
+                        }
+                        return VConst.Null;
+                    }
                     if (sh == null || s == null) break;
                     foreach (var part in s.Split("###"))
                     {

@@ -62,7 +62,7 @@
         ]
       },
       "guards": [
-        "flag"
+        "accum(flag := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> true | else -> flag), from false, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count)"
       ],
       "effects": [
         {
@@ -71,7 +71,7 @@
             "sheet": "activeSheet",
             "cell": "{col=col(PL_01_2_TD_GTGT/tongCong)}{row(PL_01_2_TD_GTGT/tongCong)}"
           },
-          "value": "{num}",
+          "value": "{sum_over(for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count, tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].Value)}",
           "params": {
             "prop": "value"
           },
@@ -87,7 +87,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: activeSheet, col(PL_01_2_TD_GTGT/tongCong), num, row(PL_01_2_TD_GTGT/tongCong)"
+      "reason": "placeholder: activeSheet, col(PL_01_2_TD_GTGT/tongCong), row(PL_01_2_TD_GTGT/tongCong), sum_over(for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count, tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].Value)"
     },
     {
       "key": {
@@ -115,8 +115,8 @@
         ]
       },
       "guards": [
-        "flag",
-        "loop: for num4 from tk.SheetInfos[activeSheet].Tables[num2].DataLocationTemplateRowStart while tk.SheetInfos[activeSheet].Tables.Count-1 > num2 && num4 < tk.SheetInfos[activeSheet].Tables[num2+1].DataLocationTemplateRowStart-1 || tk.SheetInfos[activeSheet].Tables.Count-1 <= num2 && num4 < tk.SheetInfos[activeSheet].Tables[num2].DataLocationTemplateRowStart+tk.SheetInfos[activeSheet].Tables[num2].RowsValues.Count"
+        "accum(flag := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> true | else -> flag), from false, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count)",
+        "loop: for num4 from tk.SheetInfos[activeSheet].Tables[accum(num2 := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> i | else -> num2), from -1, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count)].DataLocationTemplateRowStart while tk.SheetInfos[activeSheet].Tables.Count-1 > accum(num2 := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> i | else -> num2), from -1, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count) && num4 < tk.SheetInfos[activeSheet].Tables[accum(num2 := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> i | else -> num2), from -1, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count)+1].DataLocationTemplateRowStart-1 || tk.SheetInfos[activeSheet].Tables.Count-1 <= accum(num2 := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> i | else -> num2), from -1, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count) && num4 < tk.SheetInfos[activeSheet].Tables[accum(num2 := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> i | else -> num2), from -1, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count)].DataLocationTemplateRowStart+tk.SheetInfos[activeSheet].Tables[accum(num2 := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> i | else -> num2), from -1, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count)].RowsValues.Count"
       ],
       "effects": [
         {
@@ -125,7 +125,7 @@
             "sheet": "activeSheet",
             "cell": "U{num4}"
           },
-          "value": "{(\"{tk.SheetInfos[activeSheet].Tables[num2].Header.StaticCells[5].Value}\"*(\"{cell(R{num4}).text}\"/100))}",
+          "value": "{(tk.SheetInfos[activeSheet].Tables[accum(num2 := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> i | else -> num2), from -1, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count)].Header.StaticCells[5].Value*(cell(R{num4}).text/100))}",
           "params": {
             "prop": "value"
           },
@@ -141,7 +141,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: (\"{tk.SheetInfos[activeSheet].Tables[num2].Header.StaticCells[5].Value}\"*(\"{cell(R{num4}).text}\"/100)), activeSheet, num4"
+      "reason": "placeholder: (tk.SheetInfos[activeSheet].Tables[accum(num2 := cases(trigger.row == tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].RowIndex -> i | else -> num2), from -1, for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count)].Header.StaticCells[5].Value*(cell(R{num4}).text/100)), activeSheet, num4"
     },
     {
       "key": {
@@ -177,7 +177,7 @@
             "sheet": "activeSheet",
             "cell": "U{trigger.row}"
           },
-          "value": "{(\"{tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].Value}\"*(\"{cell(R{num4}).text}\"/100))}",
+          "value": "{(tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].Value*(cell(R{num4}).text/100))}",
           "params": {
             "prop": "value"
           },
@@ -193,7 +193,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: (\"{tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].Value}\"*(\"{cell(R{num4}).text}\"/100)), activeSheet, trigger.row"
+      "reason": "placeholder: (tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].Value*(cell(R{num4}).text/100)), activeSheet, trigger.row"
     },
     {
       "key": {
@@ -222,7 +222,7 @@
         ]
       },
       "guards": [
-        "num2 > -1",
+        "accum(num2 := cases(trigger.row == num4 -> i | else -> num2), from -1, for num4 from tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart while tk.SheetInfos[activeSheet].Tables.Count-1 > i && num4 < tk.SheetInfos[activeSheet].Tables[i+1].DataLocationTemplateRowStart || tk.SheetInfos[activeSheet].Tables.Count-1 <= i && num4 < tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart+tk.SheetInfos[activeSheet].Tables[i].RowsValues.Count) > -1",
         "loop: for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count"
       ],
       "effects": [
@@ -230,9 +230,9 @@
           "op": "setValue",
           "target": {
             "sheet": "activeSheet",
-            "cell": "R{tk.SheetInfos[activeSheet].Tables[num2].Header.StaticCells[4].RowIndex}"
+            "cell": "R{tk.SheetInfos[activeSheet].Tables[accum(num2 := cases(trigger.row == num4 -> i | else -> num2), from -1, for num4 from tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart while tk.SheetInfos[activeSheet].Tables.Count-1 > i && num4 < tk.SheetInfos[activeSheet].Tables[i+1].DataLocationTemplateRowStart || tk.SheetInfos[activeSheet].Tables.Count-1 <= i && num4 < tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart+tk.SheetInfos[activeSheet].Tables[i].RowsValues.Count)].Header.StaticCells[4].RowIndex}"
           },
-          "value": "{num7}",
+          "value": "{sum_over(for num4 from tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart while tk.SheetInfos[activeSheet].Tables.Count-1 > i && num4 < tk.SheetInfos[activeSheet].Tables[i+1].DataLocationTemplateRowStart || tk.SheetInfos[activeSheet].Tables.Count-1 <= i && num4 < tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart+tk.SheetInfos[activeSheet].Tables[i].RowsValues.Count, cell(R{num4}).text)}",
           "params": {
             "prop": "value"
           },
@@ -248,7 +248,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: activeSheet, num7, tk.SheetInfos[activeSheet].Tables[num2].Header.StaticCells[4].RowIndex"
+      "reason": "placeholder: activeSheet, sum_over(for num4 from tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart while tk.SheetInfos[activeSheet].Tables.Count-1 > i && num4 < tk.SheetInfos[activeSheet].Tables[i+1].DataLocationTemplateRowStart || tk.SheetInfos[activeSheet].Tables.Count-1 <= i && num4 < tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart+tk.SheetInfos[activeSheet].Tables[i].RowsValues.Count, cell(R{num4}).text), tk.SheetInfos[activeSheet].Tables[accum(num2 := cases(trigger.row == num4 -> i | else -> num2), from -1, for num4 from tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart while tk.SheetInfos[activeSheet].Tables.Count-1 > i && num4 < tk.SheetInfos[activeSheet].Tables[i+1].DataLocationTemplateRowStart || tk.SheetInfos[activeSheet].Tables.Count-1 <= i && num4 < tk.SheetInfos[activeSheet].Tables[i].DataLocationTemplateRowStart+tk.SheetInfos[activeSheet].Tables[i].RowsValues.Count)].Header.StaticCells[4].RowIndex"
     },
     {
       "key": {
@@ -275,7 +275,7 @@
             "sheet": "activeSheet",
             "cell": "{col=col(PL_01_2_TD_GTGT/tongCong)}{row(PL_01_2_TD_GTGT/tongCong)}"
           },
-          "value": "{num}",
+          "value": "{sum_over(for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count, tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].Value)}",
           "params": {
             "prop": "value"
           },
@@ -291,7 +291,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: activeSheet, col(PL_01_2_TD_GTGT/tongCong), num, row(PL_01_2_TD_GTGT/tongCong)"
+      "reason": "placeholder: activeSheet, col(PL_01_2_TD_GTGT/tongCong), row(PL_01_2_TD_GTGT/tongCong), sum_over(for i from 0 while i < tk.SheetInfos[activeSheet].Tables.Count, tk.SheetInfos[activeSheet].Tables[i].Header.StaticCells[5].Value)"
     }
   ]
 }

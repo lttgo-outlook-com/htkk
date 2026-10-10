@@ -191,12 +191,12 @@
         "when": []
       },
       "guards": [
-        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0 || result.Count > 0",
+        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0 || opaque(accum) > 0",
         "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0 || obj(Dictionary).Count > 0",
         "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 || obj(Dictionary).Count > 0",
         "split(\"{item.Key}\", [\"_\"]).Length == 2",
-        "opaque(ConvertHelpers.ConvertToDouble1) == 0",
-        "loop: foreach item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> result | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        "cell(S0!{col=colIndex(split(\"{item.Key}\", [\"_\"])[0])}{split(\"{item.Key}\", [\"_\"])[1]}).text == 0",
+        "loop: foreach item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> opaque(accum) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
       ],
       "effects": [
         {
@@ -251,11 +251,11 @@
         "when": []
       },
       "guards": [
-        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0 || result.Count > 0",
+        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0 || opaque(accum) > 0",
         "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0 || obj(Dictionary).Count > 0",
         "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 || obj(Dictionary).Count > 0",
         "split(\"{item.Key}\", [\"_\"]).Length == 2",
-        "loop: foreach item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> result | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        "loop: foreach item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> opaque(accum) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
       ],
       "effects": [
         {
@@ -313,7 +313,7 @@
         "obj(Dictionary).Count > 0",
         "!(isEmpty(item.Value))",
         "!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) || trigger.row == split(item.Key, [\"_\"])[1]",
-        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \";{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> \"\"), \"{trigger.row}\") != -1",
+        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \"{text};{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> text), \"{trigger.row}\") != -1",
         "split(item.Key, [\"_\"])[1] >= 39",
         "split(item.Key, [\"_\"])[1] <= 44",
         "!(cell(S0!{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}).locked)",
@@ -372,7 +372,7 @@
         "obj(Dictionary).Count > 0",
         "!(isEmpty(item.Value))",
         "!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) || trigger.row == split(item.Key, [\"_\"])[1]",
-        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \";{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> \"\"), \"{trigger.row}\") != -1",
+        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \"{text};{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> text), \"{trigger.row}\") != -1",
         "split(item.Key, [\"_\"])[1] >= 45",
         "split(item.Key, [\"_\"])[1] <= 50",
         "!(cell(S0!{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}).locked)",
@@ -431,7 +431,7 @@
         "obj(Dictionary).Count > 0",
         "!(isEmpty(item.Value))",
         "!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) || trigger.row == split(item.Key, [\"_\"])[1]",
-        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \";{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> \"\"), \"{trigger.row}\") != -1",
+        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \"{text};{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> text), \"{trigger.row}\") != -1",
         "split(item.Key, [\"_\"])[1] >= 51",
         "split(item.Key, [\"_\"])[1] <= 55",
         "!(cell(S0!{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}).locked)",
@@ -490,7 +490,7 @@
         "obj(Dictionary).Count > 0",
         "!(isEmpty(item.Value))",
         "!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) || trigger.row == split(item.Key, [\"_\"])[1]",
-        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \";{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> \"\"), \"{trigger.row}\") != -1",
+        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \"{text};{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> text), \"{trigger.row}\") != -1",
         "split(item.Key, [\"_\"])[1] >= 56",
         "split(item.Key, [\"_\"])[1] <= 62",
         "!(cell(S0!{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}).locked)",
