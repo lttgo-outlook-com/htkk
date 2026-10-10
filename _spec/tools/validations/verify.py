@@ -47,6 +47,7 @@ for k, m, c in checks:
         gm_json[(c["source"]["file"], p["pos"][0])] += 1
         gm_kind[(p["kind"], "có text" if p.get("text") else "không text", c["status"])] += 1
 gm_src = collections.Counter()
+by_asm = collections.Counter()
 for root in ("_decompiled/tax.htkk.business", "_decompiled/htkk"):
     for f in sorted(glob.glob(os.path.join(data, root, "**", "*.cs"), recursive=True)):
         rel = os.path.relpath(f, data)
@@ -67,13 +68,23 @@ api = collections.Counter(c["mark_api"] for _, _, c in checks)
 print("== (3) mark_api trong JSON:", dict(sorted(api.items())))
 print("   level:", dict(sorted(collections.Counter(c["level"] for _, _, c in checks).items())))
 src = collections.Counter()
+by_asm = collections.Counter()
 for root in ("_decompiled/tax.htkk.business", "_decompiled/htkk"):
     for f in sorted(glob.glob(os.path.join(data, root, "**", "*.cs"), recursive=True)):
         for t in open(f, encoding="utf-8-sig"):
             for nm in ("SetNodeBackGroundPink2", "SetNodeBackGroundPink", "SetNodeBackGroundYellow"):
                 for mm in re.finditer(r"(void\s+)?\b" + nm + r"\(", t):
                     src[(nm, "khai báo" if mm.group(1) else "lời gọi")] += 1
+                    by_asm[(root.split("/")[1], nm, "khai báo" if mm.group(1) else "lời gọi")] += 1
 print("   đếm độc lập (regex trên nguồn, business+htkk):", dict(sorted(src.items())))
+print("   tách theo assembly:", dict(sorted(by_asm.items())))
+jp = sum(v for k, v in api.items() if "SetNodeBackGroundPink/" in k)
+jp2 = sum(v for k, v in api.items() if "Pink2" in k)
+jy = sum(v for k, v in api.items() if "Yellow" in k)
+print("   so khớp lời gọi: Pink JSON=%d nguồn=%d; Pink2 JSON=%d nguồn=%d; Yellow JSON=%d nguồn=%d" % (
+    jp, src[("SetNodeBackGroundPink", "lời gọi")], jp2, src[("SetNodeBackGroundPink2", "lời gọi")], jy, src[("SetNodeBackGroundYellow", "lời gọi")]))
+neutral_bad = [c for _, _, c in checks if re.search(r"expr\(|lambda\(\.\.\.\)| IS |\?|format\(\"|\bnew ", c["condition"] + json.dumps(c["bindings"], ensure_ascii=False))]
+print("   điều kiện/bindings còn mảnh chưa trung tính hoàn toàn (expr(, lambda, IS, ?, format(, new):", len(neutral_bad), "/", len(checks))
 
 # (4) message id
 xml_ids = {e.get("ID") for e in ET.parse(os.path.join(data, "_extracted/message.xml")).getroot().iter("Infor")}
@@ -91,6 +102,15 @@ for k, m, c in checks:
     for p in c["message"].get("parts", []):
         if p["kind"] == "cell_text":
             ct["có text" if p.get("text") else "không text"] += 1
+tsheet = collections.Counter()
+tsrc = collections.Counter()
+for k, m, c in checks:
+    for p in c["message"].get("parts", []):
+        if p["kind"] == "cell_text" and p.get("text"):
+            tsheet[p.get("template_sheet")] += 1
+            t = p.get("template") or ""
+            tsrc["nhiều ứng viên MaFile cùng text" if ";" in t else "_extracted (tên suy ra)" if t.startswith("_extracted") else "_forms MaFile/Xsd"] += 1
+print("   cell_text có text theo sheet đọc:", dict(tsheet.most_common()), "; theo nguồn template:", dict(tsrc))
 un = json.load(open(os.path.join(vdir, "messages_unresolved.json"), encoding="utf-8"))
 print("   cell_text:", dict(ct), "; messages_unresolved.json:", un["count"], "mục; theo lý do:")
 for r, n in collections.Counter((i["kind"], re.sub(r"[0-9A-Z_]{2,}.*$", "…", i["reason"] or "")[:60]) for i in un["items"]).most_common(12):
@@ -128,7 +148,7 @@ V = {
     "V9": find("Tndn03TT80Nckt294", {"E_212"}),
     "V10": find("GeneralFunctions", lines=(12100, 12260)),
     "V11": find(None, {"E_227", "E_228"}),
-    "V12": find(None, {"E_56"}, cond=r"H|M"),
+    "V12": find(None, {"E_56", "E_29"}, lines=(771, 815)),
     "V13": find("DkTndn02TT80Nckt276", {"E_25", "E_19", "E_31", "E_32"}, lines=(1971, 2037)),
     "V14": find("DkTndn02TT80Nckt276", {"E_13", "E_19", "E_28"}, lines=(2045, 2122)),
     "V15": find("Tndn02TT89Nckt309", {"E_17", "E_19"}),  # NOTES ghi E_16/E_18 = chỉ số 0 của Cells[16]/[18]; ô thật là E17/E19
@@ -143,8 +163,9 @@ V = {
 print("== (5) V1-V22")
 for v, hits in V.items():
     if hits:
-        k, m, c = hits[0]
-        print("   %s: %d bản ghi; ví dụ %s %s L%s level=%s msg=%s/%s" % (v, len(hits), k, m["method"], c["source"]["lines"][0], c["level"], c["message"]["kind"], c["message"].get("id")))
+        pk = [h for h in hits if h[2]["level"] in ("pink", "yellow")]
+        k, m, c = (pk or hits)[0]
+        print("   %s: %d bản ghi; ví dụ %s %s L%s level=%s msg=%s/%s \"%s\"" % (v, len(hits), k, m["method"], c["source"]["lines"][0], c["level"], c["message"]["kind"], c["message"].get("id"), (c["message"].get("text") or "")[:45]))
     else:
         print("   %s: 0 bản ghi" % v)
 
@@ -158,8 +179,30 @@ if "--sample" in sys.argv:
         pool[recs[k]["key"]["in_menu"]].append((k, m))
     pick = rnd.sample(sorted(pool[True], key=lambda x: (x[0], x[1]["source"]["lines"][0])), 18) + \
         rnd.sample(sorted(pool[False], key=lambda x: (x[0], x[1]["source"]["lines"][0])), 12)
-    for i, (k, m) in enumerate(pick, 1):
-        c = rnd.choice(m["checks"])
-        print("#%d|%s|%s|in_menu=%s|L%s-%s|check L%s" % (i, k, m["method"], recs[k]["key"]["in_menu"], *m["source"]["lines"], c["source"]["lines"][0]))
+    chosen = [(k, m, rnd.choice(m["checks"])) for k, m in pick]
+    rnd2 = random.Random(20261011)
+    used = {(k, m["method"], m["source"]["lines"][0]) for k, m in pick}
+    final = []
+    for k, m, c in chosen:
+        if m["in_scope"]:
+            final.append((k, m, c, "goc"))
+            continue
+        cand = sorted([x for x in pool[recs[k]["key"]["in_menu"]] if x[1]["in_scope"] and (x[0], x[1]["method"], x[1]["source"]["lines"][0]) not in used],
+                      key=lambda x: (x[0], x[1]["source"]["lines"][0]))
+        k2, m2 = rnd2.choice(cand)
+        used.add((k2, m2["method"], m2["source"]["lines"][0]))
+        final.append((k2, m2, rnd2.choice(m2["checks"]), "thay(%s.%s)" % (k[:-5], m["method"])))
+    for i, (k, m, c, how) in enumerate(final, 1):
+        print("#%d|%s|%s|in_menu=%s|L%s-%s|check L%s|%s|%s" % (i, k, m["method"], recs[k]["key"]["in_menu"], *m["source"]["lines"], c["source"]["lines"][0], m["kind"], how))
         print(json.dumps({x: c[x] for x in ("condition", "bindings", "cells_marked", "level", "status")}, ensure_ascii=False))
         print("   msg:", c["message"]["kind"], c["message"].get("id"), (c["message"].get("text") or "")[:60], "| ctx:", c.get("context"))
+
+mc = os.path.join(vdir, "manual_check.csv")
+if os.path.exists(mc):
+    import csv
+    rows = list(csv.DictReader(open(mc, encoding="utf-8")))
+    n = len(rows)
+    ok = sum(1 for r in rows if r["ket_qua_sau_sua"] == "dung")
+    part = sum(1 for r in rows if r["ket_qua_sau_sua"] == "dung_mot_phan")
+    first = sum(1 for r in rows if r["loi_lan_1"] == "khong" and r["ket_qua_sau_sua"] != "sai")
+    print("== (6) manual_check.csv: %d hàm; đúng sau sửa %d (%.1f%%), đúng một phần %d; lượt 1 không lỗi %d (%.1f%%)" % (n, ok, 100.0 * ok / n, part, first, 100.0 * first / n))

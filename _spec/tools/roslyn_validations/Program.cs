@@ -552,6 +552,12 @@ class MethodCtx
                     {
                         if (st.SpanStart >= child.SpanStart) break;
                         if (st is IfStatementSyntax g && g.Else == null && EndsWithJump(g.Statement)) conds.Add(Neg(g.Condition));
+                        else if (st is IfStatementSyntax g2 && g2.Else != null && !(g2.Else.Statement is IfStatementSyntax))
+                        {   // if (A) {...} else {...; continue;} => sau lệnh này A đúng; và ngược lại
+                            bool tj = EndsWithJump(g2.Statement), ej = EndsWithJump(g2.Else.Statement);
+                            if (ej && !tj) conds.Add(R(g2.Condition));
+                            else if (tj && !ej) conds.Add(Neg(g2.Condition));
+                        }
                     }
                     break;
             }
