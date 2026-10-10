@@ -45,6 +45,25 @@ for c in classes:
 idx = json.load(open(os.path.join(rules, "index.json")))
 for k in kinds:
     say(idx["hook_counts"].get(k) == gcount[k], "hook %s: index.json %s = grep khai báo %d (chỉ mục T0 cho 394 class: %s)" % (k, idx["hook_counts"].get(k), gcount[k], idx["hook_counts_T0_index_394_classes"].get(k)))
+# đối chiếu với hook_counts của chỉ mục T0 (mọi tệp): phần chênh nằm ngoài 394 class
+t0 = json.load(open(os.path.join(os.path.dirname(classes_path), "index.json")))
+paths394 = {c["path"] for c in classes}
+outside = collections.Counter(); upd_rt = collections.Counter()
+for fe in t0["files"]:
+    for m in fe["methods"]:
+        if not m.get("is_hook") or m.get("hook_kind") not in kinds:
+            continue
+        if fe["path"] not in paths394:
+            outside[(m["hook_kind"], fe["path"] + ":" + m["name"])] += 1
+        elif m["hook_kind"] == "UpdateFormula":
+            upd_rt[m.get("return_type")] += 1
+print("   T0 hook_counts (mọi tệp):", {k: t0["hook_counts"].get(k) for k in kinds})
+for (k, where), n in sorted(outside.items()):
+    print("   hook ngoài 394 class: %s %s x%d" % (k, where, n))
+print("   UpdateFormula_N trong 394 class theo return_type:", dict(sorted(upd_rt.items())))
+for k in kinds:
+    n_out = sum(n for (kk, _), n in outside.items() if kk == k)
+    say(t0["hook_counts"].get(k) == idx["hook_counts"].get(k) + n_out, "T0 %s %s = công cụ %s + ngoài 394 class %d" % (k, t0["hook_counts"].get(k), idx["hook_counts"].get(k), n_out))
 nrec = 0
 for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
     b = os.path.basename(f)
@@ -88,6 +107,27 @@ def walk(o, path):
             bad.append((path, s2))
 for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
     walk(json.load(open(f)), os.path.basename(f))
+# định danh C# thô trong trường nội dung (trừ tên hàm ở params.call/args và reason)
+ident = re.compile(r"hTKKCMC|\.Cells\[|CellTemplate\.|\(int\)|\.Location\.")
+raw = []
+def walk2(o, path):
+    if isinstance(o, dict):
+        for k, v in o.items():
+            if k in ("reason", "call", "args", "file"):
+                continue
+            walk2(v, path + "." + k)
+    elif isinstance(o, list):
+        for v in o:
+            walk2(v, path)
+    elif isinstance(o, str) and ident.search(o):
+        raw.append((path, o[:150]))
+for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+    if os.path.basename(f) in ("formula_points.json", "opaque_calls.json", "index.json"):
+        continue
+    walk2(json.load(open(f)), os.path.basename(f))
+for b in raw[:5]:
+    print("   định danh C# thô:", b)
+print("   chuỗi chứa định danh C# thô (hTKKCMC, .Cells[, CellTemplate., (int), .Location.): %d" % len(raw))
 for b in bad[:10]:
     print("   nghi C#:", b[0], pat.findall(b[1]), b[1][:300])
 say(not bad, "không chuỗi nào chứa dấu hiệu câu lệnh C# (; => return if else foreach try catch throw var xuống dòng): %d chuỗi vi phạm" % len(bad))

@@ -442,6 +442,8 @@ var opq = opaqueSites.Select(s => s.Split('\t')).GroupBy(p => p[0], StringCompar
     .Select(g => new Dictionary<string, object>
     {
         ["call"] = g.Key,
+        ["category"] = g.Key.StartsWith("GeneralFunctions.") || g.Key.StartsWith("HTKKFile.") || g.Key.StartsWith("ConvertHelpers.") || g.Key.StartsWith("HTKKFormater.") || g.Key.StartsWith("WinSettings.") ? "htkk-helper"
+            : !g.Key.Contains('.') ? "class-local" : g.Key.StartsWith("<") ? "object-member" : "bcl",
         ["sites"] = g.Select(p => p[1]).Distinct().Count(),
         ["statement_sites"] = g.Where(p => p[2] == "statement").Select(p => p[1]).Distinct().Count(),
         ["value_sites"] = g.Where(p => p[2] == "value").Select(p => p[1]).Distinct().Count(),
