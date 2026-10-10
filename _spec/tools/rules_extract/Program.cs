@@ -117,7 +117,7 @@ var classSummaries = new List<object>();
 int totalRecords = 0;
 
 // ---------- hiển thị ----------
-string ColText(V c1) { var fl = new Flags(); return c1 is VConst k && k.Val is long n && n >= 1 ? Fmt.Letters(n) : "{col=" + R.Expr(c1, fl) + "}"; }
+string ColText(V c1) { var fl = new Flags(); return c1 is VConst k && k.Val is long n && n >= 1 ? Fmt.Letters(n) : "{col(" + R.Expr(c1, fl) + ")}"; }
 string RowText(V r1) { var fl = new Flags(); return r1 is VConst k && k.Val is long n ? n.ToString() : "{" + R.Expr(r1, fl) + "}"; }
 
 // Tỉa nhánh cases mâu thuẫn với dữ kiện đường đi (atom == hằng, khoảng, tập giá trị)
@@ -243,8 +243,45 @@ Dictionary<string, object> BuildTrigger(List<Cond> trig, string kind)
     };
 }
 
-List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<string, object> key, string hook, string kind, int sheet, string file, string ctxLabel)
+// ---------- ký hiệu tự do, điều kiện mâu thuẫn ----------
+var tokRx = new System.Text.RegularExpressions.Regex(@"(?<![\w.$])[A-Za-z_]\w*(?![\w(])", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+var litRx = new System.Text.RegularExpressions.Regex("\"(?:\\\\.|[^\"\\\\])*\"", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+string Placeholders(string t)
 {
+    var sb = new System.Text.StringBuilder(); int d = 0;
+    foreach (char ch in t) { if (ch == '{') { if (d > 0) sb.Append(ch); d++; } else if (ch == '}') { d--; if (d > 0) sb.Append(ch); else sb.Append(' '); } else if (d > 0) sb.Append(ch); }
+    return sb.ToString();
+}
+void Tokens(object o, string k, HashSet<string> acc)
+{
+    switch (o)
+    {
+        case string t:
+            if (k is "formula" or "value") t = Placeholders(t);
+            if (k is "file" or "call" or "via" or "note" or "base" or "reason" or "prop") return;
+            t = litRx.Replace(t, "\"\"");
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"field\(\w+\)|obj\(\w*\)|opaque\([^()]*\)", "");
+            foreach (System.Text.RegularExpressions.Match m in tokRx.Matches(t)) acc.Add(m.Value);
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(t, @"@(\d+)")) acc.Add("@" + m.Groups[1].Value);
+            break;
+        case System.Collections.IDictionary d: foreach (System.Collections.DictionaryEntry e in d) Tokens(e.Value, (string)e.Key, acc); break;
+        case System.Collections.IEnumerable l: foreach (var x in l) Tokens(x, k, acc); break;
+    }
+}
+bool Contradictory(List<Cond> conj)
+{
+    for (int i = 0; i < conj.Count; i++)
+    {
+        var others = conj.Where((_, j) => j != i).ToList();
+        if (Infeasible(conj[i], others, new HashSet<string>(others.Select(x => x.Key), StringComparer.Ordinal))) return true;
+    }
+    return false;
+}
+int recUnreachable = 0, recWithSyms = 0, symEntries = 0;
+
+List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<string, object> key, string hook, string kind, int sheet, string file, string ctxLabel, SortedDictionary<string, List<SymInfo>> syms)
+{
+    var groupConj = new Dictionary<string, List<Cond>>(StringComparer.Ordinal);
     var groups = new List<(string gk, List<Effect> effs, List<Cond> trig, List<string> guards)>();
     var effSeen = new HashSet<string>(StringComparer.Ordinal);
     var gidx = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -261,7 +298,7 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
         }
         foreach (var lp in ef.Loops) guards.Add("loop: " + lp.Desc);
         string gk = string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards);
-        if (!gidx.TryGetValue(gk, out var gi)) { gi = groups.Count; gidx[gk] = gi; groups.Add((gk, new List<Effect>(), trig, guards)); }
+        if (!gidx.TryGetValue(gk, out var gi)) { gi = groups.Count; gidx[gk] = gi; groups.Add((gk, new List<Effect>(), trig, guards)); groupConj[gk] = conj; }
         effRaw++;
         string ek = gk + "\u0003" + ef.Op + "|" + ef.Target?.Key + "|" + ef.Val?.Key + "|" + ef.Line + "|" + ef.Via + "|" + JsonSerializer.Serialize(ef.Params);
         if (!effSeen.Add(ek)) continue;
@@ -286,7 +323,7 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
             foreach (var p in ef.Path) if (p.C is not CConst) facts.AddRange(Conj(p.C));
             if (ef.Op == "setFormula") ej["formula"] = ValueJson(Prune(ef.Val, facts), fl, false);
             else if (ef.Op == "setValue") ej["value"] = ValueJson(Prune(ef.Val, facts), fl, true);
-            else if (ef.Val != null && ef.Op is "lock") R.Expr(ef.Val, fl);
+            else if (ef.Val != null) R.Expr(ef.Val, fl);
             if (ef.Params.Count > 0) ej["params"] = new SortedDictionary<string, object>(ef.Params, StringComparer.Ordinal);
             ej["at"] = ef.Line;
             if (ef.Via != null) ej["via"] = ef.Via;
@@ -316,18 +353,36 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
             reason = (reason.Length > 0 ? reason + " | " : "") + (status == "parametric" ? "placeholder: " : status == "unresolved" ? "chưa giải: " : "") + string.Join(", ", ns);
         }
         recStatus[status] = recStatus.GetValueOrDefault(status) + 1;
+        bool unreach = Contradictory(groupConj[g.gk]);
+        if (unreach) { recUnreachable++; reason = "không tới được: điều kiện trên đường đi mâu thuẫn" + (reason.Length > 0 ? " | " + reason : ""); }
+        var trigJ = BuildTrigger(g.trig, kind);
+        var toks = new HashSet<string>(StringComparer.Ordinal);
+        Tokens(g.guards, "guards", toks); Tokens(trigJ, "trigger", toks); Tokens(effJson, "effects", toks);
+        var symJ = new List<object>();
+        foreach (var t in toks.OrderBy(x => x, StringComparer.Ordinal))
+            if (syms != null && syms.TryGetValue(t, out var sl0))
+            {
+                // biến lặp: chỉ giữ mục của vòng lặp được nhắc trong bản ghi (loop@dòng); không xác định thì giữ hết
+                var sl = sl0.Where(x => !(x.Origin is "loop" or "foreach") || toks.Contains("@" + x.Line)).ToList();
+                if (sl.Count == 0) sl = sl0;
+                foreach (var si in sl.OrderBy(x => x.Line).ThenBy(x => x.Origin, StringComparer.Ordinal))
+                    symJ.Add(new Dictionary<string, object> { ["name"] = si.Name, ["origin"] = si.Origin, ["at"] = si.Line, ["desc"] = si.Desc });
+            }
+        if (symJ.Count > 0) { recWithSyms++; symEntries += symJ.Count; }
         recs.Add(new Dictionary<string, object>
         {
             ["key"] = key,
             ["hook"] = hook,
             ["kind"] = kind,
             ["sheetIndex"] = sheet >= 0 ? sheet : null,
-            ["trigger"] = BuildTrigger(g.trig, kind),
+            ["trigger"] = trigJ,
             ["guards"] = g.guards,
             ["effects"] = effJson,
             ["source"] = new Dictionary<string, object> { ["file"] = file, ["lines"] = new[] { lmin, lmax } },
             ["status"] = status,
             ["reason"] = reason,
+            ["unreachable"] = unreach,
+            ["symbols"] = symJ,
         });
     }
     return recs;
@@ -349,7 +404,7 @@ List<Dictionary<string, object>> RunStandalone(string rel, ClassCtx cls, BaseMet
     it.RunMethod(m, cls, BindParams(m, -1, null), null, null, null);
     string name = Interp.MethodName(m);
     if (it.Truncated) truncated.Add(rel + ":" + name);
-    return BuildRecords(it.Effects, key, name, "helper", -1, rel, "standalone");
+    return BuildRecords(it.Effects, key, name, "helper", -1, rel, "standalone", it.Syms);
 }
 
 // ---------- 394 class ----------
@@ -398,8 +453,9 @@ foreach (var row in classRows)
         foreach (var n in m.DescendantNodes())
         {
             ExpressionSyntax recv0 = null; int l0 = 0;
-            if (n is AssignmentExpressionSyntax asx && asx.Left is MemberAccessExpressionSyntax lm && (lm.Name.Identifier.Text is "Formula" or "Value" or "Text" or "Locked" || Interp.FormatProps.Contains(lm.Name.Identifier.Text))) { recv0 = lm.Expression; l0 = LineOf(asx); }
-            else if (n is InvocationExpressionSyntax ivx && ivx.Expression is MemberAccessExpressionSyntax im && im.Name.Identifier.Text is "ResetFormula" or "ResetValue") { recv0 = im.Expression; l0 = LineOf(ivx); }
+            // mọi phép gán thuộc tính và mọi lời gọi Reset* trên phần tử Cells/Rows/Columns
+            if (n is AssignmentExpressionSyntax asx && asx.IsKind(SyntaxKind.SimpleAssignmentExpression) && asx.Left is MemberAccessExpressionSyntax lm) { recv0 = lm.Expression; l0 = LineOf(asx); }
+            else if (n is InvocationExpressionSyntax ivx && ivx.Expression is MemberAccessExpressionSyntax im && im.Name.Identifier.Text.StartsWith("Reset", StringComparison.Ordinal) && ivx.ArgumentList.Arguments.Count == 0) { recv0 = im.Expression; l0 = LineOf(ivx); }
             if (recv0 is not ElementAccessExpressionSyntax rea || rea.Expression is not MemberAccessExpressionSyntax rem || rem.Name.Identifier.Text is not ("Cells" or "Rows" or "Columns")) continue;
             if (!seenL.Add(l0)) continue;
             effStmts++;
@@ -409,7 +465,7 @@ foreach (var row in classRows)
                 ?? (n.Ancestors().Any(a => a is LambdaExpressionSyntax) ? "nằm trong lambda, không phân tích" : n.Ancestors().Any(a => a is CatchClauseSyntax) ? "nằm trong khối catch, không phân tích" : "không tới được: nhánh điều kiện gấp thành hằng sai, hoặc sau lệnh trả về/ném ngoại lệ");
             dropped.Add(new Dictionary<string, object> { ["at"] = l0, ["reason"] = why });
         }
-        var r = BuildRecords(it.Effects, key, name, kind, sheet, rel, "hook");
+        var r = BuildRecords(it.Effects, key, name, kind, sheet, rel, "hook", it.Syms);
         if (it.Truncated) truncated.Add(rel + ":" + name);
         var span = m.GetLocation().GetLineSpan();
         hookList.Add(new Dictionary<string, object> { ["hook"] = name, ["kind"] = kind, ["sheetIndex"] = sheet >= 0 ? sheet : null, ["lines"] = new[] { span.StartLinePosition.Line + 1, span.EndLinePosition.Line + 1 }, ["records"] = r.Count, ["effects"] = it.Effects.Count, ["truncated"] = it.Truncated, ["dropped"] = dropped });
@@ -494,6 +550,8 @@ Write("index.json", new Dictionary<string, object>
     ["effects_dedup"] = new Dictionary<string, object> { ["before"] = effRaw, ["after"] = effKept },
     ["hook_effect_statements"] = new Dictionary<string, object> { ["total"] = effStmts, ["with_effect"] = effMatched, ["dropped_flagged"] = effDropped },
     ["effect_ops"] = effOps,
+    ["records_unreachable"] = recUnreachable,
+    ["records_with_symbols"] = new Dictionary<string, object> { ["records"] = recWithSyms, ["entries"] = symEntries },
     ["effect_status"] = effStatus,
     ["formula_points"] = new Dictionary<string, object> { ["total"] = ptList.Count, ["by_status"] = ptCounts, ["business"] = ptList.Count(p => ((string)p["file"]).StartsWith("tax.")), ["app"] = ptList.Count(p => ((string)p["file"]).StartsWith("htkk/")) },
     ["opaque_call_names"] = opq.Count,

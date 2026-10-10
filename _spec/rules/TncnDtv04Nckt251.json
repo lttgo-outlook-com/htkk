@@ -106,9 +106,9 @@
         "when": []
       },
       "guards": [
-        "cell(S0!C24).value",
+        "bool(cell(S0!C24).value)",
         "period.KieuKy != \"D\"",
-        "isEmpty(\"{cell(S0!H48).text}\")"
+        "isEmpty(\"{trim(\"{cell(S0!H48).text}\")}\")"
       ],
       "effects": [
         {
@@ -232,7 +232,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: header.dchiNNT, header.dthoaiNNT, header.emailNNT, header.faxNNT, header.mst, header.tenHuyenNNT, header.tenNNT, header.tenTinhNNT"
+      "reason": "placeholder: header.dchiNNT, header.dthoaiNNT, header.emailNNT, header.faxNNT, header.mst, header.tenHuyenNNT, header.tenNNT, header.tenTinhNNT",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -252,9 +254,9 @@
         "when": []
       },
       "guards": [
-        "!(cell(S0!C24).value)",
+        "!(bool(cell(S0!C24).value))",
         "period.KieuKy != \"D\"",
-        "isEmpty(\"{cell(S0!H48).text}\")"
+        "isEmpty(\"{trim(\"{cell(S0!H48).text}\")}\")"
       ],
       "effects": [
         {
@@ -378,7 +380,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -432,7 +436,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -454,7 +460,7 @@
       "guards": [
         "tk.SheetInfos[1] != null",
         "tk.SheetInfos[0].Tables[i].RowsValues.Count > 1",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count"
+        "loop: for@220 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count"
       ],
       "effects": [
         {
@@ -483,7 +489,16 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.RemoveDataRows"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.RemoveDataRows",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 220,
+          "desc": "biến mang qua vòng lặp dòng 220: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -504,16 +519,16 @@
       },
       "guards": [
         "tk.SheetInfos[1] != null",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: foreach cell in tk.SheetInfos[0].Tables[i].RowsInfo.cells"
+        "loop: for@229 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@233 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: foreach@235 cell in tk.SheetInfos[0].Tables[i].RowsInfo.cells"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell.ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(cell.ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "value": "{cell.DefaultValue}",
           "params": {
@@ -527,7 +542,7 @@
           "op": "lock",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell.ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(cell.ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "params": {
             "via": "LockUnLockCol"
@@ -545,7 +560,34 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell.ColIndex, cell.DefaultValue, j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart"
+      "reason": "placeholder: cell.ColIndex, cell.DefaultValue, j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "cell",
+          "origin": "foreach",
+          "at": 235,
+          "desc": "phần tử đang duyệt của tk.SheetInfos[0].Tables[i].RowsInfo.cells"
+        },
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 229,
+          "desc": "biến mang qua vòng lặp dòng 229: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 229,
+          "desc": "biến mang qua vòng lặp dòng 229: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 233,
+          "desc": "biến mang qua vòng lặp dòng 233: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -566,16 +608,16 @@
       },
       "guards": [
         "tk.SheetInfos[1] == null",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: foreach cell2 in tk.SheetInfos[0].Tables[i].RowsInfo.cells"
+        "loop: for@244 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@248 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: foreach@250 cell2 in tk.SheetInfos[0].Tables[i].RowsInfo.cells"
       ],
       "effects": [
         {
           "op": "unlock",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell2.ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(cell2.ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "params": {
             "via": "LockUnLockCol"
@@ -593,7 +635,34 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell2.ColIndex, j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart"
+      "reason": "placeholder: cell2.ColIndex, j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "cell2",
+          "origin": "foreach",
+          "at": 250,
+          "desc": "phần tử đang duyệt của tk.SheetInfos[0].Tables[i].RowsInfo.cells"
+        },
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 244,
+          "desc": "biến mang qua vòng lặp dòng 244: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 244,
+          "desc": "biến mang qua vòng lặp dòng 244: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 248,
+          "desc": "biến mang qua vòng lặp dòng 248: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -617,7 +686,7 @@
         ]
       },
       "guards": [
-        "cell(S0!C22).value"
+        "bool(cell(S0!C22).value)"
       ],
       "effects": [
         {
@@ -642,7 +711,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -666,7 +737,7 @@
         ]
       },
       "guards": [
-        "cell(S0!C24).value"
+        "bool(cell(S0!C24).value)"
       ],
       "effects": [
         {
@@ -691,7 +762,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -742,7 +815,7 @@
           "params": {
             "args": [
               "tk",
-              "spread"
+              "spread()"
             ],
             "call": "GeneralFunctions.checkLockUnLockCells"
           },
@@ -758,7 +831,9 @@
         ]
       },
       "status": "resolved",
-      "reason": "có lời gọi chưa giải kèm theo | "
+      "reason": "có lời gọi chưa giải kèm theo | ",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -778,8 +853,8 @@
         "when": []
       },
       "guards": [
-        "activeSheet == 0",
-        "cell(S0!C24).value"
+        "activeSheet() == 0",
+        "bool(cell(S0!C24).value)"
       ],
       "effects": [
         {
@@ -903,7 +978,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: field(_HeaderInfo).dchiNNT, field(_HeaderInfo).dthoaiNNT, field(_HeaderInfo).emailNNT, field(_HeaderInfo).faxNNT, field(_HeaderInfo).mst, field(_HeaderInfo).tenHuyenNNT, field(_HeaderInfo).tenNNT, field(_HeaderInfo).tenTinhNNT"
+      "reason": "placeholder: field(_HeaderInfo).dchiNNT, field(_HeaderInfo).dthoaiNNT, field(_HeaderInfo).emailNNT, field(_HeaderInfo).faxNNT, field(_HeaderInfo).mst, field(_HeaderInfo).tenHuyenNNT, field(_HeaderInfo).tenNNT, field(_HeaderInfo).tenTinhNNT",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -923,8 +1000,8 @@
         "when": []
       },
       "guards": [
-        "activeSheet == 0",
-        "!(cell(S0!C24).value)"
+        "activeSheet() == 0",
+        "!(bool(cell(S0!C24).value))"
       ],
       "effects": [
         {
@@ -1048,7 +1125,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1102,7 +1181,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1124,7 +1205,7 @@
       "guards": [
         "field(_ToKhaiInfo).SheetInfos[1] != null",
         "field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count > 1",
-        "loop: for i from 0 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count"
+        "loop: for@220 i from 0 step +1 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count"
       ],
       "effects": [
         {
@@ -1153,7 +1234,16 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.RemoveDataRows"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.RemoveDataRows",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 220,
+          "desc": "biến mang qua vòng lặp dòng 220: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1174,16 +1264,16 @@
       },
       "guards": [
         "field(_ToKhaiInfo).SheetInfos[1] != null",
-        "loop: for i from 0 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: foreach cell in field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
+        "loop: for@229 i from 0 step +1 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count",
+        "loop: for@233 j from 0 step +1 while j < field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: foreach@235 cell in field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell.ColIndex}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
+            "cell": "{col(cell.ColIndex)}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
           },
           "value": "{cell.DefaultValue}",
           "params": {
@@ -1197,7 +1287,7 @@
           "op": "lock",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell.ColIndex}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
+            "cell": "{col(cell.ColIndex)}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
           },
           "params": {
             "via": "LockUnLockCol"
@@ -1215,7 +1305,34 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell.ColIndex, cell.DefaultValue, field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart, j"
+      "reason": "placeholder: cell.ColIndex, cell.DefaultValue, field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart, j",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "cell",
+          "origin": "foreach",
+          "at": 235,
+          "desc": "phần tử đang duyệt của field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
+        },
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 229,
+          "desc": "biến mang qua vòng lặp dòng 229: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 229,
+          "desc": "biến mang qua vòng lặp dòng 229: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 233,
+          "desc": "biến mang qua vòng lặp dòng 233: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1236,16 +1353,16 @@
       },
       "guards": [
         "field(_ToKhaiInfo).SheetInfos[1] == null",
-        "loop: for i from 0 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: foreach cell2 in field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
+        "loop: for@244 i from 0 step +1 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count",
+        "loop: for@248 j from 0 step +1 while j < field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: foreach@250 cell2 in field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
       ],
       "effects": [
         {
           "op": "unlock",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell2.ColIndex}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
+            "cell": "{col(cell2.ColIndex)}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
           },
           "params": {
             "via": "LockUnLockCol"
@@ -1263,7 +1380,34 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell2.ColIndex, field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart, j"
+      "reason": "placeholder: cell2.ColIndex, field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart, j",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "cell2",
+          "origin": "foreach",
+          "at": 250,
+          "desc": "phần tử đang duyệt của field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
+        },
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 244,
+          "desc": "biến mang qua vòng lặp dòng 244: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 244,
+          "desc": "biến mang qua vòng lặp dòng 244: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 248,
+          "desc": "biến mang qua vòng lặp dòng 248: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1317,7 +1461,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1339,7 +1485,7 @@
       "guards": [
         "field(_ToKhaiInfo).SheetInfos[1] != null",
         "field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count > 1",
-        "loop: for i from 0 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count"
+        "loop: for@220 i from 0 step +1 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count"
       ],
       "effects": [
         {
@@ -1368,7 +1514,16 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.RemoveDataRows"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.RemoveDataRows",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 220,
+          "desc": "biến mang qua vòng lặp dòng 220: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1389,16 +1544,16 @@
       },
       "guards": [
         "field(_ToKhaiInfo).SheetInfos[1] != null",
-        "loop: for i from 0 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: foreach cell in field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
+        "loop: for@229 i from 0 step +1 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count",
+        "loop: for@233 j from 0 step +1 while j < field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: foreach@235 cell in field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell.ColIndex}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
+            "cell": "{col(cell.ColIndex)}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
           },
           "value": "{cell.DefaultValue}",
           "params": {
@@ -1412,7 +1567,7 @@
           "op": "lock",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell.ColIndex}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
+            "cell": "{col(cell.ColIndex)}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
           },
           "params": {
             "via": "LockUnLockCol"
@@ -1430,7 +1585,34 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell.ColIndex, cell.DefaultValue, field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart, j"
+      "reason": "placeholder: cell.ColIndex, cell.DefaultValue, field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart, j",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "cell",
+          "origin": "foreach",
+          "at": 235,
+          "desc": "phần tử đang duyệt của field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
+        },
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 229,
+          "desc": "biến mang qua vòng lặp dòng 229: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 229,
+          "desc": "biến mang qua vòng lặp dòng 229: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 233,
+          "desc": "biến mang qua vòng lặp dòng 233: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1451,16 +1633,16 @@
       },
       "guards": [
         "field(_ToKhaiInfo).SheetInfos[1] == null",
-        "loop: for i from 0 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: foreach cell2 in field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
+        "loop: for@244 i from 0 step +1 while i < field(_ToKhaiInfo).SheetInfos[0].Tables.Count",
+        "loop: for@248 j from 0 step +1 while j < field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: foreach@250 cell2 in field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
       ],
       "effects": [
         {
           "op": "unlock",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell2.ColIndex}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
+            "cell": "{col(cell2.ColIndex)}{field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart+j}"
           },
           "params": {
             "via": "LockUnLockCol"
@@ -1478,7 +1660,34 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell2.ColIndex, field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart, j"
+      "reason": "placeholder: cell2.ColIndex, field(_ToKhaiInfo).SheetInfos[0].Tables[i].DataLocationTemplateRowStart, j",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "cell2",
+          "origin": "foreach",
+          "at": 250,
+          "desc": "phần tử đang duyệt của field(_ToKhaiInfo).SheetInfos[0].Tables[i].RowsInfo.cells"
+        },
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 244,
+          "desc": "biến mang qua vòng lặp dòng 244: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 244,
+          "desc": "biến mang qua vòng lặp dòng 244: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 248,
+          "desc": "biến mang qua vòng lặp dòng 248: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1498,8 +1707,8 @@
         "when": []
       },
       "guards": [
-        "sheet[activeSheet].ActiveRowIndex == 1",
-        "sheet[activeSheet].ActiveColumnIndex == 3"
+        "sheetOf(activeSheet()).ActiveRowIndex == 1",
+        "sheetOf(activeSheet()).ActiveColumnIndex == 3"
       ],
       "effects": [
         {
@@ -1523,7 +1732,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.ShowBangKe"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.ShowBangKe",
+      "unreachable": false,
+      "symbols": []
     }
   ]
 }

@@ -69,7 +69,7 @@
               },
               {
                 "when": "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0",
-                "value": "{opaque(accum)}"
+                "value": "{last_in_loop(foreach@427 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from null, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@430 fileInfo in opaque(<obj>.GetFiles)))}"
               },
               {
                 "when": "else",
@@ -92,7 +92,34 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: opaque:accum"
+      "reason": "chưa giải: last_in_loop(foreach@427 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from null, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@430 fileInfo in opaque(<obj>.GetFiles)))",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "fileInfo",
+          "origin": "foreach",
+          "at": 430,
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 427,
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 427,
+          "desc": "biến mang qua vòng lặp dòng 427: giá trị trước vòng null, cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@430 fileInfo in opaque(<obj>.GetFiles))"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 430,
+          "desc": "biến mang qua vòng lặp dòng 430: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result)"
+        }
+      ]
     },
     {
       "key": {
@@ -137,7 +164,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -180,7 +209,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -200,7 +231,7 @@
         "when": []
       },
       "guards": [
-        "period.Nam >= 2021"
+        "int(period.Nam) >= 2021"
       ],
       "effects": [
         {
@@ -381,7 +412,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: period.MaHSDuAnDT"
+      "reason": "placeholder: period.MaHSDuAnDT",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -401,7 +434,7 @@
         "when": []
       },
       "guards": [
-        "period.Nam < 2021"
+        "int(period.Nam) < 2021"
       ],
       "effects": [
         {
@@ -582,7 +615,9 @@
         ]
       },
       "status": "resolved",
-      "reason": "có lời gọi chưa giải kèm theo | "
+      "reason": "có lời gọi chưa giải kèm theo | ",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -597,30 +632,30 @@
       "sheetIndex": 1,
       "trigger": {
         "cells": [
-          "{col=col(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}{row(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}",
-          "{col=col(PL01_KHBS/NOIDUNGGIAITHICH/soTienTraNSNN)}{row(PL01_KHBS/NOIDUNGGIAITHICH/soTienTraNSNN)}"
+          "{col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}",
+          "{col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienTraNSNN))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienTraNSNN)}"
         ],
         "rowRange": null,
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
-          "trigger.row == row(PL01_KHBS/NOIDUNGGIAITHICH/ngay) && trigger.col == col(PL01_KHBS/NOIDUNGGIAITHICH/ngay) || trigger.row == row(PL01_KHBS/NOIDUNGGIAITHICH/soTienTraNSNN) && trigger.col == col(PL01_KHBS/NOIDUNGGIAITHICH/soTienTraNSNN)"
+          "trigger.row == rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay) && trigger.col == colIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay) || trigger.row == rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienTraNSNN) && trigger.col == colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienTraNSNN)"
         ]
       },
       "guards": [
-        "!(isEmpty(cell(S{sheets.Count-2}!BG5).text))",
-        "!(isEmpty(cell(S{sheets.Count-2}!{col=col(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}{row(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}).text))"
+        "!(isEmpty(cell(S[sheets().Count-2]!BG5).text))",
+        "!(isEmpty(cell(S[sheets().Count-2]!{col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}).text))"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
-            "sheet": "sheets.Count-2",
-            "cell": "{col=col(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan)}{row(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan)}"
+            "sheet": "sheets().Count-2",
+            "cell": "{col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan)}"
           },
           "value": {
             "cases": [
               {
-                "when": "!(isEmpty(cell(S{sheets.Count-2}!BG5).text)) && opaque(DateTime.ParseExact) < 0 || !(isEmpty(cell(S{sheets.Count-2}!{col=col(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}{row(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}).text)) && opaque(DateTime.ParseExact) < 0 || isEmpty(cell(S{sheets.Count-2}!BG5).text) && isEmpty(cell(S{sheets.Count-2}!{col=col(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}{row(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}).text) && (null-null).Days < 0",
+                "when": "!(isEmpty(cell(S[sheets().Count-2]!BG5).text)) && opaque(DateTime.ParseExact) < 0 || !(isEmpty(cell(S[sheets().Count-2]!{col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}).text)) && opaque(DateTime.ParseExact) < 0 || isEmpty(cell(S[sheets().Count-2]!BG5).text) && isEmpty(cell(S[sheets().Count-2]!{col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/ngay)}).text) && (null-null).Days < 0",
                 "value": 0
               },
               {
@@ -642,8 +677,8 @@
         {
           "op": "setFormula",
           "target": {
-            "sheet": "sheets.Count-2",
-            "cell": "{col=col(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop)}{row(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop)}"
+            "sheet": "sheets().Count-2",
+            "cell": "{col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop)}"
           },
           "formula": "BE5",
           "at": 499,
@@ -658,7 +693,9 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: (null-null).Days, col(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan), col(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop), opaque:DateTime.ParseExact, row(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan), row(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop), sheets.Count"
+      "reason": "chưa giải: (null-null).Days, colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan), colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop), opaque:DateTime.ParseExact, rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan), rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop), sheets().Count",
+      "unreachable": false,
+      "symbols": []
     }
   ]
 }

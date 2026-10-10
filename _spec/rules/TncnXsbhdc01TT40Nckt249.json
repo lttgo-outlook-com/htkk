@@ -149,7 +149,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: File.Copy, gọi chưa giải: Process.Start"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: File.Copy, gọi chưa giải: Process.Start",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -170,9 +172,9 @@
       },
       "guards": [
         "obj(Dictionary).Count == 0",
-        "!(opaque(<obj>.ContainsKey))",
+        "!(hasKey(dicFomula, \"{tk.SheetInfos[0].StaticCells[i].RowIndex}\"))",
         "tk.SheetInfos[0].StaticCells[i].ColIndex == 23",
-        "loop: for i from 0 while i < tk.SheetInfos[0].StaticCells.Count"
+        "loop: for@341 i from 0 step +1 while i < tk.SheetInfos[0].StaticCells.Count"
       ],
       "effects": [
         {
@@ -197,7 +199,22 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "dicFomula",
+          "origin": "loop",
+          "at": 341,
+          "desc": "biến mang qua vòng lặp dòng 341: giá trị trước vòng ?, cuối mỗi vòng dicFomula := dicFomula"
+        },
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 341,
+          "desc": "biến mang qua vòng lặp dòng 341: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -217,17 +234,17 @@
         "when": []
       },
       "guards": [
-        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 && opaque(accum) > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 && obj(Dictionary).Count > 0 || (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0) && (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0) && obj(Dictionary).Count > 0",
+        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 && last_in_loop(foreach@715 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@718 fileInfo in opaque(<obj>.GetFiles))).Count > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 && obj(Dictionary).Count > 0 || (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0) && (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0) && obj(Dictionary).Count > 0",
         "split(\"{item.Key}\", [\"_\"]).Length == 2",
-        "cell(S0!{col=colIndex(split(\"{item.Key}\", [\"_\"])[0])}{split(\"{item.Key}\", [\"_\"])[1]}).value == 0",
-        "loop: foreach item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> opaque(accum) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        "num(cell(S0!{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])}).value) == 0",
+        "loop: foreach@352 item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> last_in_loop(foreach@715 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@718 fileInfo in opaque(<obj>.GetFiles))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=colIndex(split(\"{item.Key}\", [\"_\"])[0])}{split(\"{item.Key}\", [\"_\"])[1]}"
+            "cell": "{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])}"
           },
           "formula": "",
           "at": 362,
@@ -237,7 +254,7 @@
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=colIndex(split(\"{item.Key}\", [\"_\"])[0])}{split(\"{item.Key}\", [\"_\"])[1]}"
+            "cell": "{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])}"
           },
           "value": "{item.Value}",
           "params": {
@@ -255,7 +272,40 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: colIndex(split(\"{item.Key}\", [\"_\"])[0]), item.Value, split(\"{item.Key}\", [\"_\"])[1]"
+      "reason": "placeholder: colIndex(split(\"{item.Key}\", [\"_\"])[0]), int(split(\"{item.Key}\", [\"_\"])[1]), item.Value",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "fileInfo",
+          "origin": "foreach",
+          "at": 718,
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 352,
+          "desc": "phần tử đang duyệt của cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> last_in_loop(foreach@715 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@718 fileInfo in opaque(<obj>.GetFiles))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 715,
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 715,
+          "desc": "biến mang qua vòng lặp dòng 715: giá trị trước vòng obj(Dictionary), cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@718 fileInfo in opaque(<obj>.GetFiles))"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 718,
+          "desc": "biến mang qua vòng lặp dòng 718: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result)"
+        }
+      ]
     },
     {
       "key": {
@@ -275,16 +325,16 @@
         "when": []
       },
       "guards": [
-        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 && opaque(accum) > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 && obj(Dictionary).Count > 0 || (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0) && (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0) && obj(Dictionary).Count > 0",
+        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 && last_in_loop(foreach@715 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@718 fileInfo in opaque(<obj>.GetFiles))).Count > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 && obj(Dictionary).Count > 0 || (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0) && (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0) && obj(Dictionary).Count > 0",
         "split(\"{item.Key}\", [\"_\"]).Length == 2",
-        "loop: foreach item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> opaque(accum) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        "loop: foreach@352 item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> last_in_loop(foreach@715 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@718 fileInfo in opaque(<obj>.GetFiles))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "AD{split(\"{item.Key}\", [\"_\"])[1]}"
+            "cell": "AD{int(split(\"{item.Key}\", [\"_\"])[1])}"
           },
           "value": "{item.Value}",
           "params": {
@@ -302,7 +352,40 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: item.Value, split(\"{item.Key}\", [\"_\"])[1]"
+      "reason": "placeholder: int(split(\"{item.Key}\", [\"_\"])[1]), item.Value",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "fileInfo",
+          "origin": "foreach",
+          "at": 718,
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 352,
+          "desc": "phần tử đang duyệt của cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> last_in_loop(foreach@715 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@718 fileInfo in opaque(<obj>.GetFiles))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 715,
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 715,
+          "desc": "biến mang qua vòng lặp dòng 715: giá trị trước vòng obj(Dictionary), cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@718 fileInfo in opaque(<obj>.GetFiles))"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 718,
+          "desc": "biến mang qua vòng lặp dòng 718: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result)"
+        }
+      ]
     },
     {
       "key": {
@@ -695,7 +778,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1088,7 +1173,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1481,7 +1568,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1874,7 +1963,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1925,7 +2016,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S1!N{trigger.row}).value, trigger.row"
+      "reason": "placeholder: cell(S1!N{trigger.row}).value, trigger.row",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -2131,7 +2224,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -2524,7 +2619,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -2917,7 +3014,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -3123,7 +3222,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -3143,8 +3244,8 @@
         "when": []
       },
       "guards": [
-        "loop: for i from 0 while i < tk.SheetInfos[1].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[1].Tables[i].RowsValues.Count"
+        "loop: for@417 i from 0 step +1 while i < tk.SheetInfos[1].Tables.Count",
+        "loop: for@420 j from 0 step +1 while j < tk.SheetInfos[1].Tables[i].RowsValues.Count"
       ],
       "effects": [
         {
@@ -3167,7 +3268,28 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart"
+      "reason": "placeholder: j, tk.SheetInfos[1].Tables[i].DataLocationTemplateRowStart",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 417,
+          "desc": "biến mang qua vòng lặp dòng 417: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 417,
+          "desc": "biến mang qua vòng lặp dòng 417: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 420,
+          "desc": "biến mang qua vòng lặp dòng 420: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -3560,7 +3682,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -3953,7 +4077,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     }
   ]
 }

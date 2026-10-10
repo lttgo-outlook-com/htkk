@@ -55,7 +55,7 @@
         113,
         130
       ],
-      "records": 5,
+      "records": 6,
       "effects": 6,
       "truncated": false,
       "dropped": []
@@ -110,7 +110,7 @@
             "sheet": 3,
             "cell": "V{trigger.row}"
           },
-          "value": "{cell(S3!J{trigger.row}).value+cell(S3!P{trigger.row}).value-cell(S3!S{trigger.row}).value}",
+          "value": "{num(cell(S3!J{trigger.row}).value)+num(cell(S3!P{trigger.row}).value)-num(cell(S3!S{trigger.row}).value)}",
           "params": {
             "prop": "value"
           },
@@ -126,7 +126,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S3!J{trigger.row}).value, cell(S3!P{trigger.row}).value, cell(S3!S{trigger.row}).value, trigger.row"
+      "reason": "placeholder: num(cell(S3!J{trigger.row}).value), num(cell(S3!P{trigger.row}).value), num(cell(S3!S{trigger.row}).value), trigger.row",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -152,7 +154,7 @@
       },
       "guards": [
         "opaque(File.Exists)",
-        "cell(S0!D22).value"
+        "bool(cell(S0!D22).value)"
       ],
       "effects": [
         {
@@ -160,7 +162,7 @@
           "target": null,
           "params": {
             "args": [
-              "cases(isEmpty(period.TuNgay) || isEmpty(period.DenNgay) -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[0].DataFile}\" | else -> \"{HTKKConfig.DATAFILES}\\{..."
+              "cases(isEmpty(period.TuNgay) || isEmpty(period.DenNgay) -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[0].DataFile}\" | else -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[0].DataFile}_{int(period.Nam)-1}_{int(split(period.TuNgay, [\"/\"])[2])+split(period.TuNgay, [\"/\"])[0]+split(period.TuNgay, [\"/\"])[1]-1}_{int(split(period.DenNgay, [\"/\"])[2])+split(period.DenNgay, [\"/\"])[0]+split(period.DenNgay, [\"/\"])[1]-1}_{replace(replace(tk.VersionXML, \".\", \"\"), \"_\", \"\")}.xml\")"
             ],
             "call": "<obj>.GetDetailSheetInfo"
           },
@@ -177,7 +179,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.GetDetailSheetInfo"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.GetDetailSheetInfo",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -203,9 +207,9 @@
       },
       "guards": [
         "opaque(File.Exists)",
-        "cell(S0!D22).value",
+        "bool(cell(S0!D22).value)",
         "obj(HTKKCMCSheetInfo).StaticCells[i].ColIndex == 18",
-        "loop: for i from 1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
+        "loop: for@187 i from 1 step +1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
       ],
       "effects": [
         {
@@ -214,7 +218,7 @@
             "sheet": 0,
             "cell": "W{obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex}"
           },
-          "value": "{obj(HTKKCMCSheetInfo).StaticCells[i].Value}",
+          "value": "{num(obj(HTKKCMCSheetInfo).StaticCells[i].Value)}",
           "params": {
             "prop": "value"
           },
@@ -231,7 +235,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex, obj(HTKKCMCSheetInfo).StaticCells[i].Value"
+      "reason": "placeholder: num(obj(HTKKCMCSheetInfo).StaticCells[i].Value), obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 187,
+          "desc": "biến mang qua vòng lặp dòng 187: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -256,9 +269,9 @@
         ]
       },
       "guards": [
-        "!(opaque(File.Exists)) || !(cell(S0!D22).value)",
+        "!(opaque(File.Exists)) || !(bool(cell(S0!D22).value))",
         "tk.SheetInfos[0].StaticCells[i].ColIndex == 18",
-        "loop: for i from 1 while i < tk.SheetInfos[0].StaticCells.Count"
+        "loop: for@211 i from 1 step +1 while i < tk.SheetInfos[0].StaticCells.Count"
       ],
       "effects": [
         {
@@ -284,7 +297,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: tk.SheetInfos[0].StaticCells[i].RowIndex"
+      "reason": "placeholder: tk.SheetInfos[0].StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 211,
+          "desc": "biến mang qua vòng lặp dòng 211: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -317,7 +339,7 @@
             "cell": "P48"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -330,7 +352,7 @@
             "cell": "P49"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -343,7 +365,7 @@
             "cell": "P50"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -356,7 +378,7 @@
             "cell": "P51"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -369,7 +391,7 @@
             "cell": "P52"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -382,7 +404,7 @@
             "cell": "P53"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -395,7 +417,7 @@
             "cell": "P54"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -408,7 +430,7 @@
             "cell": "P55"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -421,7 +443,7 @@
             "cell": "P56"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -434,7 +456,7 @@
             "cell": "P57"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -447,7 +469,7 @@
             "cell": "P58"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -460,7 +482,7 @@
             "cell": "P59"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -473,7 +495,7 @@
             "cell": "P60"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -486,7 +508,7 @@
             "cell": "P64"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -499,7 +521,7 @@
             "cell": "P65"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -512,7 +534,7 @@
             "cell": "P66"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -525,7 +547,7 @@
             "cell": "P67"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -538,7 +560,7 @@
             "cell": "P68"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -551,7 +573,7 @@
             "cell": "P69"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -564,7 +586,7 @@
             "cell": "P70"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -577,7 +599,7 @@
             "cell": "P71"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -590,7 +612,7 @@
             "cell": "P72"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -603,7 +625,7 @@
             "cell": "P74"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -616,7 +638,7 @@
             "cell": "P75"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -629,7 +651,7 @@
             "cell": "P76"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -642,7 +664,7 @@
             "cell": "P77"
           },
           "params": {
-            "locked": "!(cell(S0!D28).value)"
+            "locked": "!(bool(cell(S0!D28).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -657,7 +679,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!D28).value"
+      "reason": "placeholder: cell(S0!D28).value",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -683,7 +707,7 @@
       },
       "guards": [
         "opaque(File.Exists)",
-        "cell(S1!D13).value"
+        "bool(cell(S1!D13).value)"
       ],
       "effects": [
         {
@@ -691,7 +715,7 @@
           "target": null,
           "params": {
             "args": [
-              "cases(isEmpty(period.TuNgay) || isEmpty(period.DenNgay) -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[1].DataFile}\" | else -> \"{HTKKConfig.DATAFILES}\\{..."
+              "cases(isEmpty(period.TuNgay) || isEmpty(period.DenNgay) -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[1].DataFile}\" | else -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[1].DataFile}_{int(period.Nam)-1}_{int(split(period.TuNgay, [\"/\"])[2])+split(period.TuNgay, [\"/\"])[0]+split(period.TuNgay, [\"/\"])[1]-1}_{int(split(period.DenNgay, [\"/\"])[2])+split(period.DenNgay, [\"/\"])[0]+split(period.DenNgay, [\"/\"])[1]-1}_{replace(replace(tk.VersionXML, \".\", \"\"), \"_\", \"\")}.xml\")"
             ],
             "call": "<obj>.GetDetailSheetInfo"
           },
@@ -708,7 +732,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.GetDetailSheetInfo"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.GetDetailSheetInfo",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -734,9 +760,9 @@
       },
       "guards": [
         "opaque(File.Exists)",
-        "cell(S1!D13).value",
+        "bool(cell(S1!D13).value)",
         "obj(HTKKCMCSheetInfo).StaticCells[i].ColIndex == 10",
-        "loop: for i from 1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
+        "loop: for@187 i from 1 step +1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
       ],
       "effects": [
         {
@@ -745,7 +771,7 @@
             "sheet": 1,
             "cell": "K{obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex}"
           },
-          "value": "{obj(HTKKCMCSheetInfo).StaticCells[i].Value}",
+          "value": "{num(obj(HTKKCMCSheetInfo).StaticCells[i].Value)}",
           "params": {
             "prop": "value"
           },
@@ -762,7 +788,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex, obj(HTKKCMCSheetInfo).StaticCells[i].Value"
+      "reason": "placeholder: num(obj(HTKKCMCSheetInfo).StaticCells[i].Value), obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 187,
+          "desc": "biến mang qua vòng lặp dòng 187: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -787,9 +822,9 @@
         ]
       },
       "guards": [
-        "!(opaque(File.Exists)) || !(cell(S1!D13).value)",
+        "!(opaque(File.Exists)) || !(bool(cell(S1!D13).value))",
         "tk.SheetInfos[1].StaticCells[i].ColIndex == 10",
-        "loop: for i from 1 while i < tk.SheetInfos[1].StaticCells.Count"
+        "loop: for@211 i from 1 step +1 while i < tk.SheetInfos[1].StaticCells.Count"
       ],
       "effects": [
         {
@@ -815,7 +850,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: tk.SheetInfos[1].StaticCells[i].RowIndex"
+      "reason": "placeholder: tk.SheetInfos[1].StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 211,
+          "desc": "biến mang qua vòng lặp dòng 211: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -848,7 +892,7 @@
             "cell": "I25"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -861,7 +905,7 @@
             "cell": "I26"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -874,7 +918,7 @@
             "cell": "I27"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -887,7 +931,7 @@
             "cell": "I28"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -900,7 +944,7 @@
             "cell": "I29"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -913,7 +957,7 @@
             "cell": "I30"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -926,7 +970,7 @@
             "cell": "I32"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -939,7 +983,7 @@
             "cell": "I33"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -952,7 +996,7 @@
             "cell": "I34"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -965,7 +1009,7 @@
             "cell": "I35"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -978,7 +1022,7 @@
             "cell": "I36"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -991,7 +1035,7 @@
             "cell": "I37"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -1004,7 +1048,7 @@
             "cell": "I38"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -1017,7 +1061,7 @@
             "cell": "I39"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -1030,7 +1074,7 @@
             "cell": "I41"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -1043,7 +1087,7 @@
             "cell": "I42"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -1056,7 +1100,7 @@
             "cell": "I43"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -1069,7 +1113,7 @@
             "cell": "I44"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -1082,7 +1126,7 @@
             "cell": "I47"
           },
           "params": {
-            "locked": "!(cell(S1!D15).value)"
+            "locked": "!(bool(cell(S1!D15).value))"
           },
           "at": 74,
           "via": "LockUnlockThuyetMinh@68",
@@ -1097,7 +1141,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S1!D15).value"
+      "reason": "placeholder: cell(S1!D15).value",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1123,7 +1169,7 @@
       },
       "guards": [
         "opaque(File.Exists)",
-        "cell(S2!D22).value"
+        "bool(cell(S2!D22).value)"
       ],
       "effects": [
         {
@@ -1131,7 +1177,7 @@
           "target": null,
           "params": {
             "args": [
-              "cases(isEmpty(period.TuNgay) || isEmpty(period.DenNgay) -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[2].DataFile}\" | else -> \"{HTKKConfig.DATAFILES}\\{..."
+              "cases(isEmpty(period.TuNgay) || isEmpty(period.DenNgay) -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[2].DataFile}\" | else -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[2].DataFile}_{int(period.Nam)-1}_{int(split(period.TuNgay, [\"/\"])[2])+split(period.TuNgay, [\"/\"])[0]+split(period.TuNgay, [\"/\"])[1]-1}_{int(split(period.DenNgay, [\"/\"])[2])+split(period.DenNgay, [\"/\"])[0]+split(period.DenNgay, [\"/\"])[1]-1}_{replace(replace(tk.VersionXML, \".\", \"\"), \"_\", \"\")}.xml\")"
             ],
             "call": "<obj>.GetDetailSheetInfo"
           },
@@ -1148,7 +1194,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.GetDetailSheetInfo"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.GetDetailSheetInfo",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1174,9 +1222,9 @@
       },
       "guards": [
         "opaque(File.Exists)",
-        "cell(S2!D22).value",
+        "bool(cell(S2!D22).value)",
         "obj(HTKKCMCSheetInfo).StaticCells[i].ColIndex == 22",
-        "loop: for i from 1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
+        "loop: for@187 i from 1 step +1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
       ],
       "effects": [
         {
@@ -1185,21 +1233,70 @@
             "sheet": 2,
             "cell": "J{obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex}"
           },
-          "value": "{obj(HTKKCMCSheetInfo).StaticCells[i].Value}",
+          "value": "{num(obj(HTKKCMCSheetInfo).StaticCells[i].Value)}",
           "params": {
             "prop": "value"
           },
           "at": 191,
           "via": "GetSoKyTruoc@151",
           "status": "parametric"
-        },
+        }
+      ],
+      "source": {
+        "file": "tax.htkk.business/TAX.HTKK.Business/BctcB01HtxTt71Nckt297.cs",
+        "lines": [
+          117,
+          191
+        ]
+      },
+      "status": "parametric",
+      "reason": "placeholder: num(obj(HTKKCMCSheetInfo).StaticCells[i].Value), obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 187,
+          "desc": "biến mang qua vòng lặp dòng 187: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
+    },
+    {
+      "key": {
+        "MenuID": "U3",
+        "MaFile": "71_B01_HTX_BCTC",
+        "VersionXML": "2.9.7",
+        "Class": "BctcB01HtxTt71Nckt297",
+        "in_menu": true
+      },
+      "hook": "ButtonClick_2",
+      "kind": "ButtonClick",
+      "sheetIndex": 2,
+      "trigger": {
+        "cells": [
+          "D22"
+        ],
+        "rowRange": null,
+        "base": "idxRow/idxCol 0-based, đã quy về dòng/cột Excel 1-based",
+        "when": [
+          "trigger.col == D",
+          "trigger.row == 22"
+        ]
+      },
+      "guards": [
+        "opaque(File.Exists)",
+        "bool(cell(S2!D22).value)",
+        "obj(HTKKCMCSheetInfo).StaticCells[i].ColIndex == 22",
+        "loop: for@198 i from 1 step +1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
+      ],
+      "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 2,
             "cell": "J{obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex}"
           },
-          "value": "{obj(HTKKCMCSheetInfo).StaticCells[i].Value}",
+          "value": "{num(obj(HTKKCMCSheetInfo).StaticCells[i].Value)}",
           "params": {
             "prop": "value"
           },
@@ -1216,7 +1313,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex, obj(HTKKCMCSheetInfo).StaticCells[i].Value"
+      "reason": "placeholder: num(obj(HTKKCMCSheetInfo).StaticCells[i].Value), obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 198,
+          "desc": "biến mang qua vòng lặp dòng 198: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1242,9 +1348,9 @@
       },
       "guards": [
         "opaque(File.Exists)",
-        "cell(S2!D22).value",
+        "bool(cell(S2!D22).value)",
         "obj(HTKKCMCSheetInfo).StaticCells[i].ColIndex == 25",
-        "loop: for i from 1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
+        "loop: for@198 i from 1 step +1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
       ],
       "effects": [
         {
@@ -1253,7 +1359,7 @@
             "sheet": 2,
             "cell": "M{obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex}"
           },
-          "value": "{obj(HTKKCMCSheetInfo).StaticCells[i].Value}",
+          "value": "{num(obj(HTKKCMCSheetInfo).StaticCells[i].Value)}",
           "params": {
             "prop": "value"
           },
@@ -1270,7 +1376,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex, obj(HTKKCMCSheetInfo).StaticCells[i].Value"
+      "reason": "placeholder: num(obj(HTKKCMCSheetInfo).StaticCells[i].Value), obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 198,
+          "desc": "biến mang qua vòng lặp dòng 198: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1295,9 +1410,9 @@
         ]
       },
       "guards": [
-        "!(opaque(File.Exists)) || !(cell(S2!D22).value)",
+        "!(opaque(File.Exists)) || !(bool(cell(S2!D22).value))",
         "tk.SheetInfos[2].StaticCells[i].ColIndex == 22",
-        "loop: for i from 1 while i < tk.SheetInfos[2].StaticCells.Count"
+        "loop: for@211 i from 1 step +1 while i < tk.SheetInfos[2].StaticCells.Count"
       ],
       "effects": [
         {
@@ -1323,7 +1438,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: tk.SheetInfos[2].StaticCells[i].RowIndex"
+      "reason": "placeholder: tk.SheetInfos[2].StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 211,
+          "desc": "biến mang qua vòng lặp dòng 211: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1348,9 +1472,9 @@
         ]
       },
       "guards": [
-        "!(opaque(File.Exists)) || !(cell(S2!D22).value)",
+        "!(opaque(File.Exists)) || !(bool(cell(S2!D22).value))",
         "tk.SheetInfos[2].StaticCells[i].ColIndex == 25",
-        "loop: for i from 1 while i < tk.SheetInfos[2].StaticCells.Count"
+        "loop: for@211 i from 1 step +1 while i < tk.SheetInfos[2].StaticCells.Count"
       ],
       "effects": [
         {
@@ -1376,7 +1500,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: tk.SheetInfos[2].StaticCells[i].RowIndex"
+      "reason": "placeholder: tk.SheetInfos[2].StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 211,
+          "desc": "biến mang qua vòng lặp dòng 211: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1402,7 +1535,7 @@
       },
       "guards": [
         "opaque(File.Exists)",
-        "cell(S3!D22).value"
+        "bool(cell(S3!D22).value)"
       ],
       "effects": [
         {
@@ -1410,7 +1543,7 @@
           "target": null,
           "params": {
             "args": [
-              "cases(isEmpty(period.TuNgay) || isEmpty(period.DenNgay) -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[3].DataFile}\" | else -> \"{HTKKConfig.DATAFILES}\\{..."
+              "cases(isEmpty(period.TuNgay) || isEmpty(period.DenNgay) -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[3].DataFile}\" | else -> \"{HTKKConfig.DATAFILES}\\{ttc.mst}\\{tk.SheetInfos[3].DataFile}_{int(period.Nam)-1}_{int(split(period.TuNgay, [\"/\"])[2])+split(period.TuNgay, [\"/\"])[0]+split(period.TuNgay, [\"/\"])[1]-1}_{int(split(period.DenNgay, [\"/\"])[2])+split(period.DenNgay, [\"/\"])[0]+split(period.DenNgay, [\"/\"])[1]-1}_{replace(replace(tk.VersionXML, \".\", \"\"), \"_\", \"\")}.xml\")"
             ],
             "call": "<obj>.GetDetailSheetInfo"
           },
@@ -1427,7 +1560,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.GetDetailSheetInfo"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.GetDetailSheetInfo",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1453,9 +1588,9 @@
       },
       "guards": [
         "opaque(File.Exists)",
-        "cell(S3!D22).value",
+        "bool(cell(S3!D22).value)",
         "obj(HTKKCMCSheetInfo).StaticCells[i].ColIndex == 22",
-        "loop: for i from 1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
+        "loop: for@187 i from 1 step +1 while i < obj(HTKKCMCSheetInfo).StaticCells.Count"
       ],
       "effects": [
         {
@@ -1464,7 +1599,7 @@
             "sheet": 3,
             "cell": "J{obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex}"
           },
-          "value": "{obj(HTKKCMCSheetInfo).StaticCells[i].Value}",
+          "value": "{num(obj(HTKKCMCSheetInfo).StaticCells[i].Value)}",
           "params": {
             "prop": "value"
           },
@@ -1481,7 +1616,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex, obj(HTKKCMCSheetInfo).StaticCells[i].Value"
+      "reason": "placeholder: num(obj(HTKKCMCSheetInfo).StaticCells[i].Value), obj(HTKKCMCSheetInfo).StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 187,
+          "desc": "biến mang qua vòng lặp dòng 187: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -1506,9 +1650,9 @@
         ]
       },
       "guards": [
-        "!(opaque(File.Exists)) || !(cell(S3!D22).value)",
+        "!(opaque(File.Exists)) || !(bool(cell(S3!D22).value))",
         "tk.SheetInfos[3].StaticCells[i].ColIndex == 22",
-        "loop: for i from 1 while i < tk.SheetInfos[3].StaticCells.Count"
+        "loop: for@211 i from 1 step +1 while i < tk.SheetInfos[3].StaticCells.Count"
       ],
       "effects": [
         {
@@ -1534,7 +1678,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: tk.SheetInfos[3].StaticCells[i].RowIndex"
+      "reason": "placeholder: tk.SheetInfos[3].StaticCells[i].RowIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 211,
+          "desc": "biến mang qua vòng lặp dòng 211: giá trị trước vòng 1, cuối mỗi vòng i := i+1"
+        }
+      ]
     }
   ]
 }

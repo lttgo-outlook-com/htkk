@@ -149,7 +149,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: File.Copy, gọi chưa giải: Process.Start"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: File.Copy, gọi chưa giải: Process.Start",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -170,9 +172,9 @@
       },
       "guards": [
         "obj(Dictionary).Count == 0",
-        "!(opaque(<obj>.ContainsKey))",
+        "!(hasKey(dicFomula, \"{tk.SheetInfos[0].StaticCells[i].RowIndex}\"))",
         "tk.SheetInfos[0].StaticCells[i].ColIndex == 23",
-        "loop: for i from 0 while i < tk.SheetInfos[0].StaticCells.Count"
+        "loop: for@414 i from 0 step +1 while i < tk.SheetInfos[0].StaticCells.Count"
       ],
       "effects": [
         {
@@ -197,7 +199,22 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "dicFomula",
+          "origin": "loop",
+          "at": 414,
+          "desc": "biến mang qua vòng lặp dòng 414: giá trị trước vòng ?, cuối mỗi vòng dicFomula := dicFomula"
+        },
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 414,
+          "desc": "biến mang qua vòng lặp dòng 414: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -217,17 +234,17 @@
         "when": []
       },
       "guards": [
-        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 && opaque(accum) > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 && obj(Dictionary).Count > 0 || (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0) && (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0) && obj(Dictionary).Count > 0",
+        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 && last_in_loop(foreach@1057 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@1060 fileInfo in opaque(<obj>.GetFiles))).Count > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 && obj(Dictionary).Count > 0 || (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0) && (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0) && obj(Dictionary).Count > 0",
         "split(\"{item.Key}\", [\"_\"]).Length == 2",
-        "cell(S0!{col=colIndex(split(\"{item.Key}\", [\"_\"])[0])}{split(\"{item.Key}\", [\"_\"])[1]}).text == 0",
-        "loop: foreach item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> opaque(accum) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        "num(cell(S0!{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])}).text) == 0",
+        "loop: foreach@425 item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> last_in_loop(foreach@1057 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@1060 fileInfo in opaque(<obj>.GetFiles))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=colIndex(split(\"{item.Key}\", [\"_\"])[0])}{split(\"{item.Key}\", [\"_\"])[1]}"
+            "cell": "{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])}"
           },
           "formula": "",
           "at": 435,
@@ -237,7 +254,7 @@
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=colIndex(split(\"{item.Key}\", [\"_\"])[0])}{split(\"{item.Key}\", [\"_\"])[1]}"
+            "cell": "{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])}"
           },
           "value": "{item.Value}",
           "params": {
@@ -255,7 +272,40 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: colIndex(split(\"{item.Key}\", [\"_\"])[0]), item.Value, split(\"{item.Key}\", [\"_\"])[1]"
+      "reason": "placeholder: colIndex(split(\"{item.Key}\", [\"_\"])[0]), int(split(\"{item.Key}\", [\"_\"])[1]), item.Value",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "fileInfo",
+          "origin": "foreach",
+          "at": 1060,
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 425,
+          "desc": "phần tử đang duyệt của cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> last_in_loop(foreach@1057 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@1060 fileInfo in opaque(<obj>.GetFiles))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 1057,
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 1057,
+          "desc": "biến mang qua vòng lặp dòng 1057: giá trị trước vòng obj(Dictionary), cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@1060 fileInfo in opaque(<obj>.GetFiles))"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 1060,
+          "desc": "biến mang qua vòng lặp dòng 1060: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result)"
+        }
+      ]
     },
     {
       "key": {
@@ -275,16 +325,16 @@
         "when": []
       },
       "guards": [
-        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 && opaque(accum) > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 && obj(Dictionary).Count > 0 || (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0) && (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0) && obj(Dictionary).Count > 0",
+        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 && last_in_loop(foreach@1057 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@1060 fileInfo in opaque(<obj>.GetFiles))).Count > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 && obj(Dictionary).Count > 0 || (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0) && (!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) > 0) && obj(Dictionary).Count > 0",
         "split(\"{item.Key}\", [\"_\"]).Length == 2",
-        "loop: foreach item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> opaque(accum) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        "loop: foreach@425 item in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> last_in_loop(foreach@1057 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@1060 fileInfo in opaque(<obj>.GetFiles))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "AD{split(\"{item.Key}\", [\"_\"])[1]}"
+            "cell": "AD{int(split(\"{item.Key}\", [\"_\"])[1])}"
           },
           "value": "{item.Value}",
           "params": {
@@ -302,7 +352,40 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: item.Value, split(\"{item.Key}\", [\"_\"])[1]"
+      "reason": "placeholder: int(split(\"{item.Key}\", [\"_\"])[1]), item.Value",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "fileInfo",
+          "origin": "foreach",
+          "at": 1060,
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 425,
+          "desc": "phần tử đang duyệt của cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) > 0 -> last_in_loop(foreach@1057 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from obj(Dictionary), last accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@1060 fileInfo in opaque(<obj>.GetFiles))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0 && opaque(<obj>.GetFiles) <= 0 -> obj(Dictionary) | else -> obj(Dictionary))"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 1057,
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 1057,
+          "desc": "biến mang qua vòng lặp dòng 1057: giá trị trước vòng obj(Dictionary), cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result), from result, foreach@1060 fileInfo in opaque(<obj>.GetFiles))"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 1060,
+          "desc": "biến mang qua vòng lặp dòng 1060: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> opaque(GeneralFunctions.GetValueInXml) | else -> result)"
+        }
+      ]
     },
     {
       "key": {
@@ -356,7 +439,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -388,19 +473,19 @@
       "guards": [
         "obj(Dictionary).Count > 0",
         "!(isEmpty(item.Value))",
-        "!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) || trigger.row == split(item.Key, [\"_\"])[1]",
-        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \"{text};{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> text), \"{trigger.row}\") != -1",
-        "split(item.Key, [\"_\"])[1] >= 39",
-        "split(item.Key, [\"_\"])[1] <= 44",
-        "!(cell(S0!{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}).locked)",
-        "loop: foreach item in obj(Dictionary)"
+        "!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])",
+        "isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1",
+        "int(split(item.Key, [\"_\"])[1]) >= 39",
+        "int(split(item.Key, [\"_\"])[1]) <= 44",
+        "!(cell(S0!{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])}).locked)",
+        "loop: foreach@520 item in obj(Dictionary)"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}"
+            "cell": "{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])}"
           },
           "formula": "{item.Value}",
           "at": 535,
@@ -415,7 +500,22 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: colIndex(split(item.Key, [\"_\"])[0]), item.Value, split(item.Key, [\"_\"])[1]"
+      "reason": "placeholder: colIndex(split(item.Key, [\"_\"])[0]), int(split(item.Key, [\"_\"])[1]), item.Value",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 520,
+          "desc": "phần tử đang duyệt của obj(Dictionary)"
+        },
+        {
+          "name": "text",
+          "origin": "loop",
+          "at": 520,
+          "desc": "biến mang qua vòng lặp dòng 520: giá trị trước vòng \"\", cuối mỗi vòng text := cases(!(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && (int(split(item.Key, [\"_\"])[1]) == 44 || int(split(item.Key, [\"_\"])[1]) == 50) -> \"\" | !(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && !(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | !(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && int(split(item.Key, [\"_\"])[1]) != 44 && int(split(item.Key, [\"_\"])[1]) != 50 && isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) -> text | !(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text)"
+        }
+      ]
     },
     {
       "key": {
@@ -447,19 +547,19 @@
       "guards": [
         "obj(Dictionary).Count > 0",
         "!(isEmpty(item.Value))",
-        "!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) || trigger.row == split(item.Key, [\"_\"])[1]",
-        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \"{text};{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> text), \"{trigger.row}\") != -1",
-        "split(item.Key, [\"_\"])[1] >= 45",
-        "split(item.Key, [\"_\"])[1] <= 50",
-        "!(cell(S0!{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}).locked)",
-        "loop: foreach item in obj(Dictionary)"
+        "!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])",
+        "isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1",
+        "int(split(item.Key, [\"_\"])[1]) >= 45",
+        "int(split(item.Key, [\"_\"])[1]) <= 50",
+        "!(cell(S0!{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])}).locked)",
+        "loop: foreach@520 item in obj(Dictionary)"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}"
+            "cell": "{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])}"
           },
           "formula": "{item.Value}",
           "at": 539,
@@ -474,7 +574,22 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: colIndex(split(item.Key, [\"_\"])[0]), item.Value, split(item.Key, [\"_\"])[1]"
+      "reason": "placeholder: colIndex(split(item.Key, [\"_\"])[0]), int(split(item.Key, [\"_\"])[1]), item.Value",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 520,
+          "desc": "phần tử đang duyệt của obj(Dictionary)"
+        },
+        {
+          "name": "text",
+          "origin": "loop",
+          "at": 520,
+          "desc": "biến mang qua vòng lặp dòng 520: giá trị trước vòng \"\", cuối mỗi vòng text := cases(!(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && (int(split(item.Key, [\"_\"])[1]) == 44 || int(split(item.Key, [\"_\"])[1]) == 50) -> \"\" | !(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && !(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | !(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && int(split(item.Key, [\"_\"])[1]) != 44 && int(split(item.Key, [\"_\"])[1]) != 50 && isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) -> text | !(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text)"
+        }
+      ]
     },
     {
       "key": {
@@ -506,19 +621,19 @@
       "guards": [
         "obj(Dictionary).Count > 0",
         "!(isEmpty(item.Value))",
-        "!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) || trigger.row == split(item.Key, [\"_\"])[1]",
-        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \"{text};{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> text), \"{trigger.row}\") != -1",
-        "split(item.Key, [\"_\"])[1] >= 51",
-        "split(item.Key, [\"_\"])[1] <= 55",
-        "!(cell(S0!{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}).locked)",
-        "loop: foreach item in obj(Dictionary)"
+        "!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])",
+        "isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1",
+        "int(split(item.Key, [\"_\"])[1]) >= 51",
+        "int(split(item.Key, [\"_\"])[1]) <= 55",
+        "!(cell(S0!{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])}).locked)",
+        "loop: foreach@520 item in obj(Dictionary)"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}"
+            "cell": "{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])}"
           },
           "formula": "{item.Value}",
           "at": 543,
@@ -533,7 +648,22 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: colIndex(split(item.Key, [\"_\"])[0]), item.Value, split(item.Key, [\"_\"])[1]"
+      "reason": "placeholder: colIndex(split(item.Key, [\"_\"])[0]), int(split(item.Key, [\"_\"])[1]), item.Value",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 520,
+          "desc": "phần tử đang duyệt của obj(Dictionary)"
+        },
+        {
+          "name": "text",
+          "origin": "loop",
+          "at": 520,
+          "desc": "biến mang qua vòng lặp dòng 520: giá trị trước vòng \"\", cuối mỗi vòng text := cases(!(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && (int(split(item.Key, [\"_\"])[1]) == 44 || int(split(item.Key, [\"_\"])[1]) == 50) -> \"\" | !(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && !(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | !(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && int(split(item.Key, [\"_\"])[1]) != 44 && int(split(item.Key, [\"_\"])[1]) != 50 && isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) -> text | !(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text)"
+        }
+      ]
     },
     {
       "key": {
@@ -565,19 +695,19 @@
       "guards": [
         "obj(Dictionary).Count > 0",
         "!(isEmpty(item.Value))",
-        "!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) || trigger.row == split(item.Key, [\"_\"])[1]",
-        "isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{split(item.Key, [\"_\"])[1]}).formula)) -> \"{text};{cell(S0!R{split(item.Key, [\"_\"])[1]}).formula}\" | else -> text), \"{trigger.row}\") != -1",
-        "split(item.Key, [\"_\"])[1] >= 56",
-        "split(item.Key, [\"_\"])[1] <= 62",
-        "!(cell(S0!{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}).locked)",
-        "loop: foreach item in obj(Dictionary)"
+        "!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])",
+        "isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1",
+        "int(split(item.Key, [\"_\"])[1]) >= 56",
+        "int(split(item.Key, [\"_\"])[1]) <= 62",
+        "!(cell(S0!{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])}).locked)",
+        "loop: foreach@520 item in obj(Dictionary)"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=colIndex(split(item.Key, [\"_\"])[0])}{split(item.Key, [\"_\"])[1]}"
+            "cell": "{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])}"
           },
           "formula": "{item.Value}",
           "at": 547,
@@ -592,7 +722,22 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: colIndex(split(item.Key, [\"_\"])[0]), item.Value, split(item.Key, [\"_\"])[1]"
+      "reason": "placeholder: colIndex(split(item.Key, [\"_\"])[0]), int(split(item.Key, [\"_\"])[1]), item.Value",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 520,
+          "desc": "phần tử đang duyệt của obj(Dictionary)"
+        },
+        {
+          "name": "text",
+          "origin": "loop",
+          "at": 520,
+          "desc": "biến mang qua vòng lặp dòng 520: giá trị trước vòng \"\", cuối mỗi vòng text := cases(!(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && (int(split(item.Key, [\"_\"])[1]) == 44 || int(split(item.Key, [\"_\"])[1]) == 50) -> \"\" | !(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && !(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | !(isEmpty(item.Value)) && (!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) || trigger.row == int(split(item.Key, [\"_\"])[1])) && (isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) || indexOf(cases(!(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text), \"{trigger.row}\") != -1) && int(split(item.Key, [\"_\"])[1]) != 44 && int(split(item.Key, [\"_\"])[1]) != 50 && isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula) -> text | !(isEmpty(cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula)) -> \"{text};{cell(S0!R{int(split(item.Key, [\"_\"])[1])}).formula}\" | else -> text)"
+        }
+      ]
     },
     {
       "key": {
@@ -640,7 +785,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!AE42).value"
+      "reason": "placeholder: cell(S0!AE42).value",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -688,7 +835,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!AE48).value"
+      "reason": "placeholder: cell(S0!AE48).value",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -736,7 +885,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!AE53).value"
+      "reason": "placeholder: cell(S0!AE53).value",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -784,7 +935,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!AE59).value"
+      "reason": "placeholder: cell(S0!AE59).value",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -818,9 +971,9 @@
           "op": "setFormula",
           "target": {
             "sheet": 1,
-            "cell": "{col=col(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27)}{row(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27)}"
+            "cell": "{col(colIndex(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27))}{rowIndex(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27)}"
           },
-          "formula": "M{row(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27)}",
+          "formula": "M{rowIndex(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27)}",
           "at": 590,
           "status": "parametric"
         }
@@ -833,7 +986,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: col(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27), row(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27)"
+      "reason": "placeholder: colIndex(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27), rowIndex(PLuc_01_1_BK_XSBHDC/BanHangDC/ct27)",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -868,9 +1023,9 @@
           "op": "setFormula",
           "target": {
             "sheet": 1,
-            "cell": "{col=col(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22)}{row(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22)}"
+            "cell": "{col(colIndex(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22))}{rowIndex(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22)}"
           },
-          "formula": "M{row(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22)}",
+          "formula": "M{rowIndex(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22)}",
           "at": 595,
           "status": "parametric"
         }
@@ -883,7 +1038,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: col(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22), row(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22)"
+      "reason": "placeholder: colIndex(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22), rowIndex(PLuc_01_1_BK_XSBHDC/BaoHiem/ct22)",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -911,9 +1068,9 @@
           "op": "setFormula",
           "target": {
             "sheet": 1,
-            "cell": "{col=col(PLuc_01_1_BK_XSBHDC/XoSo/ct17)}{row(PLuc_01_1_BK_XSBHDC/XoSo/ct17)}"
+            "cell": "{col(colIndex(PLuc_01_1_BK_XSBHDC/XoSo/ct17))}{rowIndex(PLuc_01_1_BK_XSBHDC/XoSo/ct17)}"
           },
-          "formula": "M{row(PLuc_01_1_BK_XSBHDC/XoSo/ct17)}",
+          "formula": "M{rowIndex(PLuc_01_1_BK_XSBHDC/XoSo/ct17)}",
           "at": 600,
           "status": "parametric"
         }
@@ -926,7 +1083,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: col(PLuc_01_1_BK_XSBHDC/XoSo/ct17), row(PLuc_01_1_BK_XSBHDC/XoSo/ct17)"
+      "reason": "placeholder: colIndex(PLuc_01_1_BK_XSBHDC/XoSo/ct17), rowIndex(PLuc_01_1_BK_XSBHDC/XoSo/ct17)",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -977,7 +1136,7 @@
           "params": {
             "args": [
               "tk",
-              "spread"
+              "spread()"
             ],
             "call": "GeneralFunctions.checkLockUnLockCells"
           },
@@ -993,7 +1152,9 @@
         ]
       },
       "status": "resolved",
-      "reason": "có lời gọi chưa giải kèm theo | "
+      "reason": "có lời gọi chưa giải kèm theo | ",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1044,7 +1205,7 @@
           "params": {
             "args": [
               "field(_ToKhaiInfo)",
-              "spread"
+              "spread()"
             ],
             "call": "GeneralFunctions.checkLockUnLockCells"
           },
@@ -1060,7 +1221,9 @@
         ]
       },
       "status": "resolved",
-      "reason": "có lời gọi chưa giải kèm theo | "
+      "reason": "có lời gọi chưa giải kèm theo | ",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1260,7 +1423,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: sView"
+      "reason": "placeholder: sView",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "sView",
+          "origin": "param",
+          "at": 451,
+          "desc": "tham số của method SetFormula, giá trị do nơi gọi truyền vào"
+        }
+      ]
     }
   ]
 }

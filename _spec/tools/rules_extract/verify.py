@@ -132,7 +132,7 @@ xs = 0
 for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
     if os.path.basename(f) in ("formula_points.json", "opaque_calls.json", "index.json"):
         continue
-    xs += len(re.findall(r"cell\(S[0-9{]", open(f).read()))
+    xs += len(re.findall(r"cell\(S(?:\d+!|\[)", open(f).read()))
 print("   tham chiếu ô chéo sheet ghi tường minh cell(Sn!...): %d" % xs)
 rxe = re.compile(r"\.(Cells|Rows|Columns)\[.*\]\.(Value|Text|Formula|Locked|CellType|BackColor|ForeColor|HorizontalAlignment|VerticalAlignment|Formatter|Font) = |\.Cells\[.*\]\.Reset(Formula|Value)\(")
 tot = cov = drp = 0; miss = []
@@ -154,5 +154,203 @@ say(not miss, "câu lệnh tác dụng trong thân hook (grep): %d, có effect %
 for b in bad[:10]:
     print("   nghi C#:", b[0], pat.findall(b[1]), b[1][:300])
 say(not bad, "không chuỗi nào chứa dấu hiệu câu lệnh C# (; => return if else foreach try catch throw var xuống dòng): %d chuỗi vi phạm" % len(bad))
+# ---------------- (7) kiểm độc lập vòng sửa 2 ----------------
+def hook_records(d, hook):
+    return [r for r in d["records"] if r["hook"] == hook]
+
+# (7a) mọi câu gán thuộc tính / Reset* trên Cells/Rows/Columns trong thân hook: effect hoặc dropped, theo thuộc tính
+rx_any = re.compile(r"\.(?:Cells|Rows|Columns)\[.*\]\.(\w+) = |\.(?:Cells|Rows|Columns)\[.*\]\.(Reset\w*)\(\)")
+per_prop = collections.Counter(); per_prop_ok = collections.Counter(); miss7 = []
+cls_data = {}
+for c in classes:
+    d = json.load(open(os.path.join(rules, c["class"] + ".json")))
+    src = open(os.path.join(dec, d["file"]), encoding="utf-8-sig").read().split("\n")
+    cls_data[c["class"]] = (d, src)
+    for h in d["hooks"]:
+        ats = {e["at"] for r in hook_records(d, h["hook"]) for e in r["effects"] if "via" not in e}
+        dats = {x["at"]: x["reason"] for x in h.get("dropped", [])}
+        for ln in range(h["lines"][0], h["lines"][1] + 1):
+            m = rx_any.search(src[ln - 1])
+            if not m:
+                continue
+            prop = m.group(1) or m.group(2)
+            per_prop[prop] += 1
+            if ln in ats or (ln in dats and dats[ln]):
+                per_prop_ok[prop] += 1
+            else:
+                miss7.append("%s:%d %s" % (d["file"], ln, prop))
+print("   câu gán/Reset theo thuộc tính (nguồn -> effect+dropped có lý do):", {k: "%d->%d" % (v, per_prop_ok[k]) for k, v in sorted(per_prop.items())})
+for x in miss7[:8]:
+    print("   thiếu:", x)
+say(not miss7, "(7a) mọi câu gán thuộc tính/Reset* trên Cells/Rows/Columns trong thân hook có effect hoặc dropped kèm lý do: %d câu, thiếu %d" % (sum(per_prop.values()), len(miss7)))
+
+# (7b) phép chuỗi/chuyển kiểu trong vế phải câu tác dụng (kể cả qua biến cục bộ gán trước đó trong hook) phải có biểu diễn trong JSON
+OPS = {
+    "Replace": (re.compile(r"\.Replace\("), re.compile(r"\breplace\(")),
+    "Substring": (re.compile(r"\.Substring\("), re.compile(r"\bsubstring\(")),
+    "Trim": (re.compile(r"\.Trim(?:Start|End)?\("), re.compile(r"\btrim(?:Start|End)?\(")),
+    "ToUpper": (re.compile(r"\.ToUpper(?:Invariant)?\("), re.compile(r"\bupper\(")),
+    "ToLower": (re.compile(r"\.ToLower(?:Invariant)?\("), re.compile(r"\blower\(")),
+    "PadLeft": (re.compile(r"\.Pad(?:Left|Right)\("), re.compile(r"\bpad(?:Left|Right)\(")),
+    "ToString(format)": (re.compile(r"\.ToString\([^)\s]"), re.compile(r"\bformat\(")),
+    "Split": (re.compile(r"\.Split\("), re.compile(r"\bsplit\(")),
+    "string.Format": (re.compile(r"\b[sS]tring\.Format\(\s*\"[^\"]*\{\d+[:,]"), re.compile(r"\bformat\(")),
+    "Convert": (re.compile(r"\bConvert(?:Helpers)?\.(?:To|Convert)\w*\(|\b(?:int|long|double|decimal)\.Parse\("), re.compile(r"\b(?:num|int|toDate|bool)\(")),
+}
+asg = re.compile(r"^\s*(?:[\w.<>\[\],]+\s+)?([A-Za-z_]\w*)\s*(?:\+|-)?=(?!=)\s*(.+?);\s*$")
+eff_rhs = re.compile(r"\.(?:Cells|Rows|Columns)\[.*\]\.(?:Value|Text|Formula) = (.+?);\s*$")
+src_ops = collections.Counter(); rep_ops = collections.Counter(); miss_ops = []
+def leaves(v):
+    if isinstance(v, dict):
+        return [x for c in v.get("cases", []) for x in leaves(c["value"])]
+    return [v] if isinstance(v, str) else []
+for cname, (d, src) in cls_data.items():
+    for h in d["hooks"]:
+        recs = hook_records(d, h["hook"])
+        by_line = collections.defaultdict(list)
+        for r in recs:
+            for e in r["effects"]:
+                if "via" not in e:
+                    by_line[e["at"]].append(e)
+        dats = {x["at"] for x in h.get("dropped", [])}
+        varops = {}; varpat = {}
+        for ln in range(h["lines"][0], h["lines"][1] + 1):
+            t = src[ln - 1]
+            em = eff_rhs.search(t)
+            am = None if em else asg.match(t)
+            rhs = em.group(1) if em else am.group(2) if am else None
+            if rhs is None:
+                continue
+            ops = {k for k, (rs, _) in OPS.items() if rs.search(rhs)}
+            pats = set(re.findall(r'\.Replace\("((?:\\.|[^"\\])+)"', rhs))
+            for v in re.findall(r"(?<![\w.])([A-Za-z_]\w*)\b", rhs):
+                ops |= varops.get(v, set()); pats |= varpat.get(v, set())
+            if am:
+                pl = re.search(r"\+=|-=", t)
+                varops[am.group(1)] = (varops.get(am.group(1), set()) | ops) if pl else ops
+                varpat[am.group(1)] = (varpat.get(am.group(1), set()) | pats) if pl else pats
+                continue
+            if not ops or ln in dats:
+                continue
+            effs = by_line.get(ln, [])
+            for k in sorted(ops):
+                src_ops[k] += 1
+                js = [json.dumps(e, ensure_ascii=False) for e in effs]
+                okk = any(OPS[k][1].search(j) or "opaque(" in j for j in js)
+                # Replace trên mẫu hằng đã thay hết (khuôn công thức "###" -> dòng): mẫu không còn trong đầu ra
+                if k == "Replace" and pats and effs:
+                    okk = okk or all(all(json.loads('"' + p + '"') not in json.dumps(e.get("formula", e.get("value")), ensure_ascii=False) for p in pats) for e in effs)
+                # toàn hằng (đã tính sẵn trên hằng số): không còn placeholder lúc chạy
+                okk = okk or (effs and all(all("{" not in x for x in leaves(e.get("formula", e.get("value")))) for e in effs))
+                if okk:
+                    rep_ops[k] += 1
+                else:
+                    miss_ops.append("%s:%d %s" % (d["file"], ln, k))
+print("   phép chuỗi/chuyển kiểu trong câu tác dụng (nguồn -> có biểu diễn):", {k: "%d->%d" % (src_ops[k], rep_ops[k]) for k in sorted(src_ops)})
+jtxt = "".join(open(f).read() for f in sorted(glob.glob(os.path.join(rules, "*.json"))) if os.path.basename(f) not in ("opaque_calls.json", "formula_points.json", "index.json"))
+print("   số lần xuất hiện trong JSON:", {k: len(OPS[k][1].findall(jtxt)) for k in OPS})
+for x in miss_ops[:8]:
+    print("   mất phép:", x)
+say(not miss_ops, "(7b) phép chuỗi/chuyển kiểu không bị bỏ lặng lẽ (thiếu %d)" % len(miss_ops))
+
+# (7c) biến cục bộ tự do: tên khai báo cục bộ trong tệp xuất hiện trong bản ghi mà không có trong symbols
+decl = re.compile(r"^\t{3,}(?:const\s+)?(?!return\b|else\b|case\b|goto\b|throw\b|new\b|await\b|yield\b|using\b)[A-Za-z_][\w.]*(?:<[^;=()]*?>)?(?:\[,*\])*\??\s+([A-Za-z_]\w*)\s*(?:=(?!=)|;)", re.M)
+extra_decl = [re.compile(r"\bfor\s*\(\s*(?:int|long|var)\s+(\w+)\s*="), re.compile(r"\bforeach\s*\(\s*[\w.<>\[\], ]+?\s+(\w+)\s+in\b"),
+              re.compile(r"\bout\s+(?:[\w.<>\[\]]+\s+)?(\w+)\s*[),]"), re.compile(r"\bcatch\s*\(\s*\w+\s+(\w+)\s*\)")]
+member = re.compile(r"^\t\t(?:public|private|protected|internal)[^(=;]*?\s(\w+)\s*(?:;|=|\{|$)", re.M)
+tok = re.compile(r"(?<![\w.$])[A-Za-z_]\w*(?![\w(])")
+lit = re.compile(r'"(?:\\.|[^"\\])*"')
+def placeholders(t):
+    out, dep = [], 0
+    for ch in t:
+        if ch == "{":
+            if dep: out.append(ch)
+            dep += 1
+        elif ch == "}":
+            dep -= 1
+            out.append(ch if dep else " ")
+        elif dep:
+            out.append(ch)
+    return "".join(out)
+def rec_tokens(o, k, acc):
+    if isinstance(o, dict):
+        for kk, v in o.items():
+            if kk in ("reason", "file", "call", "via", "note", "base", "symbols", "source", "key", "hook", "kind", "status", "prop"):
+                continue
+            rec_tokens(v, kk, acc)
+    elif isinstance(o, list):
+        for v in o:
+            rec_tokens(v, k, acc)
+    elif isinstance(o, str):
+        t = placeholders(o) if k in ("formula", "value") else o
+        t = re.sub(r"field\(\w+\)|obj\(\w*\)|opaque\([^()]*\)", "", lit.sub('""', t))
+        acc.update(tok.findall(t))
+free_recs = 0; free_ex = []; nrec_all = 0
+files = [(c["class"], os.path.join(rules, c["class"] + ".json")) for c in classes]
+for cname, path in files:
+    d = cls_data[cname][0]
+    txt = open(os.path.join(dec, d["file"]), encoding="utf-8-sig").read()
+    locs = set(decl.findall(txt))
+    for rx in extra_decl:
+        locs |= set(rx.findall(txt))
+    locs -= set(member.findall(txt)) | {"_"}  # "_" là discard của C#, không phải biến
+    for r in d["records"]:
+        nrec_all += 1
+        acc = set(); rec_tokens(r, "", acc)
+        fr = (acc & locs) - {s["name"] for s in r.get("symbols", [])}
+        if fr:
+            free_recs += 1
+            if len(free_ex) < 8:
+                free_ex.append("%s %s at=%s %s" % (cname, r["hook"], r["source"]["lines"], sorted(fr)[:6]))
+# _shared.json, _app.json: biến cục bộ lấy theo tệp nguồn của từng bản ghi
+loc_cache = {}
+for extra in ("_shared.json", "_app.json"):
+    for r in json.load(open(os.path.join(rules, extra)))["records"]:
+        fsrc = r["source"]["file"]
+        if fsrc not in loc_cache:
+            txt = open(os.path.join(dec, fsrc), encoding="utf-8-sig").read()
+            locs = set(decl.findall(txt))
+            for rx in extra_decl:
+                locs |= set(rx.findall(txt))
+            loc_cache[fsrc] = locs - set(member.findall(txt)) - {"_"}
+        nrec_all += 1
+        acc = set(); rec_tokens(r, "", acc)
+        fr = (acc & loc_cache[fsrc]) - {s["name"] for s in r.get("symbols", [])}
+        if fr:
+            free_recs += 1
+            if len(free_ex) < 8:
+                free_ex.append("%s %s at=%s %s" % (extra, r["hook"], r["source"]["lines"], sorted(fr)[:6]))
+for x in free_ex:
+    print("   biến tự do:", x)
+say(free_recs == 0, "(7c) bản ghi có biến cục bộ tự do không khai báo trong symbols: %d / %d" % (free_recs, nrec_all))
+
+# (7d) tham chiếu ô thiếu sheet
+nos = collections.Counter()
+for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+    if os.path.basename(f) in ("formula_points.json", "opaque_calls.json", "index.json"):
+        continue
+    n = len(re.findall(r"\bcell\((?!S\d+!|S\[)", open(f).read()))
+    if n:
+        nos[os.path.basename(f)] = n
+for k, v in nos.most_common(5):
+    print("   cell thiếu sheet:", k, v)
+say(not nos, "(7d) tham chiếu cell(...) thiếu sheet tường minh: %d lần trong %d tệp" % (sum(nos.values()), len(nos)))
+
+# (7e) đường đi mâu thuẫn được gắn cờ: trigger.col/row == hai hằng khác nhau trong cùng bản ghi
+bad_unr = 0; n_unr = 0
+for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+    if os.path.basename(f) in ("formula_points.json", "opaque_calls.json", "index.json"):
+        continue
+    for r in json.load(open(f))["records"]:
+        n_unr += bool(r.get("unreachable"))
+        eq = collections.defaultdict(set)
+        for w in r["trigger"]["when"] + r["guards"]:
+            m = re.fullmatch(r"(trigger\.(?:row|col)) == (\w+)", w)
+            if m:
+                eq[m.group(1)].add(m.group(2))
+        if any(len(v) > 1 for v in eq.values()) and not r.get("unreachable"):
+            bad_unr += 1
+print("   bản ghi gắn cờ unreachable: %d" % n_unr)
+say(bad_unr == 0, "(7e) bản ghi có trigger == hai hằng khác nhau mà không gắn cờ unreachable: %d" % bad_unr)
 print("KẾT LUẬN:", "ĐẠT" if ok else "CÓ MỤC TRƯỢT")
 sys.exit(0 if ok else 1)

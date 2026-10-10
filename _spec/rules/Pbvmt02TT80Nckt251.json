@@ -84,7 +84,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.RemoveDataRows"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.RemoveDataRows",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -106,15 +108,15 @@
       "guards": [
         "!(isEmpty(ttc.maCQTQuanLy))",
         "opaque(GeneralFunctions.GetHeaderInfo) != ttc.maCQTQuanLy",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables[1].RowsValues.Count",
-        "loop: foreach cell in tk.SheetInfos[0].Tables[1].RowsInfo.cells"
+        "loop: for@76 i from 0 step +1 while i < tk.SheetInfos[0].Tables[1].RowsValues.Count",
+        "loop: foreach@78 cell in tk.SheetInfos[0].Tables[1].RowsInfo.cells"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell.ColIndex}{i+tk.SheetInfos[0].Tables[1].DataLocationTemplateRowStart}"
+            "cell": "{col(cell.ColIndex)}{i+tk.SheetInfos[0].Tables[1].DataLocationTemplateRowStart}"
           },
           "value": "{cell.DefaultValue}",
           "params": {
@@ -127,7 +129,7 @@
           "op": "lock",
           "target": {
             "sheet": 0,
-            "cell": "{col=cell.ColIndex}{i+tk.SheetInfos[0].Tables[1].DataLocationTemplateRowStart}"
+            "cell": "{col(cell.ColIndex)}{i+tk.SheetInfos[0].Tables[1].DataLocationTemplateRowStart}"
           },
           "params": {
             "via": "LockUnLockCol"
@@ -144,7 +146,22 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell.ColIndex, cell.DefaultValue, i, tk.SheetInfos[0].Tables[1].DataLocationTemplateRowStart"
+      "reason": "placeholder: cell.ColIndex, cell.DefaultValue, i, tk.SheetInfos[0].Tables[1].DataLocationTemplateRowStart",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "cell",
+          "origin": "foreach",
+          "at": 78,
+          "desc": "phần tử đang duyệt của tk.SheetInfos[0].Tables[1].RowsInfo.cells"
+        },
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 76,
+          "desc": "biến mang qua vòng lặp dòng 76: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        }
+      ]
     },
     {
       "key": {
@@ -198,7 +215,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.ThayDoiTinhTheoCQT"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.ThayDoiTinhTheoCQT",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -256,7 +275,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: period.MaQuyetToan, period.TenQuyetToan"
+      "reason": "placeholder: period.MaQuyetToan, period.TenQuyetToan",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -284,7 +305,7 @@
         ]
       },
       "guards": [
-        "(period.dicVar == null || period.dicVar.Count <= 0 || !(opaque(<obj>.ContainsKey)) || \"{period.dicVar[\"IS_DM_MOI\"]}\" != \"1\") && field(dicDMKhoangSan)[\"{cell(S0!{col=trigger.col}{trigger.row}).text}\"].Length > 2 || period.dicVar != null && period.dicVar.Count > 0 && opaque(<obj>.ContainsKey) && \"{period.dicVar[\"IS_DM_MOI\"]}\" == \"1\" && field(dicDMKSBVMT)[\"{cell(S0!{col=trigger.col}{trigger.row}).text}\"].Length > 2"
+        "(period.dicVar == null || period.dicVar.Count <= 0 || !(hasKey(PeriodInfo.dicVar, \"IS_DM_MOI\")) || \"{period.dicVar[\"IS_DM_MOI\"]}\" != \"1\") && field(dicDMKhoangSan)[\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"].Length > 2 || period.dicVar != null && period.dicVar.Count > 0 && hasKey(PeriodInfo.dicVar, \"IS_DM_MOI\") && \"{period.dicVar[\"IS_DM_MOI\"]}\" == \"1\" && field(dicDMKSBVMT)[\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"].Length > 2"
       ],
       "effects": [
         {
@@ -296,12 +317,12 @@
           "value": {
             "cases": [
               {
-                "when": "period.dicVar == null || period.dicVar.Count <= 0 || !(opaque(<obj>.ContainsKey)) || \"{period.dicVar[\"IS_DM_MOI\"]}\" != \"1\"",
-                "value": "{field(dicDMKhoangSan)[\"{cell(S0!{col=trigger.col}{trigger.row}).text}\"][1]}"
+                "when": "period.dicVar == null || period.dicVar.Count <= 0 || !(hasKey(PeriodInfo.dicVar, \"IS_DM_MOI\")) || \"{period.dicVar[\"IS_DM_MOI\"]}\" != \"1\"",
+                "value": "{field(dicDMKhoangSan)[\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"][1]}"
               },
               {
                 "when": "else",
-                "value": "{field(dicDMKSBVMT)[\"{cell(S0!{col=trigger.col}{trigger.row}).text}\"][1]}"
+                "value": "{field(dicDMKSBVMT)[\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"][1]}"
               }
             ]
           },
@@ -333,7 +354,9 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: field(dicDMKSBVMT)[\"{cell(S0!{col=trigger.col}{trigger.row}).text}\"][1], field(dicDMKhoangSan)[\"{cell(S0!{col=trigger.col}{trigger.row}).text}\"][1], opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row"
+      "reason": "chưa giải: field(dicDMKSBVMT)[\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"][1], field(dicDMKhoangSan)[\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"][1], opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row",
+      "unreachable": false,
+      "symbols": []
     }
   ]
 }

@@ -82,16 +82,16 @@
       "guards": [
         "tk.SheetInfos[0].Tables.Count > 0",
         "tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count > 0",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for k from 0 while k < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
+        "loop: for@76 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@90 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@95 k from 0 step +1 while k < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
       ],
       "effects": [
         {
           "op": "lock",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[k].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[k].ColIndex)}{int(tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart)+j}"
           },
           "at": 97,
           "status": "parametric"
@@ -105,7 +105,46 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[k].ColIndex"
+      "reason": "placeholder: int(tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart), j, tk.SheetInfos[0].Tables[i].RowsInfo.cells[k].ColIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 76,
+          "desc": "biến mang qua vòng lặp dòng 76: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 76,
+          "desc": "biến mang qua vòng lặp dòng 76: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 90,
+          "desc": "biến mang qua vòng lặp dòng 90: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 76,
+          "desc": "biến mang qua vòng lặp dòng 76: giá trị trước vòng ?, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 90,
+          "desc": "biến mang qua vòng lặp dòng 90: giá trị trước vòng k, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 95,
+          "desc": "biến mang qua vòng lặp dòng 95: giá trị trước vòng 0, cuối mỗi vòng k := k+1"
+        }
+      ]
     },
     {
       "key": {
@@ -157,7 +196,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: HTKKFile.RemoveValidate"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: HTKKFile.RemoveValidate",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -186,9 +227,9 @@
       },
       "guards": [
         "item.Value.Length > 3",
-        "\"{item.Value[2]}\" == \"{cell(S0!{col=trigger.col}{trigger.row}).text}\"",
-        "item.Value[4] == 0",
-        "loop: foreach item in field(dicDMKhoangSan)"
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"",
+        "int(item.Value[4]) == 0",
+        "loop: foreach@149 item in field(dicDMKhoangSan)"
       ],
       "effects": [
         {
@@ -215,7 +256,16 @@
         ]
       },
       "status": "ui_only",
-      "reason": "chỉ có thao tác giao diện, không tác dụng lên ô"
+      "reason": "chỉ có thao tác giao diện, không tác dụng lên ô",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 149,
+          "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
+        }
+      ]
     },
     {
       "key": {
@@ -244,8 +294,8 @@
       },
       "guards": [
         "item.Value.Length > 3",
-        "\"{item.Value[2]}\" == \"{cell(S0!{col=trigger.col}{trigger.row}).text}\"",
-        "loop: foreach item in field(dicDMKhoangSan)"
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"",
+        "loop: foreach@149 item in field(dicDMKhoangSan)"
       ],
       "effects": [
         {
@@ -293,7 +343,7 @@
             "cases": [
               {
                 "when": "!(isEmpty(item.Key)) && field(_dmKSData) != null && field(_dmKSData).Count > 0 && opaque(Find) != null && opaque(<obj>.ToNumber) > 0",
-                "value": "{opaque(<obj>.ToNumber)}"
+                "value": "{num(opaque(<obj>.ToNumber))}"
               },
               {
                 "when": "else",
@@ -316,7 +366,16 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: item.Key, item.Value[3], opaque:<obj>.ToNumber, trigger.row"
+      "reason": "chưa giải: item.Key, item.Value[3], num(opaque(<obj>.ToNumber)), trigger.row",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 149,
+          "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
+        }
+      ]
     },
     {
       "key": {
@@ -345,9 +404,9 @@
       },
       "guards": [
         "item.Value.Length > 3",
-        "\"{item.Value[2]}\" == \"{cell(S0!{col=trigger.col}{trigger.row}).text}\"",
-        "cell(S0!AD{trigger.row}).text > 0",
-        "loop: foreach item in field(dicDMKhoangSan)"
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"",
+        "num(cell(S0!AD{trigger.row}).text) > 0",
+        "loop: foreach@149 item in field(dicDMKhoangSan)"
       ],
       "effects": [
         {
@@ -372,7 +431,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: trigger.row"
+      "reason": "placeholder: trigger.row",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 149,
+          "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
+        }
+      ]
     },
     {
       "key": {
@@ -401,9 +469,9 @@
       },
       "guards": [
         "item.Value.Length > 3",
-        "\"{item.Value[2]}\" == \"{cell(S0!{col=trigger.col}{trigger.row}).text}\"",
-        "cell(S0!AD{trigger.row}).text <= 0",
-        "loop: foreach item in field(dicDMKhoangSan)"
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"",
+        "num(cell(S0!AD{trigger.row}).text) <= 0",
+        "loop: foreach@149 item in field(dicDMKhoangSan)"
       ],
       "effects": [
         {
@@ -428,7 +496,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: item.Value[4], trigger.row"
+      "reason": "placeholder: item.Value[4], trigger.row",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 149,
+          "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
+        }
+      ]
     },
     {
       "key": {
@@ -457,9 +534,9 @@
       },
       "guards": [
         "item.Value.Length > 3",
-        "\"{item.Value[2]}\" == \"{cell(S0!{col=trigger.col}{trigger.row}).text}\"",
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"",
         "item.Value[5] == \"1\" || item.Value[1] == \"1101\"",
-        "loop: foreach item in field(dicDMKhoangSan)"
+        "loop: foreach@149 item in field(dicDMKhoangSan)"
       ],
       "effects": [
         {
@@ -480,7 +557,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: trigger.row"
+      "reason": "placeholder: trigger.row",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 149,
+          "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
+        }
+      ]
     },
     {
       "key": {
@@ -509,10 +595,10 @@
       },
       "guards": [
         "item.Value.Length > 3",
-        "\"{item.Value[2]}\" == \"{cell(S0!{col=trigger.col}{trigger.row}).text}\"",
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"",
         "item.Value[5] != \"1\"",
         "item.Value[1] != \"1101\"",
-        "loop: foreach item in field(dicDMKhoangSan)"
+        "loop: foreach@149 item in field(dicDMKhoangSan)"
       ],
       "effects": [
         {
@@ -533,7 +619,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: trigger.row"
+      "reason": "placeholder: trigger.row",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 149,
+          "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
+        }
+      ]
     },
     {
       "key": {
@@ -561,7 +656,7 @@
         ]
       },
       "guards": [
-        "cell(S0!{col=trigger.col}{trigger.row}).value > 0"
+        "num(cell(S0!{col(trigger.col)}{trigger.row}).value) > 0"
       ],
       "effects": [
         {
@@ -582,7 +677,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: trigger.row"
+      "reason": "placeholder: trigger.row",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -610,7 +707,7 @@
         ]
       },
       "guards": [
-        "cell(S0!{col=trigger.col}{trigger.row}).value <= 0"
+        "num(cell(S0!{col(trigger.col)}{trigger.row}).value) <= 0"
       ],
       "effects": [
         {
@@ -631,7 +728,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: trigger.row"
+      "reason": "placeholder: trigger.row",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -659,7 +758,7 @@
         ]
       },
       "guards": [
-        "cell(S0!{col=trigger.col}{trigger.row}).value > 0"
+        "num(cell(S0!{col(trigger.col)}{trigger.row}).value) > 0"
       ],
       "effects": [
         {
@@ -693,7 +792,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: trigger.row"
+      "reason": "placeholder: trigger.row",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -721,10 +822,10 @@
         ]
       },
       "guards": [
-        "cell(S0!{col=trigger.col}{trigger.row}).value > 0",
+        "num(cell(S0!{col(trigger.col)}{trigger.row}).value) > 0",
         "item.Value.Length > 3",
-        "\"{item.Value[2]}\" == \"{cell(S0!G{trigger.row}).text}\"",
-        "loop: foreach item in field(dicDMKhoangSan)"
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"",
+        "loop: foreach@222 item in field(dicDMKhoangSan)"
       ],
       "effects": [
         {
@@ -749,7 +850,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: item.Value[4], trigger.row"
+      "reason": "placeholder: item.Value[4], trigger.row",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 222,
+          "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
+        }
+      ]
     },
     {
       "key": {
@@ -802,7 +912,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: HTKKFile.RemoveValidate"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: HTKKFile.RemoveValidate",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -865,7 +977,9 @@
         ]
       },
       "status": "ui_only",
-      "reason": "chỉ có thao tác giao diện, không tác dụng lên ô"
+      "reason": "không tới được: điều kiện trên đường đi mâu thuẫn | chỉ có thao tác giao diện, không tác dụng lên ô",
+      "unreachable": true,
+      "symbols": []
     },
     {
       "key": {
@@ -928,7 +1042,9 @@
         ]
       },
       "status": "ui_only",
-      "reason": "chỉ có thao tác giao diện, không tác dụng lên ô"
+      "reason": "không tới được: điều kiện trên đường đi mâu thuẫn | chỉ có thao tác giao diện, không tác dụng lên ô",
+      "unreachable": true,
+      "symbols": []
     },
     {
       "key": {
@@ -956,7 +1072,7 @@
         ]
       },
       "guards": [
-        "cell(S0!AD{trigger.row}).value > 0"
+        "num(cell(S0!AD{trigger.row}).value) > 0"
       ],
       "effects": [
         {
@@ -994,7 +1110,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: trigger.row"
+      "reason": "placeholder: trigger.row",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1014,14 +1132,14 @@
         "when": []
       },
       "guards": [
-        "cell(S0!V{sheet[0].ActiveRow.Index+2}).value > 0"
+        "num(cell(S0!V{sheetOf(0).ActiveRow.Index+2}).value) > 0"
       ],
       "effects": [
         {
           "op": "lock",
           "target": {
             "sheet": 0,
-            "cell": "AD{sheet[0].ActiveRow.Index+2}"
+            "cell": "AD{sheetOf(0).ActiveRow.Index+2}"
           },
           "at": 867,
           "status": "parametric"
@@ -1035,7 +1153,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: sheet[0].ActiveRow.Index"
+      "reason": "placeholder: sheetOf(0).ActiveRow.Index",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -1055,14 +1175,14 @@
         "when": []
       },
       "guards": [
-        "cell(S0!V{sheet[0].ActiveRow.Index+2}).value <= 0"
+        "num(cell(S0!V{sheetOf(0).ActiveRow.Index+2}).value) <= 0"
       ],
       "effects": [
         {
           "op": "unlock",
           "target": {
             "sheet": 0,
-            "cell": "AD{sheet[0].ActiveRow.Index+2}"
+            "cell": "AD{sheetOf(0).ActiveRow.Index+2}"
           },
           "at": 871,
           "status": "parametric"
@@ -1076,7 +1196,9 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: sheet[0].ActiveRow.Index"
+      "reason": "placeholder: sheetOf(0).ActiveRow.Index",
+      "unreachable": false,
+      "symbols": []
     }
   ]
 }

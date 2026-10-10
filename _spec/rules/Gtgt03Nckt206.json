@@ -45,7 +45,7 @@
         "period.LoaiToKhai == \"C\"",
         "opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) > 0",
         "opaque(<obj>.GetFiles) > 0",
-        "opaque(accum) < 0"
+        "last_in_loop(foreach@242 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from 0, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@245 fileInfo in opaque(<obj>.GetFiles))) < 0"
       ],
       "effects": [
         {
@@ -58,7 +58,7 @@
             "cases": [
               {
                 "when": "true",
-                "value": "{opaque(accum)}"
+                "value": "{(last_in_loop(foreach@242 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from 0, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@245 fileInfo in opaque(<obj>.GetFiles)))*-1)}"
               },
               {
                 "when": "else",
@@ -81,7 +81,34 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: opaque:accum"
+      "reason": "chưa giải: (last_in_loop(foreach@242 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from 0, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@245 fileInfo in opaque(<obj>.GetFiles)))*-1)",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "fileInfo",
+          "origin": "foreach",
+          "at": 245,
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 242,
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 242,
+          "desc": "biến mang qua vòng lặp dòng 242: giá trị trước vòng 0, cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@245 fileInfo in opaque(<obj>.GetFiles))"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 245,
+          "desc": "biến mang qua vòng lặp dòng 245: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result)"
+        }
+      ]
     },
     {
       "key": {
@@ -101,7 +128,7 @@
         "when": []
       },
       "guards": [
-        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0 || opaque(accum) >= 0"
+        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy) <= 0 || opaque(<obj>.GetFiles) <= 0 || last_in_loop(foreach@242 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from 0, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@245 fileInfo in opaque(<obj>.GetFiles))) >= 0"
       ],
       "effects": [
         {
@@ -126,7 +153,34 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "fileInfo",
+          "origin": "foreach",
+          "at": 245,
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+        },
+        {
+          "name": "item",
+          "origin": "foreach",
+          "at": 242,
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 242,
+          "desc": "biến mang qua vòng lặp dòng 242: giá trị trước vòng 0, cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@245 fileInfo in opaque(<obj>.GetFiles))"
+        },
+        {
+          "name": "result",
+          "origin": "loop",
+          "at": 245,
+          "desc": "biến mang qua vòng lặp dòng 245: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result)"
+        }
+      ]
     },
     {
       "key": {
@@ -146,7 +200,7 @@
         "when": []
       },
       "guards": [
-        "opaque(<obj>.PadLeft) == \"01\""
+        "\"{padLeft(\"{period.Thang}\", 2, \"0\")}\" == \"01\" || \"{padLeft(\"{period.Quy}\", 2, \"0\")}\" == \"01\""
       ],
       "effects": [
         {
@@ -206,7 +260,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -226,7 +282,8 @@
         "when": []
       },
       "guards": [
-        "opaque(<obj>.PadLeft) != \"01\"",
+        "\"{padLeft(\"{period.Thang}\", 2, \"0\")}\" != \"01\"",
+        "\"{padLeft(\"{period.Quy}\", 2, \"0\")}\" != \"01\"",
         "tk.SheetInfos[0].IsReadDataFile || period.LoaiToKhai == \"B\""
       ],
       "effects": [
@@ -252,7 +309,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -272,7 +331,8 @@
         "when": []
       },
       "guards": [
-        "opaque(<obj>.PadLeft) != \"01\"",
+        "\"{padLeft(\"{period.Thang}\", 2, \"0\")}\" != \"01\"",
+        "\"{padLeft(\"{period.Quy}\", 2, \"0\")}\" != \"01\"",
         "!(tk.SheetInfos[0].IsReadDataFile)",
         "period.LoaiToKhai != \"B\""
       ],
@@ -296,7 +356,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     }
   ]
 }

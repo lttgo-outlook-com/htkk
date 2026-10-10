@@ -103,7 +103,9 @@
         ]
       },
       "status": "resolved",
-      "reason": ""
+      "reason": "",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -123,7 +125,7 @@
         "when": []
       },
       "guards": [
-        "!(opaque(<obj>.ContainsKey))"
+        "!(hasKey(lstValue, \"{trigger.row-1}_{trigger.col-1}\"))"
       ],
       "effects": [
         {
@@ -132,7 +134,7 @@
           "params": {
             "args": [
               "\"{trigger.row-1}_{trigger.col-1}\"",
-              "cell(S0!{col=trigger.col}{trigger.row}).value"
+              "bool(cell(S0!{col(trigger.col)}{trigger.row}).value)"
             ],
             "call": "<obj>.Add"
           },
@@ -148,7 +150,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -193,7 +197,9 @@
         ]
       },
       "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.ShowDialog"
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.ShowDialog",
+      "unreachable": false,
+      "symbols": []
     },
     {
       "key": {
@@ -219,15 +225,15 @@
       },
       "guards": [
         "opaque(<obj>.GetOptions) == 1",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count"
+        "loop: for@82 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@88 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=trigger.col}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(trigger.col)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "value": "True",
           "params": {
@@ -245,7 +251,28 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, trigger.col"
+      "reason": "placeholder: j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, trigger.col",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 82,
+          "desc": "biến mang qua vòng lặp dòng 82: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 82,
+          "desc": "biến mang qua vòng lặp dòng 82: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 88,
+          "desc": "biến mang qua vòng lặp dòng 88: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -271,15 +298,15 @@
       },
       "guards": [
         "opaque(<obj>.GetOptions) == 2",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count"
+        "loop: for@82 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@88 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=trigger.col}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(trigger.col)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "value": "False",
           "params": {
@@ -297,7 +324,28 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, trigger.col"
+      "reason": "placeholder: j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, trigger.col",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 82,
+          "desc": "biến mang qua vòng lặp dòng 82: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 82,
+          "desc": "biến mang qua vòng lặp dòng 82: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 88,
+          "desc": "biến mang qua vòng lặp dòng 88: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -323,19 +371,19 @@
       },
       "guards": [
         "opaque(<obj>.GetOptions) == 3",
-        "j+1 >= opaque(<obj>.GetStart)",
-        "j+1 <= opaque(<obj>.GetEnd)",
-        "opaque(<obj>.GetStart) > 0",
-        "opaque(<obj>.GetEnd) <= tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count"
+        "j+1 >= int(opaque(<obj>.GetStart))",
+        "j+1 <= int(opaque(<obj>.GetEnd))",
+        "int(opaque(<obj>.GetStart)) > 0",
+        "int(opaque(<obj>.GetEnd)) <= tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@82 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@88 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=trigger.col}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(trigger.col)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "value": "True",
           "params": {
@@ -353,7 +401,28 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, trigger.col"
+      "reason": "placeholder: j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, trigger.col",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 82,
+          "desc": "biến mang qua vòng lặp dòng 82: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 82,
+          "desc": "biến mang qua vòng lặp dòng 82: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 88,
+          "desc": "biến mang qua vòng lặp dòng 88: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -379,16 +448,16 @@
       },
       "guards": [
         "opaque(<obj>.GetOptions) == 3",
-        "j+1 < opaque(<obj>.GetStart) || j+1 > opaque(<obj>.GetEnd) || opaque(<obj>.GetStart) <= 0 || opaque(<obj>.GetEnd) > tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count"
+        "j+1 < int(opaque(<obj>.GetStart)) || j+1 > int(opaque(<obj>.GetEnd)) || int(opaque(<obj>.GetStart)) <= 0 || int(opaque(<obj>.GetEnd)) > tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@82 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@88 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=trigger.col}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(trigger.col)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "value": "False",
           "params": {
@@ -406,7 +475,28 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, trigger.col"
+      "reason": "placeholder: j, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, trigger.col",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 82,
+          "desc": "biến mang qua vòng lặp dòng 82: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 82,
+          "desc": "biến mang qua vòng lặp dòng 82: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 88,
+          "desc": "biến mang qua vòng lặp dòng 88: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        }
+      ]
     },
     {
       "key": {
@@ -432,19 +522,19 @@
       },
       "guards": [
         "field(isGiamDan)",
-        "isEmpty(cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).formula)",
-        "!(cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).locked)",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for k from j+1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for l from 0 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
+        "isEmpty(cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).formula)",
+        "!(cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).locked)",
+        "loop: for@114 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@120 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@122 k from j+1 step +1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@130 l from 0 step +1 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "formula": "",
           "at": 135,
@@ -454,7 +544,7 @@
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "formula": "",
           "at": 136,
@@ -469,7 +559,70 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex"
+      "reason": "placeholder: j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng k, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 122,
+          "desc": "biến mang qua vòng lặp dòng 122: giá trị trước vòng j+1, cuối mỗi vòng k := k+1"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 122,
+          "desc": "biến mang qua vòng lặp dòng 122: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 130,
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng 0, cuối mỗi vòng l := l+1"
+        }
+      ]
     },
     {
       "key": {
@@ -495,19 +648,19 @@
       },
       "guards": [
         "field(isGiamDan)",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for k from j+1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for l from 0 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
+        "loop: for@114 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@120 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@122 k from j+1 step +1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@130 l from 0 step +1 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
-          "value": "{cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text}",
+          "value": "{cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text}",
           "params": {
             "prop": "text"
           },
@@ -518,9 +671,9 @@
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
-          "value": "{cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text}",
+          "value": "{cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text}",
           "params": {
             "prop": "text"
           },
@@ -536,7 +689,70 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text, cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text, j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex"
+      "reason": "placeholder: cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text, cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text, j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng k, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 122,
+          "desc": "biến mang qua vòng lặp dòng 122: giá trị trước vòng j+1, cuối mỗi vòng k := k+1"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 122,
+          "desc": "biến mang qua vòng lặp dòng 122: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 130,
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng 0, cuối mỗi vòng l := l+1"
+        }
+      ]
     },
     {
       "key": {
@@ -562,19 +778,19 @@
       },
       "guards": [
         "!(field(isGiamDan))",
-        "isEmpty(cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).formula)",
-        "!(cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).locked)",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for k from j+1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for l from 0 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
+        "isEmpty(cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).formula)",
+        "!(cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).locked)",
+        "loop: for@114 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@120 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@122 k from j+1 step +1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@149 l from 0 step +1 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "formula": "",
           "at": 154,
@@ -584,7 +800,7 @@
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "formula": "",
           "at": 155,
@@ -599,7 +815,70 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex"
+      "reason": "placeholder: j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng k, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 122,
+          "desc": "biến mang qua vòng lặp dòng 122: giá trị trước vòng j+1, cuối mỗi vòng k := k+1"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 122,
+          "desc": "biến mang qua vòng lặp dòng 122: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 149,
+          "desc": "biến mang qua vòng lặp dòng 149: giá trị trước vòng 0, cuối mỗi vòng l := l+1"
+        }
+      ]
     },
     {
       "key": {
@@ -625,19 +904,19 @@
       },
       "guards": [
         "!(field(isGiamDan))",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for k from j+1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for l from 0 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
+        "loop: for@114 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@120 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@122 k from j+1 step +1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@149 l from 0 step +1 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
-          "value": "{cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text}",
+          "value": "{cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text}",
           "params": {
             "prop": "text"
           },
@@ -648,9 +927,9 @@
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
-          "value": "{cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text}",
+          "value": "{cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text}",
           "params": {
             "prop": "text"
           },
@@ -666,7 +945,70 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text, cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text, j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex"
+      "reason": "placeholder: cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text, cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).text, j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng k, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 122,
+          "desc": "biến mang qua vòng lặp dòng 122: giá trị trước vòng j+1, cuối mỗi vòng k := k+1"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 114,
+          "desc": "biến mang qua vòng lặp dòng 114: giá trị trước vòng ?, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 120,
+          "desc": "biến mang qua vòng lặp dòng 120: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 122,
+          "desc": "biến mang qua vòng lặp dòng 122: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 149,
+          "desc": "biến mang qua vòng lặp dòng 149: giá trị trước vòng 0, cuối mỗi vòng l := l+1"
+        }
+      ]
     },
     {
       "key": {
@@ -692,19 +1034,19 @@
       },
       "guards": [
         "field(isGiamDan)",
-        "isEmpty(cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).formula)",
-        "!(cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).locked)",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for k from j+1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for l from 0 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
+        "isEmpty(cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).formula)",
+        "!(cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).locked)",
+        "loop: for@171 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@177 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@179 k from j+1 step +1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@187 l from 0 step +1 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "formula": "",
           "at": 192,
@@ -714,7 +1056,7 @@
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "formula": "",
           "at": 193,
@@ -729,7 +1071,70 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex"
+      "reason": "placeholder: j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng k, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 179,
+          "desc": "biến mang qua vòng lặp dòng 179: giá trị trước vòng j+1, cuối mỗi vòng k := k+1"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 179,
+          "desc": "biến mang qua vòng lặp dòng 179: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 187,
+          "desc": "biến mang qua vòng lặp dòng 187: giá trị trước vòng 0, cuối mỗi vòng l := l+1"
+        }
+      ]
     },
     {
       "key": {
@@ -755,19 +1160,19 @@
       },
       "guards": [
         "field(isGiamDan)",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for k from j+1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for l from 0 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
+        "loop: for@171 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@177 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@179 k from j+1 step +1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@187 l from 0 step +1 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
-          "value": "{cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value}",
+          "value": "{cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value}",
           "params": {
             "prop": "value"
           },
@@ -778,9 +1183,9 @@
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
-          "value": "{cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value}",
+          "value": "{cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value}",
           "params": {
             "prop": "value"
           },
@@ -796,7 +1201,70 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value, cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value, j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex"
+      "reason": "placeholder: cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value, cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value, j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng k, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 179,
+          "desc": "biến mang qua vòng lặp dòng 179: giá trị trước vòng j+1, cuối mỗi vòng k := k+1"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 179,
+          "desc": "biến mang qua vòng lặp dòng 179: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 187,
+          "desc": "biến mang qua vòng lặp dòng 187: giá trị trước vòng 0, cuối mỗi vòng l := l+1"
+        }
+      ]
     },
     {
       "key": {
@@ -822,19 +1290,19 @@
       },
       "guards": [
         "!(field(isGiamDan))",
-        "isEmpty(cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).formula)",
-        "!(cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).locked)",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for k from j+1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for l from 0 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
+        "isEmpty(cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).formula)",
+        "!(cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).locked)",
+        "loop: for@171 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@177 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@179 k from j+1 step +1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@206 l from 0 step +1 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "formula": "",
           "at": 211,
@@ -844,7 +1312,7 @@
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
           "formula": "",
           "at": 212,
@@ -859,7 +1327,70 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex"
+      "reason": "placeholder: j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng k, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 179,
+          "desc": "biến mang qua vòng lặp dòng 179: giá trị trước vòng j+1, cuối mỗi vòng k := k+1"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 179,
+          "desc": "biến mang qua vòng lặp dòng 179: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 206,
+          "desc": "biến mang qua vòng lặp dòng 206: giá trị trước vòng 0, cuối mỗi vòng l := l+1"
+        }
+      ]
     },
     {
       "key": {
@@ -885,19 +1416,19 @@
       },
       "guards": [
         "!(field(isGiamDan))",
-        "loop: for i from 0 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for j from 0 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for k from j+1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
-        "loop: for l from 0 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
+        "loop: for@171 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
+        "loop: for@177 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@179 k from j+1 step +1 while k < tk.SheetInfos[0].Tables[i].RowsValues.Count",
+        "loop: for@206 l from 0 step +1 while l < tk.SheetInfos[0].Tables[i].RowsInfo.cells.Count"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
-          "value": "{cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value}",
+          "value": "{cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value}",
           "params": {
             "prop": "value"
           },
@@ -908,9 +1439,9 @@
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
+            "cell": "{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}"
           },
-          "value": "{cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value}",
+          "value": "{cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value}",
           "params": {
             "prop": "value"
           },
@@ -926,7 +1457,70 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value, cell(S0!{col=tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value, j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex"
+      "reason": "placeholder: cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value, cell(S0!{col(tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex)}{k+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart}).value, j, k, tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[i].RowsInfo.cells[l].ColIndex",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng j := j"
+        },
+        {
+          "name": "j",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng k, cuối mỗi vòng k := k"
+        },
+        {
+          "name": "k",
+          "origin": "loop",
+          "at": 179,
+          "desc": "biến mang qua vòng lặp dòng 179: giá trị trước vòng j+1, cuối mỗi vòng k := k+1"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 171,
+          "desc": "biến mang qua vòng lặp dòng 171: giá trị trước vòng ?, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 177,
+          "desc": "biến mang qua vòng lặp dòng 177: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 179,
+          "desc": "biến mang qua vòng lặp dòng 179: giá trị trước vòng l, cuối mỗi vòng l := l"
+        },
+        {
+          "name": "l",
+          "origin": "loop",
+          "at": 206,
+          "desc": "biến mang qua vòng lặp dòng 206: giá trị trước vòng 0, cuối mỗi vòng l := l+1"
+        }
+      ]
     },
     {
       "key": {
@@ -946,7 +1540,7 @@
         "when": []
       },
       "guards": [
-        "loop: for i from 0 while i < sheets.Count-2"
+        "loop: for@235 i from 0 step +1 while i < sheets().Count-2"
       ],
       "effects": [
         {
@@ -981,7 +1575,16 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: i, period.Nam"
+      "reason": "placeholder: i, period.Nam",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "i",
+          "origin": "loop",
+          "at": 235,
+          "desc": "biến mang qua vòng lặp dòng 235: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        }
+      ]
     }
   ]
 }

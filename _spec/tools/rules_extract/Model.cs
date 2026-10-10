@@ -46,7 +46,8 @@ public sealed class VLin : V
     protected override string MakeKey() => "lin:" + string.Join(",", T.Select(kv => kv.Key + "*" + kv.Value)) + "+" + C;
 }
 
-public sealed class VSym : V { public readonly string Text; public VSym(string t) { Text = t; } protected override string MakeKey() => "sym:" + Text; }
+/// Ký hiệu lúc chạy; HasOpaque: văn bản có chứa phần opaque(...) nên bản ghi phải ở trạng thái unresolved
+public sealed class VSym : V { public readonly string Text; public readonly bool HasOpaque; public VSym(string t, bool op = false) { Text = t; HasOpaque = op; } protected override string MakeKey() => "sym:" + Text; }
 public sealed class VOpaque : V { public readonly string What; public VOpaque(string w) { What = w; } protected override string MakeKey() => "op:" + What; }
 public sealed class VArr : V { public readonly List<V> Items; public VArr(List<V> i) { Items = i; } protected override string MakeKey() => "arr[" + string.Join(";", Items.Select(i => i.Key)) + "]"; }
 public sealed class VCat : V
@@ -236,7 +237,7 @@ public static class R
         switch (v)
         {
             case VConst k:
-                if (k.Val is string s) return "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+                if (k.Val is string s) return "\"" + s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t") + "\"";
                 return Fmt.Num(k.Val);
             case VLin l:
                 {
@@ -248,21 +249,22 @@ public static class R
                         if (sb.Length > 0 && !t.StartsWith("-")) sb.Append('+');
                         sb.Append(t);
                         f.Notes.Add(kv.Key);
+                        if (kv.Key.Contains("opaque(")) f.Opaque = true;
                     }
                     if (l.C > 0) sb.Append('+').Append(l.C); else if (l.C < 0) sb.Append(l.C);
                     return sb.ToString();
                 }
-            case VSym y: f.Sym = true; f.Notes.Add(y.Text); return y.Text;
+            case VSym y: f.Sym = true; if (y.HasOpaque) f.Opaque = true; f.Notes.Add(y.Text); return y.Text;
             case VOpaque o: f.Opaque = true; f.Notes.Add("opaque:" + o.What); return "opaque(" + o.What + ")";
             case VArr a: return "[" + string.Join(", ", a.Items.Select(i => Expr(i, f))) + "]";
             case VCat c: return "\"" + Template(c, f) + "\"";
             case VCases cs: return "cases(" + string.Join(" | ", cs.Alts.Select(a => (a.When == null ? "else" : Cond(a.When, f)) + " -> " + Expr(a.Val, f))) + ")";
             case VCond cc: return Cond(cc.C, f);
-            case VCell cl: return "cell(" + CellRef(cl, f) + ")";
+            case VCell cl: return "cell(" + SheetPrefix(cl.S, f) + CellRef(cl, f) + ")";
             case VSheet sh: return "sheet(" + Expr(sh.Index, f) + ")";
             case VCellInfo ci: f.Sym = true; return "cellInfo(" + ci.Path + ")";
-            case VSpread: return "spread";
-            case VSheets: return "sheets";
+            case VSpread: return "spread()";
+            case VSheets: return "sheets()";
             case VCells cs2: return "cells(" + Expr(cs2.S.Index, f) + ")";
             case VLambda: f.Opaque = true; return "opaque(lambda)";
             default: f.Opaque = true; return "opaque(?)";
@@ -282,7 +284,7 @@ public static class R
     {
         var c1 = Ar.Add(c0, new VConst(1L));
         if (c1 is VConst k && k.Val is long n) { if (n >= 1) return Fmt.Letters(n); f.Opaque = true; f.Notes.Add("invalid column " + n); return "#COL" + n; }
-        return "{col=" + Expr(c1, f) + "}";
+        return "{col(" + Expr(c1, f) + ")}";
     }
     public static string RowPart(V r0, Flags f)
     {
@@ -299,6 +301,8 @@ public static class R
         _ => "?"
     };
     public static string Sheet(VSheet s, Flags f) => s.Index is VConst k ? Fmt.Num(k.Val) : Expr(s.Index, f);
+    /// Tiền tố sheet tường minh: S<n>! khi biết chỉ số, S[biểu thức]! khi chỉ số lúc chạy (activeSheet, tham số)
+    public static string SheetPrefix(VSheet s, Flags f) => s.Index is VConst k && k.Val is long n ? "S" + n + "!" : "S[" + Expr(s.Index, f) + "]!";
     static int Prec(Cond c) => c switch { COr => 1, CAnd => 2, _ => 3 };
     public static string Cond(Cond c, Flags f)
     {
@@ -404,17 +408,22 @@ public static class Ar
         }
         var f = new Flags();
         string txt = "(" + R.Expr(a, f) + op + R.Expr(b, f) + ")";
-        if (f.Opaque) return new VOpaque("arith");
-        return new VSym(txt);
+        return new VSym(txt, f.Opaque);
     }
     public static bool IsStringy(V v) => v is VCat || (v is VConst k && k.Val is string) || (v is VCases cs && cs.Alts.Any(a => IsStringy(a.Val)));
     public static V Concat(V a, V b) => Lift(a, b, (x, y) => VCat.Make(new[] { x, y }));
+    /// Replace: hằng thì thay trực tiếp; phần ký hiệu bọc replace(x, a, b). Mẫu 1 ký tự thay từng phần (không vắt qua ranh giới);
+    /// mẫu dài hơn bọc cả chuỗi để không sai khi mẫu vắt qua ranh giới hằng/ký hiệu.
     public static V Replace(V s, V a, V b)
     {
         return Lift(s, b, (x, y) =>
         {
-            if (a is not VConst ka || ka.Val is not string from || from.Length == 0) return new VOpaque("Replace");
+            string from = a is VConst ka && ka.Val is string fs ? fs : null;
+            if (from == null || from.Length == 0) return Fn("replace", x, a, y);
+            if (x is VConst kx && kx.Val is string sx && y is VConst ky && ky.Val is string sy) return new VConst(sx.Replace(from, sy));
+            if (x is VConst kn && kn.IsNum && y is VConst ky2 && ky2.Val is string sy2) return new VConst(Fmt.Num(kn.Val).Replace(from, sy2));
             var parts = x is VCat c ? c.Parts : new List<V> { x };
+            if (from.Length > 1 && parts.Any(p => !(p is VConst))) return VCat.Make(new[] { Fn("replace", x, a, y) });
             var res = new List<V>();
             foreach (var p in parts)
             {
@@ -423,11 +432,17 @@ public static class Ar
                     var segs = str.Split(from);
                     for (int i = 0; i < segs.Length; i++) { if (i > 0) res.Add(y); res.Add(new VConst(segs[i])); }
                 }
-                else if (p is VConst kn && kn.IsNum) res.Add(new VConst(Fmt.Num(kn.Val).Replace(from, Fmt.Num(((y as VConst)?.Val) ?? "?"))));
-                else res.Add(p);
+                else if (p is VConst kn2 && kn2.IsNum && y is VConst ky3 && ky3.Val is string sy3) res.Add(new VConst(Fmt.Num(kn2.Val).Replace(from, sy3)));
+                else res.Add(Fn("replace", p, a, y));
             }
             return VCat.Make(res);
         });
+    }
+    /// Hàm trung tính trên ký hiệu: giữ cấu trúc; nếu đối số có phần opaque thì đánh dấu HasOpaque (không bỏ phép)
+    public static V Fn(string fn, params V[] a)
+    {
+        var fl = new Flags(); var t = fn + "(" + string.Join(", ", a.Select(x => x == null ? "null" : R.Expr(x, fl))) + ")";
+        return new VSym(t, fl.Opaque);
     }
     public static V ToStr(V v) => v switch
     {
