@@ -465,6 +465,9 @@ def in_scope(name):
 
 def add(name, gid, folder, ver, rule, evidence, keepname):
     magic, root, stem0, ext = meta[name]
+    note = globals().get('sbk_note', {}).get(name)
+    if note and 'ShowBangKe' not in evidence:     # ShowBangKe target placed by a filename rule
+        evidence += '; ' + note
     records.append(dict(src=name, magic=magic, root=root or '', ext=ext, gid=gid, folder=folder,
                         ver=ver or 'nv', rule=rule, evidence=evidence, keepname=keepname,
                         kind=true_kind(magic, ext)))

@@ -14,8 +14,17 @@ check_mapping.py - independent check of _forms/ against _extracted/ (run: python
 (c) the 10 OLE templates of audit item (2) + header.xls + in_tmp.xls have a cong_thuc.txt
     section "=== FILE: <name> ===" in their folder.
 (d) number of form folders, folders with cong_thuc.txt at git HEAD and now.
+(e) one own template stem per folder; rule R5x <=> path under _ngoai_menu/; every other folder
+    (outside _shared/_ngoai_menu) is an upper-cased menu.xml FolderName or MaFile.
+(f) audit reconciliation; every file with formulas (scan_extracted.json) placed in _forms
+    (incl. _ngoai_menu) has a cong_thuc.txt section; pending files with formulas listed with reason.
+(g) every "=== FILE: X ===" section in a cong_thuc.txt names a file X in the same folder.
+(h) every file named in ShowBangKe("...") (business classes + frmHTKKSystems.cs) that exists in
+    _extracted (28-char cab name, +1 digit on collision) is in the manifest with ShowBangKe
+    evidence, or in pending with non-empty candidates.
 Reads only; never executes anything from _extracted.
-Env: HTKK_SRC (default /Users/tuanle/codes/HTKK/_extracted), FORMS_DST (default <repo>/_forms).
+Env: HTKK_SRC (default /Users/tuanle/codes/HTKK/_extracted), FORMS_DST (default <repo>/_forms),
+     HTKK_DECOMPILED (default /Users/tuanle/codes/HTKK/_decompiled; read as text only).
 """
 import os, re, sys, csv, struct, hashlib, subprocess, collections
 
@@ -119,13 +128,36 @@ def sheet_names(path):
     except (struct.error, IndexError):
         return None
 
+# ShowBangKe("<file>") targets, scanned independently of reorg_forms.py
+DECOMP = os.environ.get('HTKK_DECOMPILED', '/Users/tuanle/codes/HTKK/_decompiled')
+SBK_TRUNC = 28
+sbk_calls = collections.defaultdict(set)    # 28-char cab name -> full called names
+for dp_, dn_, fn_ in os.walk(DECOMP):
+    for f_ in fn_:
+        if f_.endswith('.cs'):
+            for m_ in re.finditer(r'ShowBangKe\("([^"]+)"\)', open(os.path.join(dp_, f_), encoding='utf-8', errors='replace').read()):
+                sbk_calls[m_.group(1).lower()[:SBK_TRUNC]].add(m_.group(1).lower())
+def sbk_target(n):
+    low = n.lower()
+    if low in sbk_calls:
+        return low
+    k = low[:SBK_TRUNC]
+    if len(low) == SBK_TRUNC + 1 and low[-1].isdigit() and k in sbk_calls and all(len(x) > SBK_TRUNC for x in sbk_calls[k]):
+        return k
+    return None
+
 ok_all = True
 # ------------------------------------------------------------------ (a)
 universe = {}
+sbk_files = {}
 for n in sorted(os.listdir(SRC)):
     p = os.path.join(SRC, n)
     if os.path.isfile(p):
         k = classify(p)
+        t = sbk_target(n)
+        if t:
+            sbk_files[n] = t
+            k = k or 'sbk'
         if k:
             universe[n] = k
 man = list(csv.DictReader(open(MANIFEST, encoding='utf-8')))
@@ -154,8 +186,8 @@ for dp, dn, fn in os.walk(F):
 extra_src = [r['src'] for r in man if r['src'] not in universe]
 kinds = collections.Counter(universe.values())
 pk = collections.Counter(universe[r['src']] for r in pend if r['src'] in universe)
-print('(a) template files in _extracted: %d (xls-family %d, xml %d, xsd %d)' % (
-    len(universe), kinds['xls'], kinds['xml'], kinds['xsd']))
+print('(a) template files in _extracted: %d (xls-family %d, xml %d, xsd %d, other ShowBangKe target %d)' % (
+    len(universe), kinds['xls'], kinds['xml'], kinds['xsd'], kinds['sbk']))
 print('    placed in _forms: %d | pending: %d (xls %d, xml %d, xsd %d)' % (
     sum(1 for n in universe if by_src[n] == 1), sum(1 for n in universe if in_pend[n] == 1), pk['xls'], pk['xml'], pk['xsd']))
 print('    files with !=1 location: %d | manifest dst missing: %d | sha mismatch: %d | orphan files in _forms: %d | manifest src outside universe: %d'
@@ -263,16 +295,29 @@ except (subprocess.CalledProcessError, FileNotFoundError):
 FULL = re.compile(r'^(?P<stem>.+?)(?:_xml\d?)?_(?P<ver>\d{3,5})(?:_|_bu)?$')
 stems = collections.defaultdict(set)
 for r in man:
-    if r['rule'].split('/')[0] in ('R1', 'R1m', 'R5v', 'R6') and not re.match(r'^(bang_?ke_|khbs_|pl_|bao_cao_)', r['src']):
+    if r['rule'].split('/')[0] in ('R1', 'R1m', 'R5v', 'R5n', 'R6') and not re.match(r'^(bang_?ke_|khbs_|pl_|bao_cao_)', r['src']):
         n = r['src'].rstrip('.').rsplit('.', 1)[0].lower()
         m = FULL.match(n)
         stems['/'.join(r['dst'].split('/')[:2])].add(m.group('stem') if m else n)
 mixed = sorted(k for k, v in stems.items() if len(v) > 1)
-r6 = {'/'.join(r['dst'].split('/')[:2]) for r in man if r['rule'] == 'R6'}
-print('(e) folders with >1 own template stem (R1/R1m/R5v/R6, no prefix): %d | folders outside menu (R6): %d' % (len(mixed), len(r6)))
-for x in mixed:
+import xml.etree.ElementTree as ET
+menu_names = set()
+for m_ in ET.parse(os.path.join(SRC, 'menu.xml')).getroot().iter('Menu'):
+    if m_.get('MaFile'):
+        menu_names.add(m_.get('MaFile').upper())
+    for v_ in m_.findall('Validity'):
+        if v_.get('FolderName'):
+            menu_names.add(v_.get('FolderName').upper())
+x_bad = [r['dst'] for r in man if (r['rule'] == 'R5x') != r['dst'].startswith('_ngoai_menu/')]
+not_menu = sorted({'/'.join(r['dst'].split('/')[:2]) for r in man
+                   if r['dst'].split('/')[0] not in ('_shared', '_ngoai_menu') and r['dst'].split('/')[1] not in menu_names})
+xdirs = {'/'.join(r['dst'].split('/')[:2]) for r in man if r['dst'].startswith('_ngoai_menu/')}
+print('(e) folders with >1 own template stem (R1/R1m/R5v/R5n, no prefix): %d | R5x outside/non-R5x inside _ngoai_menu: %d'
+      ' | folders outside menu in regular groups: %d | _ngoai_menu: %d folders, %d files'
+      % (len(mixed), len(x_bad), len(not_menu), len(xdirs), sum(1 for r in man if r['dst'].startswith('_ngoai_menu/'))))
+for x in mixed + x_bad + not_menu:
     print('     !', x)
-ok_all &= not mixed
+ok_all &= not mixed and not x_bad and not not_menu
 # ------------------------------------------------------------------ (f) audit reconciliation
 AUD = os.environ.get('AUDIT_DIR', '/Users/tuanle/codes/HTKK/_audit')
 rep_csv = os.path.join(AUD, 'out', 'completeness', 'report.csv')
@@ -292,7 +337,7 @@ if os.path.exists(rep_csv) and os.path.exists(scan):
             miss.append('report.csv row not placed: ' + n)
     print('(f) audit report.csv unmapped rows: %d -> %s' % (len(rows), dict(cnt)))
     sc = json.load(open(scan, encoding='utf-8'))
-    c2 = collections.Counter(); miss2 = []
+    c2 = collections.Counter(); miss2 = []; pend_f = []
     for k, v in sc.items():
         if not v.get('n'):
             continue
@@ -300,7 +345,8 @@ if os.path.exists(rep_csv) and os.path.exists(scan):
         if n.lower().startswith('catalogue'):
             c2['excluded:catalogue'] += 1; continue
         if n in in_pend:
-            c2['pending'] += 1; miss2.append('pending: %s (%d cell)' % (n, v['n'])); continue
+            pr = next(r for r in pend if r['src'] == n)
+            c2['pending'] += 1; pend_f.append('pending: %s (%d cell) | %s | %s' % (n, v['n'], pr['reason'], pr['candidates'][:160])); continue
         d = dst_of.get(n)
         if not d:
             c2['MISSING'] += 1; miss2.append('missing: ' + n); continue
@@ -312,7 +358,41 @@ if os.path.exists(rep_csv) and os.path.exists(scan):
     print('    scan_extracted.json files with formulas: %d -> %s' % (sum(c2.values()), dict(c2)))
     for x in miss + miss2:
         print('     !', x)
+    for x in pend_f:
+        print('     ~', x)
     ok_all &= not miss and not c2['MISSING'] and not c2['NO_SECTION']
+else:
+    print('(f) SKIP: thieu %s hoac %s' % (rep_csv, scan))
+    ok_all = False
+# ------------------------------------------------------------------ (g) cong_thuc sections point to files in the folder
+stale_sec, n_sec = [], 0
+for dp_, dn_, fn_ in os.walk(F):
+    if 'cong_thuc.txt' in fn_:
+        for x in re.findall(r'^=== FILE: (.+?) ===$', open(os.path.join(dp_, 'cong_thuc.txt'), encoding='utf-8').read(), re.M):
+            n_sec += 1
+            if x not in fn_:
+                stale_sec.append('%s: %s' % (os.path.relpath(dp_, F), x))
+print('(g) cong_thuc.txt sections: %d | pointing to a file not in the folder: %d' % (n_sec, len(stale_sec)))
+for x in stale_sec:
+    print('     !', x)
+ok_all &= not stale_sec
+# ------------------------------------------------------------------ (h) ShowBangKe targets
+pend_by = {r['src']: r for r in pend}
+man_by = {r['src']: r for r in man}
+bad_h, cnt_h = [], collections.Counter()
+for n, t in sorted(sbk_files.items()):
+    if n in man_by and 'ShowBangKe' in man_by[n]['evidence']:
+        cnt_h['manifest'] += 1
+    elif n in pend_by and pend_by[n]['candidates'].strip():
+        cnt_h['pending'] += 1
+    else:
+        bad_h.append('%s (goi: %s): %s' % (n, ','.join(sorted(sbk_calls[t])),
+                     'manifest khong co bang chung ShowBangKe' if n in man_by else 'pending khong co ung vien' if n in pend_by else 'khong o dau'))
+print('(h) ShowBangKe names: %d | files in _extracted: %d -> %s | not covered: %d'
+      % (sum(len(v) for v in sbk_calls.values()), len(sbk_files), dict(cnt_h), len(bad_h)))
+for x in bad_h:
+    print('     !', x)
+ok_all &= not bad_h
 excl = collections.Counter()
 for n in os.listdir(SRC):
     if os.path.isfile(os.path.join(SRC, n)) and n not in universe:
