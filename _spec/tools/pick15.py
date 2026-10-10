@@ -3,7 +3,7 @@
 import json
 import os
 import random
-SEED = 20261010
+SEED = 20261011
 WT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 H = json.load(open(WT + "/_spec/helpers/helpers.json"))["helpers"]
 names = sorted(h["name"] for h in H)

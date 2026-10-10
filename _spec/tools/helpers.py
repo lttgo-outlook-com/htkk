@@ -52,11 +52,26 @@ def t2_counts():
     return c, excluded
 
 
+def resolve_by_source(nm, cand, chk):
+    """Gán class cho tên không qualified bằng cách đọc dòng mã nguồn của check: gọi có tiền tố class thì lấy class đó."""
+    lo, hi = chk["source"]["lines"][0], chk["source"]["lines"][-1]
+    try:
+        with open(ROOT + "/" + chk["source"]["file"], encoding="utf-8", errors="replace") as fh:
+            text = "\n".join(fh.read().split("\n")[lo - 1:hi])
+    except OSError:
+        return None
+    hit = {c for c in cand if re.search(r"\b" + c.split(".")[0] + r"\." + nm + r"\(", text)}
+    if len(hit) == 1:
+        return next(iter(hit))
+    return None
+
+
 def t3_counts(byname):
     sites = set()
     excl = collections.Counter()
     ambiguous = {}
-    for f in sorted(glob.glob(T3DIR + "/*.json")):
+    files = sorted(glob.glob(T3DIR + "/*.json")) + sorted(glob.glob(T3DIR + "/_app/*.json"))
+    for f in files:
         b = os.path.basename(f)
         if b in ("index.json", "messages_unresolved.json"):
             continue
@@ -83,8 +98,10 @@ def t3_counts(byname):
                     cand = byname.get(nm)
                     if cand:
                         if len(cand) > 1:
-                            # không đoán class: loại khỏi mẫu số, báo lại
-                            ambiguous[nm] = ambiguous.get(nm, 0) + 1
+                            cls = resolve_by_source(nm, cand, k)
+                            ambiguous.setdefault(nm, collections.Counter())[cls or "chưa gán được"] += 1
+                            if cls:
+                                sites.add((src, ln, cls))
                             continue
                         sites.add((src, ln, next(iter(cand))))
     # messages_unresolved: mỗi mục là một vị trí GetMessage chưa giải
@@ -175,6 +192,46 @@ def verbatim_guard(spec, bodies):
     return bad
 
 
+def worktree_head(name):
+    """Đọc commit HEAD của một worktree bằng cách đọc tệp (không chạy git)."""
+    try:
+        head = open("%s/.git/worktrees/%s/HEAD" % (ROOT, name)).read().strip()
+        if head.startswith("ref: "):
+            ref = head[5:]
+            rp = "%s/.git/%s" % (ROOT, ref)
+            if os.path.exists(rp):
+                return open(rp).read().strip()
+            for ln in open(ROOT + "/.git/packed-refs"):
+                if ln.strip().endswith(" " + ref):
+                    return ln.split()[0]
+            return "không tra được ref " + ref
+        return head
+    except OSError as e:
+        return "không đọc được: %s" % e
+
+
+def sha(path):
+    import hashlib
+    return hashlib.sha256(open(path, "rb").read()).hexdigest()[:16]
+
+
+def input_versions():
+    t3files = sorted(glob.glob(T3DIR + "/*.json")) + sorted(glob.glob(T3DIR + "/_app/*.json"))
+    h = __import__("hashlib").sha256()
+    for f in t3files:
+        h.update(open(f, "rb").read())
+    return {
+        "T2": {"worktree": "agent-a638a7f65966b6d67", "head_commit": worktree_head("agent-a638a7f65966b6d67"),
+               "file": "_spec/rules/opaque_calls.json", "sha256_16": sha(T2)},
+        "T3": {"worktree": "agent-a51ffc579b757e7c6", "head_commit": worktree_head("agent-a51ffc579b757e7c6"),
+               "files": len(t3files), "sha256_16_all_files": h.hexdigest()[:16],
+               "messages_unresolved_sha256_16": sha(T3DIR + "/messages_unresolved.json")},
+        "T0_index": {"worktree": "agent-a9857e03398898f03", "head_commit": worktree_head("agent-a9857e03398898f03"),
+                     "sha256_16": sha(IDX)},
+        "note": "Commit là HEAD của nhánh worktree lúc chạy. Thay đổi chưa commit trong worktree đó (T2, T3 đang được sửa) không hiện ở commit nên sha256 của tệp là định danh chính xác của dữ liệu đọc.",
+    }
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     methods, byname = load_index()
@@ -195,7 +252,7 @@ def main():
 
     print("T2 loại trừ (không phải htkk-helper):", dict(ex2))
     print("T3 loại trừ:", dict(ex3))
-    print("T3 tên không qualified khớp nhiều class (loại khỏi mẫu số, số check):", amb)
+    print("T3 tên không qualified khớp nhiều class, kết quả gán theo mã nguồn:", {k: dict(v) for k, v in amb.items()})
     print("Tổng lượt gọi helper T2 =", sum(t2.values()), "| T3 =", sum(t3.values()), "| gộp =", grand)
     print("Số hàm khác nhau: T2 =", len(t2), "| T3 =", len(t3), "| gộp =", len(total))
     print("Số hàm trong tập phủ =", len(chosen))
@@ -205,9 +262,10 @@ def main():
     print("Tên chưa khớp index:", unmatched)
 
     overlay = {}
-    op = OUT + "manual_overlay.json"
-    if os.path.exists(op):
-        overlay = json.load(open(op))
+    for opn in ("manual_overlay.json", "manual_overlay2.json", "manual_overlay3.json"):
+        op = OUT + opn
+        if os.path.exists(op):
+            overlay.update(json.load(open(op)))
 
     spec = {}
     bodies = {}
@@ -256,13 +314,18 @@ def main():
         cov_rows.append({"rank": i, "name": k, "t2": t2.get(k, 0), "t3": t3.get(k, 0), "total": v,
                          "cumulative": run, "cumulative_pct": round(100 * run / grand, 4),
                          "in_cover_set": k in chosen, "in_index": k in methods})
-    json.dump({"threshold_pct": 100 * THRESH,
+    iv = input_versions()
+    print("Phiên bản đầu vào:", json.dumps(iv, ensure_ascii=False))
+    print("ConvertToDateTime không qualified:", {k: dict(v) for k, v in amb.items()})
+    json.dump({"threshold_pct": 100 * THRESH, "input_versions": iv,
+               "t3_denominator_definition": "Mỗi lượt T3 là một vị trí mã (file nguồn, dòng đầu của check hoặc dòng GetMessage, hàm helper) duy nhất, lấy từ: (a) mark_api của check status unresolved, (b) message.parts.api là HTKKFile.GetMessage của check unresolved, (c) tên hàm trong condition của check unresolved nếu khớp đúng một method của 5 class GeneralFunctions, ConvertHelpers, HTKKFile, ValidateBase, HTKKFormater (tên trùng nhiều class được gán theo tiền tố class ở dòng mã nguồn của check, không gán được thì loại), (d) mỗi mục của messages_unresolved.json là một vị trí HTKKFile.GetMessage. Quét _spec/validations/*.json và _spec/validations/_app/*.json, bỏ index.json. Loại direct_cell_read và frmMessage. Không tính method.calls[]. Hai nguồn trùng vị trí chỉ tính một lần. T3 có thể chồng lên T2 ở cùng dòng mã, tổng gộp là tổng lượt không khử chồng giữa T2 và T3.",
+               "ambiguous_name_resolution": {k: dict(v) for k, v in amb.items()},
                "denominator": {"t2_helper_sites": sum(t2.values()), "t3_helper_sites_dedup": sum(t3.values()),
                                "combined": grand, "distinct_functions": len(total)},
                "excluded": {"t2_by_category": dict(ex2), "t3": dict(ex3)},
                "cover_set_size": len(chosen), "covered_sites": cum, "coverage_pct": round(100 * cum / grand, 4),
                "crosscheck_set_sum_equal": cum == cum2, "unmatched_in_index": unmatched,
-               "ambiguous_condition_names": amb,
+               
                "assumptions": ["T2: chỉ category htkk-helper; bỏ bcl, object-member, class-local",
                                "T3: mark_api + message.parts.api + tên hàm trong condition của check unresolved + messages_unresolved; dedupe theo (file, dòng, hàm)",
                                "Chuẩn hóa: bỏ hậu tố /N, giữ tiền tố class; overload gộp"],
