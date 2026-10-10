@@ -15,12 +15,11 @@ string menuPath = args[1];
 string outDir = args[2];
 Directory.CreateDirectory(outDir);
 
-var hookRx = new Regex(@"^(CellChange|AutoBindData|Refresh)_(\d+)$");
+var hookRx = new Regex(@"^(CellChange|AutoBindData|Refresh|UpdateFormula|ClearData|CellEditchange|ButtonClick)(_\d+)?$");
 string HookKind(string n)
 {
     var m = hookRx.Match(n);
     if (m.Success) return m.Groups[1].Value;
-    if (n == "UpdateFormula" || n == "ClearData" || n == "CellEditchange" || n == "ButtonClick") return n;
     if (n.StartsWith("Validate")) return "Validate";
     return null;
 }
@@ -99,6 +98,7 @@ foreach (var rel in files)
             methods.Add(new SortedDictionary<string, object>(StringComparer.Ordinal)
             {
                 ["class"] = cname, ["name"] = name, ["params"] = pars,
+                ["return_type"] = md is MethodDeclarationSyntax rm ? rm.ReturnType.ToString() : null,
                 ["start_line"] = sl, ["end_line"] = el, ["body_lines"] = bodyLines,
                 ["is_hook"] = kind != null, ["hook_kind"] = kind, ["sheet_index"] = sheet,
             });
