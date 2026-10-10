@@ -171,7 +171,8 @@ class MethodCtx
 {
     readonly ClassCtx C;
     readonly MethodDeclarationSyntax M;
-    readonly List<(string key, int pos, ExpressionSyntax val, int line)> assigns = new();
+    readonly List<(string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node)> assigns = new();
+    readonly HashSet<string> forVars = new(StringComparer.Ordinal);
     readonly HashSet<string> paramNames;
     public MethodCtx(ClassCtx c, MethodDeclarationSyntax m)
     {
@@ -180,27 +181,71 @@ class MethodCtx
         foreach (var n in m.DescendantNodes())
         {
             if (n is VariableDeclaratorSyntax vd && vd.Initializer != null)
-                assigns.Add((vd.Identifier.Text, vd.SpanStart, vd.Initializer.Value, Line(vd)));
-            else if (n is AssignmentExpressionSyntax a && a.IsKind(SyntaxKind.SimpleAssignmentExpression) && (a.Left is IdentifierNameSyntax || a.Left is ElementAccessExpressionSyntax))
-                assigns.Add((Norm(a.Left.ToString()), a.SpanStart, a.Right, Line(a)));
-            else if (n is ArgumentSyntax arg && arg.RefKindKeyword.IsKind(SyntaxKind.OutKeyword))
+            {
+                assigns.Add((vd.Identifier.Text, vd.SpanStart, vd.Initializer.Value, Line(vd), "init", vd));
+                if (vd.Parent?.Parent is ForStatementSyntax) forVars.Add(vd.Identifier.Text);
+            }
+            else if (n is AssignmentExpressionSyntax a && (a.Left is IdentifierNameSyntax || a.Left is ElementAccessExpressionSyntax))
+                assigns.Add((Norm(a.Left.ToString()), a.SpanStart, a.Right, Line(a), a.IsKind(SyntaxKind.SimpleAssignmentExpression) ? "set" : a.OperatorToken.Text, a));
+            else if (n is PostfixUnaryExpressionSyntax pu && (pu.IsKind(SyntaxKind.PostIncrementExpression) || pu.IsKind(SyntaxKind.PostDecrementExpression)) && (pu.Operand is IdentifierNameSyntax || pu.Operand is ElementAccessExpressionSyntax))
+                assigns.Add((Norm(pu.Operand.ToString()), pu.SpanStart, null, Line(pu), pu.OperatorToken.Text, pu));
+            else if (n is PrefixUnaryExpressionSyntax pr && (pr.IsKind(SyntaxKind.PreIncrementExpression) || pr.IsKind(SyntaxKind.PreDecrementExpression)) && (pr.Operand is IdentifierNameSyntax || pr.Operand is ElementAccessExpressionSyntax))
+                assigns.Add((Norm(pr.Operand.ToString()), pr.SpanStart, null, Line(pr), pr.OperatorToken.Text, pr));
+            else if (n is ArgumentSyntax arg && (arg.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) || arg.RefKindKeyword.IsKind(SyntaxKind.RefKeyword)))
             {
                 string k = arg.Expression is DeclarationExpressionSyntax de && de.Designation is SingleVariableDesignationSyntax sv ? sv.Identifier.Text : Norm(arg.Expression.ToString());
-                assigns.Add((k, arg.SpanStart, null, Line(arg)));
+                assigns.Add((k, arg.SpanStart, null, Line(arg), "out", arg));
             }
             else if (n is ForEachStatementSyntax fe)
-                assigns.Add((fe.Identifier.Text, fe.SpanStart, null, Line(fe)));
+                assigns.Add((fe.Identifier.Text, fe.SpanStart, null, Line(fe), "foreach", fe));
         }
     }
     static int Line(SyntaxNode n) => n.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
     static string Norm(string s) => Regex.Replace(s, @"\s+", "");
 
+    static bool IsLoop(SyntaxNode p) => p is ForStatementSyntax || p is WhileStatementSyntax || p is DoStatementSyntax || p is ForEachStatementSyntax;
+    SyntaxNode NodeAt(int pos) => M.FindToken(pos).Parent;
+    // phép gán d chắc chắn chạy trước điểm dùng: đi lên tới tổ tiên chung không qua if/else/switch/vòng lặp/catch/lambda/&&,||
+    bool Dominates(SyntaxNode d, SyntaxNode use)
+    {
+        var anc = new HashSet<SyntaxNode>(use.AncestorsAndSelf());
+        for (var p = d.Parent; p != null && !anc.Contains(p); p = p.Parent)
+            if (p is IfStatementSyntax || p is ElseClauseSyntax || p is SwitchSectionSyntax || IsLoop(p) || p is CatchClauseSyntax || p is ConditionalExpressionSyntax || p is LambdaExpressionSyntax || p is BinaryExpressionSyntax) return false;
+        return true;
+    }
+    // mọi phép gán có thể tới điểm dùng: từ phép gán chắc chắn gần nhất trở đi, cộng phép gán phía sau trong cùng vòng lặp
+    public List<(string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node)> ReachingAll(string key, int pos)
+    {
+        // biểu thức nằm ngoài thân hàm (khởi tạo field/thuộc tính): không có biến cục bộ
+        if (!M.Span.Contains(pos)) return new();
+        var use = NodeAt(pos);
+        var useLoops = new HashSet<SyntaxNode>(use.Ancestors().Where(IsLoop));
+        var before = assigns.Where(a => a.key == key && a.pos < pos).OrderBy(a => a.pos).ToList();
+        int start = 0;
+        for (int i = before.Count - 1; i >= 0; i--)
+            if ((before[i].kind == "init" || before[i].kind == "set" || before[i].kind == "foreach") && Dominates(before[i].node, use)) { start = i; break; }
+        var res = before.Skip(start).ToList();
+        res.AddRange(assigns.Where(a => a.key == key && a.pos > pos && a.node.Ancestors().Any(useLoops.Contains)).OrderBy(a => a.pos));
+        return res;
+    }
     (ExpressionSyntax val, int line, int count)? Reaching(string key, int pos)
     {
-        (ExpressionSyntax, int, int)? best = null; int bpos = -1, cnt = 0;
-        foreach (var a in assigns) if (a.key == key) { cnt++; if (a.pos < pos && a.pos > bpos) { bpos = a.pos; best = (a.val, a.line, 0); } }
-        if (best == null) return null;
-        return (best.Value.Item1, best.Value.Item2, cnt);
+        var all = ReachingAll(key, pos);
+        if (all.Count == 0) return null;
+        var near = all.Where(a => a.pos < pos).LastOrDefault();
+        if (near.node == null) near = all[0];
+        return (near.val, near.line, all.Count);
+    }
+    // giá trị duy nhất tới được (không +=, ++, nhánh hay vòng lặp khác)
+    ExpressionSyntax SingleDef(string key, int pos)
+    {
+        var all = ReachingAll(key, pos);
+        if (all.Count != 1 || all[0].val == null || !(all[0].kind == "init" || all[0].kind == "set")) return null;
+        if (forVars.Contains(key)) return null;
+        var use = NodeAt(pos);
+        var dl = all[0].node.Ancestors().FirstOrDefault(IsLoop);
+        if (dl != null && !use.Ancestors().Contains(dl)) return null;
+        return all[0].val;
     }
 
     // ---------- hằng số ----------
@@ -227,8 +272,7 @@ class MethodCtx
             case IdentifierNameSyntax id:
                 {
                     string n = id.Identifier.Text;
-                    var r = Reaching(n, e.SpanStart);
-                    if (r != null) return r.Value.val == null || InLoopAssigned(n) ? null : Eval(r.Value.val, depth + 1);
+                    if (assigns.Any(a => a.key == n)) { var sd = SingleDef(n, e.SpanStart); return sd == null ? null : Eval(sd, depth + 1); }
                     if (paramNames.Contains(n)) return null;
                     if (C.Fields.TryGetValue(n, out var fe)) return Eval(fe, depth + 1);
                     return null;
@@ -238,9 +282,8 @@ class MethodCtx
                     var idx = Eval(ea.ArgumentList.Arguments[0].Expression, depth + 1);
                     var arr = ArrayOf(ea.Expression, depth + 1);
                     if (idx != null && arr != null && idx >= 0 && idx < arr.Length) return arr[idx.Value];
-                    var r = Reaching(Norm(ea.ToString()), e.SpanStart);
-                    if (r != null && r.Value.val != null) return Eval(r.Value.val, depth + 1);
-                    return null;
+                    var sd2 = SingleDef(Norm(ea.ToString()), e.SpanStart);
+                    return sd2 == null ? null : Eval(sd2, depth + 1);
                 }
         }
         return null;
@@ -285,8 +328,7 @@ class MethodCtx
                 }
             case IdentifierNameSyntax id:
                 {
-                    var r = Reaching(id.Identifier.Text, e.SpanStart);
-                    if (r != null) return r.Value.val == null ? null : ArrayOf(r.Value.val, depth + 1);
+                    if (assigns.Any(a => a.key == id.Identifier.Text)) { var sd = SingleDef(id.Identifier.Text, e.SpanStart); return sd == null ? null : ArrayOf(sd, depth + 1); }
                     if (C.Fields.TryGetValue(id.Identifier.Text, out var fe)) return ArrayOf(fe, depth + 1);
                     return null;
                 }
@@ -385,12 +427,19 @@ class MethodCtx
                 }
             case ConditionalExpressionSyntax c: return "IF(" + R(c.Condition) + ", " + R(c.WhenTrue) + ", " + R(c.WhenFalse) + ")";
             case IsPatternExpressionSyntax ip: return R(ip.Expression) + " IS " + ip.Pattern.ToString();
-            case ConditionalAccessExpressionSyntax ca: return RChain(ca.WhenNotNull, R(ca.Expression) + "?");
+            case ConditionalAccessExpressionSyntax ca: return RChain(ca.WhenNotNull, R(ca.Expression));
             case IdentifierNameSyntax id: return RIdent(id);
             case ThisExpressionSyntax: return "this";
             case ElementAccessExpressionSyntax ea: return RElement(ea);
             case MemberAccessExpressionSyntax ma: return RMember(ma);
             case InvocationExpressionSyntax inv: return RInvoke(inv);
+            case ObjectCreationExpressionSyntax od when od.Type.ToString() == "DateTime" && od.ArgumentList != null && od.ArgumentList.Arguments.Count >= 3 && od.ArgumentList.Arguments.Take(3).All(x => Eval(x.Expression) != null):
+                {
+                    var dv = od.ArgumentList.Arguments.Select(x => Eval(x.Expression)).ToList();
+                    return "date(" + dv[0].Value.ToString("D4") + "-" + dv[1].Value.ToString("D2") + "-" + dv[2].Value.ToString("D2") + (dv.Count >= 6 && dv.All(x => x != null) ? " " + dv[3].Value.ToString("D2") + ":" + dv[4].Value.ToString("D2") + ":" + dv[5].Value.ToString("D2") : "") + ")";
+                }
+            case ObjectCreationExpressionSyntax odt when odt.Type.ToString() == "DateTime" && odt.ArgumentList != null:
+                return "date(" + string.Join(", ", odt.ArgumentList.Arguments.Select(a => R(a.Expression))) + ")";
             case ObjectCreationExpressionSyntax oc: return "new " + oc.Type + "(" + string.Join(", ", (oc.ArgumentList?.Arguments ?? default).Select(a => R(a.Expression))) + ")";
             case ArrayCreationExpressionSyntax ac: return ac.Initializer == null ? "new_array(" + string.Join(", ", ac.Type.RankSpecifiers.SelectMany(r => r.Sizes).Select(R)) + ")" : "[" + string.Join(", ", ac.Initializer.Expressions.Select(R)) + "]";
             case ImplicitArrayCreationExpressionSyntax ic: return "[" + string.Join(", ", ic.Initializer.Expressions.Select(R)) + "]";
@@ -441,7 +490,7 @@ class MethodCtx
             case ElementBindingExpressionSyntax eb: return prefix + "[" + string.Join(", ", eb.ArgumentList.Arguments.Select(x => R(x.Expression))) + "]";
             case MemberAccessExpressionSyntax ma: return RChain(ma.Expression, prefix) + "." + ma.Name.Identifier.Text;
             case ElementAccessExpressionSyntax ea: return RChain(ea.Expression, prefix) + "[" + string.Join(", ", ea.ArgumentList.Arguments.Select(x => R(x.Expression))) + "]";
-            case ConditionalAccessExpressionSyntax c2: return RChain(c2.WhenNotNull, RChain(c2.Expression, prefix) + "?");
+            case ConditionalAccessExpressionSyntax c2: return RChain(c2.WhenNotNull, RChain(c2.Expression, prefix));
             case InvocationExpressionSyntax inv:
                 {
                     var args = inv.ArgumentList.Arguments.Select(x => x.Expression).ToList();
@@ -462,27 +511,55 @@ class MethodCtx
     {
         string n = id.Identifier.Text;
         var v = Eval(id); if (v != null) return v.Value.ToString();
-        if (paramNames.Contains(n)) return n;
-        var r = Reaching(n, id.SpanStart);
-        if (r != null && (r.Value.val is ArrayCreationExpressionSyntax ac0 && ac0.Initializer == null || r.Value.val is ObjectCreationExpressionSyntax)) return n; // tập hợp có thể bị sửa sau khi tạo: giữ tên
-        if (r != null && r.Value.val != null && inlineDepth < 2 && !InLoopAssigned(n) && r.Value.count == 1)
+        if (paramNames.Contains(n) || forVars.Contains(n)) return n;
+        var all = ReachingAll(n, id.SpanStart);
+        if (all.Count == 0)
         {
-            inlineDepth++;
-            string s = R(r.Value.val);
-            inlineDepth--;
-            if (s.Length <= 140) return s.Contains(' ') ? "(" + s + ")" : s;
-            Bind(n, s, r.Value.line);
+            if (C.Fields.ContainsKey(n) && StrOf(id) is string fs) return JsonSerializer.Serialize(fs);
             return n;
         }
-        if (r != null && r.Value.val != null && inlineDepth < 2)
+        var sd = SingleDef(n, id.SpanStart);
+        if (sd != null && !(sd is ArrayCreationExpressionSyntax ac0 && ac0.Initializer == null) && !(sd is ObjectCreationExpressionSyntax) && inlineDepth < 2)
         {
-            inlineDepth++; string s = R(r.Value.val); inlineDepth--;
-            if (r.Value.count > 1) s = "<gán " + r.Value.count + " lần; phép gán gần nhất phía trước> " + s;
-            else if (InLoopAssigned(n)) s = "<gán trong vòng lặp> " + s;
-            Bind(n, s, r.Value.line);
+            inlineDepth++; string s1 = R(sd); inlineDepth--;
+            if (s1.Length <= 140) return s1.Contains(' ') ? "(" + s1 + ")" : s1;
+            Bind(n, s1, all[0].line);
+            return n;
         }
-        if (C.Fields.ContainsKey(n) && StrOf(id) is string fs) return JsonSerializer.Serialize(fs);
+        if (inlineDepth < 2) BindAll(n, all, id);
         return n;
+    }
+    // liệt kê mọi phép gán có thể tới điểm dùng, kèm điều kiện riêng của từng phép gán
+    void BindAll(string n, List<(string key, int pos, ExpressionSyntax val, int line, string kind, SyntaxNode node)> all, SyntaxNode use)
+    {
+        if (bindings.ContainsKey(n)) return;
+        bindings[n] = "…";
+        inlineDepth++;
+        var saved = LastCondLines;
+        var parts = new List<string>();
+        var useAnc = new HashSet<SyntaxNode>(use.AncestorsAndSelf());
+        foreach (var a in all)
+        {
+            var stop = a.node.Ancestors().FirstOrDefault(useAnc.Contains);
+            var g = ConditionsUpTo(a.node, stop);
+            string val = a.kind switch
+            {
+                "init" or "set" => a.val == null ? "?" : R(a.val),
+                "out" => "<gán qua tham số out/ref>",
+                "foreach" => "<phần tử vòng lặp>",
+                "++" or "--" => a.kind,
+                _ => a.kind + " " + (a.val == null ? "?" : R(a.val)),
+            };
+            if (val.Length > 160) val = val.Substring(0, 160) + "…";
+            string gs = g.Count == 0 ? "" : " [khi " + string.Join(" AND ", g) + "]";
+            if (gs.Length > 220) gs = gs.Substring(0, 220) + "…]";
+            parts.Add("L" + a.line + gs + ": " + val);
+        }
+        LastCondLines = saved;
+        inlineDepth--;
+        string sv = all.Count == 1 ? parts[0] : "<" + all.Count + " phép gán có thể tới> " + string.Join(" | ", parts);
+        if (sv.Length > 900) sv = sv.Substring(0, 900) + "…";
+        bindings[n] = sv;
     }
     void Bind(string n, string s, int line) { if (s.Length > 400) s = s.Substring(0, 400) + "…"; bindings[n] = s + " @L" + line; }
 
@@ -494,18 +571,20 @@ class MethodCtx
         if (ea.Expression is MemberAccessExpressionSyntax ms && ms.Name.Identifier.Text == "Sheets" && args.Count == 1)
             return "sheet(" + (SheetOf(ea) ?? R(args[0].Expression)) + ")";
         var v = Eval(ea); if (v != null) return v.Value.ToString();
-        var r = Reaching(Norm(ea.ToString()), ea.SpanStart);
-        if (r != null && r.Value.val != null && inlineDepth < 2)
+        var sdE = SingleDef(Norm(ea.ToString()), ea.SpanStart);
+        if (sdE != null && inlineDepth < 2)
         {
-            inlineDepth++; string s = R(r.Value.val); inlineDepth--;
+            inlineDepth++; string s = R(sdE); inlineDepth--;
             if (s.Length <= 140) return s.Contains(' ') ? "(" + s + ")" : s;
         }
         return R(ea.Expression) + "[" + string.Join(", ", args.Select(a => R(a.Expression))) + "]";
     }
+    int? sheetIdxCache;
     public string CellRef(ExpressionSyntax sheetExpr, ExpressionSyntax row, ExpressionSyntax col)
     {
         string sh = SheetOf(sheetExpr);
-        string prefix = sh != null && !sh.StartsWith("param:") && sh != "active" ? sh + "!" : "";
+        if (sh == null || sh.StartsWith("param:") || sh == "active") { sheetIdxCache ??= SheetIndex() ?? -1; sh = sheetIdxCache >= 0 ? "S" + sheetIdxCache : "Sx"; } // Sx: sheet không xác định tĩnh (tham số của hàm dùng chung)
+        string prefix = sh + "!";
         var r = Eval(row); var c = Eval(col);
         string cs = c != null ? ColLetters(c.Value) : "col{" + R(col) + "}";
         string rs = r != null ? (r.Value + 1).ToString() : "{" + R(row) + " +1}";
@@ -567,11 +646,14 @@ class MethodCtx
         if (c is PrefixUnaryExpressionSyntax pu && pu.IsKind(SyntaxKind.LogicalNotExpression)) return R(pu.Operand);
         return "NOT (" + R(c) + ")";
     }
-    List<string> Conditions(SyntaxNode n)
+    public List<int> LastCondLines = new();
+    List<string> Conditions(SyntaxNode n) => ConditionsUpTo(n, null);
+    List<string> ConditionsUpTo(SyntaxNode n, SyntaxNode stop)
     {
         var conds = new List<string>();
+        var lines = new List<int>();
         SyntaxNode child = n;
-        for (var p = n.Parent; p != null && p != M; child = p, p = p.Parent)
+        for (var p = n.Parent; p != null && p != M && p != stop; child = p, p = p.Parent)
         {
             switch (p)
             {
@@ -604,22 +686,30 @@ class MethodCtx
                 case BinaryExpressionSyntax bo when bo.IsKind(SyntaxKind.LogicalOrExpression) && child == bo.Right: conds.Add(Neg(bo.Left)); break;
                 case CatchClauseSyntax: conds.Add("ON EXCEPTION"); break;
                 case BlockSyntax blk:
-                    // điều kiện chặn sớm: if (X) { ...; return|continue|break; } đứng trước trong cùng block
-                    foreach (var st in blk.Statements)
                     {
-                        if (st.SpanStart >= child.SpanStart) break;
-                        if (st is IfStatementSyntax g && g.Else == null && EndsWithJump(g.Statement)) conds.Add(Neg(g.Condition));
-                        else if (st is IfStatementSyntax g2 && g2.Else != null && !(g2.Else.Statement is IfStatementSyntax))
-                        {   // if (A) {...} else {...; continue;} => sau lệnh này A đúng; và ngược lại
-                            bool tj = EndsWithJump(g2.Statement), ej = EndsWithJump(g2.Else.Statement);
-                            if (ej && !tj) conds.Add(R(g2.Condition));
-                            else if (tj && !ej) conds.Add(Neg(g2.Condition));
+                        // điều kiện chặn sớm: if (X) { ...; return|continue|break; } đứng trước trong cùng block
+                        var gc = new List<(string, int)>();
+                        foreach (var st in blk.Statements)
+                        {
+                            if (st.SpanStart >= child.SpanStart) break;
+                            if (st is IfStatementSyntax g && g.Else == null && EndsWithJump(g.Statement)) gc.Add((Neg(g.Condition), Line(g)));
+                            else if (st is IfStatementSyntax g2 && g2.Else != null && !(g2.Else.Statement is IfStatementSyntax))
+                            {   // if (A) {...} else {...; continue;} => sau lệnh này A đúng; và ngược lại
+                                bool tj = EndsWithJump(g2.Statement), ej = EndsWithJump(g2.Else.Statement);
+                                if (ej && !tj) gc.Add((R(g2.Condition), Line(g2)));
+                                else if (tj && !ej) gc.Add((Neg(g2.Condition), Line(g2)));
+                            }
                         }
+                        gc.Reverse();
+                        foreach (var (t, l) in gc) { conds.Add(t); lines.Add(l); }
+                        break;
                     }
-                    break;
             }
+            while (lines.Count < conds.Count) lines.Add(Line(p));
         }
         conds.Reverse();
+        lines.Reverse();
+        LastCondLines = lines;
         return conds;
     }
     static bool EndsWithJump(StatementSyntax s)
@@ -711,6 +801,43 @@ class MethodCtx
     }
 
     public List<object> Unused = new();
+    static readonly HashSet<string> Collect = new(StringComparer.Ordinal) { "Add", "Insert", "AddRange", "Push", "Enqueue", "TryAdd" };
+    // mẫu thông điệp ghép: phần GetMessage/ô thông điệp thành {ID}, phần tính lúc chạy thành {biểu thức}
+    string RTemplate(ExpressionSyntax e, int depth)
+    {
+        if (e == null) return "";
+        if (depth > 4) return "{" + R(e) + "}";
+        switch (e)
+        {
+            case ParenthesizedExpressionSyntax p: return RTemplate(p.Expression, depth);
+            case LiteralExpressionSyntax l when l.IsKind(SyntaxKind.StringLiteralExpression): return l.Token.ValueText;
+            case BinaryExpressionSyntax b when b.IsKind(SyntaxKind.AddExpression): return RTemplate(b.Left, depth) + RTemplate(b.Right, depth);
+            case InterpolatedStringExpressionSyntax isx:
+                return string.Concat(isx.Contents.Select(c => c is InterpolatedStringTextSyntax t ? t.TextToken.ValueText : c is InterpolationSyntax ip ? RTemplate(ip.Expression, depth + 1) : ""));
+            case InvocationExpressionSyntax gi when IsGM(gi):
+                { var mi = (SortedDictionary<string, object>)MsgInfo(gi); return "{" + (mi.TryGetValue("id", out var idv) && idv != null ? idv : "message") + "}"; }
+            case InvocationExpressionSyntax fi when fi.Expression is MemberAccessExpressionSyntax fm && fm.Expression.ToString() is "string" or "String" && fm.Name.Identifier.Text == "Concat":
+                return string.Concat(fi.ArgumentList.Arguments.Select(x => RTemplate(x.Expression, depth + 1)));
+            case InvocationExpressionSyntax ti when ti.Expression is MemberAccessExpressionSyntax tm && tm.Name.Identifier.Text == "Trim" && ti.ArgumentList.Arguments.Count == 0:
+                return RTemplate(tm.Expression, depth);
+            case InvocationExpressionSyntax ff when ff.Expression is MemberAccessExpressionSyntax fmm && fmm.Expression.ToString() is "string" or "String" && fmm.Name.Identifier.Text == "Format" && ff.ArgumentList.Arguments.Count >= 1:
+                {
+                    var fa = ff.ArgumentList.Arguments.Select(x => x.Expression).ToList();
+                    string fmt = RTemplate(fa[0], depth + 1);
+                    for (int i = 1; i < fa.Count; i++) fmt = Regex.Replace(fmt, "\\{" + (i - 1) + "(:[^}]*)?\\}", "{" + R(fa[i]).Replace("$", "$$") + "}");
+                    return fmt;
+                }
+            case IdentifierNameSyntax id:
+                {
+                    var sd = SingleDef(id.Identifier.Text, id.SpanStart);
+                    if (sd != null) return RTemplate(sd, depth + 1);
+                    return "{" + id.Identifier.Text + "}";
+                }
+        }
+        var om = OtherMsgs(e, 0, new HashSet<string>(StringComparer.Ordinal));
+        if (om.Count == 1 && om[0] is SortedDictionary<string, object> od && od.TryGetValue("id", out var oid) && oid != null && e is not BinaryExpressionSyntax) return "{" + oid + "}";
+        return "{" + R(e) + "}";
+    }
     static readonly HashSet<string> NotHelper = new(StringComparer.Ordinal) { "Show", "ShowDialog", "Format", "Concat", "Add", "Replace", "Trim", "Equals", "Contains", "ToString", "Split", "Insert", "Append", "AppendLine", "Join", "Log" };
     static string CalleeOf(InvocationExpressionSyntax i) => i.Expression is MemberAccessExpressionSyntax m ? m.Name.Identifier.Text : i.Expression is IdentifierNameSyntax id ? id.Identifier.Text : i.Expression.ToString();
     string UseOf(string name, int after)
@@ -767,12 +894,12 @@ class MethodCtx
             {
                 message["parts"] = msgs;
                 bool composite = !(mk.msg is InvocationExpressionSyntax mi && IsGM(mi)) && !(mk.msg is IdentifierNameSyntax);
-                if (composite) message["composite"] = true;
+                if (composite) { message["composite"] = true; message["template"] = RTemplate(mk.msg, 0); }
             }
             else if (OtherMsgs(mk.msg, 0, new HashSet<string>(StringComparer.Ordinal)) is var om && om.Count > 0)
             {
                 message["parts"] = om;
-                if (!(mk.msg is IdentifierNameSyntax) && !(mk.msg is MemberAccessExpressionSyntax) && !(mk.msg is InvocationExpressionSyntax ti && ti.Expression is MemberAccessExpressionSyntax tm && tm.Name.Identifier.Text is "Trim" or "GetMessage")) message["composite"] = true;
+                if (!(mk.msg is IdentifierNameSyntax) && !(mk.msg is MemberAccessExpressionSyntax) && !(mk.msg is InvocationExpressionSyntax ti && ti.Expression is MemberAccessExpressionSyntax tm && tm.Name.Identifier.Text is "Trim" or "GetMessage")) { message["composite"] = true; message["template"] = RTemplate(mk.msg, 0); }
             }
             else
             {
@@ -783,6 +910,7 @@ class MethodCtx
             if (notes.Count > 0) message["notes"] = notes.Distinct().OrderBy(x => x, StringComparer.Ordinal).ToList();
             string cell = mk.row != null && mk.col != null ? CellRef(mk.sheet, mk.row, mk.col) : "?";
             var cond = Conditions(mk.node);
+            var condLines = new List<int>(LastCondLines);
             var sp = mk.node.GetLocation().GetLineSpan();
             checks.Add(new SortedDictionary<string, object>(StringComparer.Ordinal)
             {
@@ -791,6 +919,7 @@ class MethodCtx
                 ["cell_const"] = mk.row != null && Eval(mk.row) != null && Eval(mk.col) != null,
                 ["sheet"] = SheetOf(mk.sheet),
                 ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond.Select(x => x.Contains(" OR ") && !x.StartsWith("NOT (") ? "(" + x + ")" : x)),
+                ["condition_lines"] = condLines,
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
                 ["message"] = message,
                 ["lines"] = new[] { sp.StartLinePosition.Line + 1, sp.EndLinePosition.Line + 1 },
@@ -812,6 +941,7 @@ class MethodCtx
                 if (p is StatementSyntax) break;
             }
             var cond = Conditions(g);
+            var condLines = new List<int>(LastCondLines);
             var sp = g.GetLocation().GetLineSpan();
             var msg = (SortedDictionary<string, object>)MsgInfo(g);
             string helper = null;
@@ -822,20 +952,34 @@ class MethodCtx
                 var uses = M.DescendantNodes().OfType<IdentifierNameSyntax>().Where(i => i.Identifier.Text == vdecl.Identifier.Text && i.SpanStart > vdecl.SpanStart).ToList();
                 if (uses.Count == 0)
                 {
-                    msg["line"] = sp.StartLinePosition.Line + 1; msg["variable"] = vdecl.Identifier.Text;
+                    msg["line"] = sp.StartLinePosition.Line + 1; msg["variable"] = vdecl.Identifier.Text; msg["usage"] = "biến không được dùng";
                     Unused.Add(msg);
                     continue;
                 }
-                var hinv = uses.Select(u => u.Ancestors().TakeWhile(a => !(a is StatementSyntax)).OfType<InvocationExpressionSyntax>().FirstOrDefault()).FirstOrDefault(x => x != null);
-                if (hinv != null && !NotHelper.Contains(CalleeOf(hinv))) { helper = CalleeOf(hinv); cond = Conditions(hinv); }
+                var uinv = uses.Select(u => u.Ancestors().TakeWhile(a => !(a is StatementSyntax)).OfType<InvocationExpressionSyntax>().FirstOrDefault()).ToList();
+                if (uinv.All(x => x != null && Collect.Contains(CalleeOf(x))))
+                {
+                    msg["line"] = sp.StartLinePosition.Line + 1; msg["variable"] = vdecl.Identifier.Text; msg["usage"] = "chỉ đưa vào tập hợp (" + CalleeOf(uinv[0]) + ")";
+                    Unused.Add(msg);
+                    continue;
+                }
+                var hinv = uinv.FirstOrDefault(x => x != null);
+                if (hinv != null && !NotHelper.Contains(CalleeOf(hinv))) { helper = CalleeOf(hinv); cond = Conditions(hinv); condLines = new List<int>(LastCondLines); condLines.Insert(0, Line(hinv)); }
             }
-            else if (dinv != null && !NotHelper.Contains(CalleeOf(dinv))) helper = CalleeOf(dinv);
+            else if (dinv != null && Collect.Contains(CalleeOf(dinv)))
+            {
+                msg["line"] = sp.StartLinePosition.Line + 1; msg["variable"] = null; msg["usage"] = "chỉ đưa vào tập hợp (" + CalleeOf(dinv) + ")";
+                Unused.Add(msg);
+                continue;
+            }
+            else if (dinv != null && !NotHelper.Contains(CalleeOf(dinv))) { helper = CalleeOf(dinv); condLines.Insert(0, Line(dinv)); }
             if (helper != null) cond.Insert(0, "via helper " + helper);
             checks.Add(new SortedDictionary<string, object>(StringComparer.Ordinal)
             {
                 ["api"] = "HTKKFile.GetMessage", ["level"] = "other", ["cells_marked"] = Array.Empty<string>(), ["cell_const"] = true,
                 ["sheet"] = null,
                 ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond),
+                ["condition_lines"] = condLines,
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
                 ["message"] = new SortedDictionary<string, object>(StringComparer.Ordinal) { ["parts"] = new[] { msg } },
                 ["context"] = ctx,
@@ -870,6 +1014,7 @@ class MethodCtx
                 if (oa.Count == 5) part["extra"] = R(oa[1]);
             }
             var cond = Conditions(oc);
+            var condLines = new List<int>(LastCondLines);
             checks.Add(new SortedDictionary<string, object>(StringComparer.Ordinal)
             {
                 ["api"] = "frmMessage", ["level"] = "other", ["cells_marked"] = Array.Empty<string>(), ["cell_const"] = true,
@@ -878,6 +1023,7 @@ class MethodCtx
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
                 ["message"] = new SortedDictionary<string, object>(StringComparer.Ordinal) { ["parts"] = new[] { part } },
                 ["context"] = "hộp thoại frmMessage/" + oa.Count + " tham số",
+                ["condition_lines"] = condLines,
                 ["lines"] = new[] { sp.StartLinePosition.Line + 1, sp.EndLinePosition.Line + 1 },
                 ["col"] = sp.StartLinePosition.Character + 1,
             });

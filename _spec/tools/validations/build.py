@@ -224,6 +224,14 @@ for c in raw:
                 mo = {"kind": first["kind"], "id": first.get("id"), "text": first.get("text"), "parts": parts}
                 if msg.get("composite"):
                     mo["composite"] = True
+                    if msg.get("template"):
+                        tpl = msg["template"]
+                        mo["template"] = tpl
+                        filled = tpl
+                        for pp in parts:
+                            if pp.get("id") and pp.get("text"):
+                                filled = filled.replace("{" + pp["id"] + "}", pp["text"])
+                        mo["text"] = filled
                     reasons.append("thông điệp ghép thêm giá trị lúc chạy")
                 msg_ok = all(p.get("text") for p in parts)
                 for p in parts:
@@ -259,6 +267,7 @@ for c in raw:
                 status = "resolved"
             rec = {
                 "condition": k["condition"],
+                "condition_lines": k.get("condition_lines", []),
                 "bindings": k["bindings"],
                 "cells_marked": k["cells_marked"],
                 "level": k["level"],
@@ -287,7 +296,7 @@ for c in raw:
         })
         for u in m.get("unused_messages", []):
             r = resolve_part(u, cname)
-            unused_all.setdefault(cname, []).append({"method": m["method"], "variable": u.get("variable"), "line": u.get("line"),
+            unused_all.setdefault(cname, []).append({"method": m["method"], "variable": u.get("variable"), "line": u.get("line"), "usage": u.get("usage"),
                                                      "kind": r["kind"], "id": r.get("id"), "text": r.get("text"), "api": u.get("api"),
                                                      "file": "_decompiled/" + c["file"]})
     rec_list = app_classes if not is_biz else per_class
@@ -338,7 +347,11 @@ index["legend"] = {
                  "FOR v FROM a WHILE c = vòng lặp; CASE x IN {...} = nhánh switch; message(...) = thông điệp; cellid(E_15) = địa chỉ ô; "
                  "tên hàm khác giữ tên gốc dạng f(args); bindings = biến cục bộ chưa thay vào điều kiện (@L = dòng gán)",
     "pink_count_definition": "level=pink gồm mọi lời gọi SetNodeBackGroundPink: HTKKFile.SetNodeBackGroundPink/4, HTKKFile.SetNodeBackGroundPink/5, GeneralFunctions.SetNodeBackGroundPink/6, cộng HTKKFile.SetNodeBackGroundPink2/5 (đếm riêng theo mark_api); số tổng 7.246 gồm cả lời gọi trong app htkk/ (thư mục _app/); không tính 2 dòng khai báo hàm",
-    "unused_messages": "GetMessage gán vào biến nhưng biến không được dùng trong hàm: không tính là check, liệt kê riêng theo class",
+    "unused_messages": "GetMessage không dẫn tới kiểm tra: biến không được dùng, hoặc chỉ đưa vào tập hợp (Add/Insert); không tính là check, liệt kê riêng theo class",
+    "source.lines": "dòng của lệnh đánh dấu ô (SetNodeBackGround*/gán BackColor), của lời gọi GetMessage, hoặc của frmMessage; KHÔNG phải dòng câu if",
+    "condition_lines": "dòng nguồn của từng vế trong condition, cùng thứ tự (vế ngoài cùng trước); vế 'via helper' lấy dòng lời gọi helper",
+    "bindings": "biến chưa thay vào điều kiện; nếu có nhiều phép gán có thể tới điểm dùng thì liệt kê tất cả dạng 'L<dòng> [khi <điều kiện riêng của phép gán>]: <giá trị hoặc +=/-=/++ biểu thức>'",
+    "message.template": "thông điệp ghép: {E_xx}/{ID} là phần thông điệp đã tra (thay vào message.text), {biểu thức} là phần tính lúc chạy",
     "via helper": "condition bắt đầu bằng 'via helper X' = thông điệp truyền vào hàm X, ô và điều kiện thật nằm trong X",
     "level": "pink = SetNodeBackGroundPink/Pink2 (lỗi chặn); yellow = SetNodeBackGroundYellow (cảnh báo); other = GetMessage không gắn ô hoặc gán BackColor trực tiếp",
     "message.kind": "xml_id = ID trong _extracted/message.xml; cell_text = text ô ẩn trong template (.xls cùng MaFile+phiên bản, sheet cuối = Header); literal; dynamic",
