@@ -23,4 +23,5 @@ nice -n 15 dotnet build "$SPEC/tools/roslyn_validations/RoslynValidations.csproj
 dotnet build-server shutdown >/dev/null 2>&1 || true
 nice -n 15 /usr/bin/time -l dotnet "$TMP/bin/RoslynValidations.dll" "$DATA/_decompiled" "$TMP/raw.json" --log "$TMP/batches.tsv"
 nice -n 15 "$PY" -I "$SPEC/tools/validations/build.py" "$TMP/raw.json" "$DATA" "$OUT" "$SPEC/csharp/classes.json"
+nice -n 15 "$PY" -I "$SPEC/tools/validations/postprocess.py" "$OUT"
 rm -rf "$TMP"
