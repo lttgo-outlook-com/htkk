@@ -1,378 +1,645 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-reorg_forms.py — reorganize HTKK 5.7.9 form/report templates.
+reorg_forms.py - map HTKK 5.7.9 template files (Data1.cab -> _extracted/) into _forms/.
 
-Source:  _extracted/  (flat, 4526 files, extracted from Data1.cab)
-Target:  _forms/      (grouped by business -> form -> renamed files)
+Source:  _extracted/  (flat, 4526 files; UNTRUSTED data: only read bytes, never executed)
+Target:  _forms/<group>/<form>/        (one folder per template stem = menu FolderName)
+         _forms/_shared/<NAME>/        (shared templates: HEADER, IN_TMP)
+Outputs: _forms/_manifest.csv          (src -> dst, rule, evidence; one row per placed file)
+         _re/pending_mapping.csv       (template files that no rule can place with evidence)
 
-Catalogue of record: _extracted/menu.xml (314 Menu, 242 form-level MaFile).
-NOTES.md §6.2 = revised business classification (sanity check only).
+Mapping rules (evidence ladder, first hit wins) - see NOTES.md section 3.9:
+  R1 foldername  stem == cabkey(menu.xml Validity/@FolderName)  (runtime opens
+                 InterfaceTemplates\\Excel\\<FolderName>_<VersionXML>.xls, WinFnProcess.cs:866)
+  R1m mafile     stem == cabkey(menu.xml @MaFile) and no FolderName matches
+  R2 datafile    stem == cabkey(menu.xml Sheet/@DataFile) of exactly one menu
+  R3 prefixed    bang_ke_/bangke_/khbs_/pl_/bao_cao_ + rest, rest resolved by R1/R1m/R2
+  R4 truncated   cab-truncated name: longest key K with name == K + prefix-of("_xml_NNN"|"_NNN");
+                 XML root must agree with the tail of the menu Sheet/@XMLnode when it is PL_*
+  R5 backup      stem == FolderName in menu_backup2009.xml / menu_backup161118.xml (older catalogues)
+  R6 stem        no catalogue entry: folder = the file's own stem (filename evidence only);
+                 group by filename keyword (TAX_KW/BCTC_KW) else 99_KHAC
+  OVR            BANGKE_OVERRIDES (manual, evidence noted per entry)
+  SHARED         header.*, in_tmp.xls -> _forms/_shared/
+  PENDING        ambiguous / conflicting evidence -> _re/pending_mapping.csv
+OLE workbooks placed by R2/R4/R5 must share sheet names with the menu Sheet IDs of the
+target form (BOUNDSHEET parse); a mismatch sends the file to PENDING.
 
-Usage:
-  python3 _re/reorg_forms.py            # DRY RUN: print mapping + unmatched
-  python3 _re/reorg_forms.py --write    # copy + rename into _forms/
+cabkey(): Data1.cab replaces the FIRST character of names that start with a digit by "_"
+(01_GTGT -> _1_gtgt, 107_B01 -> _07_b01, 20_TH_DK_TCT -> _0_th_dk_tct); letter-initial
+names are kept (bc26_ac). Lower-cased.
+
+Usage (python3 -I):
+  python3 -I _re/reorg_forms.py            # DRY RUN: summary + diff against current _forms
+  python3 -I _re/reorg_forms.py --write    # incremental apply into _forms + manifest + pending
+Env: HTKK_SRC (default /Users/tuanle/codes/HTKK/_extracted), FORMS_DST (default <repo>/_forms)
 """
-import os, re, sys, shutil, collections, xml.etree.ElementTree as ET
+import os, re, sys, csv, struct, shutil, hashlib, collections, xml.etree.ElementTree as ET
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, '_extracted')
+SRC = os.environ.get('HTKK_SRC', '/Users/tuanle/codes/HTKK/_extracted')
 DST = os.environ.get('FORMS_DST', os.path.join(ROOT, '_forms'))
+PENDING_CSV = os.path.join(ROOT, '_re', 'pending_mapping.csv')
+MANIFEST = os.path.join(DST, '_manifest.csv')
 WRITE = '--write' in sys.argv
+KEEP_IN_DST = {'cong_thuc.txt', '.DS_Store', '_manifest.csv'}   # never touched by apply
 
-# ---------------------------------------------------------------- catalogue
+# ---------------------------------------------------------------- groups
 GROUP_SLUGS = {
-    '101_1':  '01_GTGT',
-    '101_2':  '02_TNDN',
-    '101_3':  '03_TAIN',
-    '101_4':  '04_TTDB',
-    '101_6':  '06_BCTC',
-    '101_7':  '07_HOA_DON',
-    '101_8':  '08_THUE_NHA_THAU',
-    '101_9':  '09_PHI_LE_PHI',
-    '101_11': '11_TNCN',
-    '101_12': '12_THUE_BVMT',
-    '101_15': '15_THUE_KHOAN_THUE_TAI_SAN',
-    '101_16': '16_BIEN_LAI',
-    '101_17': '17_THUY_DIEN',
-    '101_18': '18_DAU_KHI',
-    '101_20': '20_TEM_RUOU',
-    '101_24': '24_CO_TUC_LOI_NHUAN',
-    '101_25': '25_HOAN_THUE',
-    '101_26': '26_GIA_HAN_NOP_THUE',
-    '101_28': '28_SHTK',
-    '101_29': '29_NCC_NUOC_NGOAI',
-    '101_30': '30_MIEN_TIEN_CHAM_NOP',
-    '101_31': '31_DAT_DAI',
-    '101_32': '32_TAI_SAN_BAO_DAM',
-    '101_33': '33_DOI_KY_TINH_THUE',
-    '101_34': '34_THUONG_MAI_DIEN_TU',
-    '101_35': '35_CHUYEN_DOI_CO_SO_HUU',
-    '101_36': '36_THUE_TOI_THIEU_TOAN_CAU',
-    '101_37': '37_HO_CN_KINH_DOANH',
+    '101_1': '01_GTGT', '101_2': '02_TNDN', '101_3': '03_TAIN', '101_4': '04_TTDB',
+    '101_6': '06_BCTC', '101_7': '07_HOA_DON', '101_8': '08_THUE_NHA_THAU',
+    '101_9': '09_PHI_LE_PHI', '101_11': '11_TNCN', '101_12': '12_THUE_BVMT',
+    '101_15': '15_THUE_KHOAN_THUE_TAI_SAN', '101_16': '16_BIEN_LAI', '101_17': '17_THUY_DIEN',
+    '101_18': '18_DAU_KHI', '101_20': '20_TEM_RUOU', '101_24': '24_CO_TUC_LOI_NHUAN',
+    '101_25': '25_HOAN_THUE', '101_26': '26_GIA_HAN_NOP_THUE', '101_28': '28_SHTK',
+    '101_29': '29_NCC_NUOC_NGOAI', '101_30': '30_MIEN_TIEN_CHAM_NOP', '101_31': '31_DAT_DAI',
+    '101_32': '32_TAI_SAN_BAO_DAM', '101_33': '33_DOI_KY_TINH_THUE',
+    '101_34': '34_THUONG_MAI_DIEN_TU', '101_35': '35_CHUYEN_DOI_CO_SO_HUU',
+    '101_36': '36_THUE_TOI_THIEU_TOAN_CAU', '101_37': '37_HO_CN_KINH_DOANH',
     '101_38': '38_TAI_SAN_MA_HOA',
-    'KHBS': 'KHBS',
-    'BANG_KE': 'BANG_KE',
-    'PHU_LUC': 'PHU_LUC',
-    '99_KHAC': '99_KHAC',
+    'KHBS': 'KHBS', 'BANG_KE': 'BANG_KE', 'PHU_LUC': 'PHU_LUC', '99_KHAC': '99_KHAC',
+    '_shared': '_shared',
 }
 
-menus = list(ET.parse(os.path.join(SRC, 'menu.xml')).getroot().findall('Menu'))
-byid = {m.get('ID'): m for m in menus}
+def cabkey(name):
+    n = name.lower()
+    return '_' + n[1:] if n[:1].isdigit() else n
 
-def group_of(m):
-    cur = m
-    while cur is not None:
-        pid = cur.get('ParentID', '')
-        parent = byid.get(pid)
-        if parent is None:
-            return None
-        if re.match(r'^(10[0-4])_\d+$', pid):
-            return pid
-        cur = parent
-    return None
-
-mafile = {}   # MAFILE.upper() -> info
-for m in menus:
-    mf = m.get('MaFile')
-    if not mf:
-        continue
-    gid = group_of(m)
-    gcap = byid[gid].get('Caption', '') if gid and gid in byid else ''
-    info = mafile.setdefault(mf.upper(), {
-        'group': gid, 'gcap': gcap, 'name': m.get('TenToKhai', ''),
-        'tongtu': m.get('MoTaBieuMau', ''), 'versions': {}, 'class': m.get('Class', ''),
-        'menus': 0,
-    })
-    info['menus'] += 1
-    info['versions'][m.get('VersionXML', '')] = m.get('VersionKHBS', '')
-
-# stem matchers (case-insensitive)
-stem_keys = {}
-for mf, info in mafile.items():
-    k = mf.lower()
-    stem_keys.setdefault(k, info)
-    if len(k) > 1 and k[0] == '0' and k[1].isdigit():
-        stem_keys.setdefault(k[1:], info)   # "04_gtgt_tt89" -> "4_gtgt_tt89"
-    if mf.startswith('200_'):            # BCTC 200_* -> file stem 00_*
-        stem_keys.setdefault('00_' + k[4:], info)
-
-stem_ver = {}  # key -> set of version digits (from menu VersionXML)
-for k, v in mafile.items():
-    vds = set(verstr.replace('.', '') for verstr in v['versions'])
-    stem_ver.setdefault(k.lower(), set()).update(vds)
-    kl = k.lower()
-    k2 = kl[1:] if kl[0] == '0' else kl
-    stem_ver.setdefault(k2, set()).update(vds)
-
-def resolve_stem(stem, ver=None):
-    s = stem.lower()
-    if s in stem_keys:
-        return stem_keys[s]
-    # cabinet strips the FIRST digit of multi-digit form numbers:
-    # 16_TH_DKNPT -> 6_th_dknpt, 107_B01_... -> 07_b01_..., 20_TH_DK_TCT -> 0_th_dk_tct
-    cands = [k for k in stem_keys if k and k[0].isdigit() and k[1:] == s]
-    if len(cands) == 1:
-        return stem_keys[cands[0]]
-    if len(cands) > 1 and ver:
-        cands2 = [k for k in cands if ver in stem_ver.get(k, set())]
-        if len(cands2) == 1:
-            return stem_keys[cands2[0]]
-    return None
-
-# ---------------------------------------------------------------- file scan
-EXT_KIND = {
-    'xls':  'mau',
-    'xls1': 'mau-b',
-    'xlsx': 'mau',
-    'xml':  'mau-xml',
-    'xm':   'mau-xml',
-    'x':    'mau-xml?',   # truncated: could be xls or xml
-    'xs':   'xsd',
-    'xl':   'mau',
-    'xl1':  'mau-b',
-    'xml1': 'mau-xml',
-    'xml9': 'mau-xml',
-    'xsd':  'xsd',
-    '':     '?',
-}
-# per-file truth from `file` output (XLS = composite doc, else text)
-ftruth = {}
-with open('/tmp/htkk_filetypes.tsv', encoding='utf-8', errors='replace') as f:
-    for line in f:
-        if '\t' not in line:
+# ---------------------------------------------------------------- catalogue (menu.xml)
+def load_menu(path):
+    root = ET.parse(path).getroot()
+    menus = list(root.iter('Menu'))
+    byid = {m.get('ID'): m for m in menus}
+    def group_of(m):
+        cur = m
+        while cur is not None:
+            pid = cur.get('ParentID', '')
+            if re.match(r'^10[0-4]_\d+$', pid):
+                return pid
+            cur = byid.get(pid)
+        return None
+    out = []
+    for m in menus:
+        if not m.get('MaFile'):
             continue
-        name, kind = line.rsplit('\t', 1)
-        ftruth[name.strip()] = kind.strip()
+        fns = [v.get('FolderName') for v in m.findall('Validity') if v.get('FolderName')]
+        if not fns:
+            continue
+        sheets = list(m.iter('Sheet'))
+        out.append({
+            'id': m.get('ID'), 'mafile': m.get('MaFile'), 'folder': fns[0],
+            'ver': (m.get('VersionXML') or '').replace('.', ''), 'group': group_of(m),
+            'sheet_ids': [s.get('ID', '') for s in sheets],
+            'datafiles': [(s.get('DataFile', ''), s.get('XMLnode', '') or '') for s in sheets],
+        })
+    return out
 
-def true_kind(name, ext):
-    t = ftruth.get(name, '')
-    if t in ('XLS', 'XLSX'):
+CAT = load_menu(os.path.join(SRC, 'menu.xml'))
+BACKUP = []
+for bf in ('menu_backup161118.xml', 'menu_backup2009.xml'):
+    try:
+        BACKUP += [dict(e, source=bf) for e in load_menu(os.path.join(SRC, bf))]
+    except ET.ParseError:
+        pass
+
+FK = collections.defaultdict(list)   # cabkey(FolderName) -> entries
+MK = collections.defaultdict(list)   # cabkey(MaFile)     -> entries
+DK = collections.defaultdict(list)   # cabkey(DataFile)   -> (entry, xmlnode)
+for e in CAT:
+    FK[cabkey(e['folder'])].append(e)
+    MK[cabkey(e['mafile'])].append(e)
+for e in CAT:
+    for df, xn in e['datafiles']:
+        k = cabkey(df)
+        if not df or df.upper() == 'KHBS' or k in FK or k in MK:
+            continue
+        if all(x[0] is not e for x in DK[k]):
+            DK[k].append((e, xn))
+BK = collections.defaultdict(list)
+for e in BACKUP:
+    k = cabkey(e['folder'])
+    if k not in FK and k not in MK and all(x['folder'] != e['folder'] for x in BK[k]):
+        BK[k].append(e)
+
+# ---------------------------------------------------------------- content sniffing
+def sniff(path):
+    with open(path, 'rb') as f:
+        b = f.read(4096)
+    if b[:8] == b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1':
+        return 'OLE', None
+    if b[:2] == b'PK':
+        return 'ZIP', None
+    if b[:2] == b'MZ':
+        return 'PE', None
+    txt = None
+    if b[:2] in (b'\xff\xfe', b'\xfe\xff'):
+        txt = b.decode('utf-16', 'replace')
+    else:
+        s = b.lstrip(b'\xef\xbb\xbf \r\n\t')
+        if s[:1] == b'<':
+            txt = s.decode('utf-8', 'replace')
+    if txt is None:
+        return 'OTHER', None
+    m = re.search(r'<(?![?!])([A-Za-z_][\w.\-:]*)', txt)
+    return 'XML', (m.group(1).split(':')[-1] if m else '')
+
+TEMPLATE_ROOT = re.compile(r'^(Sections|HSoThueDTu|TKhai(_.*)?|PL.*|BKe.*|ToKhai.*|Workbook)$', re.I)
+
+def ole_sheet_names(path):
+    """Sheet names from BIFF BOUNDSHEET (0x85) records; pure parse, no execution."""
+    d = open(path, 'rb').read()
+    if d[:8] != b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1':
+        return None
+    try:
+        ssz = 1 << struct.unpack_from('<H', d, 30)[0]
+        mssz = 1 << struct.unpack_from('<H', d, 32)[0]
+        nfat, dir_start = struct.unpack_from('<II', d, 44)
+        mini_cut, mfat_start, _, difat_start, ndifat = struct.unpack_from('<IIIII', d, 56)
+        difat = list(struct.unpack_from('<109I', d, 76))
+        s = difat_start
+        for _ in range(ndifat):
+            vals = struct.unpack_from('<%dI' % (ssz // 4), d, (s + 1) * ssz)
+            difat += vals[:-1]
+            s = vals[-1]
+        fat = []
+        for sec in difat[:nfat]:
+            fat += struct.unpack_from('<%dI' % (ssz // 4), d, (sec + 1) * ssz)
+        def chain(st):
+            out, seen = [], set()
+            while st < 0xFFFFFFFA and st not in seen and st < len(fat):
+                seen.add(st); out.append(st); st = fat[st]
+            return out
+        def read(st):
+            return b''.join(d[(x + 1) * ssz:(x + 2) * ssz] for x in chain(st))
+        dirb = read(dir_start)
+        ents = []
+        for i in range(len(dirb) // 128):
+            e = dirb[i * 128:(i + 1) * 128]
+            nl = struct.unpack_from('<H', e, 64)[0]
+            ents.append((e[:max(nl - 2, 0)].decode('utf-16le', 'replace'), e[66],
+                         struct.unpack_from('<I', e, 116)[0], struct.unpack_from('<I', e, 120)[0]))
+        wb = next((e for e in ents if e[0] in ('Workbook', 'Book') and e[1] == 2), None)
+        if wb is None:
+            return None
+        if wb[3] < mini_cut:
+            ms = read(ents[0][2])
+            mfat = []
+            for x in chain(mfat_start):
+                mfat += struct.unpack_from('<%dI' % (ssz // 4), d, (x + 1) * ssz)
+            parts, st, seen = [], wb[2], set()
+            while st < 0xFFFFFFFA and st not in seen and st < len(mfat):
+                seen.add(st); parts.append(ms[st * mssz:(st + 1) * mssz]); st = mfat[st]
+            data = b''.join(parts)[:wb[3]]
+        else:
+            data = read(wb[2])[:wb[3]]
+        names, pos = [], 0
+        while pos + 4 <= len(data):
+            t, l = struct.unpack_from('<HH', data, pos)
+            b = data[pos + 4:pos + 4 + l]
+            if t == 0x0085 and len(b) >= 8:
+                cch, hi = b[6], b[7] & 1
+                names.append(b[8:8 + cch * (2 if hi else 1)].decode('utf-16le' if hi else 'latin-1'))
+            elif t == 0x000A:
+                break
+            pos += 4 + l
+        return names
+    except (struct.error, IndexError):
+        return None
+
+def sheet_jaccard(names, menu_ids):
+    a = {norm_sheet(x) for x in names if 'HEADER' not in x.upper() and 'KHBS' not in x.upper()}
+    b = {norm_sheet(x) for x in menu_ids if 'KHBS' not in x.upper()}
+    if not a or not b:
+        return None
+    return len(a & b) / len(a | b)
+
+def lcs_len(a, b):
+    best = 0
+    for i in range(len(a)):
+        for j in range(i + best + 1, len(a) + 1):
+            if a[i:j] in b:
+                best = j - i
+            else:
+                break
+    return best
+
+def norm_root(r):
+    return re.sub(r'^(PLUC_?|PL_?)', '', r.upper())
+
+def norm_sheet(s):
+    return re.sub(r'[\s\-_/]+', '_', s.strip().upper())
+
+def sheet_overlap(names, menu_ids):
+    a = {norm_sheet(x) for x in names if 'HEADER' not in x.upper() and 'KHBS' not in x.upper()}
+    b = {norm_sheet(x) for x in menu_ids if 'KHBS' not in x.upper()}
+    if not a or not b:
+        return None
+    return len(a & b) / min(len(a), len(b))
+
+# ---------------------------------------------------------------- kind labels (unchanged naming)
+EXT_KIND = {'xls': 'mau', 'xls1': 'mau-b', 'xlsx': 'mau', 'xml': 'mau-xml', 'xm': 'mau-xml',
+            'x': 'mau-xml?', 'xs': 'xsd', 'xl': 'mau', 'xl1': 'mau-b', 'xml1': 'mau-xml',
+            'xml9': 'mau-xml', 'xsd': 'xsd', '': '?'}
+
+def true_kind(magic, ext):
+    if magic in ('OLE', 'ZIP'):
         return 'mau'
     if ext in ('x', 'xm', 'xl', 'xs', ''):
-        return 'mau-xml' if t in ('XML', 'TEXT') else 'mau?'
+        return 'mau-xml' if magic == 'XML' else 'mau?'
     return EXT_KIND.get(ext, '?')
 
 def ver_str(d):
-    if len(d) == 3:
-        return '.'.join(d)
-    return d   # keep raw digits when ambiguous
+    return '.'.join(d) if len(d) == 3 else d
 
-FORM_RE = re.compile(r'^_?(?P<stem>.+?)(?:_xml)?_(?P<ver>\d{3,5})$')
-
-plan = collections.defaultdict(lambda: collections.defaultdict(dict))  # (group, form) -> ver -> {src: meta}
-pending = []   # (name, kind_prefix, rest_stem, ver) — unresolved by exact match
-excluded = collections.Counter()
-
-mafile_by_info = {}
-for k, v in mafile.items():
-    mafile_by_info.setdefault(id(v), k)
-
-def assign(gid, form, ver, name, kind, keepname):
-    plan[(gid, form)][ver or 'nv'][name] = \
-        {'kind': kind, 'keepname': keepname} if keepname else kind
-
-for name in sorted(os.listdir(SRC)):
-    if os.path.isdir(os.path.join(SRC, name)):
-        continue
-    disp = name.rstrip('.')                     # some cab entries end with '.'
-    stem0, ext = os.path.splitext(disp)[0], os.path.splitext(disp)[1].lstrip('.').lower()
-    if name.startswith('catalogue_'):
-        excluded['catalogue_* (danh muc lieu)'] += 1
-        continue
-    if name in ('menu.xml', 'versiontokhai.xml', 'message.xml', 'Config.xml'):
-        excluded['catalog/config (giu lai _extracted)'] += 1
-        continue
-
-    if name.startswith(('bang_ke_', 'bangke_', 'khbs_', 'pl_')):
-        rest0 = re.sub(r'^(bang_ke|bangke|khbs|pl)_', '', stem0)
-        m = FORM_RE.match(rest0)
-        ver, rest = (m.group('ver'), m.group('stem')) if m else (None, rest0)
-        info = resolve_stem(rest, ver) if rest else None
-        if info is not None:
-            assign(info['group'], mafile_by_info[id(info)], ver, name, true_kind(name, ext), True)
-        else:
-            pending.append((name, name.split('_')[0] + '_', rest, ver))
-        continue
-
-    m = FORM_RE.match(stem0)
-    if not m:
-        excluded['khac (hinh anh/dll/config...)'] += 1
-        continue
-    stem, ver = m.group('stem'), m.group('ver')
-    info = resolve_stem(stem, ver)
-    if info is None:
-        pending.append((name, '', stem, ver))
-        continue
-    assign(info['group'], mafile_by_info[id(info)], ver, name, true_kind(name, ext), False)
-
-# ------------------------------------------------- fallback pass (phụ lục)
-def split_name(name):
-    disp = name.rstrip('.')
-    return os.path.splitext(disp)[0], os.path.splitext(disp)[1].lstrip('.').lower()
-
-def tokens(s):
-    return [t for t in s.lower().split('_') if t]
-
-def nn_match(rest):
-    """'3_1_nd132_tndn_tt80' -> best MaFile whose leading number == first token."""
-    ts = tokens(rest)
-    if not ts or not ts[0].isdigit():
-        return None
-    nn = int(ts[0])
-    restset = set(ts[1:])
-    best, bestscore, bestntok = None, 0, 0
-    for mf, info in mafile.items():
-        mts = tokens(mf)
-        if not mts or not mts[0].lstrip('0').isdigit() or int(mts[0].lstrip('0') or 0) != nn:
-            continue
-        score = len(restset & set(mts[1:]))
-        if score > bestscore or (score == bestscore and score > 0 and bestntok and len(mts) < bestntok):
-            best, bestscore, bestntok = (mf, info), score, len(mts)
-    return best if bestscore >= 1 else None
-
-BCTC_SHEETS = ('thtc', 'kqhdkd', 'lctttt', 'lcttgt', 'lctt_tl', 'sxkd', 'cdkt')
-
-def bctc_folder(rest):
-    ts = tokens(rest)
-    return '_'.join(t.upper() for t in ts[:3])
-
-BCTC_KW = ('cdkt', 'sxkd', 'lctttt', 'lcttgt', 'lctt', 'thtc', 'kqhdkd', 'bctc', 'cdtk')
-TAX_KW = [
-    ('tain', '101_3'), ('tndn', '101_2'), ('tncn', '101_11'),
-    ('ntnn', '101_8'), ('gtgt', '101_1'), ('ttdb', '101_4'),
-    ('dnht', '101_25'), ('tmdn', '101_31'), ('sddnn', '101_31'),
-    ('tbvmt', '101_12'), ('blp', '101_16'),
-]
+# ---------------------------------------------------------------- legacy tables (R6 / OVR)
+BCTC_KW = ('cdkt', 'sxkd', 'lctttt', 'lcttgt', 'lctt', 'thtc', 'kqhdkd', 'bctc', 'cdtk', 'b01')
+TAX_KW = [('tain', '101_3'), ('tndn', '101_2'), ('tncn', '101_11'), ('ntnn', '101_8'),
+          ('gtgt', '101_1'), ('ttdb', '101_4'), ('dnht', '101_25'), ('tmdn', '101_31'),
+          ('sddnn', '101_31'), ('tbvmt', '101_12'), ('blp', '101_16')]
+# manual decisions kept from the 2026-10-08 run; applied only when R1-R5 find nothing.
 BANGKE_OVERRIDES = {
-    '01ntnn':        ('101_8', '01_NTNN'),
-    '01ntnn_tt80':   ('101_8', '01_NTNN'),
-    '01ntnn_tt89':   ('101_8', '01_NTNN'),
-    '01_2_ht':       ('101_25', '01_DNHT'),
-    '01_3a_ht':      ('101_25', '01_DNHT'),
-    '01_3b_ht':      ('101_25', '01_DNHT'),
-    '01_4_ht':       ('101_25', '01_DNHT'),
-    '05dk_th':       ('101_11', '05_DK_TH'),
-    '16th_dangkycapma': ('101_11', '16_TH_DKNPT'),
+    '01ntnn': ('101_8', '01_NTNN'), '01ntnn_tt80': ('101_8', '01_NTNN'),
+    '01ntnn_tt89': ('101_8', '01_NTNN'),
+    '01_2_ht': ('101_25', '01_DNHT'), '01_3a_ht': ('101_25', '01_DNHT'),
+    '01_3b_ht': ('101_25', '01_DNHT'), '01_4_ht': ('101_25', '01_DNHT'),
+    '05dk_th': ('101_11', '05_DK_TH'), '16th_dangkycapma': ('101_11', '16_TH_DKNPT'),
     '20th_dangkycapma': ('101_11', '20_TH_DK_TCT'),
     'khautruthuetncn': ('101_11', 'BK_KHAU_TRU_TNCN'),
-    'nq142_cnkd_hkd': ('101_37', 'NQ142_CNKD_HKD'),
-    'nq142_cnkd_hkd_tt18': ('101_37', 'NQ142_CNKD_HKD'),
+    'nq142_cnkd_hkd': ('101_37', 'NQ142_CNKD_HKD'), 'nq142_cnkd_hkd_tt18': ('101_37', 'NQ142_CNKD_HKD'),
     '01_7gtgt_tt154_masothue': ('101_1', 'PL_01_7_GTGT_TT154'),
-    # bảng kê hóa đơn không khớp MaFile (thiếu gạch dưới trong mã / phụ lục của form)
-    '01tbac':        ('101_7', '01_TBAC'),
-    '01bcac':        ('101_7', 'BC26_AC'),
-    '03_7':          ('101_7', 'BK_03_7'),
-    'bc26_mau_3_10': ('101_7', 'BC26_AC'),
-    'bc26_mau_3_12': ('101_7', 'BC26_AC'),
-    # PL01_KHBS — phụ lục khai bổ sung điều chỉnh (root element trong file)
+    '01tbac': ('101_7', '01_TBAC'), '01bcac': ('101_7', 'BC26_AC'), '03_7': ('101_7', 'BK_03_7'),
+    'bc26_mau_3_10': ('101_7', 'BC26_AC'), 'bc26_mau_3_12': ('101_7', 'BC26_AC'),
     'xml': ('KHBS', 'PL01_KHBS'),
 }
+SHARED = {'header': 'HEADER', 'in_tmp': 'IN_TMP'}
+# per-file notes for _re/pending_mapping.csv (what was checked, why no rule applies)
+PENDING_NOTES = {
+    '_3_tain.xls': 'BIFF tho khong co vo OLE; khong co FolderName/MaFile/DataFile nao co dang ?3_TAIN',
+    '_5kk_tncn.xml': 'SpreadsheetML (root Workbook); khong co khoa ?5KK_TNCN trong menu.xml',
+    '_9_01_cdkt_tl__hn_xml_26.xml': 'ten loi "__" + version 2 chu so; gan voi DataFile 49_01_CDKT_TL_HN (menu H9 49_BCTC_TL_HN) nhung khong khop dung khoa',
+    'bangkekhautru_01ttdb.xls': 'tien to bangkekhautru_ ngoai quy uoc; "01ttdb" khong khop MaFile 01_TTDB (thieu "_"), 2 ung vien FolderName 01_TTDB_*',
+    'bangkekhautru_01ttdb_tt80.xl': 'tien to bangkekhautru_ ngoai quy uoc; "01ttdb_tt80" khong khop khoa nao; ten bi cat (.xl)',
+    'template.xls': 'BIFF tho, ten chung khong mang ma form',
+}
+SHARED_XSD = {'tkhaithue', 'tkhaithuenccnn', 'tkhaithue_hddt', 'tkhaithue_dbhc', 'tkhaidkythue',
+              'xmldsig_core_schema'}   # base schemas imported by every form XSD
+# root=Sections but app configuration (convert/validate tables), not a form template
+CONFIG_SECTIONS = {'config_header.xml', 'convertdatacommon.xml', 'convertversion.xml',
+                   'createdatafilekhbsmiss.xml', 'replacedatafile.xml', 'validcombobox.xml'}
+CONFIG_NAMES = {'menu.xml', 'versiontokhai.xml', 'message.xml', 'config.xml'}
 
-for name, prefix, rest, ver in pending:
-    _, ext = split_name(name)
-    kind = true_kind(name, ext)
-    low = rest.lower()
-    # 0) explicit bang-ke / pl overrides
-    if low in BANGKE_OVERRIDES:
-        gid, folder = BANGKE_OVERRIDES[low]
-        assign(gid, folder, ver, name, kind, True)
+# ---------------------------------------------------------------- resolution helpers
+FULL_RE = re.compile(r'^(?P<stem>.+?)(?P<xml>_xml\d?)?_(?P<ver>\d{3,5})(?:_|_bu)?$')
+PREFIXES = ('bang_ke_', 'bangke_', 'khbs_', 'pl_', 'bao_cao_')
+TRUNC_TAIL = re.compile(r'^(?:_(?:x(?:m(?:l(?:\d|_(?P<v1>\d{0,5}))?)?)?)?)?$|^_(?P<v2>\d{1,5})_?$')
+
+def lookup(key):
+    """key (already cab-form or plain lower) -> list of (rule, entry, xmlnode)."""
+    if key in FK:
+        return [('R1', e, None) for e in FK[key]]
+    if key in MK:
+        return [('R1m', e, None) for e in MK[key]]
+    if key in DK:
+        return [('R2', e, xn) for e, xn in DK[key]]
+    return []
+
+def lookup_any(rest):
+    """rest of a prefixed name: original spelling (not cab-mangled) or cab form."""
+    for k in (rest.lower(), cabkey(rest)):
+        hit = lookup(k)
+        if hit:
+            return hit
+    return []
+
+ALL_KEYS = sorted(set(FK) | set(MK) | set(DK), key=len, reverse=True)
+
+def pick(hits, ver, sheets):
+    """disambiguate several catalogue hits by version, then by sheet names."""
+    if len({id(h[1]) for h in hits}) == 1:
+        return hits[0], ''
+    if ver:
+        hv = [h for h in hits if h[1]['ver'] == ver]
+        if len(hv) == 1:
+            return hv[0], 'version'
+    if all(h[0] == 'R1m' for h in hits) and len({h[1]['mafile'] for h in hits}) == 1:
+        return hits[0], 'cung MaFile ' + hits[0][1]['mafile']
+    if sheets:
+        sc = [(sheet_jaccard(sheets, h[1]['sheet_ids']) or 0, h) for h in hits]
+        sc.sort(key=lambda x: -x[0])
+        if sc[0][0] >= 0.5 and (len(sc) == 1 or sc[1][0] < sc[0][0]):
+            return sc[0][1], 'sheet'
+    return None, 'ambiguous:' + '|'.join(sorted({h[1]['folder'] for h in hits}))
+
+# ---------------------------------------------------------------- scan
+records = []       # dicts: src, magic, root, kind, ext, gid, folder, ver, rule, evidence, keepname
+pending = []       # dicts: src, magic, root, reason, candidates
+excluded = collections.Counter()
+known_vers = collections.defaultdict(set)   # folder -> versions seen in full names
+
+files = sorted(n for n in os.listdir(SRC) if os.path.isfile(os.path.join(SRC, n)))
+meta = {}
+for name in files:
+    magic, root = sniff(os.path.join(SRC, name))
+    disp = name.rstrip('.')
+    stem0, ext = os.path.splitext(disp)
+    ext = ext.lstrip('.').lower()
+    meta[name] = (magic, root, stem0, ext)
+
+def in_scope(name):
+    magic, root, stem0, ext = meta[name]
+    low = name.lower()
+    if low.startswith('catalogue'):
+        return False, 'catalogue_* (danh muc)'
+    if low.startswith('dm_') or low.startswith('dmngayle'):
+        return False, 'dm_* (danh muc)'
+    if low in CONFIG_NAMES or low in CONFIG_SECTIONS or low.startswith('menu_backup'):
+        return False, 'catalogue menu/config'
+    if magic in ('OLE', 'ZIP'):
+        if ext in ('doc',):
+            return False, 'OLE khac (.doc)'
+        return True, ''
+    if magic == 'XML':
+        if root == 'schema':
+            return True, ''          # xsd: mapped, reported separately
+        if root and TEMPLATE_ROOT.match(root):
+            return True, ''
+        return False, 'XML cau hinh (root=%s)' % (root or '?')
+    if ext == 'xls':
+        return True, ''              # raw BIFF stream without OLE wrapper
+    return False, 'khac (%s)' % magic
+
+def add(name, gid, folder, ver, rule, evidence, keepname):
+    magic, root, stem0, ext = meta[name]
+    records.append(dict(src=name, magic=magic, root=root or '', ext=ext, gid=gid, folder=folder,
+                        ver=ver or 'nv', rule=rule, evidence=evidence, keepname=keepname,
+                        kind=true_kind(magic, ext)))
+
+def to_pending(name, reason, cands=''):
+    magic, root, stem0, ext = meta[name]
+    pending.append(dict(src=name, magic=magic, root=root or '', reason=reason, candidates=cands))
+
+sheets_cache = {}
+def sheets_of(name):
+    if name not in sheets_cache:
+        sheets_cache[name] = ole_sheet_names(os.path.join(SRC, name)) if meta[name][0] == 'OLE' else None
+    return sheets_cache[name]
+
+def place_hit(name, hit, how, ver, rule_override=None):
+    rule, e, xn = hit
+    rule = rule_override or rule
+    ev = 'menu %s MaFile=%s FolderName=%s VersionXML=%s' % (e['id'], e['mafile'], e['folder'], e['ver'])
+    if rule in ('R2',) or (rule_override and rule_override.startswith('R3') and hit[0] == 'R2'):
+        ev += '; Sheet/@DataFile'
+    if how:
+        ev += '; chon theo ' + how
+    # sheet gate for OLE placed by indirect rules
+    sh = sheets_of(name)
+    if sh is not None and rule not in ('R1', 'R1m') and not rule.startswith('R3'):
+        ov = sheet_overlap(sh, e['sheet_ids'])
+        if ov is not None and ov < 0.5:
+            to_pending(name, 'sheet_lech_menu (overlap=%.2f)' % ov, e['folder'])
+            return
+        if ov is not None:
+            ev += '; sheet overlap=%.2f' % ov
+    keep = rule != 'R1' or name.startswith(PREFIXES)
+    folder = (e['mafile'] if rule.split('/')[-1] == 'R1m' else e['folder']).upper()
+    add(name, e['group'], folder, ver, rule, ev, keep)
+
+deferred = []   # truncated / stem-only names, resolved after full names (need known_vers)
+
+for name in files:
+    ok, why = in_scope(name)
+    if not ok:
+        excluded[why] += 1
         continue
-    # 1) BCTC: sheet/sets not in MaFile list
-    if low.startswith('00_') or 'b01' in low or 'bctc' in low \
-            or any(k in low for k in BCTC_KW):
-        cand = resolve_stem('1' + low, ver) if re.match(r'^\d', low) else None
-        if cand is not None:
-            assign('101_6', mafile_by_info[id(cand)], ver, name, kind, True)
-        else:
-            assign('101_6', bctc_folder(rest), ver, name, kind, True)
+    magic, root, stem0, ext = meta[name]
+    low = stem0.lower()
+    if low in SHARED:
+        add(name, '_shared', SHARED[low], None, 'SHARED',
+            'tep dung chung, khong gan ma form' + ('; HEADER.xls WinFnProcess.cs:864' if low == 'header' else ''),
+            True)
         continue
-    # 2) phụ lục / bang ke / khbs: first token = form number of parent
-    hit = nn_match(rest)
-    if hit:
-        mf, info = hit
-        assign(info['group'], mf, ver, name, kind, True)
+    if low in SHARED_XSD:
+        add(name, '_shared', 'XSD_CHUNG', None, 'SHARED', 'schema goc import boi XSD tung mau (NOTES.md muc 2)', True)
         continue
-    # 3) tax-type keyword token (old PL: 1A_TNDN, 3A_1_TD_TAIN, pl_*masothue...)
-    for kw, gid in TAX_KW:
-        if kw in low.split('_'):
-            assign(gid, rest.upper(), ver, name, kind, True)
+    prefix = next((p for p in PREFIXES if low.startswith(p)), None)
+    if prefix:
+        rest0 = low[len(prefix):]
+        m = FULL_RE.match(rest0)
+        ver, rest = (m.group('ver'), m.group('stem')) if m else (None, rest0)
+        hits = lookup_any(rest)
+        if hits:
+            h, how = pick(hits, ver, sheets_of(name))
+            if h:
+                place_hit(name, h, how, ver, rule_override='R3/' + h[0])
+                if m:
+                    known_vers[h[1]['folder']].add(ver)
+                continue
+            to_pending(name, how, rest)
+            continue
+        deferred.append((name, prefix, rest, ver))
+        continue
+    m = FULL_RE.match(low)
+    if m:
+        stem, ver = m.group('stem'), m.group('ver')
+        hits = lookup(stem)
+        if hits:
+            h, how = pick(hits, ver, sheets_of(name))
+            if h:
+                place_hit(name, h, how, ver)
+                known_vers[h[1]['folder']].add(ver)
+                continue
+            to_pending(name, how, stem)
+            continue
+        deferred.append((name, '', stem, ver))
+        continue
+    hits = lookup(low)                    # versionless exact key (e.g. _9_bctc_dd.xls)
+    if hits:
+        h, how = pick(hits, None, sheets_of(name))
+        if h:
+            place_hit(name, h, how, None, rule_override='R5v/' + h[0])
+            continue
+        to_pending(name, how, low)
+        continue
+    deferred.append((name, '', None, None))
+
+# R4 truncated + R5 backup + R6 stem-only + OVR
+r6_cands = []
+for name, prefix, stem, ver in deferred:
+    magic, root, stem0, ext = meta[name]
+    low = stem0.lower()
+    if stem is None:
+        # R4: truncated name
+        done = False
+        for k in ALL_KEYS:
+            if not low.startswith(k):
+                continue
+            tm = TRUNC_TAIL.match(low[len(k):])
+            if not tm:
+                continue
+            hits = lookup(k)
+            h, how = pick(hits, None, sheets_of(name))
+            if not h:
+                to_pending(name, 'truncated ' + how, k)
+                done = True
+                break
+            e, xn = h[1], h[2]
+            if root and root.upper().startswith('PL') and xn:
+                tail = xn.split('/')[-1].upper()
+                if max(lcs_len(norm_root(root), norm_root(tail)), lcs_len(norm_root(root), k.upper())) < 4:
+                    to_pending(name, 'truncated: root %s khac XMLnode %s' % (root, tail), e['folder'])
+                    done = True
+                    break
+            part = tm.group('v1') or tm.group('v2') or ''
+            kv = sorted(v for v in known_vers.get(e['folder'], ()) if part and v.startswith(part))
+            v = kv[0] if len(kv) == 1 else None
+            place_hit(name, h, (how + '; ' if how else '') + 'ten bi cat, khop tien to "%s"%s' % (
+                k, ', version %s tu %s' % (v, part) if v else ''), v, rule_override='R4/' + h[0])
+            done = True
             break
-    else:
-        # 4) dedicated buckets
-        if name.startswith('khbs_'):
-            assign('KHBS', rest.upper(), ver, name, kind, True)
-        elif name.startswith('bang_ke_'):
-            assign('BANG_KE', rest.upper(), ver, name, kind, True)
-        elif name.startswith('pl_'):
-            assign('PHU_LUC', rest.upper(), ver, name, kind, True)
-        else:
-            assign('99_KHAC', rest.upper(), ver, name, kind, True)
+        if not done:
+            to_pending(name, 'khong khop khoa nao (FolderName/MaFile/Sheet DataFile, ke ca dang ten bi cat)', '')
+        continue
+    key = cabkey(stem) if not prefix else None
+    # R5: older catalogue
+    bhits = BK.get(key or '', []) or (BK.get(stem.lower(), []) + BK.get(cabkey(stem), []) if prefix else [])
+    if bhits and len({b['folder'] for b in bhits}) == 1 and bhits[0]['group'] in GROUP_SLUGS:
+        b = bhits[0]
+        add(name, b['group'], b['folder'], ver, 'R5',
+            '%s menu %s FolderName=%s' % (b['source'], b['id'], b['folder']), True)
+        continue
+    low_rest = stem.lower()
+    if low_rest in BANGKE_OVERRIDES:
+        gid, folder = BANGKE_OVERRIDES[low_rest]
+        add(name, gid, folder, ver, 'OVR', 'BANGKE_OVERRIDES[%s] (quyet dinh thu cong 2026-10-08)' % low_rest, True)
+        continue
+    r6_cands.append((name, prefix, stem, ver))
 
-fallback_assigned = sum(sum(len(f) for f in v.values()) for v in plan.values())
+# R6: own stem folder (filename only). One folder per cab stem; prefixed files join the
+# folder of an unprefixed file with the same cab stem, else keep their own rest name.
+def kw_group(stem, prefix):
+    sl = stem.lower()
+    if any(k in sl for k in BCTC_KW) or sl.lstrip('_').startswith('00_'):
+        return '101_6'
+    g = next((g for kw, g in TAX_KW if kw in sl.split('_')), None)
+    return g or {'khbs_': 'KHBS', 'bang_ke_': 'BANG_KE', 'bangke_': 'BANG_KE', 'pl_': 'PHU_LUC'}.get(prefix or '', '99_KHAC')
+base_r6 = {}
+for name, prefix, stem, ver in r6_cands:
+    if not prefix:
+        base_r6[cabkey(stem)] = (kw_group(stem, None), cabkey(stem).lstrip('_').upper())
+for name, prefix, stem, ver in r6_cands:
+    ck = cabkey(stem)
+    if ck in base_r6:
+        gid, folder = base_r6[ck]
+        how = 'cung stem voi tep goc' if prefix else ''
+    else:
+        gid, folder, how = kw_group(stem, prefix), stem.lstrip('_').upper(), ''
+    add(name, gid, folder, ver, 'R6', 'khong co trong menu.xml/backup; thu muc theo stem ten tep; nhom theo tu khoa'
+        + ('; ' + how if how else ''), True)
+
+# ---------------------------------------------------------------- destination names
+plan = collections.defaultdict(lambda: collections.defaultdict(dict))
+for r in records:
+    plan[(r['gid'], r['folder'])][r['ver']][r['src']] = r
+dest = {}
+used = set()
+for (gid, form), vers in sorted(plan.items()):
+    gslug = GROUP_SLUGS.get(gid, '99_KHAC')
+    for ver, fs in sorted(vers.items()):
+        vlabel = 'v' + ver_str(ver) if ver != 'nv' else 'no-version'
+        for name, r in sorted(fs.items()):
+            ddir = os.path.join(gslug, form)
+            ext = os.path.splitext(name)[1]
+            if r['keepname']:
+                bname = name[1:] if name.startswith('_') else name
+                d = os.path.join(ddir, bname)
+            else:
+                d = os.path.join(ddir, '%s_%s_%s%s' % (form, vlabel, r['kind'], ext))
+            base, n = d, 2
+            while d in used:
+                st, e2 = os.path.splitext(base)
+                d = '%s-%d%s' % (st, n, e2)
+                n += 1
+            used.add(d)
+            dest[name] = d
+            r['dst'] = d
 
 # ---------------------------------------------------------------- report
+def sha(p):
+    h = hashlib.sha256()
+    with open(p, 'rb') as f:
+        for blk in iter(lambda: f.read(1 << 20), b''):
+            h.update(blk)
+    return h.hexdigest()
+
+rule_cnt = collections.Counter(r['rule'].split('/')[0] for r in records)
 print('=' * 78)
-print(f'catalog menu.xml: {len(mafile)} MaFile, {sum(len(i["versions"]) for i in mafile.values())} (MaFile,version)')
-total = 0
-for (gid, form), vers in sorted(plan.items(), key=lambda kv: (GROUP_SLUGS.get(kv[0][0], 'zz'), kv[0][1])):
-    gslug = GROUP_SLUGS.get(gid, '?')
-    for ver, files in sorted(vers.items()):
-        for name, kind in sorted(files.items()):
-            total += 1
-print(f'total matched files: {total}')
-print()
-print('per group / form:')
-per_group = collections.Counter()
-for (gid, form), vers in sorted(plan.items()):
-    n = sum(len(files) for files in vers.values())
-    per_group[(GROUP_SLUGS.get(gid, f'?{gid}'), gid)] += n
-for (gslug, gid), n in sorted(per_group.items()):
-    gcap = next((i['gcap'] for i in mafile.values() if i['group'] == gid), '')
-    nforms = sum(1 for (g, f) in plan if g == gid)
-    print(f'  {gslug:28} ({gid:7}) {n:5} files, {nforms:3} forms  - {gcap[:50]}')
-print()
-print(f'fallback-assigned files (pending pass): {len(pending)}')
-for gid in ('KHBS', 'BANG_KE', 'PHU_LUC', '99_KHAC'):
-    forms = {f: v for (g, f), v in plan.items() if g == gid}
-    if not forms:
-        continue
-    print(f'  -- {gid}: {sum(sum(len(f) for f in v.values()) for v in forms.values())} files in {len(forms)} folders')
-    for f, v in sorted(forms.items()):
-        files = [n for vv in v.values() for n in vv]
-        print(f'     {f:40} {len(files):4}  e.g. {sorted(files)[:2]}')
-print()
+print('catalogue menu.xml: %d menu co MaFile+FolderName; backup: %d' % (len(CAT), len(BACKUP)))
+print('in-scope files: %d placed, %d pending' % (len(records), len(pending)))
+for k, v in sorted(rule_cnt.items()):
+    print('  rule %-7s %5d' % (k, v))
 print('excluded:')
-for k, c in excluded.items():
-    print(f'  {k}: {c}')
+for k, v in sorted(excluded.items()):
+    print('  %-40s %5d' % (k, v))
+print('pending reasons:')
+for k, v in collections.Counter(p['reason'].split(':')[0].split(' (')[0] for p in pending).most_common():
+    print('  %-40s %5d' % (k, v))
+
+current = {}
+if os.path.isdir(DST):
+    for dp, dn, fn in os.walk(DST):
+        for f in fn:
+            if f in KEEP_IN_DST:
+                continue
+            current[os.path.relpath(os.path.join(dp, f), DST)] = os.path.join(dp, f)
+planned = {r['dst']: r for r in records}
+add_ = [d for d in planned if d not in current]
+rem_ = [d for d in current if d not in planned]
+same = [d for d in planned if d in current]
+diffc = [d for d in same if sha(current[d]) != sha(os.path.join(SRC, planned[d]['src']))]
+print('diff vs %s: keep %d (content differs %d), add %d, remove %d' % (DST, len(same), len(diffc), len(add_), len(rem_)))
+if '--verbose' in sys.argv:
+    for d in sorted(add_):
+        print('  + %s  <- %s [%s]' % (d, planned[d]['src'], planned[d]['rule']))
+    for d in sorted(rem_):
+        print('  - %s' % d)
+    for p in pending:
+        print('  ? %s  %s  %s' % (p['src'], p['reason'], p['candidates']))
 
 # ---------------------------------------------------------------- write
 if WRITE:
-    if os.path.exists(DST):
-        sys.exit(f'{DST} already exists — remove it or pick another name first')
-    for (gid, form), vers in sorted(plan.items()):
-        gslug = GROUP_SLUGS.get(gid, f'99_{form[:24]}')
-        for ver, files in sorted(vers.items()):
-            vlabel = 'v' + ver_str(ver) if ver not in ('nv',) else 'no-version'
-            ddir = os.path.join(DST, gslug, form)
-            os.makedirs(ddir, exist_ok=True)
-            for name, meta in sorted(files.items()):
-                if isinstance(meta, dict):
-                    kind, keepname = meta['kind'], meta['keepname']
-                else:
-                    kind, keepname = meta, False
-                ext = os.path.splitext(name)[1]
-                if keepname:
-                    bname = name[1:] if name.startswith('_') else name
-                    dst = os.path.join(ddir, bname)
-                else:
-                    dst = os.path.join(ddir, f'{form}_{vlabel}_{kind}{ext}')
-                # de-dup: two source files with same (form, ver, kind) -> suffix
-                base, n = dst, 2
-                while os.path.exists(dst):
-                    stem2, e2 = os.path.splitext(dst)
-                    dst = f'{stem2}-{n}{e2}'
-                    n += 1
-                shutil.copy2(os.path.join(SRC, name), dst)
-
-    print(f'\nWROTE {sum(sum(len(f) for f in v.values()) for v in plan.values())} files -> {DST}')
+    for d in sorted(rem_):
+        os.remove(current[d])
+    for d, r in sorted(planned.items()):
+        p = os.path.join(DST, d)
+        s = os.path.join(SRC, r['src'])
+        if d in current and d not in diffc:
+            continue
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        shutil.copy2(s, p)
+    # drop folders left with no source file (cong_thuc.txt handled by caller, reported here)
+    for dp, dn, fn in sorted(os.walk(DST, topdown=False)):
+        if dp == DST:
+            continue
+        real = [f for f in fn if f not in ('.DS_Store',)]
+        if not real and not dn:
+            for f in fn:
+                os.remove(os.path.join(dp, f))
+            os.rmdir(dp)
+        elif real == ['cong_thuc.txt'] and not dn:
+            print('  ORPHAN cong_thuc.txt (no source file left): %s' % os.path.relpath(dp, DST))
+    with open(MANIFEST, 'w', newline='', encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['src', 'dst', 'rule', 'version', 'magic', 'root', 'sha256', 'evidence'])
+        for r in sorted(records, key=lambda r: r['dst']):
+            w.writerow([r['src'], r['dst'], r['rule'], r['ver'], r['magic'], r['root'],
+                        sha(os.path.join(SRC, r['src'])), r['evidence']])
+    with open(PENDING_CSV, 'w', newline='', encoding='utf-8') as f:
+        w = csv.writer(f)
+        w.writerow(['src', 'magic', 'root', 'reason', 'candidates', 'ghi_chu'])
+        for p in sorted(pending, key=lambda p: p['src']):
+            w.writerow([p['src'], p['magic'], p['root'], p['reason'], p['candidates'],
+                        PENDING_NOTES.get(p['src'], '')])
+    print('WROTE %d planned files (%d copied/updated, %d removed) -> %s; manifest + pending written'
+          % (len(planned), len(add_) + len(diffc), len(rem_), DST))
