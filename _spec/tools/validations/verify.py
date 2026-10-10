@@ -46,6 +46,14 @@ for k, m, c in checks:
         seen.add(key)
         gm_json[(c["source"]["file"], p["pos"][0])] += 1
         gm_kind[(p["kind"], "có text" if p.get("text") else "không text", c["status"])] += 1
+n_unused = 0
+for k, r in recs.items():
+    for u in r.get("unused_messages", []):
+        if u.get("api") == "HTKKFile.GetMessage":
+            gm_json[(u["file"], u["line"])] += 1
+            n_unused += 1
+print("   GetMessage gán biến không dùng (unused_messages, không tính là check):", n_unused)
+print("   check có condition 'via helper':", sum(1 for _, _, c in checks if c["condition"].startswith("via helper")))
 gm_src = collections.Counter()
 by_asm = collections.Counter()
 for root in ("_decompiled/tax.htkk.business", "_decompiled/htkk"):
@@ -171,7 +179,7 @@ for v, hits in V.items():
 
 # (6) mẫu đọc tay
 if "--sample" in sys.argv:
-    rnd = random.Random(20261010)
+    rnd = random.Random(int(os.environ.get("SAMPLE_SEED", "20261010")))
     pool = {True: [], False: []}
     for k, m in methods:
         if k.startswith("_app") or not m["checks"]:
@@ -180,7 +188,7 @@ if "--sample" in sys.argv:
     pick = rnd.sample(sorted(pool[True], key=lambda x: (x[0], x[1]["source"]["lines"][0])), 18) + \
         rnd.sample(sorted(pool[False], key=lambda x: (x[0], x[1]["source"]["lines"][0])), 12)
     chosen = [(k, m, rnd.choice(m["checks"])) for k, m in pick]
-    rnd2 = random.Random(20261011)
+    rnd2 = random.Random(int(os.environ.get("SAMPLE_SEED", "20261010")) + 1)
     used = {(k, m["method"], m["source"]["lines"][0]) for k, m in pick}
     final = []
     for k, m, c in chosen:
@@ -201,8 +209,11 @@ mc = os.path.join(vdir, "manual_check.csv")
 if os.path.exists(mc):
     import csv
     rows = list(csv.DictReader(open(mc, encoding="utf-8")))
-    n = len(rows)
-    ok = sum(1 for r in rows if r["ket_qua_sau_sua"] == "dung")
-    part = sum(1 for r in rows if r["ket_qua_sau_sua"] == "dung_mot_phan")
-    first = sum(1 for r in rows if r["loi_lan_1"] == "khong" and r["ket_qua_sau_sua"] != "sai")
-    print("== (6) manual_check.csv: %d hàm; đúng sau sửa %d (%.1f%%), đúng một phần %d; lượt 1 không lỗi %d (%.1f%%)" % (n, ok, 100.0 * ok / n, part, first, 100.0 * first / n))
+    for vg in sorted({r["vong"] for r in rows}):
+        rr = [r for r in rows if r["vong"] == vg]
+        n = len(rr)
+        ok = sum(1 for r in rr if r["ket_qua_sau_sua"] == "dung")
+        part = sum(1 for r in rr if r["ket_qua_sau_sua"] == "dung_mot_phan")
+        first = sum(1 for r in rr if r["loi_lan_1"] == "khong")
+        print("== (6) manual_check vòng %s (seed %s): %d check; đúng chặt %d (%.1f%%), một phần %d; không lỗi ở lần đọc đầu %d (%.1f%%)" % (
+            vg, rr[0]["seed"], n, ok, 100.0 * ok / n, part, first, 100.0 * first / n))

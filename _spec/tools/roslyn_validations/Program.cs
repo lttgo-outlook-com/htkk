@@ -145,6 +145,7 @@ foreach (var c in classes.OrderBy(c => c.File, StringComparer.Ordinal).ThenBy(c 
             ["sheetIndex"] = mx.SheetIndex(),
             ["calls"] = edges[key].Where(nodes.ContainsKey).Select(t => t.StartsWith(c.Name + "::") ? t.Split("::")[1] : t.Replace("::", ".")).OrderBy(x => x, StringComparer.Ordinal).ToList(),
             ["checks"] = mx.Extract(),
+            ["unused_messages"] = mx.Unused,
         });
     }
     if (methods.Count == 0) continue;
@@ -384,7 +385,7 @@ class MethodCtx
                 }
             case ConditionalExpressionSyntax c: return "IF(" + R(c.Condition) + ", " + R(c.WhenTrue) + ", " + R(c.WhenFalse) + ")";
             case IsPatternExpressionSyntax ip: return R(ip.Expression) + " IS " + ip.Pattern.ToString();
-            case ConditionalAccessExpressionSyntax ca: return R(ca.Expression) + "?" + ca.WhenNotNull.ToString();
+            case ConditionalAccessExpressionSyntax ca: return RChain(ca.WhenNotNull, R(ca.Expression) + "?");
             case IdentifierNameSyntax id: return RIdent(id);
             case ThisExpressionSyntax: return "this";
             case ElementAccessExpressionSyntax ea: return RElement(ea);
@@ -397,11 +398,63 @@ class MethodCtx
             case PredefinedTypeSyntax pt: return pt.Keyword.Text;
             case TypeOfExpressionSyntax to: return "type(" + to.Type + ")";
             case AssignmentExpressionSyntax asg: return R(asg.Left) + " := " + R(asg.Right);
-            case SimpleLambdaExpressionSyntax or ParenthesizedLambdaExpressionSyntax: return "lambda(...)";
+            case SimpleLambdaExpressionSyntax or ParenthesizedLambdaExpressionSyntax: return RLambda((LambdaExpressionSyntax)e);
             case DeclarationExpressionSyntax de: return de.Designation.ToString();
             case GenericNameSyntax g: return g.Identifier.Text;
         }
         return "expr(" + e.Kind().ToString() + ")";
+    }
+    string RLambda(LambdaExpressionSyntax l)
+    {
+        var ps = l is SimpleLambdaExpressionSyntax sl ? new[] { sl.Parameter.Identifier.Text } : ((ParenthesizedLambdaExpressionSyntax)l).ParameterList.Parameters.Select(p => p.Identifier.Text).ToArray();
+        if (l.ExpressionBody == null) return "(" + string.Join(", ", ps) + " => {khối lệnh})";
+        return "(" + string.Join(", ", ps) + " => " + R(l.ExpressionBody) + ")";
+    }
+    // biểu thức lọc dạng x => x.Thuộc_tính == E: trả (thuộc tính, E)
+    static (string prop, ExpressionSyntax val)? SimpleFilter(ExpressionSyntax arg)
+    {
+        if (arg is not LambdaExpressionSyntax l || l.ExpressionBody == null) return null;
+        string pn = l is SimpleLambdaExpressionSyntax sl ? sl.Parameter.Identifier.Text : ((ParenthesizedLambdaExpressionSyntax)l).ParameterList.Parameters.Count == 1 ? ((ParenthesizedLambdaExpressionSyntax)l).ParameterList.Parameters[0].Identifier.Text : null;
+        if (pn == null) return null;
+        ExpressionSyntax left = null, right = null;
+        if (l.ExpressionBody is BinaryExpressionSyntax b && b.IsKind(SyntaxKind.EqualsExpression)) { left = b.Left; right = b.Right; }
+        else if (l.ExpressionBody is InvocationExpressionSyntax iv && iv.Expression is MemberAccessExpressionSyntax im && im.Name.Identifier.Text == "Equals" && iv.ArgumentList.Arguments.Count == 1) { left = im.Expression; right = iv.ArgumentList.Arguments[0].Expression; }
+        if (left is MemberAccessExpressionSyntax lm && lm.Expression is IdentifierNameSyntax li && li.Identifier.Text == pn && !right.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Any(x => x.Identifier.Text == pn))
+            return (lm.Name.Identifier.Text, right);
+        return null;
+    }
+    string RFind(string name, string recv, ExpressionSyntax lambdaArg)
+    {
+        var f = SimpleFilter(lambdaArg);
+        if (f == null) return null;
+        string v = R(f.Value.val);
+        if (f.Value.prop == "Path" && (name is "Find" or "FirstOrDefault" or "First" or "SingleOrDefault")) return "cell_by_path(" + recv + ", " + v + ")";
+        string op = name switch { "Find" or "FirstOrDefault" or "First" or "SingleOrDefault" => "find_by", "Where" or "FindAll" => "filter_by", "Exists" or "Any" => "exists_by", "Count" => "count_by", _ => null };
+        return op == null ? null : op + "(" + recv + ", " + f.Value.prop + " = " + v + ")";
+    }
+    // chuỗi sau toán tử ?. : prefix là phần nhận đã in
+    string RChain(ExpressionSyntax e, string prefix)
+    {
+        switch (e)
+        {
+            case MemberBindingExpressionSyntax mb: return prefix + "." + mb.Name.Identifier.Text;
+            case ElementBindingExpressionSyntax eb: return prefix + "[" + string.Join(", ", eb.ArgumentList.Arguments.Select(x => R(x.Expression))) + "]";
+            case MemberAccessExpressionSyntax ma: return RChain(ma.Expression, prefix) + "." + ma.Name.Identifier.Text;
+            case ElementAccessExpressionSyntax ea: return RChain(ea.Expression, prefix) + "[" + string.Join(", ", ea.ArgumentList.Arguments.Select(x => R(x.Expression))) + "]";
+            case ConditionalAccessExpressionSyntax c2: return RChain(c2.WhenNotNull, RChain(c2.Expression, prefix) + "?");
+            case InvocationExpressionSyntax inv:
+                {
+                    var args = inv.ArgumentList.Arguments.Select(x => x.Expression).ToList();
+                    string name; string recv;
+                    if (inv.Expression is MemberAccessExpressionSyntax im) { name = im.Name.Identifier.Text; recv = RChain(im.Expression, prefix); }
+                    else if (inv.Expression is MemberBindingExpressionSyntax ib) { name = ib.Name.Identifier.Text; recv = prefix; }
+                    else return R(e);
+                    if (args.Count == 1) { var fr = RFind(name, recv, args[0]); if (fr != null) return fr; }
+                    string fn = FnMap.TryGetValue(name, out var mp) ? mp : name;
+                    return fn + "(" + string.Join(", ", new[] { recv }.Concat(args.Select(R))) + ")";
+                }
+        }
+        return R(e);
     }
     string Wrap(ExpressionSyntax e) { var s = R(e); return e is BinaryExpressionSyntax || e is ConditionalExpressionSyntax ? "(" + s + ")" : s; }
 
@@ -497,6 +550,8 @@ class MethodCtx
             return (name == "GetText" ? "text(" : "value(") + CellRef(recv, args[0], args[1]) + ")";
         if (name == "Equals" && recv != null && args.Count >= 1 && !(recv is PredefinedTypeSyntax)) return Wrap(recv) + " = " + Wrap(args[0]);
         bool staticRecv = recv == null || recv is PredefinedTypeSyntax || recv is IdentifierNameSyntax q && char.IsUpper(q.Identifier.Text[0]) && !paramNames.Contains(q.Identifier.Text) && Reaching(q.Identifier.Text, inv.SpanStart) == null && !C.Fields.ContainsKey(q.Identifier.Text);
+        if (args.Count == 1 && recv != null && args[0] is LambdaExpressionSyntax)
+        { var fr = RFind(name, R(recv), args[0]); if (fr != null) return fr; }
         string fn = FnMap.TryGetValue(name, out var mapped) ? mapped : name;
         var parts = new List<string>();
         if (!staticRecv) parts.Add(R(recv));
@@ -528,8 +583,10 @@ class MethodCtx
                 case ForStatementSyntax fs:
                     if (child != fs.Condition && !fs.Initializers.Contains(child))
                     {
-                        string v = fs.Declaration?.Variables.FirstOrDefault()?.Identifier.Text ?? "i";
-                        string init = fs.Declaration?.Variables.FirstOrDefault()?.Initializer?.Value is ExpressionSyntax iv ? R(iv) : "?";
+                        string v = fs.Declaration?.Variables.FirstOrDefault()?.Identifier.Text;
+                        string init = fs.Declaration?.Variables.FirstOrDefault()?.Initializer?.Value is ExpressionSyntax iv ? R(iv) : null;
+                        if (v == null && fs.Initializers.FirstOrDefault() is AssignmentExpressionSyntax fa) { v = R(fa.Left); init = R(fa.Right); }
+                        v ??= "?"; init ??= "?";
                         conds.Add("FOR " + v + " FROM " + init + " WHILE " + (fs.Condition != null ? R(fs.Condition) : "true"));
                     }
                     break;
@@ -653,6 +710,9 @@ class MethodCtx
         return res;
     }
 
+    public List<object> Unused = new();
+    static readonly HashSet<string> NotHelper = new(StringComparer.Ordinal) { "Show", "ShowDialog", "Format", "Concat", "Add", "Replace", "Trim", "Equals", "Contains", "ToString", "Split", "Insert", "Append", "AppendLine", "Join", "Log" };
+    static string CalleeOf(InvocationExpressionSyntax i) => i.Expression is MemberAccessExpressionSyntax m ? m.Name.Identifier.Text : i.Expression is IdentifierNameSyntax id ? id.Identifier.Text : i.Expression.ToString();
     string UseOf(string name, int after)
     {
         var uses = M.DescendantNodes().OfType<IdentifierNameSyntax>().Where(i => i.Identifier.Text == name && i.SpanStart > after).ToList();
@@ -754,6 +814,23 @@ class MethodCtx
             var cond = Conditions(g);
             var sp = g.GetLocation().GetLineSpan();
             var msg = (SortedDictionary<string, object>)MsgInfo(g);
+            string helper = null;
+            var vdecl = g.Ancestors().TakeWhile(a => !(a is StatementSyntax)).OfType<VariableDeclaratorSyntax>().FirstOrDefault();
+            var dinv = g.Ancestors().TakeWhile(a => !(a is StatementSyntax)).OfType<InvocationExpressionSyntax>().FirstOrDefault(a => !IsGM(a));
+            if (vdecl != null)
+            {
+                var uses = M.DescendantNodes().OfType<IdentifierNameSyntax>().Where(i => i.Identifier.Text == vdecl.Identifier.Text && i.SpanStart > vdecl.SpanStart).ToList();
+                if (uses.Count == 0)
+                {
+                    msg["line"] = sp.StartLinePosition.Line + 1; msg["variable"] = vdecl.Identifier.Text;
+                    Unused.Add(msg);
+                    continue;
+                }
+                var hinv = uses.Select(u => u.Ancestors().TakeWhile(a => !(a is StatementSyntax)).OfType<InvocationExpressionSyntax>().FirstOrDefault()).FirstOrDefault(x => x != null);
+                if (hinv != null && !NotHelper.Contains(CalleeOf(hinv))) { helper = CalleeOf(hinv); cond = Conditions(hinv); }
+            }
+            else if (dinv != null && !NotHelper.Contains(CalleeOf(dinv))) helper = CalleeOf(dinv);
+            if (helper != null) cond.Insert(0, "via helper " + helper);
             checks.Add(new SortedDictionary<string, object>(StringComparer.Ordinal)
             {
                 ["api"] = "HTKKFile.GetMessage", ["level"] = "other", ["cells_marked"] = Array.Empty<string>(), ["cell_const"] = true,

@@ -23,9 +23,34 @@ for el in ET.parse(os.path.join(repo, "_extracted/message.xml")).getroot().iter(
 # ---- template theo MaFile + VersionXML ----
 # menu.xml: MenuClass -> {(MaFile, XsdSchema)}; dùng XsdSchema làm tên dự phòng khi _forms không có thư mục MaFile
 menu_pairs = {}
+folders_cls = {}      # Class -> {FolderName} (Validity/@FolderName; runtime mở <FolderName>_<VersionXML>.xls)
+folders_cls_ver = {}  # (Class, VersionXML) -> {FolderName}
 for el in ET.parse(os.path.join(repo, "_extracted/menu.xml")).getroot().iter("Menu"):
     if el.get("Class") and el.get("MaFile"):
         menu_pairs.setdefault(el.get("Class"), set()).add((el.get("MaFile"), el.get("XsdSchema") or ""))
+        for v in el.iter("Validity"):
+            if v.get("FolderName"):
+                folders_cls.setdefault(el.get("Class"), set()).add(v.get("FolderName"))
+                folders_cls_ver.setdefault((el.get("Class"), el.get("VersionXML") or ""), set()).add(v.get("FolderName"))
+
+# chỉ mục tên tệp (chữ thường) trong _forms/*/*/ và _extracted/
+file_index = {}
+for d in sorted(glob.glob(os.path.join(repo, "_forms", "*", "*"))) + [os.path.join(repo, "_extracted")]:
+    if os.path.isdir(d):
+        for fn in sorted(os.listdir(d)):
+            file_index.setdefault(fn.lower(), []).append(os.path.join(d, fn))
+
+
+def _is_ole(path):
+    try:
+        with open(path, "rb") as f:
+            return f.read(8) == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+    except OSError:
+        return False
+
+
+def _norm2(name):
+    return re.sub(r"(^|_)0+(?=[0-9a-z])", r"\1", name.lower())
 
 
 def template_key(cname):
@@ -51,7 +76,25 @@ def _norm(name):
     return "_" + s if s[:1].isdigit() else s
 
 
-def find_xls(mafile, xsd, ver):
+def find_xls(mafile, xsd, ver, folders=()):
+    f = _find_xls_old(mafile, xsd, ver)
+    if f:
+        return f
+    vd = ver.replace(".", "")
+    for nm in [mafile, xsd] + sorted(folders):
+        if not nm:
+            continue
+        # tên tệp giải nén từ cab mất ký tự đầu (05QTT_TNCN -> _5qtt_tncn, 334_B01 -> _34_b01)
+        for base in sorted({nm.lower(), nm.lower()[1:], _norm(nm).lstrip("_"), _norm2(nm)}):
+            for pre in ("", "_"):
+                for ext in (".xls", ".xl", ".x", ""):  # tên tệp có thể bị cụt đuôi khi giải nén
+                    for path in file_index.get(pre + base + "_" + vd + ext, []):
+                        if _is_ole(path) and workbook_path(path):
+                            return path
+    return None
+
+
+def _find_xls_old(mafile, xsd, ver):
     cands = [os.path.join(repo, "_forms", "*", mafile, "%s_v%s_mau.xls" % (mafile, ver))]
     if xsd:
         cands.append(os.path.join(repo, "_forms", "*", xsd, "%s_v%s_mau.xls" % (xsd, ver)))
@@ -82,9 +125,12 @@ def workbook_path(path):
 
 def templates_for(cname):
     pairs, ver, how = template_key(cname)
+    ci = cls_info.get(cname)
+    mc = ci["MenuClass"] if ci and ci["in_menu"] else re.sub(r"Nckt\d{3}$", "", cname)
+    folders = folders_cls_ver.get((mc, ver or "")) or folders_cls.get(mc, set())
     out = []
     for mf, xs in pairs:
-        f = find_xls(mf, xs, ver)
+        f = find_xls(mf, xs, ver, folders)
         if f:
             out.append((mf, f))
     return out, pairs, ver, how
@@ -155,6 +201,7 @@ def resolve_part(p, cname):
 
 SHARED = {"GeneralFunctions", "ValidateBase", "Common"}
 unresolved = []
+unused_all = {}
 per_class = {}
 app_classes = {}
 totals = {"checks": 0}
@@ -238,6 +285,11 @@ for c in raw:
             "source": {"file": "_decompiled/" + c["file"], "lines": [m["start_line"], m["end_line"]]},
             "calls": m["calls"], "checks": checks, "note": note,
         })
+        for u in m.get("unused_messages", []):
+            r = resolve_part(u, cname)
+            unused_all.setdefault(cname, []).append({"method": m["method"], "variable": u.get("variable"), "line": u.get("line"),
+                                                     "kind": r["kind"], "id": r.get("id"), "text": r.get("text"), "api": u.get("api"),
+                                                     "file": "_decompiled/" + c["file"]})
     rec_list = app_classes if not is_biz else per_class
     rec_list[cname] = mrecs
 
@@ -260,6 +312,7 @@ for cname in sorted(cls_info):
         "key": key,
         "template": {"candidates": [mf for mf, _ in pairs], "Version": ver, "how": how, "files": [os.path.relpath(f, repo) for _, f in tpls]},
         "methods": methods,
+        "unused_messages": unused_all.get(cname, []),
     })
     lv = {}
     st = {}
@@ -276,7 +329,7 @@ for cname in missing:  # class trong thư mục business nhưng ngoài namespace
     dump(os.path.join(out_dir, cname + ".json"), {"key": {"Class": cname, "MenuID": None, "MaFile": None, "VersionXML": None, "in_menu": False}, "template": None, "methods": per_class[cname]})
     index["classes"][cname] = {"file": cname + ".json", "in_menu": False, "note": "không có trong classes.json"}
 for cname in sorted(app_classes):
-    dump(os.path.join(out_dir, "_app", cname + ".json"), {"key": {"Class": cname, "assembly": "htkk"}, "methods": app_classes[cname]})
+    dump(os.path.join(out_dir, "_app", cname + ".json"), {"key": {"Class": cname, "assembly": "htkk"}, "methods": app_classes[cname], "unused_messages": unused_all.get(cname, [])})
     index["app_classes"][cname] = {"file": "_app/" + cname + ".json", "methods": len(app_classes[cname]),
                                    "checks": sum(len(m["checks"]) for m in app_classes[cname])}
 index["legend"] = {
@@ -284,6 +337,9 @@ index["legend"] = {
                  "S1!L33 = ô ở sheet chỉ số 1; {expr +1} = hàng tính lúc chạy (expr là chỉ số 0); col{expr} = cột tính lúc chạy; "
                  "FOR v FROM a WHILE c = vòng lặp; CASE x IN {...} = nhánh switch; message(...) = thông điệp; cellid(E_15) = địa chỉ ô; "
                  "tên hàm khác giữ tên gốc dạng f(args); bindings = biến cục bộ chưa thay vào điều kiện (@L = dòng gán)",
+    "pink_count_definition": "level=pink gồm mọi lời gọi SetNodeBackGroundPink: HTKKFile.SetNodeBackGroundPink/4, HTKKFile.SetNodeBackGroundPink/5, GeneralFunctions.SetNodeBackGroundPink/6, cộng HTKKFile.SetNodeBackGroundPink2/5 (đếm riêng theo mark_api); số tổng 7.246 gồm cả lời gọi trong app htkk/ (thư mục _app/); không tính 2 dòng khai báo hàm",
+    "unused_messages": "GetMessage gán vào biến nhưng biến không được dùng trong hàm: không tính là check, liệt kê riêng theo class",
+    "via helper": "condition bắt đầu bằng 'via helper X' = thông điệp truyền vào hàm X, ô và điều kiện thật nằm trong X",
     "level": "pink = SetNodeBackGroundPink/Pink2 (lỗi chặn); yellow = SetNodeBackGroundYellow (cảnh báo); other = GetMessage không gắn ô hoặc gán BackColor trực tiếp",
     "message.kind": "xml_id = ID trong _extracted/message.xml; cell_text = text ô ẩn trong template (.xls cùng MaFile+phiên bản, sheet cuối = Header); literal; dynamic",
     "status": "resolved = có text thông điệp và ô hằng; parametric = có text nhưng ô/thông điệp phụ thuộc giá trị lúc chạy; unresolved = chưa có text thông điệp",
