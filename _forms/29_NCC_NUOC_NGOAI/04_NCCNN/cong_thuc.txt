@@ -1,217 +1,145 @@
-CÔNG THỨC TÍNH (human-readable) — 04_NCCNN (Bảng kê kê khai thay thuế TNCN cho người nước ngoài, ngân hàng/TCTGTT)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-
-## File 04_NCCNN_v2.5.1_mau.xls
-
-### Sheet "01" (bảng kê chính)
-- [H11] "[01] Kỳ tính thuế: Tháng ... năm ..." = nối Header!V46 và Header!V48
-- [L16] Tên ngân hàng/tổ chức trung gian thanh toán = TRIM(Header!C3)
-- [K18] Mã số thuế nộp thay = nối 10 ký tự Header!C2:K2 (rỗng thì dấu cách, không rỗng thì TRIM)
-- [R20] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
-- [Q30] Số hợp đồng đại lý = TRIM(Header!V13)
-- [R42] Tổng cộng = SUM(R39:R41)
-- [N54, N56]: prefill người ký từ Header (người ký V41, ngày ký V42)
-
-### Sheet "KHBS" (khấu trừ/bổ sung, tính tiền chậm nộp)
-- [BD3] Tiêu đề = "Tờ khai thuế NTNN mẫu số 01/NTNN kỳ tính thuế: ..." (Tháng/Năm nếu Header!V30="M", ngược lại Ngày dd/mm/yyyy tách từ Header!V32 bằng MID) + "ngày ... tháng ... năm ..." (tách từ BG5)
-- [BF5] Số tiền chậm nộp = ROUND(BH15 × BE20 × 0,05/100; làm tròn) — lãi suất 0,05%/ngày
-- [B9, B13, B17] Số thứ tự khối I, II, III = B8+1, B12+1, B16+1
-- [BH17] = BI5
-- [BE20] Số ngày nộp chậm = BD5
-- [BE21] Số tiền chậm nộp = IF(BH17×BE20×0,05/100 > 0, ROUND(BH17×BE20×0,05/100), 0)
-- [B47] = BG5
-- [BD47, BF47] Tổng khối = SUM(BH8:BH10), SUM(BH12:BH14)
-- [BG45, BG46] Người ký / Ngày ký = TRIM(#REF!AX67), TRIM(#REF!AX69) — THAM CHIẾU HỎNG (#REF!) trong template gốc
-
-### Sheet "Header" (sheet nội trợ/ẩn)
-- [M2] = nếu N2:O2:P2 rỗng thì dấu cách, ngược lại " - "
-- [T8] Người ký = CONCATENATE(1)
-
-## File 04_NCCNN_v2.5.1_mau.xls1 (phiên bản b, layout khác .xls — không trùng bộ công thức)
-
-### Sheet "01" (bảng kê chính)
-- [G11] "[01] Tháng ... năm ..." = nối Header!V46 và Header!V48
-- [H16] Ngân hàng thương mại, tổ chức trung gian thanh toán = TRIM(Header!C3)
-- Các ô [J18:AJ18]: mã số thuế nộp thay = 13 ký tự Header!C2:P2 (từng ô một ký tự)
-- [D20] Địa chỉ = TRIM(Header!C4)
-- [E21] Quận/huyện = TRIM(Header!C5)
-- [BA20, Q21] Tỉnh/Thành phố = TRIM(Header!C6)
-- [D22] Điện thoại = TRIM(Header!C7)
-- [H22] Fax = TRIM(Header!C8)
-- [W22] E-mail = TRIM(Header!C9)
-- [I52] Câu "Ngày dd tháng mm yyyy" = định dạng lại BC51 bằng MID
-
-### Sheet "KHBS"
-- [R7] Tiêu đề = "Tờ khai thuế NTNN mẫu số 03/NTNN kỳ tính thuế: ..." (Ngày nếu 01!Q34="1" và ngày tách từ 01!S34, ngược lại "Tháng T3 năm T2") + ngày tách từ E70 bằng MID
-- [AF10] Tên NNT = Header!C3
-- Các ô [AA12:CL12]: mã số thuế NNT = 13 ký tự Header!C2:P2 (từng ô)
-- Các ô [AA14:CK18]: prefill địa chỉ, điện thoại, fax, email từ Header (C4..C9)
-- [AK20] Tên đại lý thuế = TRIM(Header!V6)
-- Các ô [AA22:CL22]: mã số thuế đại lý = MID(TRIM(Header!V5), 1..13)
-- Các ô [AA24:BP30]: prefill thông tin đại lý từ Header (V7..V14)
-- [D39, D43, D47] Số thứ tự khối I, II, III = D38+1, D42+1, D46+1
-- [CP39] Cột (6) = (5) − (4) = BU39 − BB39
-- [CP43, CP47] = BU43 − BB43 (cùng pattern, dòng khác)
-- [BP72] Câu "Ngày dd tháng mm yyyy" = định dạng lại C70 bằng MID
-- [N74, AA75]: prefill từ sheet 01 (TRIM(01!W65), TRIM(01!AC66))
-
-### Sheet "Header"
-- [M2] = nếu N2:O2:P2 rỗng thì dấu cách, ngược lại " - "
-- [T8] Người ký = CONCATENATE(1)
-- [B16] = "0" nếu 01!O67 có giá trị VÀ 01!O69 rỗng, ngược lại "1"
-
-## File bangke_04_nccnn_tt80.xls (bảng kê TT80)
-
-### Sheet "04" (bảng kê chi tiết)
-- Các ô [H6:H10] Mã quốc gia = IF(ISNA(VLOOKUP(E6, Data!C2:D275, 2, FALSE)), "", VLOOKUP(...)) — tra mã quốc gia từ bảng Data theo tên ở cột E (rỗng nếu không tìm thấy)
-- Các ô [I6:I10] Mã đơn vị tiền = IF(ISNA(VLOOKUP(G6, Data!A2:B3, 2, FALSE)), "", VLOOKUP(...)) — tra mã tiền tệ từ bảng Data theo ký hiệu ở cột G
-
-### Sheet "HDSD"
-- Không có công thức (sheet hướng dẫn sử dụng)
-
-### Sheet "Data"
-- Không có công thức (bảng dữ liệu tra cứu: mã quốc gia, mã đơn vị tiền)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 04_NCCNN
-Thư mục: 29_NCC_NUOC_NGOAI/04_NCCNN (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 04_NCCNN
+VersionXML: 2.5.1
+Class: Nccnn04Nckt251
+MenuID: T3
+Nguồn sha256: e2ef74d4926383f0ac3f426718f584d3d3003d0b42f074d74c05255db05e7e69
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 04_NCCNN_v2.5.1_mau.xls ===
---- Sheet "01" ---
-H11: "[01] Kỳ tính thuế:  Tháng "&Header!V46&" năm "&Header!V48
-L16: TRIM(Header!C3)
-K18: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-R20: TRIM(Header!V6)
-Q30: TRIM(Header!V13)
-R42: SUM(R39:R41)
-N54: TRIM(Header!V41)
-N56: TRIM(Header!V42)
---- Sheet "KHBS" ---
-BD3: "Tờ khai thuế NTNN mẫu số 01/NTNN kỳ tính thuế:"&IF(Header!V30="M","  Tháng "&Header!V46&" năm  "&Header!V48," Ngày "&MID(Header!V32,1,2)&"/"&MID(Header!V32,4,2)&"/"&MID(Header!V32,7,4))&" ngày "&MID(BG5,1,2)&" tháng "&MID(BG5,4,2)&" năm "&MID(BG5,7,4)&")"
-BF5: ROUND(BH15*BE20*0.05/100,0)
-B9: B8+1
-B13: B12+1
-B17: B16+1
-BH17: BI5
-BE20: BD5
-BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
-BG45: TRIM(#REF!AX67)
-BG46: TRIM(#REF!AX69)
-B47: BG5
-BD47: SUM(BH8:BH10)
-BF47: SUM(BH12:BH14)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
+## sheet: 01
+H11 | "[01] Kỳ tính thuế:  Tháng "&Header!V46&" năm "&Header!V48 | Tải bảng kê | xls
+L16 | TRIM(Header!C3) | [02] Ngân hàng thương mại, tổ chức trung gian thanh toán: | xls
+K18 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | [05]Mã số thuế nộp thay: | xls
+R20 | TRIM(Header!V6) |  | xls
+Q30 | TRIM(Header!V13) | [20] Hợp đồng đại lý thuế: Số | xls
+R42 | SUM(R39:R41) |  | xls
+N54 | TRIM(Header!V41) | Người ký | xls
+N56 | TRIM(Header!V42) | Ngày ký | xls
+## sheet: KHBS
+BD3 | "Tờ khai thuế NTNN mẫu số 01/NTNN kỳ tính thuế:"&IF(Header!V30="M","  Tháng "&Header!V46&" năm  "&Header!V48," Ngày "&MID(Header!V32,1,2)&"/"&MID(Header!V32,4,2)&"/"&MID(Header!V32,7,4))&" ngày "&MID(BG5,1,2)&" tháng "&MID(BG5,4,2)&" năm "&MID(BG5,7,4)&")" |  | xls
+BF5 | ROUND(BH15*BE20*0.05/100,0) |  | xls
+B9 | B8+1 | cbo | xls
+B13 | B12+1 | cbo | xls
+B17 | B16+1 | Tổng số thuế phải nộp vào Ngân sách Nhà nước | xls
+BH17 | BI5 | 13 | xls
+BE20 | BD5 | Số ngày nộp chậm: | xls
+BE21 | IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0) | Số tiền chậm nộp: | xls
+BG45 | TRIM(#REF!) | Người ký: | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 66, "col": 49, "ref_a1": "AX67"}]
+BG46 | TRIM(#REF!) | Ngày ký: | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 68, "col": 49, "ref_a1": "AX69"}]
+B47 | BG5 |  | xls
+BD47 | SUM(BH8:BH10) |  | xls
+BF47 | SUM(BH12:BH14) |  | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
 => 23 cell công thức trong file này
 
+MaFile: 04_NCCNN
+VersionXML: 2.5.1
+Class: Nccnn04Nckt251
+MenuID: T3
+Nguồn sha256: 05532884a4555126171756954ce4dd01e5a417ab03c10870bc626655e7facf2a
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 04_NCCNN_v2.5.1_mau.xls1 ===
---- Sheet "01" ---
-G11: "Tháng "  &Header!V46&" năm "&Header!V48
-H16: TRIM(Header!C3)
-J18: TRIM(Header!C2)
-L18: TRIM(Header!D2)
-N18: TRIM(Header!E2)
-P18: TRIM(Header!F2)
-R18: TRIM(Header!G2)
-T18: TRIM(Header!H2)
-V18: TRIM(Header!I2)
-X18: TRIM(Header!J2)
-Z18: TRIM(Header!K2)
-AB18: TRIM(Header!L2)
-AD18: Header!M2
-AF18: TRIM(Header!N2)
-AH18: TRIM(Header!O2)
-AJ18: TRIM(Header!P2)
-D20: TRIM(Header!C4)
-BA20: TRIM(Header!C6)
-E21: TRIM(Header!C5)
-Q21: TRIM(Header!C6)
-D22: TRIM(Header!C7)
-H22: TRIM(Header!C8)
-W22: TRIM(Header!C9)
-I52: "Ngày " & MID(TRIM(BC51),1,2) &" tháng " &MID(TRIM(BC51),4,2) & " năm " & MID(TRIM(BC51),7,4)
---- Sheet "KHBS" ---
-R7: "                  Tờ khai thuế NTNN mẫu số 03/NTNN kỳ tính thuế:" &  IF(01!Q34="1"," Ngày " & MID(01!S34,1,2) & " tháng " & MID(01!S34,4,2) & " năm " & MID( 01!S34,7,4),"Tháng " & Header!T3 & " năm " & Header!T2)  &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
-AF10: Header!C3
-AA12: Header!C2
-AF12: Header!D2
-AK12: Header!E2
-AP12: Header!F2
-AU12: Header!G2
-AZ12: Header!H2
-BE12: Header!I2
-BJ12: Header!J2
-BO12: Header!K2
-BT12: Header!L2
-CB12: Header!N2
-CG12: Header!O2
-CL12: Header!P2
-AA14: Header!C4
-AA16: Header!C5
-CK16: Header!C6
-AA18: Header!C7
-BD18: Header!C8
-CK18: Header!C9
-AK20: TRIM(Header!V6)
-AA22: MID(TRIM(Header!V5),1,1)
-AF22: MID(TRIM(Header!V5),2,1)
-AK22: MID(TRIM(Header!V5),3,1)
-AP22: MID(TRIM(Header!V5),4,1)
-AU22: MID(TRIM(Header!V5),5,1)
-AZ22: MID(TRIM(Header!V5),6,1)
-BE22: MID(TRIM(Header!V5),7,1)
-BJ22: MID(TRIM(Header!V5),8,1)
-BO22: MID(TRIM(Header!V5),9,1)
-BT22: MID(TRIM(Header!V5),10,1)
-CB22: MID(TRIM(Header!V5),11,1)
-CG22: MID(TRIM(Header!V5),12,1)
-CL22: MID(TRIM(Header!V5),13,1)
-AA24: TRIM(Header!V7)
-AA26: TRIM(Header!V8)
-CK26: TRIM(Header!V9)
-AA28: TRIM(Header!V10)
-BD28: TRIM(Header!V11)
-CK28: TRIM(Header!V12)
-AI30: TRIM(Header!V13)
-BP30: TRIM(Header!V14)
-D39: D38+1
-CP39: BU39-BB39
-D43: D42+1
-CP43: BU43-BB43
-D47: D46+1
-CP47: BU43-BB43
-BP72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
-N74: TRIM(01!W65)
-AA75: TRIM(01!AC66)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
-B16: IF(AND(LEN(01!O67)>0,LEN(01!O69)=0),"0","1")
+## sheet: 01
+G11 |   "Tháng "&Header!V46&" năm "&Header!V48 | [01] | xls1
+H16 | TRIM(Header!C3) | [02] Ngân hàng thương mại, tổ chức trung gian thanh toán: | xls1
+J18 | TRIM(Header!C2) | [05] Mã số thuế nộp thay: | xls1
+L18 | TRIM(Header!D2) | [05] Mã số thuế nộp thay: | xls1
+N18 | TRIM(Header!E2) | [05] Mã số thuế nộp thay: | xls1
+P18 | TRIM(Header!F2) | [05] Mã số thuế nộp thay: | xls1
+R18 | TRIM(Header!G2) | [05] Mã số thuế nộp thay: | xls1
+T18 | TRIM(Header!H2) | [05] Mã số thuế nộp thay: | xls1
+V18 | TRIM(Header!I2) | [05] Mã số thuế nộp thay: | xls1
+X18 | TRIM(Header!J2) | [05] Mã số thuế nộp thay: | xls1
+Z18 | TRIM(Header!K2) | [05] Mã số thuế nộp thay: | xls1
+AB18 | TRIM(Header!L2) | [05] Mã số thuế nộp thay: | xls1
+AD18 | Header!M2 | [05] Mã số thuế nộp thay: | xls1
+AF18 | TRIM(Header!N2) | [05] Mã số thuế nộp thay: | xls1
+AH18 | TRIM(Header!O2) | [05] Mã số thuế nộp thay: | xls1
+AJ18 | TRIM(Header!P2) | [05] Mã số thuế nộp thay: | xls1
+D20 | TRIM(Header!C4) | [03] Địa chỉ : | xls1
+BA20 | TRIM(Header!C6) | [03] Địa chỉ : | xls1
+E21 | TRIM(Header!C5) | [04] Quận/huyện: | xls1
+Q21 | TRIM(Header!C6) | [05] Tỉnh/thành phố: | xls1
+D22 | TRIM(Header!C7) | [06] Điện thoại: | xls1
+H22 | TRIM(Header!C8) | [07] Fax: | xls1
+W22 | TRIM(Header!C9) | [08] E-mail: | xls1
+I52 |      "Ngày "& MID(TRIM(BC51),1,2)&" tháng "&MID(TRIM(BC51),4,2)& " năm "& MID(TRIM(BC51),7,4) |  | xls1
+## sheet: KHBS
+R7 |           "                  Tờ khai thuế NTNN mẫu số 03/NTNN kỳ tính thuế:"&  IF('01'!Q34="1",     " Ngày "& MID('01'!S34,1,2)& " tháng "& MID('01'!S34,4,2)& " năm "& MID( '01'!S34,7,4),   "Tháng "& Header!T3& " năm "& Header!T2)&"  ngày "& MID(E70,1,2)& " tháng "& MID(E70,4,2)& " năm "& MID(E70,7,4)& ")" |  | xls1
+AF10 | Header!C3 | [01] Tên người nộp thuế: | xls1
+AA12 | Header!C2 | [02] Mã số thuế : | xls1
+AF12 | Header!D2 | [02] Mã số thuế : | xls1
+AK12 | Header!E2 | [02] Mã số thuế : | xls1
+AP12 | Header!F2 | [02] Mã số thuế : | xls1
+AU12 | Header!G2 | [02] Mã số thuế : | xls1
+AZ12 | Header!H2 | [02] Mã số thuế : | xls1
+BE12 | Header!I2 | [02] Mã số thuế : | xls1
+BJ12 | Header!J2 | [02] Mã số thuế : | xls1
+BO12 | Header!K2 | [02] Mã số thuế : | xls1
+BT12 | Header!L2 | [02] Mã số thuế : | xls1
+CB12 | Header!N2 | [02] Mã số thuế : | xls1
+CG12 | Header!O2 | [02] Mã số thuế : | xls1
+CL12 | Header!P2 | [02] Mã số thuế : | xls1
+AA14 | Header!C4 | [03] Địa chỉ trụ sở: | xls1
+AA16 | Header!C5 | [04] Quận/huyện: | xls1
+CK16 | Header!C6 | [05] Tỉnh/Thành phố: | xls1
+AA18 | Header!C7 | [07] Fax: | xls1
+BD18 | Header!C8 | [07] Fax: | xls1
+CK18 | Header!C9 | [08]E-Mail : | xls1
+AK20 | TRIM(Header!V6) | [09] Tên đại lý thuế(nếu có): | xls1
+AA22 | MID(TRIM(Header!V5),1,1) | [10] Mã số thuế : | xls1
+AF22 | MID(TRIM(Header!V5),2,1) | [10] Mã số thuế : | xls1
+AK22 | MID(TRIM(Header!V5),3,1) | [10] Mã số thuế : | xls1
+AP22 | MID(TRIM(Header!V5),4,1) | [10] Mã số thuế : | xls1
+AU22 | MID(TRIM(Header!V5),5,1) | [10] Mã số thuế : | xls1
+AZ22 | MID(TRIM(Header!V5),6,1) | [10] Mã số thuế : | xls1
+BE22 | MID(TRIM(Header!V5),7,1) | [10] Mã số thuế : | xls1
+BJ22 | MID(TRIM(Header!V5),8,1) | [10] Mã số thuế : | xls1
+BO22 | MID(TRIM(Header!V5),9,1) | [10] Mã số thuế : | xls1
+BT22 | MID(TRIM(Header!V5),10,1) | [10] Mã số thuế : | xls1
+CB22 | MID(TRIM(Header!V5),11,1) | [10] Mã số thuế : | xls1
+CG22 | MID(TRIM(Header!V5),12,1) | [10] Mã số thuế : | xls1
+CL22 | MID(TRIM(Header!V5),13,1) | [10] Mã số thuế : | xls1
+AA24 | TRIM(Header!V7) | [11] Địa chỉ trụ sở: | xls1
+AA26 | TRIM(Header!V8) | [12] Quận/huyện: | xls1
+CK26 | TRIM(Header!V9) | [13] Tỉnh/Thành phố: | xls1
+AA28 | TRIM(Header!V10) | [15] Fax: | xls1
+BD28 | TRIM(Header!V11) | [15] Fax: | xls1
+CK28 | TRIM(Header!V12) | [16]E-Mail : | xls1
+AI30 | TRIM(Header!V13) | ngày | xls1
+BP30 | TRIM(Header!V14) | ngày | xls1
+D39 | D38+1 |  | xls1
+CP39 | BU39-BB39 |  | xls1
+D43 | D42+1 |  | xls1
+CP43 | BU43-BB43 |  | xls1
+D47 | D46+1 | Tổng số thuế phải nộp vào Ngân sách Nhà nước | xls1
+CP47 | BU43-BB43 | 14 | xls1
+BP72 |     "Ngày "& MID(TRIM(C70),1,2)& " tháng "& MID(TRIM(C70),4,2)& " năm "& MID(TRIM(C70),7,4) |  | xls1
+N74 | TRIM('01'!W65) | Họ và tên: | xls1
+AA75 | TRIM('01'!AC66) | Chứng chỉ hành nghề số: | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls1
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls1
+B16 | IF(AND(LEN('01'!O67)>0,LEN('01'!O69)=0),"0","1") | Chứng chỉ hành nghề số bắt buộc phải nhập nếu nhập thông ti… | xls1
 => 79 cell công thức trong file này
 
+MaFile: -
+VersionXML: -
+Class: -
+MenuID: -
+Nguồn sha256: 9340e99fcbc1ed5ccbbaf25fd95307d6bd1c85c108249818a3d83e779499a6f3
+Generator: render_cong_thuc.py@1.0.0
 === FILE: bangke_04_nccnn_tt80.xls ===
---- Sheet "04" ---
-H6: IF(ISNA(VLOOKUP(E6,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E6,Data!$C$2:$D$275,2,FALSE))
-I6: IF(ISNA(VLOOKUP(G6,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G6,Data!$A$2:$B$3,2,FALSE))
-H7: IF(ISNA(VLOOKUP(E7,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E7,Data!$C$2:$D$275,2,FALSE))
-I7: IF(ISNA(VLOOKUP(G7,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G7,Data!$A$2:$B$3,2,FALSE))
-H8: IF(ISNA(VLOOKUP(E8,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E8,Data!$C$2:$D$275,2,FALSE))
-I8: IF(ISNA(VLOOKUP(G8,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G8,Data!$A$2:$B$3,2,FALSE))
-H9: IF(ISNA(VLOOKUP(E9,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E9,Data!$C$2:$D$275,2,FALSE))
-I9: IF(ISNA(VLOOKUP(G9,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G9,Data!$A$2:$B$3,2,FALSE))
-H10: IF(ISNA(VLOOKUP(E10,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E10,Data!$C$2:$D$275,2,FALSE))
-I10: IF(ISNA(VLOOKUP(G10,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G10,Data!$A$2:$B$3,2,FALSE))
---- Sheet "HDSD" ---
-(không có cell công thức)
---- Sheet "Data" ---
-(không có cell công thức)
+## sheet: 04
+H6 | IF(ISNA(VLOOKUP(E6,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E6,Data!$C$2:$D$275,2,FALSE)) |  | xls
+I6 | IF(ISNA(VLOOKUP(G6,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G6,Data!$A$2:$B$3,2,FALSE)) |  | xls
+H7 | IF(ISNA(VLOOKUP(E7,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E7,Data!$C$2:$D$275,2,FALSE)) |  | xls
+I7 | IF(ISNA(VLOOKUP(G7,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G7,Data!$A$2:$B$3,2,FALSE)) |  | xls
+H8 | IF(ISNA(VLOOKUP(E8,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E8,Data!$C$2:$D$275,2,FALSE)) |  | xls
+I8 | IF(ISNA(VLOOKUP(G8,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G8,Data!$A$2:$B$3,2,FALSE)) |  | xls
+H9 | IF(ISNA(VLOOKUP(E9,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E9,Data!$C$2:$D$275,2,FALSE)) |  | xls
+I9 | IF(ISNA(VLOOKUP(G9,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G9,Data!$A$2:$B$3,2,FALSE)) |  | xls
+H10 | IF(ISNA(VLOOKUP(E10,Data!$C$2:$D$275,2,FALSE)),"",VLOOKUP(E10,Data!$C$2:$D$275,2,FALSE)) |  | xls
+I10 | IF(ISNA(VLOOKUP(G10,Data!$A$2:$B$3,2,FALSE)),"",VLOOKUP(G10,Data!$A$2:$B$3,2,FALSE)) |  | xls
 => 10 cell công thức trong file này
-
-
-TỔNG CỘNG: 112 cell công thức trong 3 file

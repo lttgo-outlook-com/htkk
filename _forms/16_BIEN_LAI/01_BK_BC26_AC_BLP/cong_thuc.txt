@@ -1,111 +1,60 @@
-CÔNG THỨC TÍNH (human-readable) — 01_BK_BC26_AC_BLP (Bảng kê kèm biểu mẫu BC26/AC về biên lai — theo nhãn "Tên cơ quan thu phí, lệ phí" trong dump)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-
-## File 01_BK_BC26_AC_BLP_v2.3.4_mau.xls
-
-### Sheet "01" (bảng kê chính)
-- [H7] 1. Tên cơ quan thu phí, lệ phí = TRIM(Header!C3)
-- [H8] 2. Mã số thuế (nếu có) = TRIM của chuỗi nối các ô Header!C2..K2 (và các ô tiếp theo), mỗi ô rỗng bỏ qua (chained IF+ISBLANK+TRIM, công thức dài bị cắt trong dump)
-- [B45] Số thứ tự = B44+1 (lặp các dòng bảng kê kế tiếp)
-- [U45] Số lượng (hiển thị) = AA45
-- [AE45] Cờ "Kiểm tra số lượng" = IF(AA45 <= 0, 1, 0) — cảnh báo khi số lượng không dương
-- [AF45] Cờ "Kiểm tra từ số" = IF(V45 = 0, 1, 0) — cảnh báo khi ô "từ số" bằng 0
-- [AG45] Cờ "Kiểm tra đến số" = IF(Y45 = 0, 1, 0) — cảnh báo khi ô "đến số" bằng 0
-- [U47] (ô tham chiếu dòng tổng) = AA47
-- [AA47] Tổng số lượng = SUM(AA44:AD46) — cộng nhóm các dòng khối bảng kê
-- [R49] "Thủ trưởng đơn vị" (người ký) = Header!V41
-- [R51] "Ngày lập bảng kê" = Header!V31
-
-### Sheet "KHBS" (khai bổ sung)
-- [B6] Số thứ tự = B5+1 (lặp các dòng kế tiếp)
-- [G6] Chênh lệch = F6 − E6 (số mới trừ số đã khai)
-- [E8, F8, G8] Dòng Tổng cộng = SUM(cột E/F/G từ dòng 5 đến 7)
-
-### Sheet "Header"
-- [M2] Cờ nối địa chỉ: nếu 3 ô N2, O2, P2 cùng rỗng trả "", ngược lại "-" (IF(TRIM(N2&O2&P2)="","","-"))
-- [T8] Cờ người ký: CONCATENATE(1)
-- [B46, B47] (2 ô) Giá trị cố định = 1 (không phải công thức tính)
-
-## File 01_BK_BC26_AC_BLP_v2.3.4_mau.xls1
-
-### Sheet "01" (bảng kê, bản 2)
-- [H7] 1. Tên cơ quan thu phí, lệ phí = TRIM(Header!C3)
-- [H8] 2. Mã số thuế (nếu có) = TRIM của chuỗi nối các ô Header!C2..K2 (và các ô tiếp theo), mỗi ô rỗng bỏ qua (chained IF+ISBLANK+TRIM, công thức dài bị cắt trong dump)
-- [B45] Số thứ tự = B44+1 (lặp các dòng bảng kê kế tiếp)
-- [U45] Số lượng (hiển thị) = TRIM(AA45)
-- [AE45] Cờ "Kiểm tra số lượng" = IF(AA45 <= 0, 1, 0)
-- [AF45] Cờ "Kiểm tra từ số" = IF(V45 = 0, 1, 0)
-- [AG45] Cờ "Kiểm tra đến số" = IF(Y45 = 0, 1, 0)
-- [R49] "Người ký" = Header!T5
-- [S52] Dòng ngày in: "…………….,ngày " + ngày + " tháng " + tháng + " năm " + năm tách từ R51 bằng MID (múi 2-4-4)
-- [S59] (ô khối chữ ký) = TRIM(R49) — lấy lại tên người ký
-
-### Sheet "KHBS" (khai bổ sung)
-- [B6] Số thứ tự = B5+1
-- [G6] Chênh lệch = F6 − E6
-- [E8, F8, G8] Dòng Tổng cộng = SUM(cột E/F/G từ dòng 5 đến 7)
-
-### Sheet "Header"
-- [M2] Cờ nối địa chỉ: nếu N2, O2, P2 cùng rỗng trả "", ngược lại "-"
-- [T8] Cờ người ký: CONCATENATE(1)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 01_BK_BC26_AC_BLP
-Thư mục: 16_BIEN_LAI/01_BK_BC26_AC_BLP (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 01_BK_BC26_AC_BLP
+VersionXML: 2.3.4
+Class: BlpBk01BcAc26Nckt234
+MenuID: B7
+Nguồn sha256: 6da83a95e634a096617ae0da0acb43c2cf7dff0b6db32916d622cfb914db0f08
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 01_BK_BC26_AC_BLP_v2.3.4_mau.xls ===
---- Sheet "01" ---
-H7: TRIM(Header!C3)
-H8: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
-B45: B44+1
-U45: AA45
-AE45: IF(AA45<=0,1,0)
-AF45: IF(V45=0,1,0)
-AG45: IF(Y45=0,1,0)
-U47: AA47
-AA47: SUM(AA44:AD46)
-R49: Header!V41
-R51: Header!V31
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)="","","-")
-T8: CONCATENATE(1)
-B46: 1
-B47: 1
+## sheet: 01
+H7 | TRIM(Header!C3) | 1. Tên cơ quan thu phí, lệ phí: | xls
+H8 | TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2))) | 2. Mã số thuế (nếu có): | xls
+B45 | B44+1 | cbo | xls
+U45 | AA45 | cbo | xls
+AE45 | IF(AA45<=0,1,0) | cbo | xls
+AF45 | IF(V45=0,1,0) | cbo | xls
+AG45 | IF(Y45=0,1,0) | cbo | xls
+U47 | AA47 | Tổng cộng | xls
+AA47 | SUM(AA44:AD46) | Tổng cộng | xls
+R49 | Header!V41 | Thủ trưởng đơn vị: | xls
+R51 | Header!V31 | Ngày lập bảng kê: | xls
+## sheet: KHBS
+B6 | B5+1 |  | xls
+G6 | F6-E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)="","","-") | 0 | xls
+T8 | CONCATENATE(1) | Fax | xls
+B46 | 1 | Số lượng tồn cuối kỳ trên báo cáo BC26/AC không khớp với số… | xls
+B47 | 1 | Số lượng tồn cuối kỳ trên báo cáo BC26/AC không khớp với số… | xls
 => 20 cell công thức trong file này
 
+MaFile: 01_BK_BC26_AC_BLP
+VersionXML: 2.3.4
+Class: BlpBk01BcAc26Nckt234
+MenuID: B7
+Nguồn sha256: 703163364239aead9207a1e4492d55e71e60b94ced0a389128f4d69fd1168ac2
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 01_BK_BC26_AC_BLP_v2.3.4_mau.xls1 ===
---- Sheet "01" ---
-H7: TRIM(Header!C3)
-H8: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2)) & IF(ISBLANK(Header!M2),"",Header!M2) & IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
-B45: B44+1
-U45: TRIM(AA45)
-AE45:  IF(AA45<=0,1,0)
-AF45: IF(V45=0,1,0)
-AG45: IF(Y45=0,1,0)
-R49: Header!T5
-S52: "…………….,ngày " & MID(TRIM(R51),1,2) &" tháng " &MID(TRIM(R51),4,2) & " năm " & MID(TRIM(R51),7,4)
-S59: TRIM(R49)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)="","","-")
-T8: CONCATENATE(1)
+## sheet: 01
+H7 | TRIM(Header!C3) | 1. Tên cơ quan thu phí, lệ phí: | xls1
+H8 | TRIM(  IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))& IF(ISBLANK(Header!M2),"",Header!M2)& IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2))) | 2. Mã số thuế (nếu có): | xls1
+B45 | B44+1 | cbo | xls1
+U45 | TRIM(AA45) | cbo | xls1
+AE45 |  IF(AA45<=0,1,0) | cbo | xls1
+AF45 | IF(V45=0,1,0) | cbo | xls1
+AG45 | IF(Y45=0,1,0) | cbo | xls1
+R49 | Header!T5 | Người ký: | xls1
+S52 |      "…………….,ngày "& MID(TRIM(R51),1,2)&" tháng "&MID(TRIM(R51),4,2)& " năm "& MID(TRIM(R51),7,4) |  | xls1
+S59 | TRIM(R49) |  | xls1
+## sheet: KHBS
+B6 | B5+1 |  | xls1
+G6 | F6-E6 |  | xls1
+E8 | SUM(E5:E7) | Tổng cộng | xls1
+F8 | SUM(F5:F7) | Tổng cộng | xls1
+G8 | SUM(G5:G7) | Tổng cộng | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)="","","-") | 0 | xls1
+T8 | CONCATENATE(1) | Fax | xls1
 => 17 cell công thức trong file này
-
-
-TỔNG CỘNG: 37 cell công thức trong 2 file

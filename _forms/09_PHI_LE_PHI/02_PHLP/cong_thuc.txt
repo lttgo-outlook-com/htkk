@@ -1,248 +1,205 @@
-CÔNG THỨC TÍNH (human-readable) — Tờ khai thuế quyết toán phí, lệ phí mẫu số 02/PHLP (quyết toán năm)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-Folder có 1 phiên bản 02_PHLP_v2.0.5_mau.xls + .xls1 (bản có dữ liệu). 3 sheet mỗi file: 01 (tờ khai chính), KHBS, Header. Kỳ luôn dạng "Năm ..." (Header!V48).
-
-## File 02_PHLP_v2.0.5_mau.xls (template)
-
-### Sheet "01" (tờ khai chính)
-- [J6] [01] Kỳ tính thuế = "Kỳ tính thuế: Năm "&Header!V48
-- [H7] Lần đầu = IF(V29="","[X]",""); [N7, I35] Bổ sung = IF(V29="","",V29)
-- prefill: NNT (D8 = TRIM(C3)), MST nối ký tự ISBLANK (D9), địa chỉ (F10..S12 = C4..C9), [F13] "Số tài khoản" = TRIM(Header!V2), [O14] = TRIM(Header!T9)
-- đại lý: (D16..S20 = V6..V12), [L21] "Số:" = TRIM(V13), [S21] "Ngày:" = TRIM(V14)
-- Cờ: [C35] = IF(V29="","1",""); [F35] = IF(V29="","","1"); [M35] = TRIM(V34); [N35] = TRIM(V35)
-- Tổng 2 khối (dòng 48..50 → tổng 37, dòng 51): [H37, N37, Q37, T37, X37] = SUM(H48:H50)/SUM(N48:N50)/SUM(Q48:Q50)/SUM(T48:T50)/SUM(X48:X50) (trùng pattern ở dòng 51 cho H/N/Q)
-- [N49] = ROUND(L49×H49/100, 0) (lấy H49 theo tỷ lệ L49)
-- [Q49] = IF(H49−N49 < 0, 0, ROUND(H49−N49, 0)) (chênh lệch, chặn dưới 0)
-- [X49] = ROUND(Q49−T49, 0)
-- [T51] = T37; [X51] = X37 (kéo tổng xuống dòng 51)
-- Chữ ký: [H32] = TRIM(V15); [R32] = TRIM(Header!T5); [H34] = TRIM(V16); [H60] = TRIM(H32); [H62] = TRIM(H34); [R60] = TRIM(V41); [R62] = IF(V42<>"", V42, "")
-
-### Sheet "KHBS"
-- [B3] tiêu đề = "Tờ khai thuế quyết toán lệ phí mẫu số 02/PHLP kỳ tính thuế: Năm "&V48&" ngày "&MID(BG5)...&")"
-- [B9] mục I = B8+1; [B13] mục II = B12+1; [B17] mục III = B16+1 (STT)
-- [BH17] "7" = BI5; [BE20] "Số ngày nộp chậm" = BD5
-- [BE21] "Số tiền chậm nộp" = IF((BH17×BE20×0,05/100) > 0, ROUND(BH17×BE20×0,05/100, 0), 0); [BF5] = ROUND(BH15×BE20×0,05/100, 0) (0,05%/ngày)
-- [B47] ngày = BG5; [BD47] tổng mục I = SUM(BH8:BH10); [BF47] tổng mục II = SUM(BH12:BH14)
-- Chữ ký: [BG45] = TRIM(01!R60); [BG46] = TRIM(01!R62)
-
-### Sheet "Header"
-- [M2] định dạng MST; [T8] = CONCATENATE(1)
-- [B16] = 1 nếu 01!R62 (ngày ký) ≠ rỗng (C16 = 01!R62)
-
-## File 02_PHLP_v2.0.5_mau.xls1 (bản có dữ liệu — số liệu lưu tĩnh, chỉ còn prefill)
-- Sheet 01: [K6] kỳ = "Kỳ tính thuế: Năm "&V48&" từ "&V34&" đến "&V35; lần đầu/bổ sung (L7/R7); NNT (H8); MST tách ký tự [F9..S9] = C2..P2; địa chỉ (F10..S12 = C4..C9); [F13] "Số tài khoản" = TRIM(V2); [M14] = TRIM(T9); đại lý (H16 = TRIM(V6), MST tách MID [F17..S17] = MID(TRIM(V5))); địa chỉ đại lý (F18..S20 = V7..V12); [L21] "Số:" = TRIM(V13); [S21] "Ngày:" = TRIM(V14)
-- Tổng: [I37] 1 = SUM(U44:U46); [N37] = SUM(U48:U50); [P37, P51] = SUM(P48:P50); [S37, S51] = SUM(S48:S50); [V37, V51] = SUM(V48:V50); [B49] = B48+1 (STT)
-- [H51] "Tổng cộng" = SUM(H48:H50); [M51] = SUM(M48:M50)
-- [B54] "Tổng cộng" = "Số tiền phí bảo vệ môi trường đối với khai thác khoáng sản phải nộp vào NSNN trong kỳ này là (ghi bằng chữ): "&AB37 (nhiên liệu chữ cứng của mẫu khác còn sót trong form)
-- [N60] "Ngày ..." = MID(TRIM(R58)) (tách d/m/n)
-- Sheet KHBS: [D7] tiêu đề = "Tờ khai thuế quyết toán phí, lệ phí mẫu số 02/PHLP kỳ tính thuế: Năm "&V48&"  ngày "&MID(E70)...; prefill đầy đủ NNT/MST/địa chỉ/đại lý/MST đại lý (AA10..CL22), [AI30] = TRIM(V13), [BP30] = TRIM(V14)
-  - [D39] mục I = D38+1; [D43] mục II = D42+1; [D47] mục III = D46+1
-  - [CP39] (6) = (5)−(4) = BU39−BB39; [CP43] = BU43−BB43 (cùng công thức)
-  - [BL72] "Ngày ..." = MID(TRIM(C70)); [N74] = TRIM(Header!V15); [AA75] = TRIM(Header!V16)
-- Sheet Header: [M2] định dạng MST + [T8] = CONCATENATE(1) (không có bộ cờ)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 02_PHLP
-Thư mục: 09_PHI_LE_PHI/02_PHLP (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 02_PHLP
+VersionXML: 2.0.5
+Class: Phlp02Nckt205
+MenuID: 88
+Nguồn sha256: 84882767680a394f05cdb3a01348b4b0626973934467150969cf1bb6f027ab56
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 02_PHLP_v2.0.5_mau.xls ===
---- Sheet "01" ---
-J6: " Kỳ tính thuế:  Năm "&Header!V48
-H7: IF(Header!V29="","[X]","")
-N7: IF(Header!V29="","",Header!V29)
-D8: TRIM(Header!C3)
-D9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-F10: TRIM(Header!C4)
-F11: TRIM(Header!C5)
-P11: TRIM(Header!C6)
-F12: TRIM(Header!C7)
-M12: TRIM(Header!C8)
-S12: TRIM(Header!C9)
-F13: TRIM(Header!V2)
-O14: TRIM(Header!T9)
-D16: TRIM(Header!V6)
-D17: TRIM(Header!V5)
-F18: TRIM(Header!V7)
-F19: TRIM(Header!V8)
-P19: TRIM(Header!V9)
-F20: TRIM(Header!V10)
-M20: TRIM(Header!V11)
-S20: TRIM(Header!V12)
-L21: TRIM(Header!V13)
-S21: TRIM(Header!V14)
-H32: TRIM(Header!V15)
-R32: TRIM(Header!T5)
-H34: TRIM(Header!V16)
-C35: IF(Header!V29="","1","")
-F35: IF(Header!V29="","","1")
-I35: IF(Header!V29="","",Header!V29)
-M35: TRIM(Header!V34)
-N35: TRIM(Header!V35)
-H37: SUM(H48:H50)
-N37: SUM(N48:N50)
-Q37: SUM(Q48:Q50)
-T37: SUM(T48:T50)
-X37: SUM(X48:X50)
-N49: ROUND(L49*H49/100,0)
-Q49: IF(H49-N49<0,0,ROUND(H49-N49,0))
-X49: ROUND(Q49-T49,0)
-H51: SUM(H48:H50)
-N51: SUM(N48:N50)
-Q51: SUM(Q48:Q50)
-T51: T37
-X51: X37
-D60: "Họ và tên:"
-H60: TRIM(H$32)
-R60: TRIM(Header!V41)
-D62: "Chứng chỉ hành nghề số:"
-H62: TRIM(H$34)
-R62: IF(Header!V42<>"",Header!V42,"")
---- Sheet "KHBS" ---
-B3: "Tờ khai thuế quyết toán lệ phí mẫu số 02/PHLP kỳ tính thuế: Năm "&Header!V48&" ngày "&MID(BG5,1,2)&" tháng "&MID(BG5,4,2)&" năm "&MID(BG5,7,4)&")"
-BF5: ROUND(BH15*BE20*0.05/100,0)
-B9: B8+1
-B13: B12+1
-B17: B16+1
-BH17: BI5
-BE20: BD5
-BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
-BG45: TRIM(01!R60)
-BG46: TRIM(01!R62)
-B47: BG5
-BD47: SUM(BH8:BH10)
-BF47: SUM(BH12:BH14)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
-B16: IF(LEN(01!R62)=0,"0","1")
-C16: 01!R62
+## sheet: 01
+J6 | " Kỳ tính thuế:  Năm "&Header!V48 | [01] | xls
+H7 | IF(Header!V29="","[X]","") | [03] | xls
+N7 | IF(Header!V29="","",Header!V29) | Bổ sung lần thứ: | xls
+D8 | TRIM(Header!C3) | Tên người nộp thuế: | xls
+D9 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+F10 | TRIM(Header!C4) | Địa chỉ: | xls
+F11 | TRIM(Header!C5) | Quận/Huyện: | xls
+P11 | TRIM(Header!C6) | Tỉnh/Thành phố: | xls
+F12 | TRIM(Header!C7) | Điện thoại: | xls
+M12 | TRIM(Header!C8) | Fax: | xls
+S12 | TRIM(Header!C9) | Email: | xls
+F13 | TRIM(Header!V2) | Số tài khoản: | xls
+O14 | TRIM(Header!T9) | Nghề nghiệp/ lĩnh vực hoạt động, kinh doanh chính: | xls
+D16 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
+D17 | TRIM(Header!V5) | Mã số thuế: | xls
+F18 | TRIM(Header!V7) | Địa chỉ: | xls
+F19 | TRIM(Header!V8) | Quận/Huyện: | xls
+P19 | TRIM(Header!V9) | Tỉnh/Thành phố: | xls
+F20 | TRIM(Header!V10) | Điện thoại: | xls
+M20 | TRIM(Header!V11) | Fax: | xls
+S20 | TRIM(Header!V12) | Email: | xls
+L21 | TRIM(Header!V13) | Số: | xls
+S21 | TRIM(Header!V14) | Ngày: | xls
+H32 | TRIM(Header!V15) |  | xls
+R32 | TRIM(Header!T5) |  | xls
+H34 | TRIM(Header!V16) | 01/01/2009 | xls
+C35 | IF(Header!V29="","1","") |  | xls
+F35 | IF(Header!V29="","","1") |  | xls
+I35 | IF(Header!V29="","",Header!V29) |  | xls
+M35 | TRIM(Header!V34) |  | xls
+N35 | TRIM(Header!V35) |  | xls
+H37 | SUM(H48:H50) |  | xls
+N37 | SUM(N48:N50) |  | xls
+Q37 | SUM(Q48:Q50) |  | xls
+T37 | SUM(T48:T50) |  | xls
+X37 | SUM(X48:X50) |  | xls
+N49 | ROUND(L49*H49/100,0) | cbo | xls
+Q49 | IF(H49-N49<0,0,ROUND(H49-N49,0)) | cbo | xls
+X49 | ROUND(Q49-T49,0) | cbo | xls
+H51 | SUM(H48:H50) | Tổng cộng: | xls
+N51 | SUM(N48:N50) | Tổng cộng: | xls
+Q51 | SUM(Q48:Q50) | Tổng cộng: | xls
+T51 | T37 | Tổng cộng: | xls
+X51 | X37 | Tổng cộng: | xls
+D60 | "Họ và tên:" | Người ký: | xls
+H60 | TRIM(H$32) | Người ký: | xls
+R60 | TRIM(Header!V41) | Người ký: | xls
+D62 | "Chứng chỉ hành nghề số:" | Ngày ký: | xls
+H62 | TRIM(H$34) | Ngày ký: | xls
+R62 | IF(Header!V42<>"",Header!V42,"") | Ngày ký: | xls
+## sheet: KHBS
+B3 | "Tờ khai thuế quyết toán lệ phí mẫu số 02/PHLP kỳ tính thuế: Năm "&Header!V48&" ngày "&MID(BG5,1,2)&" tháng "&MID(BG5,4,2)&" năm "&MID(BG5,7,4)&")" |  | xls
+BF5 | ROUND(BH15*BE20*0.05/100,0) |  | xls
+B9 | B8+1 | cbo | xls
+B13 | B12+1 | cbo | xls
+B17 | B16+1 | Số tiền phí, lệ phí phải nộp Ngân sách Nhà nước | xls
+BH17 | BI5 | 7 | xls
+BE20 | BD5 | Số ngày nộp chậm: | xls
+BE21 | IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0) | Số tiền chậm nộp: | xls
+BG45 | TRIM('01'!R60) | Người ký: | xls
+BG46 | TRIM('01'!R62) | Ngày ký: | xls
+B47 | BG5 |  | xls
+BD47 | SUM(BH8:BH10) |  | xls
+BF47 | SUM(BH12:BH14) |  | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
+B16 | IF(LEN('01'!R62)=0,"0","1") | Thông tin ngày ký bắt buộc nhập. Đề nghị hãy nhập thông tin… | xls
+C16 | '01'!R62 | Thông tin ngày ký bắt buộc nhập. Đề nghị hãy nhập thông tin… | xls
 => 67 cell công thức trong file này
 
+MaFile: 02_PHLP
+VersionXML: 2.0.5
+Class: Phlp02Nckt205
+MenuID: 88
+Nguồn sha256: 391572704722a36947f8e0ecb9b321e1b7e739f548cb21fdc7fcdbc15b0c03c5
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 02_PHLP_v2.0.5_mau.xls1 ===
---- Sheet "01" ---
-K6: " Kỳ tính thuế:  Năm " &Header!V48 &" từ "&Header!V34&" đến "&Header!V35
-L7: IF(Header!V29="","[X]","")
-R7: IF(Header!V29="","",Header!V29)
-H8: TRIM(Header!C3)
-F9: Header!C2
-G9: Header!D2
-H9: Header!E2
-I9: Header!F2
-J9: Header!G2
-K9: Header!H2
-L9: Header!I2
-M9: Header!J2
-N9: Header!K2
-O9: Header!L2
-P9: Header!M2
-Q9: Header!N2
-R9: Header!O2
-S9: Header!P2
-F10: TRIM(Header!C4)
-F11: TRIM(Header!C5)
-P11: TRIM(Header!C6)
-F12: TRIM(Header!C7)
-M12: TRIM(Header!C8)
-S12: TRIM(Header!C9)
-F13: TRIM(Header!V2)
-M14: TRIM(Header!T9)
-H16: TRIM(Header!V6)
-F17: MID(TRIM(Header!V5),1,1)
-G17: MID(TRIM(Header!V5),2,1)
-H17: MID(TRIM(Header!V5),3,1)
-I17: MID(TRIM(Header!V5),4,1)
-J17: MID(TRIM(Header!V5),5,1)
-K17: MID(TRIM(Header!V5),6,1)
-L17: MID(TRIM(Header!V5),7,1)
-M17: MID(TRIM(Header!V5),8,1)
-N17: MID(TRIM(Header!V5),9,1)
-O17: MID(TRIM(Header!V5),10,1)
-P17: TRIM(Header!M2)
-Q17: MID(TRIM(Header!V5),11,1)
-R17: MID(TRIM(Header!V5),12,1)
-S17: MID(TRIM(Header!V5),13,1)
-F18: TRIM(Header!V7)
-F19: TRIM(Header!V8)
-P19: TRIM(Header!V9)
-F20: TRIM(Header!V10)
-M20: TRIM(Header!V11)
-S20: TRIM(Header!V12)
-L21: TRIM(Header!V13)
-S21: TRIM(Header!V14)
-I37: SUM(U44:U46)
-N37: SUM(U48:U50)
-P37: SUM(P48:P50)
-S37: SUM(S48:S50)
-V37: SUM(V48:V50)
-B49: B48+1
-H51: SUM(H48:H50)
-M51: SUM(M48:M50)
-P51: SUM(P48:P50)
-S51: SUM(S48:S50)
-V51: SUM(V48:V50)
-B54: "Số tiền phí bảo vệ môi trường đối với khai thác khoáng sản phải nộp vào NSNN trong kỳ này là (ghi bằng chữ): " & AB37
-N60: "Ngày " & MID(TRIM(R58),1,2) &" tháng " &MID(TRIM(R58),4,2) & " năm " & MID(TRIM(R58),7,4)
---- Sheet "KHBS" ---
-D7: "Tờ khai thuế quyết toán phí, lệ phí mẫu số 02/PHLP kỳ tính thuế:  Năm " & Header!V48 &"  ngày " & MID(E70,1,2) & " tháng " & MID(E70,4,2) & " năm "  & MID(E70,7,4) & ")"
-AF10: Header!C3
-AA12: Header!C2
-AF12: Header!D2
-AK12: Header!E2
-AP12: Header!F2
-AU12: Header!G2
-AZ12: Header!H2
-BE12: Header!I2
-BJ12: Header!J2
-BO12: Header!K2
-BT12: Header!L2
-CB12: Header!N2
-CG12: Header!O2
-CL12: Header!P2
-AA14: Header!C4
-AA16: Header!C5
-CK16: Header!C6
-AA18: Header!C7
-BD18: Header!C8
-CK18: Header!C9
-AK20: TRIM(Header!V6)
-AA22: MID(TRIM(Header!V5),1,1)
-AF22: MID(TRIM(Header!V5),2,1)
-AK22: MID(TRIM(Header!V5),3,1)
-AP22: MID(TRIM(Header!V5),4,1)
-AU22: MID(TRIM(Header!V5),5,1)
-AZ22: MID(TRIM(Header!V5),6,1)
-BE22: MID(TRIM(Header!V5),7,1)
-BJ22: MID(TRIM(Header!V5),8,1)
-BO22: MID(TRIM(Header!V5),9,1)
-BT22: MID(TRIM(Header!V5),10,1)
-CB22: MID(TRIM(Header!V5),11,1)
-CG22: MID(TRIM(Header!V5),12,1)
-CL22: MID(TRIM(Header!V5),13,1)
-AA24: TRIM(Header!V7)
-AA26: TRIM(Header!V8)
-CK26: TRIM(Header!V9)
-AA28: TRIM(Header!V10)
-BD28: TRIM(Header!V11)
-CK28: TRIM(Header!V12)
-AI30: TRIM(Header!V13)
-BP30: TRIM(Header!V14)
-D39: D38+1
-CP39: BU39-BB39
-D43: D42+1
-CP43: BU43-BB43
-D47: D46+1
-BL72: "Ngày "& MID(TRIM(C70),1,2) & " tháng " & MID(TRIM(C70),4,2) & " năm " & MID(TRIM(C70),7,4)
-N74: TRIM(Header!V15)
-AA75: TRIM(Header!V16)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
+## sheet: 01
+K6 |   " Kỳ tính thuế:  Năm "&Header!V48&" từ "&Header!V34&" đến "&Header!V35 | [01] | xls1
+L7 | IF(Header!V29="","[X]","") | Lần đầu: | xls1
+R7 | IF(Header!V29="","",Header!V29) | Bổ sung lần thứ: | xls1
+H8 | TRIM(Header!C3) | Tên người nộp thuế: | xls1
+F9 | Header!C2 | Mã số thuế: | xls1
+G9 | Header!D2 | Mã số thuế: | xls1
+H9 | Header!E2 | Mã số thuế: | xls1
+I9 | Header!F2 | Mã số thuế: | xls1
+J9 | Header!G2 | Mã số thuế: | xls1
+K9 | Header!H2 | Mã số thuế: | xls1
+L9 | Header!I2 | Mã số thuế: | xls1
+M9 | Header!J2 | Mã số thuế: | xls1
+N9 | Header!K2 | Mã số thuế: | xls1
+O9 | Header!L2 | Mã số thuế: | xls1
+P9 | Header!M2 | Mã số thuế: | xls1
+Q9 | Header!N2 | Mã số thuế: | xls1
+R9 | Header!O2 | Mã số thuế: | xls1
+S9 | Header!P2 | Mã số thuế: | xls1
+F10 | TRIM(Header!C4) | Địa chỉ: | xls1
+F11 | TRIM(Header!C5) | Quận/Huyện: | xls1
+P11 | TRIM(Header!C6) | Tỉnh/Thành phố: | xls1
+F12 | TRIM(Header!C7) | Điện thoại: | xls1
+M12 | TRIM(Header!C8) | Fax: | xls1
+S12 | TRIM(Header!C9) | Email: | xls1
+F13 | TRIM(Header!V2) | Số tài khoản: | xls1
+M14 | TRIM(Header!T9) | Nghề nghiệp/ lĩnh vực hoạt động, kinh doanh chính : | xls1
+H16 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls1
+F17 | MID(TRIM(Header!V5),1,1) | Mã số thuế: | xls1
+G17 | MID(TRIM(Header!V5),2,1) | Mã số thuế: | xls1
+H17 | MID(TRIM(Header!V5),3,1) | Mã số thuế: | xls1
+I17 | MID(TRIM(Header!V5),4,1) | Mã số thuế: | xls1
+J17 | MID(TRIM(Header!V5),5,1) | Mã số thuế: | xls1
+K17 | MID(TRIM(Header!V5),6,1) | Mã số thuế: | xls1
+L17 | MID(TRIM(Header!V5),7,1) | Mã số thuế: | xls1
+M17 | MID(TRIM(Header!V5),8,1) | Mã số thuế: | xls1
+N17 | MID(TRIM(Header!V5),9,1) | Mã số thuế: | xls1
+O17 | MID(TRIM(Header!V5),10,1) | Mã số thuế: | xls1
+P17 | TRIM(Header!M2) | Mã số thuế: | xls1
+Q17 | MID(TRIM(Header!V5),11,1) | Mã số thuế: | xls1
+R17 | MID(TRIM(Header!V5),12,1) | Mã số thuế: | xls1
+S17 | MID(TRIM(Header!V5),13,1) | Mã số thuế: | xls1
+F18 | TRIM(Header!V7) | Địa chỉ: | xls1
+F19 | TRIM(Header!V8) | Quận/Huyện: | xls1
+P19 | TRIM(Header!V9) | Tỉnh/Thành phố: | xls1
+F20 | TRIM(Header!V10) | Điện thoại: | xls1
+M20 | TRIM(Header!V11) | Fax: | xls1
+S20 | TRIM(Header!V12) | Email: | xls1
+L21 | TRIM(Header!V13) | Số: | xls1
+S21 | TRIM(Header!V14) | Ngày: | xls1
+I37 | SUM(U44:U46) |  | xls1
+N37 | SUM(U48:U50) |  | xls1
+P37 | SUM(P48:P50) |  | xls1
+S37 | SUM(S48:S50) |  | xls1
+V37 | SUM(V48:V50) |  | xls1
+B49 | B48+1 |  | xls1
+H51 | SUM(H48:H50) | Tổng cộng: | xls1
+M51 | SUM(M48:M50) | Tổng cộng: | xls1
+P51 | SUM(P48:P50) | Tổng cộng: | xls1
+S51 | SUM(S48:S50) | Tổng cộng: | xls1
+V51 | SUM(V48:V50) | Tổng cộng: | xls1
+B54 |  "Số tiền phí bảo vệ môi trường đối với khai thác khoáng sản phải nộp vào NSNN trong kỳ này là (ghi bằng chữ): "& AB37 |  | xls1
+N60 |      "Ngày "& MID(TRIM(R58),1,2)&" tháng "&MID(TRIM(R58),4,2)& " năm "& MID(TRIM(R58),7,4) |  | xls1
+## sheet: KHBS
+D7 |          "Tờ khai thuế quyết toán phí, lệ phí mẫu số 02/PHLP kỳ tính thuế:  Năm "& Header!V48&"  ngày "& MID(E70,1,2)& " tháng "& MID(E70,4,2)& " năm "& MID(E70,7,4)& ")" |  | xls1
+AF10 | Header!C3 | [01] Tên người nộp thuế: | xls1
+AA12 | Header!C2 | [02] Mã số thuế : | xls1
+AF12 | Header!D2 | [02] Mã số thuế : | xls1
+AK12 | Header!E2 | [02] Mã số thuế : | xls1
+AP12 | Header!F2 | [02] Mã số thuế : | xls1
+AU12 | Header!G2 | [02] Mã số thuế : | xls1
+AZ12 | Header!H2 | [02] Mã số thuế : | xls1
+BE12 | Header!I2 | [02] Mã số thuế : | xls1
+BJ12 | Header!J2 | [02] Mã số thuế : | xls1
+BO12 | Header!K2 | [02] Mã số thuế : | xls1
+BT12 | Header!L2 | [02] Mã số thuế : | xls1
+CB12 | Header!N2 | [02] Mã số thuế : | xls1
+CG12 | Header!O2 | [02] Mã số thuế : | xls1
+CL12 | Header!P2 | [02] Mã số thuế : | xls1
+AA14 | Header!C4 | [03] Địa chỉ trụ sở: | xls1
+AA16 | Header!C5 | [04] Quận/huyện: | xls1
+CK16 | Header!C6 | [05] Tỉnh/Thành phố: | xls1
+AA18 | Header!C7 | [07] Fax: | xls1
+BD18 | Header!C8 | [07] Fax: | xls1
+CK18 | Header!C9 | [08]E-Mail : | xls1
+AK20 | TRIM(Header!V6) | [09] Tên đại lý thuế(nếu có): | xls1
+AA22 | MID(TRIM(Header!V5),1,1) | [10] Mã số thuế : | xls1
+AF22 | MID(TRIM(Header!V5),2,1) | [10] Mã số thuế : | xls1
+AK22 | MID(TRIM(Header!V5),3,1) | [10] Mã số thuế : | xls1
+AP22 | MID(TRIM(Header!V5),4,1) | [10] Mã số thuế : | xls1
+AU22 | MID(TRIM(Header!V5),5,1) | [10] Mã số thuế : | xls1
+AZ22 | MID(TRIM(Header!V5),6,1) | [10] Mã số thuế : | xls1
+BE22 | MID(TRIM(Header!V5),7,1) | [10] Mã số thuế : | xls1
+BJ22 | MID(TRIM(Header!V5),8,1) | [10] Mã số thuế : | xls1
+BO22 | MID(TRIM(Header!V5),9,1) | [10] Mã số thuế : | xls1
+BT22 | MID(TRIM(Header!V5),10,1) | [10] Mã số thuế : | xls1
+CB22 | MID(TRIM(Header!V5),11,1) | [10] Mã số thuế : | xls1
+CG22 | MID(TRIM(Header!V5),12,1) | [10] Mã số thuế : | xls1
+CL22 | MID(TRIM(Header!V5),13,1) | [10] Mã số thuế : | xls1
+AA24 | TRIM(Header!V7) | [11] Địa chỉ trụ sở: | xls1
+AA26 | TRIM(Header!V8) | [12] Quận/huyện: | xls1
+CK26 | TRIM(Header!V9) | [13] Tỉnh/Thành phố: | xls1
+AA28 | TRIM(Header!V10) | [15] Fax: | xls1
+BD28 | TRIM(Header!V11) | [15] Fax: | xls1
+CK28 | TRIM(Header!V12) | [16]E-Mail : | xls1
+AI30 | TRIM(Header!V13) | ngày | xls1
+BP30 | TRIM(Header!V14) | ngày | xls1
+D39 | D38+1 |  | xls1
+CP39 | BU39-BB39 |  | xls1
+D43 | D42+1 |  | xls1
+CP43 | BU43-BB43 |  | xls1
+D47 | D46+1 | Số tiền phí, lệ phí phải nộp Ngân sách Nhà nước | xls1
+BL72 |     "Ngày "& MID(TRIM(C70),1,2)& " tháng "& MID(TRIM(C70),4,2)& " năm "& MID(TRIM(C70),7,4) |  | xls1
+N74 | TRIM(Header!V15) | Họ và tên: | xls1
+AA75 | TRIM(Header!V16) | Chứng chỉ hành nghề số: | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls1
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls1
 => 115 cell công thức trong file này
-
-
-TỔNG CỘNG: 182 cell công thức trong 2 file

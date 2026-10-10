@@ -1,126 +1,72 @@
-CÔNG THỨC TÍNH (human-readable) — 01_TD_GTGT_VIEW (Tờ khai thuế GTGT ngành thủy điện, mẫu 01/TĐ-GTGT)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-
-## File 01_TD_GTGT_VIEW_v2.0.1_mau.xls (chỉ có 1 file .xls trong folder — không có .xls1)
-
-### Sheet "01" (tờ khai chính)
-- [K6] "[01] Kỳ tính thuế:" = "Tháng V46 năm V48" nếu Header!V30="M", ngược lại "Quý V47 năm V48"
-- [L7] Lần đầu: nếu Header!V29 rỗng thì "X", ngược lại trống
-- [R7] Bổ sung lần thứ = Header!V29 (dấu cách nếu lần đầu)
-- [H8] Tên người nộp thuế = TRIM(Header!C3)
-- [H9] Mã số thuế = nối 10 ký tự Header!C2:K2 (rỗng thì dấu cách, không rỗng thì TRIM)
-- Các ô [F10:S12]: prefill địa chỉ, điện thoại, fax, email NNT từ Header (C4..C9)
-- [H13] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
-- [H14] Mã số thuế đại lý = TRIM(Header!V5)
-- Các ô [F15:S18]: prefill địa chỉ, điện thoại, fax, email, hợp đồng đại lý từ Header (V7..V14)
-- [S43] Cột [23]/Giá trị = ROUND(S41 × S42; 2 số lẻ) — giá trị × tỷ lệ
-- [S45] Cột [25] = ROUND(S43 × S44/100; 2 số lẻ) — giá trị × thuế suất %
-- [AB46] = #REF!+#REF! — THAM CHIẾU HỎNG trong template gốc (không có nhãn, không dùng)
-- [S47] Cột [27] Số thuế GTGT phải nộp = IF(S45 − S46 > 0, ROUND(S45 − S46; làm tròn), 0) — [25] − [26], không âm
-- [C59, F59, I59, K59]: chỉ báo (chính thức "1" nếu Header!V29 rỗng; bổ sung = 1 nếu khác rỗng; số lần TRIM(Header!V29); quý = 0 nếu Header!V30="M", ngược lại 1)
-- [Q59] = '01-1'!U45 (giá trị tổng từ bảng kê bên dưới)
-- [Q60] Câu "Ngày dd tháng mm yyyy" = định dạng lại R58 bằng MID
-- [C62, H62, R62] Khối "NHÂN VIÊN ĐẠI LÝ THUẾ" — Họ và tên: nhãn tĩnh + TRIM(Header!V15), người ký = TRIM(Header!V41)
-- [C64, H64, R64] Chứng chỉ hành nghề số: nhãn tĩnh + TRIM(Header!V16), ngày ký = TRIM(Header!V42)
-
-### Sheet "01-1" (bảng kê giá trị sản lượng điện)
-- [U35] = U45 (chỉ mục dòng tổng)
-- [AB43] = IF(G43=1, 0, R43) — nếu cờ G43 = 1 thì 0, ngược lại lấy R43
-- [AI43] = G43 (cột cờ, nhãn "cbo")
-- [AB45] Tổng cộng = SUM(AB41:AB44)
-
-### Sheet "KHBS" (khấu trừ/bổ sung, tính tiền chậm nộp)
-- [B3] Tiêu đề = "Tờ khai thuế thủy điện mẫu số 01/TĐ-GTGT kỳ tính thuế: tháng/quý .../năm ... ngày ... tháng ... năm ..." (tháng nếu Header!V30="M" lấy V46, ngược lại quý V47; ngày tách từ BG5 bằng MID)
-- [BF5] Số tiền chậm nộp = ROUND(BH15 × BE20 × 0,05/100; làm tròn) — lãi suất 0,05%/ngày
-- [B9, B13, B17] Số thứ tự khối I, II, III = B8+1, B12+1, B16+1
-- [BH17] = BI5
-- [BE20] Số ngày nộp chậm = BD5
-- [BE21] Số tiền chậm nộp = IF(BH17×BE20×0,05/100 > 0, ROUND(BH17×BE20×0,05/100), 0)
-- [B47] = BG5
-- [BD47, BF47] Tổng khối = SUM(BH8:BH10), SUM(BH12:BH14)
-- [BG45, BG46]: prefill người ký từ sheet 01 (TRIM(01!R62), TRIM(01!R64))
-
-### Sheet "Header" (sheet nội trợ/ẩn)
-- [M2] = nếu N2:O2:P2 rỗng thì dấu cách, ngược lại " - "
-- [T8] Người ký = CONCATENATE(1)
-- [B15] = "1" nếu 01!S47 ≥ 0, ngược lại "0"; [C15] = 01!S47 (số thuế GTGT phải nộp)
-- [B26] = "1" nếu '01-1'!U45 = 01!S47 (khớp bảng kê), ngược lại "0"; [C26] = '01-1'!U45
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 01_TD_GTGT_VIEW
-Thư mục: 17_THUY_DIEN/01_TD_GTGT_VIEW (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 01_TD_GTGT_VIEW
+VersionXML: 2.0.1
+Class: TdGtgt01ViewNckt201
+MenuID: K9
+Nguồn sha256: 1ac29e8957b3d8be178168c553b44510d50602973c83eae31b99de6de03bf65d
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 01_TD_GTGT_VIEW_v2.0.1_mau.xls ===
---- Sheet "01" ---
-K6: IF(Header!V30="M"," Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48,"Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48)
-L7: IF(Header!V29="","X","")
-R7: IF(Header!V29<>"",Header!V29," ")
-H8: TRIM(Header!C3)
-H9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-F10: TRIM(Header!C4)
-F11: TRIM(Header!C5)
-P11: TRIM(Header!C6)
-F12: TRIM(Header!C7)
-M12: TRIM(Header!C8)
-S12: TRIM(Header!C9)
-H13: TRIM(Header!V6)
-H14: TRIM(Header!V5)
-F15: TRIM(Header!V7)
-F16: TRIM(Header!V8)
-P16: TRIM(Header!V9)
-F17: TRIM(Header!V10)
-M17: TRIM(Header!V11)
-S17: TRIM(Header!V12)
-L18: TRIM(Header!V13)
-S18: TRIM(Header!V14)
-S43: ROUND(S41*S42,2)
-S45: ROUND(S43*S44/100,2)
-AB46: #REF!+#REF!
-S47: IF(S45-S46>0,ROUND(S45-S46,0),0)
-C59: IF(Header!V29="","1","")
-F59: IF(Header!V29="","",1)
-I59: TRIM(Header!V29)
-K59: IF(Header!V30="M",0,1)
-Q59: '01-1'!U45
-Q60: "Ngày "&MID(TRIM(R58),1,2)&" tháng "&MID(TRIM(R58),4,2)&" năm "&MID(TRIM(R58),7,4)
-C62: "     Họ và tên:"
-H62: TRIM(Header!V15)
-R62: TRIM(Header!V41)
-C64: "     Chứng chỉ hành nghề số:"
-H64: TRIM(Header!V16)
-R64: TRIM(Header!V42)
---- Sheet "01-1" ---
-U35: U45
-AB43: IF(G43=1,0,R43)
-AI43: G43
-AB45: SUM(AB41:AB44)
---- Sheet "KHBS" ---
-B3: " Tờ khai thuế thủy điện mẫu số 01/TĐ-GTGT kỳ tính thuế:"&IF(Header!V30="M"," tháng "&Header!V46," quý "&Header!V47)&"/"&Header!V48&" ngày  "&MID(BG5,1,2)&" tháng "&MID(BG5,4,2)&" năm "&MID(BG5,7,4)&")"
-BF5: ROUND(BH15*BE20*0.05/100,0)
-B9: B8+1
-B13: B12+1
-B17: B16+1
-BH17: BI5
-BE20: BD5
-BE21: IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0)
-BG45: TRIM(01!R62)
-BG46: TRIM(01!R64)
-B47: BG5
-BD47: SUM(BH8:BH10)
-BF47: SUM(BH12:BH14)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
-B15: IF(01!S47<0,"0","1")
-C15: 01!S47
-B26: IF('01-1'!U45<>01!S47,"0","1")
-C26: '01-1'!U45
+## sheet: 01
+K6 | IF(Header!V30="M"," Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48,"Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48) | [01] | xls
+L7 | IF(Header!V29="","X","") | Lần đầu: | xls
+R7 | IF(Header!V29<>"",Header!V29," ") | Bổ sung lần thứ: | xls
+H8 | TRIM(Header!C3) | Tên người nộp thuế: | xls
+H9 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+F10 | TRIM(Header!C4) | Địa chỉ: | xls
+F11 | TRIM(Header!C5) | Quận/Huyện: | xls
+P11 | TRIM(Header!C6) | Tỉnh/Thành phố: | xls
+F12 | TRIM(Header!C7) | Điện thoại: | xls
+M12 | TRIM(Header!C8) | Fax: | xls
+S12 | TRIM(Header!C9) | Email: | xls
+H13 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
+H14 | TRIM(Header!V5) | Mã số thuế: | xls
+F15 | TRIM(Header!V7) | Địa chỉ: | xls
+F16 | TRIM(Header!V8) | Quận/Huyện: | xls
+P16 | TRIM(Header!V9) | Tỉnh/Thành phố: | xls
+F17 | TRIM(Header!V10) | Điện thoại: | xls
+M17 | TRIM(Header!V11) | Fax: | xls
+S17 | TRIM(Header!V12) | Email: | xls
+L18 | TRIM(Header!V13) | Số: | xls
+S18 | TRIM(Header!V14) | Ngày: | xls
+S43 | ROUND(S41*S42,2) | [23] | xls
+S45 | ROUND(S43*S44/100,2) | [25] | xls
+AB46 | #REF!+#REF! | [26] | xls
+S47 | IF(S45-S46>0,ROUND(S45-S46,0),0) | [27] | xls
+C59 | IF(Header!V29="","1","") |  | xls
+F59 | IF(Header!V29="","",1) |  | xls
+I59 | TRIM(Header!V29) |  | xls
+K59 | IF(Header!V30="M",0,1) |  | xls
+Q59 | '01-1'!U45 |  | xls
+Q60 | "Ngày "&MID(TRIM(R58),1,2)&" tháng "&MID(TRIM(R58),4,2)&" năm "&MID(TRIM(R58),7,4) |  | xls
+C62 | "     Họ và tên:" | Người ký: | xls
+H62 | TRIM(Header!V15) | Người ký: | xls
+R62 | TRIM(Header!V41) | Người ký: | xls
+C64 | "     Chứng chỉ hành nghề số:" | Ngày ký: | xls
+H64 | TRIM(Header!V16) | Ngày ký: | xls
+R64 | TRIM(Header!V42) | Ngày ký: | xls
+## sheet: 01-1
+U35 | U45 |  | xls
+AB43 | IF(G43=1,0,R43) | cbo | xls
+AI43 | G43 | cbo | xls
+AB45 | SUM(AB41:AB44) | Tổng | xls
+## sheet: KHBS
+B3 | " Tờ khai thuế thủy điện mẫu số 01/TĐ-GTGT kỳ tính thuế:"&IF(Header!V30="M"," tháng "&Header!V46," quý "&Header!V47)&"/"&Header!V48&" ngày  "&MID(BG5,1,2)&" tháng "&MID(BG5,4,2)&" năm "&MID(BG5,7,4)&")" |  | xls
+BF5 | ROUND(BH15*BE20*0.05/100,0) |  | xls
+B9 | B8+1 | cbo | xls
+B13 | B12+1 | cbo | xls
+B17 | B16+1 | Số thuế GTGT phải nộp [27]= [25]-[26] | xls
+BH17 | BI5 | 27 | xls
+BE20 | BD5 | Số ngày nộp chậm: | xls
+BE21 | IF((BH17*BE20*0.05/100)>0,ROUND(BH17*BE20*0.05/100,0),0) | Số tiền chậm nộp: | xls
+BG45 | TRIM('01'!R62) | Người ký: | xls
+BG46 | TRIM('01'!R64) | Ngày ký: | xls
+B47 | BG5 |  | xls
+BD47 | SUM(BH8:BH10) |  | xls
+BF47 | SUM(BH12:BH14) |  | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
+B15 | IF('01'!S47<0,"0","1") | Số thuế GTGT phải nộp phải >= 0. Đề nghị xem lại | xls
+C15 | '01'!S47 | Số thuế GTGT phải nộp phải >= 0. Đề nghị xem lại | xls
+B26 | IF('01-1'!U45<>'01'!S47,"0","1") | Tổng số thuế GTGT trên PL 01-2/TĐ-GTGT phải bằng chỉ tiêu [… | xls
+C26 | '01-1'!U45 | Tổng số thuế GTGT trên PL 01-2/TĐ-GTGT phải bằng chỉ tiêu [… | xls
 => 60 cell công thức trong file này
-
-
-TỔNG CỘNG: 60 cell công thức trong 1 file

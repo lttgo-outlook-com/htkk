@@ -1,170 +1,102 @@
-CÔNG THỨC TÍNH (human-readable) — 58_BCTC (Báo cáo tài chính)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-
-## File 58_BCTC_v3.0.5_mau.xls
-
-### Sheet "01" (Bảng cân đối kế toán)
-- [E3, G10] Đơn vị = TRIM(Header!C3)
-- [E4] Địa chỉ = TRIM(Header!C4) & " - " & TRIM(Header!C5) & " - " & TRIM(Header!C6) (nối 3 phần: đường phố - quận - tỉnh)
-- [I7] "Tại ngày ..." = ngày tách từ Header!V33 bằng MID (dd tháng mm yyyy)
-- [G9] Mã số thuế = nối 10 ký tự Header!C2:K2 (rỗng thì dấu cách, không rỗng thì TRIM)
-- [R46] Tổng tài sản = R40 + R41 + R42 + R43 + R44 (cột "Số cuối năm" bên tài sản)
-- [W46] Tổng tài sản (cột "Số đầu năm") = W40 + W41 + W42 + W43 + W44
-- [R48] Tổng nguồn vốn = R49 + R50
-- [W48] Tổng nguồn vốn (đầu năm) = W49 + W50
-- [R55] Cộng B + C (nợ phải trả + VCSH) = R56 + R57 + R58
-- [W55] (đầu năm) = W56 + W57 + W58
-- [R59] Tổng cộng = R48 + R55 — phải khớp tổng tài sản (R46)
-- [W59] Tổng cộng (đầu năm) = W48 + W55
-- [U67, U69]: prefill người ký từ Header (người ký V41, ngày ký V42)
-- [F75] Từ ngày = Header!V32
-- [H75] Đến ngày = Header!V33
-
-### Sheet "01-1" (Báo cáo kết quả hoạt động kinh doanh)
-- [E4] Đơn vị = TRIM(Header!C3)
-- [E5] Địa chỉ = 01!E4 (lấy từ sheet 01)
-- [F9] "Năm ..." = nối Header!V48
-- [J24, K24] Cột 03 = J22 − J23, K22 − K23 (lũy kế: năm trước − hiện có)
-- [J26, K26] Lợi nhuận sau thuế TNDN: cột (20) = (03) − (10) = J24 − J25, K24 − K25
-- [J30] Người ký = 01!R67
-- [J32] Ngày ký = 01!R69
-
-### Sheet "KHBS" (bảng chênh lệch)
-- [B6] Số thứ tự = B5+1
-- [G6] Chênh lệch = F6 − E6 (số hiện tại − số đã khai)
-- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
-
-### Sheet "Header" (sheet nội trợ/ẩn)
-- [M2] = nếu N2:O2:P2 rỗng thì dấu cách, ngược lại " - "
-- [T8] Người ký = CONCATENATE(1)
-- [B15] = "1" nếu C3:C6 đủ 4 giá trị (không ô rỗng), ngược lại "0" — cờ đủ địa chỉ
-- [B16] = "1" nếu 01!U69 (ngày ký) khác rỗng, ngược lại "0"; [C16] = 01!R69
-- [B17, B18] = "0" nếu 01!R46 ≠ 01!R59 (tổng tài sản ≠ tổng nguồn vốn, cuối năm), ngược lại "1"; [C17] = 01!R46, [C18] = 01!R59
-- [B19, B20] = "0" nếu 01!W46 ≠ 01!W59 (đầu năm), ngược lại "1"; [C19] = 01!W46, [C20] = 01!W59
-
-## File 58_BCTC_v3.0.5_mau.xls1 (phiên bản b, layout khác .xls — không trùng bộ công thức)
-
-### Sheet "01" (Bảng cân đối kế toán)
-- [E1] Đơn vị = TRIM(Header!C3)
-- [E2] Địa chỉ = TRIM(Header!C4) & " - " & TRIM(Header!C5) & " - " & TRIM(Header!C6)
-- [D5] "Tại ngày ..." = ngày tách từ Header!V33 bằng MID
-- Các ô [F8:S8]: mã số thuế = 13 ký tự Header!C2:P2 (từng ô một ký tự)
-- [R64] "Phê duyệt, ngày ..." = định dạng lại R63 bằng MID
-
-### Sheet "01-1" (Báo cáo kết quả hoạt động kinh doanh)
-- [D1] Đơn vị = TRIM(Header!C3)
-- [D2] Địa chỉ = 01!E2
-- [I6] "Năm ..." = nối Header!V48
-- [Z33] = 01!R64 (ngày phê duyệt)
-- [B39, H39, Z39]: prefill chữ ký từ sheet 01 (TRIM(01!C70), TRIM(01!K70), TRIM(01!R70))
-
-### Sheet "KHBS"
-- Cùng bộ công thức như file .xls (STT = B5+1; chênh lệch = F6−E6; tổng cộng = SUM E5:E7 / F5:F7 / G5:G7)
-
-### Sheet "Header"
-- [M2] = nếu N2:O2:P2 rỗng thì dấu cách, ngược lại " - "
-- [V4] = "-" nếu Header!V5 (mã số thuế đơn vị chủ quản) có độ dài > 10, ngược lại trống
-- [T8] Người ký = CONCATENATE(1)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 58_BCTC
-Thư mục: 06_BCTC/58_BCTC (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 58_BCTC
+VersionXML: 3.0.5
+Class: BctcTt58Nckt305
+MenuID: X4
+Nguồn sha256: 64018d7ab59ff6d488f723ce167ee2106d5762e899e7169381d0b4ad64e60c58
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 58_BCTC_v3.0.5_mau.xls ===
---- Sheet "01" ---
-E3: TRIM(Header!C3)
-E4: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
-I7: "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4)
-G9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-G10: TRIM(Header!C3)
-R46: R40+R41+R42+R43+R44
-W46: W40+W41+W42+W43+W44
-R48: R49+R50
-W48: W49+W50
-R55: R56+R57+R58
-W55: W56+W57+W58
-R59: R48+R55
-W59: W48+W55
-U67: Header!V41
-U69: Header!V42
-F75: Header!V32
-H75: Header!V33
---- Sheet "01-1" ---
-E4: TRIM(Header!C3)
-E5: 01!E4
-F9: "Năm "&Header!V48
-J24: J22-J23
-K24: K22-K23
-J26: J24-J25
-K26: K24-K25
-J30: 01!R67
-J32: 01!R69
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
-B15: IF(OR(LEN(C3)=0,LEN(C4)=0,LEN(C5)=0,LEN(C6)=0),"0","1")
-B16: IF(LEN(01!U69)=0,"0","1")
-C16: 01!R69
-B17: IF(01!R46<>01!R59,"0","1")
-C17: 01!R46
-B18: IF(01!R46<>01!R59,"0","1")
-C18: 01!R59
-B19: IF(01!W46<>01!W59,"0","1")
-C19: 01!W46
-B20: IF(01!W46<>01!W59,"0","1")
-C20: 01!W59
+## sheet: 01
+E3 | TRIM(Header!C3) | ĐƠN VỊ: | xls
+E4 | TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6) | Địa chỉ: | xls
+I7 | "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4) |  | xls
+G9 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+G10 | TRIM(Header!C3) | ĐƠN VỊ: | xls
+R46 | R40+R41+R42+R43+R44 | TỔNG CỘNG TÀI SẢN (200=110+120+130+140+150) | xls
+W46 | W40+W41+W42+W43+W44 | TỔNG CỘNG TÀI SẢN (200=110+120+130+140+150) | xls
+R48 | R49+R50 | I. Nợ phải trả | xls
+W48 | W49+W50 | I. Nợ phải trả | xls
+R55 | R56+R57+R58 | II. Vốn chủ sở hữu | xls
+W55 | W56+W57+W58 | II. Vốn chủ sở hữu | xls
+R59 | R48+R55 | TỔNG CỘNG NGUỒN VỐN (500=300+400) | xls
+W59 | W48+W55 | TỔNG CỘNG NGUỒN VỐN (500=300+400) | xls
+U67 | Header!V41 | NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT | xls
+U69 | Header!V42 | Ngày phê duyệt | xls
+F75 | Header!V32 | Từ ngày | xls
+H75 | Header!V33 | đến ngày | xls
+## sheet: 01-1
+E4 | TRIM(Header!C3) | ĐƠN VỊ: | xls
+E5 | '01'!E4 | Địa chỉ: | xls
+F9 | "Năm "&Header!V48 |  | xls
+J24 | J22-J23 | 03 | xls
+K24 | K22-K23 | 03 | xls
+J26 | J24-J25 | 5. Lợi nhuận sau thuế TNDN {(20) = (03)-(10)} | xls
+K26 | K24-K25 | 5. Lợi nhuận sau thuế TNDN {(20) = (03)-(10)} | xls
+J30 | '01'!R67 | Người ký: | xls
+J32 | '01'!R69 | Ngày ký: | xls
+## sheet: KHBS
+B6 | B5+1 |  | xls
+G6 | F6-E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
+B15 | IF(OR(LEN(C3)=0,LEN(C4)=0,LEN(C5)=0,LEN(C6)=0),"0","1") | Đề nghị nhập tất cả các trường: Tên cơ sở kinh doanh, Địa c… | xls
+B16 | IF(LEN('01'!U69)=0,"0","1") | Thông tin ngày ký bắt buộc nhập. Đề nghị hãy nhập thông tin… | xls
+C16 | '01'!R69 | Thông tin ngày ký bắt buộc nhập. Đề nghị hãy nhập thông tin… | xls
+B17 | IF('01'!R46<>'01'!R59,"0","1") | Tổng cộng Tài sản [200] phải bằng tổng cộng nguồn vốn [500] | xls
+C17 | '01'!R46 | Tổng cộng Tài sản [200] phải bằng tổng cộng nguồn vốn [500] | xls
+B18 | IF('01'!R46<>'01'!R59,"0","1") | Tổng cộng Tài sản [200] phải bằng tổng cộng nguồn vốn [500] | xls
+C18 | '01'!R59 | Tổng cộng Tài sản [200] phải bằng tổng cộng nguồn vốn [500] | xls
+B19 | IF('01'!W46<>'01'!W59,"0","1") | Tổng cộng Tài sản [200] phải bằng tổng cộng nguồn vốn [500] | xls
+C19 | '01'!W46 | Tổng cộng Tài sản [200] phải bằng tổng cộng nguồn vốn [500] | xls
+B20 | IF('01'!W46<>'01'!W59,"0","1") | Tổng cộng Tài sản [200] phải bằng tổng cộng nguồn vốn [500] | xls
+C20 | '01'!W59 | Tổng cộng Tài sản [200] phải bằng tổng cộng nguồn vốn [500] | xls
 => 44 cell công thức trong file này
 
+MaFile: 58_BCTC
+VersionXML: 3.0.5
+Class: BctcTt58Nckt305
+MenuID: X4
+Nguồn sha256: 75b78020807d1710ce0e055312ee35c33d0a227ed970725e6b38a1d086a5e9bf
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 58_BCTC_v3.0.5_mau.xls1 ===
---- Sheet "01" ---
-E1: TRIM(Header!C3)
-E2: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
-D5: "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4)
-F8: Header!C2
-G8: Header!D2
-H8: Header!E2
-I8: Header!F2
-J8: Header!G2
-K8: Header!H2
-L8: Header!I2
-M8: Header!J2
-N8: Header!K2
-O8: Header!L2
-P8: Header!M2
-Q8: Header!N2
-R8: Header!O2
-S8: Header!P2
-R64: "Phê duyệt, ngày " & MID(TRIM(R63),1,2) & " tháng " & MID(TRIM(R63),4,2) & " năm " & MID(TRIM(R63),7,4)
---- Sheet "01-1" ---
-D1: TRIM(Header!C3)
-D2: 01!E2
-I6: "Năm "&Header!V48
-Z33: 01!R64
-B39: TRIM(01!C70)
-H39: TRIM(01!K70)
-Z39: TRIM(01!R70)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-V4: IF(LEN(TRIM(V5))>10,"-","")
-T8: CONCATENATE(1)
+## sheet: 01
+E1 | TRIM(Header!C3) | ĐƠN VỊ: | xls1
+E2 | TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6) | Địa chỉ: | xls1
+D5 | "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4) |  | xls1
+F8 | Header!C2 | Mã số thuế: | xls1
+G8 | Header!D2 | Mã số thuế: | xls1
+H8 | Header!E2 | Mã số thuế: | xls1
+I8 | Header!F2 | Mã số thuế: | xls1
+J8 | Header!G2 | Mã số thuế: | xls1
+K8 | Header!H2 | Mã số thuế: | xls1
+L8 | Header!I2 | Mã số thuế: | xls1
+M8 | Header!J2 | Mã số thuế: | xls1
+N8 | Header!K2 | Mã số thuế: | xls1
+O8 | Header!L2 | Mã số thuế: | xls1
+P8 | Header!M2 | Mã số thuế: | xls1
+Q8 | Header!N2 | Mã số thuế: | xls1
+R8 | Header!O2 | Mã số thuế: | xls1
+S8 | Header!P2 | Mã số thuế: | xls1
+R64 |      "Phê duyệt, ngày "& MID(TRIM(R63),1,2)& " tháng "& MID(TRIM(R63),4,2)& " năm "& MID(TRIM(R63),7,4) |  | xls1
+## sheet: 01-1
+D1 | TRIM(Header!C3) | ĐƠN VỊ: | xls1
+D2 | '01'!E2 | Địa chỉ: | xls1
+I6 | "Năm "&Header!V48 |  | xls1
+Z33 | '01'!R64 |  | xls1
+B39 | TRIM('01'!C70) |  | xls1
+H39 | TRIM('01'!K70) |  | xls1
+Z39 | TRIM('01'!R70) |  | xls1
+## sheet: KHBS
+B6 | B5+1 |  | xls1
+G6 | F6-E6 |  | xls1
+E8 | SUM(E5:E7) | Tổng cộng | xls1
+F8 | SUM(F5:F7) | Tổng cộng | xls1
+G8 | SUM(G5:G7) | Tổng cộng | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls1
+V4 | IF(LEN(TRIM(V5))>10,"-","") | Mã số thuế đơn vị chủ quản: | xls1
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls1
 => 33 cell công thức trong file này
-
-
-TỔNG CỘNG: 77 cell công thức trong 2 file

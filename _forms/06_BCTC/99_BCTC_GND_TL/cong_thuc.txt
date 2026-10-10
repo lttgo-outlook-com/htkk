@@ -1,328 +1,249 @@
-CÔNG THỨC TÍNH (human-readable) — 99_BCTC_GND_TL (Báo cáo tài chính trên giả định hoạt động liên tục, nhóm 06_BCTC)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-Hai file .xls và .xls1 cùng cấu trúc: bảng chính "01", hai bảng chi tiết "01-1", "01-2", bảng khấu trừ KHBS; kèm theo Thông tư 99/2025/TT-BTC.
-
-## File 99_BCTC_GND_TL_v3.0.5_mau.xls
-
-### Sheet "01" (báo cáo tài chính chính — tài sản / nợ và vốn chủ sở hữu)
-- [G3] Giả định hoạt động liên tục: "doanh nghiệp đáp ứng" nếu Header!K45="1", khác thì "không đáp ứng"
-- [G4] "Quý <V47> năm <V48>"; [G5] "Tại ngày <V33>" (ngày/tháng/năm tách bằng LEFT/MID/RIGHT)
-- [G6] Tên đơn vị báo cáo = TRIM(Header!C3); [G7] MST = nối 13 chữ số từ Header (ô trống để " ")
-- [G8] Địa chỉ = C4 & " - " & C5 & " - " & C6; [G9]/[G10] Tên/MST đại lý thuế = V6/V5
-- [F38]/[F40] Đơn vị tiền = V50/V49; [S45]/[U45] Từ ngày/đến ngày = V32/V33
-- Hai cột "tại thời điểm" (R) và "cùng kỳ trước" (W) có cùng công thức tổng dòng:
-- [R56] 100 Tiền và các tài sản tương đương tiền = R57+R58+R59+R60+R61+R62 (6 dòng chi tiết)
-- [R63] 200 Đầu tư tài chính ngắn hạn = R64..R70 (7 dòng)
-- [R71] 280 Tổng tài sản ngắn hạn = R56 + R63
-- [R73] 300 Tài sản dài hạn và các khoản mục khác = R74 + R75
-- [R77] 440 Tổng tài sản = R73 + R76
-- [R83] 100 Tổng nợ phải trả = R84+R87+R93+R102+R103+R107+R108+R109
-- [R84] 110 Vay và nợ = R85 + R86; [R87] 120 Dự phòng và các khoản phải trả/dự phòng (5 dòng); [R93] 130 (8 dòng); [R103] 150 (3 dòng); [R109] 180 (6 dòng)
-- [R116] 300 Tổng vốn chủ sở hữu = SUM(R117:R135)
-- [R136] 400 Tổng nguồn vốn = R137 + R152
-- [R137] 410 = tổng 10 dòng (R138..R147); [R138] 411 = R139 + R140; [R148] 421 = R149 + R150
-- [R152] 430 = R153 + R154; [R155] 440 Tổng cộng = R116 + R136 (vốn + nợ)
-- [V158] Người đại diện theo pháp luật = TRIM(Header!V41); [V160] Ngày phê duyệt = TRIM(Header!V42)
-
-### Sheet "01-1" (bảng chi tiết 1)
-- [C3] "Kỳ kế toán từ ngày … đến ngày …" = ngày V32, V33 tách bằng LEFT/MID/RIGHT
-- [E5] Tên đơn vị = TRIM(C3); [E6] MST = nối 13 ô từ Header; [D7] Địa chỉ = 01!G8; [E8]/[E9] Tên/MST đại lý = V6/V5
-- [I19] Thuyết minh (đơn vị tiền) = TRIM(01!AL8)
-- Các dòng bảng chi tiết (P22:P39): cột "cột (6T)+cột (4)" = I(dòng) + O(dòng) — số cuối kỳ = số đầu kỳ + tăng trong kỳ
-
-### Sheet "01-2" (bảng chi tiết 2)
-- [F3] "Kỳ kế toán từ ngày … đến ngày …" = cùng công thức trên
-- [G4..G8] Tên đơn vị/MST/địa chỉ/tên/MST đại lý = prefill từ Header (C3, nối C2..P2, V6, V5)
-- [R40] Thuyết minh (đơn vị tiền) = 01!AL8
-- Các dòng (AO43:AO49): cột "cột (6T)+cột (4)" = R(dòng) + AN(dòng)
-- [R46] 50 = R43+R44+R45; [R50] 70 = R46+R47+R48+R49 — cùng công thức với các cột W, AB, AG (các thời điểm so sánh)
-- [AO46..AO49] = R(dòng) + AN(dòng); [AO50] = R50 + AN50
-
-### Sheet "KHBS" (bảng khấu trừ)
-- [B6] STT = B5 + 1; [G6] Cột (0) = F6 − E6
-- [E8]/[F8]/[G8] Tổng cộng = SUM(E5:E7) / SUM(F5:F7) / SUM(G5:G7)
-
-### Sheet "Header"
-- [M2] ký hiệu MST (3 ô N2..P2 trống → " ", khác → " - "); [T8] "nguoi ky" = CONCATENATE(1)
-- Nhóm cờ kiểm tra (B = đúng/sai 0/1, C = giá trị tham chiếu): [B15] đủ tên + 3 dòng địa chỉ (C3..C6); [B16]/[C16] có ngày phê duyệt (01!V160); [B17]/[C17] tổng tài sản bằng tổng cộng R71 = R77; [B19]/[C19] cùng điều với cột kỳ trước W71 = W77; [B21]/[C21] tổng bảng chi tiết '01-2'!R50 = tổng tài sản 01!R57
-
-## File 99_BCTC_GND_TL_v3.0.5_mau.xls1
-
-### Sheet "01"
-- [G5] Tên đơn vị báo cáo = TRIM(C3); [F6] Địa chỉ = C4 & " - " & C5 & " - " & C6
-- [K19] "Quý <V47> năm <V48>"; [E20] "Tại ngày <V33>" (MID); [K21] Quý năm = Header!U32; [L21] Ngày kỳ khai = V33
-- [M30] Tên đại lý = V6; [F31:S31] 13 ô MST đại lý = tách từng chữ số bằng MID từ V5
-- [F32..R34] Địa chỉ/liên hệ đại lý = V7..V12
-- [T53] "Đơn vị tính: Đồng Việt Nam" (chuỗi tĩnh)
-- [R250] Người ký = Header!T5; [R253] "Phê duyệt, ngày <V> tháng <V> năm <V>" = MID từ R252
-
-### Sheet "01-1"
-- [G4] Tên đơn vị = 01!G5; [F5] Địa chỉ = 01!F6
-- [D9] "Kỳ kế toán từ ngày … đến ngày …" = V32, V33 tách bằng LEFT/MID/RIGHT
-- [F16] Tên đại lý = V6; [D17:Q17] 13 ô MST đại lý = MID từ V5; [D18..Y20] địa chỉ/liên hệ đại lý = V7..V12
-- [AF21] = 01!T53 (đơn vị tiền); [Z22] Thuyết minh = 01!AL8; [AF34] Dòng "Phê duyệt, ngày…" = 01!R253
-- [C41]/[L41]/[AJ41] Ba chữ ký = TRIM(01!C259 / K259 / S259)
-
-### Sheet "01-2"
-- [J4] Tên đơn vị = 01!G5; [J5] Địa chỉ = 01!F6; [F13] "Kỳ kế toán…" = TRIM('01-1'!D9)
-- [G20] Tên đại lý = V6; [F21:S21] 13 ô MST đại lý = MID từ V5; [AB21]/[AC21] 2 ô khác = MID từ Header!AF5
-- [F22..R24] địa chỉ/liên hệ đại lý = V7..V12; [AB23]/[AB24] = Header!AF9/AF12; [AB63] = Header!AD5
-- [R42] = 01!T53; [R43] Thuyết minh (đơn vị tiền) = 01!AL8
-- [R63] Người ký = Header!T5; [W66] = 01!R253
-- [C71]/[M71]/[W71] Ba chữ ký (ký, họ tên, đóng dấu) = TRIM(01!C259 / K259 / S259)
-
-### Sheet "KHBS"
-- [B6] STT = B5 + 1; [G6] = F6 − E6; [E8]/[F8]/[G8] Tổng cộng = SUM(E5:E7) / SUM(F5:F7) / SUM(G5:G7)
-
-### Sheet "Header"
-- [M2] ký hiệu MST; [T8] "nguoi ky" = CONCATENATE(1) (không có cờ kiểm tra như bản .xls)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 99_BCTC_GND_TL
-Thư mục: 06_BCTC/99_BCTC_GND_TL (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 99_BCTC_GND_TL
+VersionXML: 3.0.5
+Class: BctcTt99GndTlNckt305
+MenuID: X2
+Nguồn sha256: 8213cb40ec551e639b86294f4ab25eee63a3a564017e81ef36af1af869e74de9
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 99_BCTC_GND_TL_v3.0.5_mau.xls ===
---- Sheet "01" ---
-C2: "(Kèm theo Thông tư số 99/2025/TT-BTC ngày 27 tháng 10 năm 2025 của Bộ trưởng Bộ Tài chính)"
-G3: IF(K45="1","(Áp dụng cho doanh nghiệp đáp ứng giả định hoạt động liên tục)","(Áp dụng cho doanh nghiệp không đáp ứng giả định hoạt động liên tục)")
-G4: "Quý "&Header!V47&" năm "&Header!V48
-G5: "Tại ngày "&LEFT(Header!V33,2)&" tháng "&MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4)
-G6: TRIM(Header!C3)
-G7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-G8: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
-G9: TRIM(Header!V6)
-G10: TRIM(Header!V5)
-F38: Header!V50
-AI39: Header!V50
-F40: Header!V49
-S45: Header!V32
-U45: Header!V33
-R56: R57+R58+R59+R60+R61+R62
-W56: W57+W58+W59+W60+W61+W62
-R63: R64+R65+R66+R67+R68+R69+R70
-W63: W64+W65+W66+W67+W68+W69+W70
-R71: R56+R63
-W71: W56+W63
-R73: R74+R75
-W73: W74+W75
-R77: R73+R76
-W77: W73+W76
-R83: R84+R87+R93+R102+R103+R107+R108+R109
-W83: W84+W87+W93+W102+W103+W107+W108+W109
-R84: R85+R86
-W84: W85+W86
-R87: R88+R89+R90+R91+R92
-W87: W88+W89+W90+W91+W92
-R93: R94+R95+R96+R97+R98+R99+R100+R101
-W93: W94+W95+W96+W97+W98+W99+W100+W101
-R103: R104+R105+R106
-W103: W104+W105+W106
-R109: R110+R111+R112+R113+R114+R115
-W109: W110+W111+W112+W113+W114+W115
-R116: SUM(R117:R135)
-W116: SUM(W117:W135)
-R136: R137+R152
-W136: W137+W152
-R137: R138+R141+R142+R143+R144+R145+R146+R147+R148+R151
-W137: W138+W141+W142+W143+W144+W145+W146+W147+W148+W151
-R138: R139+R140
-W138: W139+W140
-R148: R149+R150
-W148: W149+W150
-R152: R153+R154
-W152: W153+W154
-R155: R116+R136
-W155: W116+W136
-V158: TRIM(Header!V41)
-V160: TRIM(Header!V42)
---- Sheet "01-1" ---
-C3: "Kỳ kế toán từ ngày "&LEFT(Header!V32,2)&" tháng "&MID(Header!V32,4,2)&" năm "&RIGHT(Header!V32,4)&" đến ngày "&LEFT(Header!V33,2)&" tháng "&MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4)
-E5: TRIM(Header!C3)
-E6: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-D7: 01!G8
-E8: TRIM(Header!V6)
-E9: TRIM(Header!V5)
-I19: TRIM(01!AL8)
-P22: I22+O22
-P23: I23+O23
-P24: I24+O24
-P25: I25+O25
-P26: I26+O26
-P27: I27+O27
-P28: I28+O28
-P29: I29+O29
-P30: I30+O30
-P31: I31+O31
-P32: I32+O32
-P33: I33+O33
-P34: I34+O34
-P35: I35+O35
-P36: I36+O36
-P37: I37+O37
-P38: I38+O38
-P39: I39+O39
---- Sheet "01-2" ---
-F3: "Kỳ kế toán từ ngày "&LEFT(Header!V32,2)&" tháng "&MID(Header!V32,4,2)&" năm "&RIGHT(Header!V32,4)&" đến ngày "&LEFT(Header!V33,2)&" tháng "&MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4)
-G4: TRIM(Header!C3)
-G5: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-G6: 01!G8
-G7: TRIM(Header!V6)
-G8: TRIM(Header!V5)
-R40: TRIM(01!AL8)
-AO43: R43+AN43
-AO44: R44+AN44
-AO45: R45+AN45
-R46: R43+R44+R45
-W46: W43+W44+W45
-AB46: AB43+AB44+AB45
-AG46: AG43+AG44+AG45
-AO46: R46+AN46
-AO47: R47+AN47
-AO48: R48+AN48
-AO49: R49+AN49
-R50: R46+R47+R48+R49
-W50: W46+W47+W48+W49
-AB50: AB46+AB47+AB48+AB49
-AG50: AG46+AG47+AG48+AG49
-AO50: R50+AN50
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
-B15: IF(OR(LEN(C3)=0,LEN(C4)=0,LEN(C5)=0,LEN(C6)=0),"0","1")
-B16: IF(LEN(01!V160)=0,"0","1")
-C16: 01!V160
-B17: IF(01!R71<>01!R77,"0","1")
-C17: 01!R71
-B18: IF(01!R71<>01!R77,"0","1")
-C18: 01!R77
-B19: IF(01!W71<>01!W77,"0","1")
-C19: 01!W71
-B20: IF(01!W71<>01!W77,"0","1")
-C20: 01!W77
-B21: IF('01-2'!R50<>01!R57,"0","1")
-C21: '01-2'!R50
-B22: IF('01-2'!R50<>01!R57,"0","1")
-C22: 01!R57
+## sheet: 01
+C2 | "(Kèm theo Thông tư số 99/2025/TT-BTC ngày 27 tháng 10 năm 2025 của Bộ trưởng Bộ Tài chính)" |  | xls
+G3 | IF(K45="1","(Áp dụng cho doanh nghiệp đáp ứng giả định hoạt động liên tục)","(Áp dụng cho doanh nghiệp không đáp ứng giả định hoạt động liên tục)") |  | xls
+G4 | "Quý "&Header!V47&" năm "&Header!V48 |  | xls
+G5 | "Tại ngày "&LEFT(Header!V33,2)&" tháng "&MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4) |  | xls
+G6 | TRIM(Header!C3) | Đơn vị báo cáo: | xls
+G7 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+G8 | TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6) | Địa chỉ: | xls
+G9 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
+G10 | TRIM(Header!V5) | Mã số thuế: | xls
+F38 | Header!V50 | Đơn vị tính: | xls
+AI39 | Header!V50 |  | xls
+F40 | Header!V49 | ma don vi tien | xls
+S45 | Header!V32 | Tu ngay | xls
+U45 | Header!V33 | den ngay | xls
+R56 | R57+R58+R59+R60+R61+R62 | 100 | xls
+W56 | W57+W58+W59+W60+W61+W62 | 100 | xls
+R63 | R64+R65+R66+R67+R68+R69+R70 | 200 | xls
+W63 | W64+W65+W66+W67+W68+W69+W70 | 200 | xls
+R71 | R56+R63 | 280 | xls
+W71 | W56+W63 | 280 | xls
+R73 | R74+R75 | 300 | xls
+W73 | W74+W75 | 300 | xls
+R77 | R73+R76 | 440 | xls
+W77 | W73+W76 | 440 | xls
+R83 | R84+R87+R93+R102+R103+R107+R108+R109 | 100 | xls
+W83 | W84+W87+W93+W102+W103+W107+W108+W109 | 100 | xls
+R84 | R85+R86 | 110 | xls
+W84 | W85+W86 | 110 | xls
+R87 | R88+R89+R90+R91+R92 | 120 | xls
+W87 | W88+W89+W90+W91+W92 | 120 | xls
+R93 | R94+R95+R96+R97+R98+R99+R100+R101 | 130 | xls
+W93 | W94+W95+W96+W97+W98+W99+W100+W101 | 130 | xls
+R103 | R104+R105+R106 | 150 | xls
+W103 | W104+W105+W106 | 150 | xls
+R109 | R110+R111+R112+R113+R114+R115 | 180 | xls
+W109 | W110+W111+W112+W113+W114+W115 | 180 | xls
+R116 | SUM(R117:R135) | 300 | xls
+W116 | SUM(W117:W135) | 300 | xls
+R136 | R137+R152 | 400 | xls
+W136 | W137+W152 | 400 | xls
+R137 | R138+R141+R142+R143+R144+R145+R146+R147+R148+R151 | 410 | xls
+W137 | W138+W141+W142+W143+W144+W145+W146+W147+W148+W151 | 410 | xls
+R138 | R139+R140 | 411 | xls
+W138 | W139+W140 | 411 | xls
+R148 | R149+R150 | 421 | xls
+W148 | W149+W150 | 421 | xls
+R152 | R153+R154 | 430 | xls
+W152 | W153+W154 | 430 | xls
+R155 | R116+R136 | 440 | xls
+W155 | W116+W136 | 440 | xls
+V158 | TRIM(Header!V41) | NGƯỜI ĐẠI DIỆN THEO PHÁP LUẬT | xls
+V160 | TRIM(Header!V42) | Ngày phê duyệt | xls
+## sheet: 01-1
+C3 | "Kỳ kế toán từ ngày "&LEFT(Header!V32,2)&" tháng "&MID(Header!V32,4,2)&" năm "&RIGHT(Header!V32,4)&" đến ngày "&LEFT(Header!V33,2)&" tháng "&MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4) |  | xls
+E5 | TRIM(Header!C3) | Đơn vị báo cáo: | xls
+E6 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+D7 | '01'!G8 | Địa chỉ: | xls
+E8 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
+E9 | TRIM(Header!V5) | Mã số thuế: | xls
+I19 | TRIM('01'!AL8) | Thuyết minh | xls
+P22 | I22+O22 | 01 | xls
+P23 | I23+O23 | 31 | xls
+P24 | I24+O24 | 50 | xls
+P25 | I25+O25 | 60 | xls
+P26 | I26+O26 |  | xls
+P27 | I27+O27 |  | xls
+P28 | I28+O28 |  | xls
+P29 | I29+O29 |  | xls
+P30 | I30+O30 |  | xls
+P31 | I31+O31 |  | xls
+P32 | I32+O32 |  | xls
+P33 | I33+O33 |  | xls
+P34 | I34+O34 |  | xls
+P35 | I35+O35 |  | xls
+P36 | I36+O36 |  | xls
+P37 | I37+O37 |  | xls
+P38 | I38+O38 |  | xls
+P39 | I39+O39 |  | xls
+## sheet: 01-2
+F3 | "Kỳ kế toán từ ngày "&LEFT(Header!V32,2)&" tháng "&MID(Header!V32,4,2)&" năm "&RIGHT(Header!V32,4)&" đến ngày "&LEFT(Header!V33,2)&" tháng "&MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4) |  | xls
+G4 | TRIM(Header!C3) | Đơn vị báo cáo | xls
+G5 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+G6 | '01'!G8 | Địa chỉ | xls
+G7 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
+G8 | TRIM(Header!V5) | Mã số thuế: | xls
+R40 | TRIM('01'!AL8) | Thuyết minh | xls
+AO43 | R43+AN43 | 20 | xls
+AO44 | R44+AN44 | 30 | xls
+AO45 | R45+AN45 | 40 | xls
+R46 | R43+R44+R45 | 50 | xls
+W46 | W43+W44+W45 | 50 | xls
+AB46 | AB43+AB44+AB45 | 50 | xls
+AG46 | AG43+AG44+AG45 | 50 | xls
+AO46 | R46+AN46 | 50 | xls
+AO47 | R47+AN47 | eof | xls
+AO48 | R48+AN48 | 61 | xls
+AO49 | R49+AN49 | 62 | xls
+R50 | R46+R47+R48+R49 | 70 | xls
+W50 | W46+W47+W48+W49 | 70 | xls
+AB50 | AB46+AB47+AB48+AB49 | 70 | xls
+AG50 | AG46+AG47+AG48+AG49 | 70 | xls
+AO50 | R50+AN50 | 70 | xls
+## sheet: KHBS
+B6 | B5+1 |  | xls
+G6 | F6-E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
+B15 | IF(OR(LEN(C3)=0,LEN(C4)=0,LEN(C5)=0,LEN(C6)=0),"0","1") | Đề nghị nhập tất cả các trường: Tên cơ sở kinh doanh, Địa c… | xls
+B16 | IF(LEN('01'!V160)=0,"0","1") | Thông tin ngày ký bắt buộc nhập. Đề nghị hãy nhập thông tin… | xls
+C16 | '01'!V160 | Thông tin ngày ký bắt buộc nhập. Đề nghị hãy nhập thông tin… | xls
+B17 | IF('01'!R71<>'01'!R77,"0","1") | Chỉ tiêu 280 = chỉ tiêu 440 | xls
+C17 | '01'!R71 | Chỉ tiêu 280 = chỉ tiêu 440 | xls
+B18 | IF('01'!R71<>'01'!R77,"0","1") | Chỉ tiêu 280 = chỉ tiêu 440 | xls
+C18 | '01'!R77 | Chỉ tiêu 280 = chỉ tiêu 440 | xls
+B19 | IF('01'!W71<>'01'!W77,"0","1") | Chỉ tiêu 280 = chỉ tiêu 440 | xls
+C19 | '01'!W71 | Chỉ tiêu 280 = chỉ tiêu 440 | xls
+B20 | IF('01'!W71<>'01'!W77,"0","1") | Chỉ tiêu 280 = chỉ tiêu 440 | xls
+C20 | '01'!W77 | Chỉ tiêu 280 = chỉ tiêu 440 | xls
+B21 | IF('01-2'!R50<>'01'!R57,"0","1") | Căn cứ vào số liệu chỉ tiêu "Tiền và tương đương tiền" cuối… | xls
+C21 | '01-2'!R50 | Căn cứ vào số liệu chỉ tiêu "Tiền và tương đương tiền" cuối… | xls
+B22 | IF('01-2'!R50<>'01'!R57,"0","1") | Căn cứ vào số liệu chỉ tiêu "Tiền và tương đương tiền" cuối… | xls
+C22 | '01'!R57 | Căn cứ vào số liệu chỉ tiêu "Tiền và tương đương tiền" cuối… | xls
 => 122 cell công thức trong file này
 
+MaFile: 99_BCTC_GND_TL
+VersionXML: 3.0.5
+Class: BctcTt99GndTlNckt305
+MenuID: X2
+Nguồn sha256: d667c88712d4edb8136a2996b48a310c43f94840cf7b08002deb8b02b81339d2
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 99_BCTC_GND_TL_v3.0.5_mau.xls1 ===
---- Sheet "01" ---
-G5: TRIM(Header!C3)
-F6: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
-K19: "Quý "&Header!V47&" năm "&Header!V48
-E20: "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4)
-K21: Header!U32
-L21: Header!V33
-M30: TRIM(Header!V6)
-F31: MID(TRIM(Header!V5),1,1)
-G31: MID(TRIM(Header!V5),2,1)
-H31: MID(TRIM(Header!V5),3,1)
-I31: MID(TRIM(Header!V5),4,1)
-J31: MID(TRIM(Header!V5),5,1)
-K31: MID(TRIM(Header!V5),6,1)
-L31: MID(TRIM(Header!V5),7,1)
-M31: MID(TRIM(Header!V5),8,1)
-N31: MID(TRIM(Header!V5),9,1)
-O31: MID(TRIM(Header!V5),10,1)
-Q31: MID(TRIM(Header!V5),11,1)
-R31: MID(TRIM(Header!V5),12,1)
-S31: MID(TRIM(Header!V5),13,1)
-F32: TRIM(Header!V7)
-F33: TRIM(Header!V8)
-R33: TRIM(Header!V9)
-F34: TRIM(Header!V10)
-L34: TRIM(Header!V11)
-R34: TRIM(Header!V12)
-T53: "Đơn vị tính: Đồng Việt Nam"
-R250: Header!T5
-R253: "    Phê duyệt,  ngày "&MID(TRIM(R252),1,2)&" tháng "&MID(TRIM(R252),4,2)&" năm "&MID(TRIM(R252),7,4)
---- Sheet "01-1" ---
-G4: 01!G5
-F5: 01!F6
-D9: "Kỳ kế toán từ ngày "&LEFT(Header!V32,2)&" tháng "&MID(Header!V32,4,2)&" năm "&RIGHT(Header!V32,4)&" đến ngày "&LEFT(Header!V33,2)&" tháng "&MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4)
-F16: TRIM(Header!V6)
-D17: MID(TRIM(Header!V5),1,1)
-E17: MID(TRIM(Header!V5),2,1)
-F17: MID(TRIM(Header!V5),3,1)
-G17: MID(TRIM(Header!V5),4,1)
-H17: MID(TRIM(Header!V5),5,1)
-I17: MID(TRIM(Header!V5),6,1)
-J17: MID(TRIM(Header!V5),7,1)
-K17: MID(TRIM(Header!V5),8,1)
-L17: MID(TRIM(Header!V5),9,1)
-M17: MID(TRIM(Header!V5),10,1)
-O17: MID(TRIM(Header!V5),11,1)
-P17: MID(TRIM(Header!V5),12,1)
-Q17: MID(TRIM(Header!V5),13,1)
-D18: TRIM(Header!V7)
-D19: TRIM(Header!V8)
-T19: TRIM(Header!V9)
-D20: TRIM(Header!V10)
-L20: TRIM(Header!V11)
-Y20: TRIM(Header!V12)
-AF21: 01!T53
-Z22: 01!AL8
-AF34: 01!R253
-C41: TRIM(01!C259)
-L41: TRIM(01!K259)
-AJ41: TRIM(01!S259)
---- Sheet "01-2" ---
-J4: 01!G5
-J5: 01!F6
-F13: TRIM('01-1'!D9)
-G20: TRIM(Header!V6)
-F21: MID(TRIM(Header!V5),1,1)
-G21: MID(TRIM(Header!V5),2,1)
-H21: MID(TRIM(Header!V5),3,1)
-I21: MID(TRIM(Header!V5),4,1)
-J21: MID(TRIM(Header!V5),5,1)
-K21: MID(TRIM(Header!V5),6,1)
-L21: MID(TRIM(Header!V5),7,1)
-M21: MID(TRIM(Header!V5),8,1)
-N21: MID(TRIM(Header!V5),9,1)
-O21: MID(TRIM(Header!V5),10,1)
-Q21: MID(TRIM(Header!V5),11,1)
-R21: MID(TRIM(Header!V5),12,1)
-S21: MID(TRIM(Header!V5),13,1)
-AB21: MID(TRIM(Header!AF5),12,1)
-AC21: MID(TRIM(Header!AF5),13,1)
-F22: TRIM(Header!V7)
-F23: TRIM(Header!V8)
-R23: TRIM(Header!V9)
-AB23: TRIM(Header!AF9)
-F24: TRIM(Header!V10)
-L24: TRIM(Header!V11)
-R24: TRIM(Header!V12)
-AB24: TRIM(Header!AF12)
-R42: 01!T53
-R43: 01!AL8
-R63: Header!T5
-AB63: Header!AD5
-W66: 01!R253
-C71: TRIM(01!C259)
-M71: TRIM(01!K259)
-W71: TRIM(01!S259)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
+## sheet: 01
+G5 | TRIM(Header!C3) | Đơn vị báo cáo: | xls1
+F6 | TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6) | Địa chỉ: | xls1
+K19 | "Quý "&Header!V47&" năm "&Header!V48 |  | xls1
+E20 | "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4) |  | xls1
+K21 | Header!U32 |  | xls1
+L21 | Header!V33 |  | xls1
+M30 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls1
+F31 | MID(TRIM(Header!V5),1,1) | Mã số thuế: | xls1
+G31 | MID(TRIM(Header!V5),2,1) | Mã số thuế: | xls1
+H31 | MID(TRIM(Header!V5),3,1) | Mã số thuế: | xls1
+I31 | MID(TRIM(Header!V5),4,1) | Mã số thuế: | xls1
+J31 | MID(TRIM(Header!V5),5,1) | Mã số thuế: | xls1
+K31 | MID(TRIM(Header!V5),6,1) | Mã số thuế: | xls1
+L31 | MID(TRIM(Header!V5),7,1) | Mã số thuế: | xls1
+M31 | MID(TRIM(Header!V5),8,1) | Mã số thuế: | xls1
+N31 | MID(TRIM(Header!V5),9,1) | Mã số thuế: | xls1
+O31 | MID(TRIM(Header!V5),10,1) | Mã số thuế: | xls1
+Q31 | MID(TRIM(Header!V5),11,1) | Mã số thuế: | xls1
+R31 | MID(TRIM(Header!V5),12,1) | Mã số thuế: | xls1
+S31 | MID(TRIM(Header!V5),13,1) | Mã số thuế: | xls1
+F32 | TRIM(Header!V7) | Địa chỉ trụ sở: | xls1
+F33 | TRIM(Header!V8) | Quận Huyện: | xls1
+R33 | TRIM(Header!V9) | Tỉnh/Thành phố: | xls1
+F34 | TRIM(Header!V10) | Điện thoại: | xls1
+L34 | TRIM(Header!V11) | Fax: | xls1
+R34 | TRIM(Header!V12) | Email: | xls1
+T53 | "Đơn vị tính: Đồng Việt Nam" |  | xls1
+R250 | Header!T5 | Người ký: | xls1
+R253 | "    Phê duyệt,  ngày "&MID(TRIM(R252),1,2)&" tháng "&MID(TRIM(R252),4,2)&" năm "&MID(TRIM(R252),7,4) |  | xls1
+## sheet: 01-1
+G4 | '01'!G5 | Đơn vị báo cáo: | xls1
+F5 | '01'!F6 | Địa chỉ: | xls1
+D9 | "Kỳ kế toán từ ngày "&LEFT(Header!V32,2)&" tháng "&MID(Header!V32,4,2)&" năm "&RIGHT(Header!V32,4)&" đến ngày "&LEFT(Header!V33,2)&" tháng "&MID(Header!V33,4,2)&" năm "&RIGHT(Header!V33,4) |  | xls1
+F16 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls1
+D17 | MID(TRIM(Header!V5),1,1) | Mã số thuế: | xls1
+E17 | MID(TRIM(Header!V5),2,1) | Mã số thuế: | xls1
+F17 | MID(TRIM(Header!V5),3,1) | Mã số thuế: | xls1
+G17 | MID(TRIM(Header!V5),4,1) | Mã số thuế: | xls1
+H17 | MID(TRIM(Header!V5),5,1) | Mã số thuế: | xls1
+I17 | MID(TRIM(Header!V5),6,1) | Mã số thuế: | xls1
+J17 | MID(TRIM(Header!V5),7,1) | Mã số thuế: | xls1
+K17 | MID(TRIM(Header!V5),8,1) | Mã số thuế: | xls1
+L17 | MID(TRIM(Header!V5),9,1) | Mã số thuế: | xls1
+M17 | MID(TRIM(Header!V5),10,1) | Mã số thuế: | xls1
+O17 | MID(TRIM(Header!V5),11,1) | Mã số thuế: | xls1
+P17 | MID(TRIM(Header!V5),12,1) | Mã số thuế: | xls1
+Q17 | MID(TRIM(Header!V5),13,1) | Mã số thuế: | xls1
+D18 | TRIM(Header!V7) | Địa chỉ trụ sở: | xls1
+D19 | TRIM(Header!V8) | Quận Huyện: | xls1
+T19 | TRIM(Header!V9) | Tỉnh/Thành phố: | xls1
+D20 | TRIM(Header!V10) | Điện thoại: | xls1
+L20 | TRIM(Header!V11) | Fax: | xls1
+Y20 | TRIM(Header!V12) | Email: | xls1
+AF21 | '01'!T53 |  | xls1
+Z22 | '01'!AL8 | Thuyết minh | xls1
+AF34 | '01'!R253 |  | xls1
+C41 | TRIM('01'!C259) | eof | xls1
+L41 | TRIM('01'!K259) | eof | xls1
+AJ41 | TRIM('01'!S259) | eof | xls1
+## sheet: 01-2
+J4 | '01'!G5 | Đơn vị báo cáo: | xls1
+J5 | '01'!F6 | Địa chỉ: | xls1
+F13 | TRIM('01-1'!D9) |  | xls1
+G20 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls1
+F21 | MID(TRIM(Header!V5),1,1) | Mã số thuế: | xls1
+G21 | MID(TRIM(Header!V5),2,1) | Mã số thuế: | xls1
+H21 | MID(TRIM(Header!V5),3,1) | Mã số thuế: | xls1
+I21 | MID(TRIM(Header!V5),4,1) | Mã số thuế: | xls1
+J21 | MID(TRIM(Header!V5),5,1) | Mã số thuế: | xls1
+K21 | MID(TRIM(Header!V5),6,1) | Mã số thuế: | xls1
+L21 | MID(TRIM(Header!V5),7,1) | Mã số thuế: | xls1
+M21 | MID(TRIM(Header!V5),8,1) | Mã số thuế: | xls1
+N21 | MID(TRIM(Header!V5),9,1) | Mã số thuế: | xls1
+O21 | MID(TRIM(Header!V5),10,1) | Mã số thuế: | xls1
+Q21 | MID(TRIM(Header!V5),11,1) | Mã số thuế: | xls1
+R21 | MID(TRIM(Header!V5),12,1) | Mã số thuế: | xls1
+S21 | MID(TRIM(Header!V5),13,1) | Mã số thuế: | xls1
+AB21 | MID(TRIM(Header!AF5),12,1) | Mã số thuế: | xls1
+AC21 | MID(TRIM(Header!AF5),13,1) | Mã số thuế: | xls1
+F22 | TRIM(Header!V7) | Địa chỉ trụ sở: | xls1
+F23 | TRIM(Header!V8) | Quận Huyện: | xls1
+R23 | TRIM(Header!V9) | Tỉnh/Thành phố: | xls1
+AB23 | TRIM(Header!AF9) | Tỉnh/Thành phố: | xls1
+F24 | TRIM(Header!V10) | Điện thoại: | xls1
+L24 | TRIM(Header!V11) | Fax: | xls1
+R24 | TRIM(Header!V12) | Email: | xls1
+AB24 | TRIM(Header!AF12) | Email: | xls1
+R42 | '01'!T53 |  | xls1
+R43 | '01'!AL8 | Thuyết minh | xls1
+R63 | Header!T5 | Người ký: | xls1
+AB63 | Header!AD5 | Người ký: | xls1
+W66 | '01'!R253 |  | xls1
+C71 | TRIM('01'!C259) |  | xls1
+M71 | TRIM('01'!K259) |  | xls1
+W71 | TRIM('01'!S259) |  | xls1
+## sheet: KHBS
+B6 | B5+1 |  | xls1
+G6 | F6-E6 |  | xls1
+E8 | SUM(E5:E7) | Tổng cộng | xls1
+F8 | SUM(F5:F7) | Tổng cộng | xls1
+G8 | SUM(G5:G7) | Tổng cộng | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls1
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls1
 => 100 cell công thức trong file này
-
-
-TỔNG CỘNG: 222 cell công thức trong 2 file

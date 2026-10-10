@@ -14,10 +14,34 @@ try:
 except ImportError:
     sys.exit('Thiếu olefile: chạy bằng /tmp/audit_venv/bin/python -I')
 
-EXPECT = {'forms_total': 418494, 'forms_xls': 418378, 'forms_xlsx': 116, 'ext_min': 183,
-          'names_user': 852, 'names_files': 429, 'shrfmla': 3138, 'array': 3,
-          'catalogue_files': 42, 'catalogue_formulas': 8872}
+# Số kỳ vọng của tập _forms không viết cứng: tính từ _forms/_manifest.csv nối với index.json của T1
+# (khóa nối: src = source_name và sha256 = source_sha256), xem expected_from_manifest().
+# Lịch sử: _forms cũ 418.494 ô / SHRFMLA 3.138 / defined name 852 trong 429 tệp; _forms mới (tệp vào/ra pending)
+# 417.348 ô / SHRFMLA 3.139 / defined name nhóm .xls+.xls1 855 trong 432 tệp, không mất dữ liệu.
+EXPECT = {'ext_min': 183, 'catalogue_files': 42, 'catalogue_formulas': 8872}
 FAIL = []
+
+
+def expected_from_manifest(forms_dir, files):
+    """Số kỳ vọng của tập _forms: manifest nối index (src + sha256), cộng theo từng dòng manifest có công thức."""
+    import csv
+    ent = {(e['source_name'], e['source_sha256']): e for e in files if e['status'] == 'ok'}
+    ex = collections.Counter()
+    with open(os.path.join(forms_dir, '_manifest.csv'), encoding='utf-8') as fh:
+        for r in csv.DictReader(fh):
+            e = ent.get((r['src'], r['sha256']))
+            if e is None:
+                continue
+            ex['rows'] += 1
+            ex['total'] += e['formulas']
+            ex['xlsx' if e['format'] == 'xlsx' else 'xls'] += e['formulas']
+            if e['format'] == 'biff8':
+                ex['shrfmla'] += e['shrfmla_records']
+                ex['array'] += e['array_records']
+            if r['dst'].endswith(('.xls', '.xls1')):
+                ex['names_user'] += e['defined_names_user']
+                ex['names_files'] += 1 if e['defined_names_user'] else 0
+    return ex
 
 
 def check(ok, label):
@@ -282,6 +306,9 @@ def main():
     for e in files:
         if e['status'] != 'ok':
             print('  bỏ qua: %s (%s)' % (e['source_name'], e['reason']))
+    EX = expected_from_manifest(a.forms, files)
+    print('kỳ vọng từ _manifest.csv + index.json: %d dòng manifest có công thức, %d ô (.xls/.xls1 %d, .xlsx %d), SHRFMLA %d, ARRAY %d, defined name .xls/.xls1 %d trong %d tệp' % (
+        EX['rows'], EX['total'], EX['xls'], EX['xlsx'], EX['shrfmla'], EX['array'], EX['names_user'], EX['names_files']))
     by_sha = collections.defaultdict(list)
     for e in ok_files:
         by_sha[e['source_sha256']].append(e)
@@ -415,10 +442,10 @@ def main():
         if h in by_sha:
             uniq[h] = by_sha[h][0]['formulas']
     print('  theo sha duy nhất: %d' % sum(uniq.values()))
-    check(tot == EXPECT['forms_total'], '(1) tổng = %d (kỳ vọng %d); .xls %d/%d, .xlsx %d/%d' % (
-        tot, EXPECT['forms_total'], xls_t, EXPECT['forms_xls'], xlsx_t, EXPECT['forms_xlsx']))
-    if tot != EXPECT['forms_total']:
-        print('  lệch: %d' % (tot - EXPECT['forms_total']))
+    check(tot == EX['total'], '(1) tổng = %d (kỳ vọng %d); .xls %d/%d, .xlsx %d/%d' % (
+        tot, EX['total'], xls_t, EX['xls'], xlsx_t, EX['xlsx']))
+    if tot != EX['total']:
+        print('  lệch: %d' % (tot - EX['total']))
     print('  tổng toàn bộ nguồn (cả tệp ngoài _forms): %d trong %d tệp' % (
         sum(e['formulas'] for e in ok_files), len(ok_files)))
 
@@ -432,10 +459,10 @@ def main():
     f_shr = sum(by_sha[h][0]['_ind']['n_shr'] for h in forms_hash.values() if h in by_sha and by_sha[h][0]['format'] == 'biff8')
     f_arr = sum(by_sha[h][0]['_ind']['n_arr'] for h in forms_hash.values() if h in by_sha and by_sha[h][0]['format'] == 'biff8')
     x_shr = sum(by_sha[h][0]['_ind']['n_shr'] for h in forms_hash.values() if h in by_sha and by_sha[h][0]['format'] == 'xlsx')
-    print('  SHRFMLA/ARRAY độc lập trên tệp BIFF của _forms: %d / %d (kỳ vọng %d / %d); ngoài ra %d shared master trong .xlsx (không tính vào SHRFMLA)' % (f_shr, f_arr, EXPECT['shrfmla'], EXPECT['array'], x_shr))
+    print('  SHRFMLA/ARRAY độc lập trên tệp BIFF của _forms: %d / %d (kỳ vọng %d / %d); ngoài ra %d shared master trong .xlsx (không tính vào SHRFMLA)' % (f_shr, f_arr, EX['shrfmla'], EX['array'], x_shr))
     print('  ô lỗi giải mã: %d; ô formula=None: %d' % (all_stats['errors'], all_stats['formula_none']))
     check(not mism and n_ind == n_js and all_stats['errors'] == 0, '(2) tập ô khớp 100%, SHRFMLA/ARRAY/ptgExp/SUPBOOK/defined name khớp, 0 lỗi giải mã')
-    check((f_shr, f_arr) == (EXPECT['shrfmla'], EXPECT['array']), '(2b) SHRFMLA=%d ARRAY=%d trên _forms' % (f_shr, f_arr))
+    check((f_shr, f_arr) == (EX['shrfmla'], EX['array']), '(2b) SHRFMLA=%d ARRAY=%d trên _forms' % (f_shr, f_arr))
 
     # ---- (3)
     print('\n== (3) So với SheetJS (xlsx@0.18.5), mọi ô không có tham chiếu ngoài')
@@ -566,10 +593,10 @@ def main():
     for g in ('xls/xls1', 'ole đuôi khác', 'xlsx'):
         print('  _forms, nhóm %-14s: %d tên người dùng trong %d tệp' % (g, grp[(g, 'tên')], grp[(g, 'tệp có tên')]))
     print('  toàn nguồn: %d tên người dùng trong %d tệp (+%d tên dựng sẵn)' % (nu_all, nf_all, nb_all))
-    print('  giải thích: 852/429 khớp đúng nhóm .xls/.xls1; 968 gồm thêm tệp OLE đuôi .x/.xl/.xl1/không đuôi (84) và .xlsx (32)')
-    check((grp[('xls/xls1', 'tên')], grp[('xls/xls1', 'tệp có tên')]) == (EXPECT['names_user'], EXPECT['names_files']),
+    print('  giải thích: nhóm .xls/.xls1 khớp số kỳ vọng từ manifest; tổng toàn nguồn gồm thêm tệp OLE đuôi .x/.xl/.xl1/không đuôi (84) và .xlsx (32)')
+    check((grp[('xls/xls1', 'tên')], grp[('xls/xls1', 'tệp có tên')]) == (EX['names_user'], EX['names_files']),
           '(5) defined name người dùng trong .xls/.xls1 của _forms = %d tên / %d tệp (kỳ vọng %d / %d)' % (
-              grp[('xls/xls1', 'tên')], grp[('xls/xls1', 'tệp có tên')], EXPECT['names_user'], EXPECT['names_files']))
+              grp[('xls/xls1', 'tên')], grp[('xls/xls1', 'tệp có tên')], EX['names_user'], EX['names_files']))
 
     # ---- (6)
     print('\n== (6) catalogue*.xls (catalogue_*.xls và catalogue.xls)')

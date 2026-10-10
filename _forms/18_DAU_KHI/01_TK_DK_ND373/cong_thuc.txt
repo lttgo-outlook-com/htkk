@@ -1,424 +1,366 @@
-CÔNG THỨC TÍNH (human-readable) — Tờ khai đăng ký thuế & xác định nghĩa vụ thuế tài nguyên khai thác dầu khí mẫu 01-TK-DK (ND373)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-Folder có 1 phiên bản 01_TK_DK_ND373_v2.9.3_mau.xls + .xls1 (bản có dữ liệu). 5 sheet: 01 (tờ khai + bảng tính), 01_1 (bảng phân bổ), 01-KHBS, 01-1-KHBS, Header. Đơn vị tiền do ô $BG$65 quyết định (USD/VND): công thức "BI = làm tròn 2 số lẻ (USD) / BJ = làm tròn nguyên (VND)"; mỗi chỉ tiêu có bộ 4 cột kiểm tra dung sai BM/BN/BO/BR: BM = −5 (USD) hoặc −100.000 (VND), BN = −0,1%, BO = MAX(2 bên âm), BP = +5/+100.000, BQ = +0,1%, BR = MIN(2 bên dương) (Header kiểm tra giá trị nhập nằm trong [BO; BR]).
-
-## File 01_TK_DK_ND373_v2.9.3_mau.xls
-
-### Sheet "01" (tờ khai chính — kèm bảng tính thuế)
-- Checkbox loại tài nguyên: [P14] [01] dầu thô = IF(OR(BQ14 = "1", UPPER(BQ14) = "TRUE", UPPER(BQ14) = "X", BQ14 = TRUE), "X", ""); [AE14] [02] condensate cùng cơ chế với BR14; [AS14] [03] khí thiên nhiên với BS14
-- [V21] [04] kỳ tính thuế = "Ngày ... tháng ... năm ..." (Header!V51/V46/V48) nếu V30 = "D", ngược lại "Tháng ... năm ..." (V46/V48)
-- [Y35] [06] lần đầu = IF(Header!V29 = "", "X", ""); [AS35] bổ sung = V29
-- prefill NNT (P46), MST (P50), đại lý (AB59 = V6, P63 = V5); chữ ký U126 = TRIM(V15), [AR126] người ký = IF(V41 = "", "", V41), U128 = TRIM(V16), [AR128] ngày ký = IF(V42 ≠ "", V42, "")
-- Bảng tính (dòng 92..115, cột chỉ tiêu AV):
-  - [AN92...] [35] đơn vị tiền = $BG$65
-  - [BI94, BJ94] [39] = AV92×AV93 = ROUND(AV92×(AV93/100), 2) / ROUND(..., 0) (doanh thu × thuế suất)
-  - [BK94] mã chỉ tiêu [39] = IF($BQ$14 = TRUE, "3751", IF($BR$14 = TRUE, "3951", "3801")) (tương tự: [BK102] = 3755/3955/3805; [BK107] = 3752/3952/3802; [BK108] = 3756/3956/3806)
-  - [BI102, BJ102] [42] = [39]×[35]+[40]×[41] = ROUND(((AV96/100)×AV92)+(AV100×(AV101/100)), 2/0)
-  - [BI107, BJ107] [44] = [42]−[43] = ROUND(AV102−AV106, 2/0)
-  - [BI108, BJ108] [45] = [46] hoặc [47] = IF(AV112 ≠ 0, ROUND(AV112, 2/0), ROUND(AV113, 2/0))
-  - [BI112, BJ112] [46] = 50%×{[33]−1,2×[34]}×[32] = IF(AND(1.2×AV88 < AV87, AV87 ≤ 1.5×AV88), ROUND(0.5×(AV87−1.2×AV88)×AV86, ...), 0) (kỳ BJ nhân thêm AV116)
-  - [BI113, BJ113] [47] = [48]+[49] = IF(AV87 > 1.5×AV88, ROUND(AV114+AV115, ...), 0)
-  - [BI114, BJ114] [48] = 50%×{1,5×[34]−1,2×[34]}×[32] = ROUND(0.5×((1.5×AV88)−(1.2×AV88))×AV86, 2/0)
-  - [BI115, BJ115] [49] = 60%×{[33]−1,5×[34]}×[32] = ROUND(0.6×(AV87−(1.5×AV88))×AV86, 2/0)
-  - [BM94..BR115] bộ 4 cột dung sai (BM/BN/BO/BP/BQ/BR) cho từng chỉ tiêu (công thức như mô tả ở đầu file)
-  - [BO103..BO105, BO109..BO111] = MAX(ABS(BM..)×1, ABS(BN..)×1) (3 dòng không có nhãn)
-
-### Sheet "01_1" (bảng phân bổ số thuế theo địa bàn/tổ chức)
-- checkbox/lần đầu/bổ sung lấy từ 01 (P14/AE14/AS14, BQ14/BR14/BS14, V21, Y35/AS35); NNT/MST từ Header
-- [Q59, Y59] checkbox = IF(OR(01!Q59 = TRUE, "TRUE", "X"), "X", "") / cùng với 01!Y59 ("hoặc Đại lý thuế")
-- [AB59] = 01!AB59; [P63] = TRIM(Header!V5)
-- [T69] = 01!AV94 (giá trị chỉ tiêu [39]); [W71] = 01!AV107 (chỉ tiêu [44])
-- [Y86, AQ86] tỷ lệ phân bổ = 01!$BG$65
-- [BQ89] = IF(USD, ROUND($T$69×(U89/100), 2), ROUND(..., 0)) (phân bổ thuế [39] theo tỷ lệ); [BR89] = cùng nhưng với $W$71 (chỉ tiêu [44]) và cột AK
-- Dòng tổng: [U91] = SUM(U88:X90); [Y91] = SUM(Y88:AJ90); [AK91] = SUM(AK88:AP90); [AQ91] = SUM(AQ88:AV90) (4 khối cột)
-
-### Sheet "01-KHBS"
-- [O36] tổng số thuế phải nộp = O49; [O37] tổng khấu trừ = O88; [O38] tổng đề nghị hoàn = O103
-- [O49] [10] = SUM(O46:T48); [AF62] [11] = SUM(AF58:AI60); [O88] [12] = SUM(O85:T87); [O103] [13] = SUM(O100:T102)
-
-### Sheet "01-1-KHBS"
-- [AD46] (7) = IF(TRIM(BV46) ≠ "", Z46, 0)
-- [BM46] = IF(BW46 = 16, V46−R46, 0)
-- [CB46, CC46, CD46] = IF(BV46 = 0/1/2, AD46, 0)
-- [AD48, AD49, AD50] [07]/[08]/[09] = SUM(CB45:CB47) / SUM(CC45:CC47) / SUM(CD45:CD47)
-
-### Sheet "Header"
-- [M2] định dạng MST = IF(TRIM(N2&O2&P2) = "", "", "  - "); [T8] = CONCATENATE(1)
-- [E14..E20] thông báo ngưỡng = IF(01!$BG$65 = "USD", "Sửa trong ngưỡng +-5USD hoặc 0. 1%", "Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-- Cờ dung sai (giá trị nhập phải nằm trong [BO; BR], A/C = tham chiếu):
-  - [B15] 01!AV94; [B16] 01!AV102; [B31] 01!AV107 (3 cờ này chỉ bật khi 01!$Q$69 = TRUE): IF(AND(Q69, OR(ABS(AV..)>ABS(BR..), ABS(AV..)<ABS(BO..))), 0, 1)
-  - [B17..B20] 01!AV112/AV113/AV114/AV115; [B32] 01!AV108 (không phụ thuộc Q69)
-- Cờ khác: [B21] Y40 (ngày ký) phải có nếu AS38 hoặc Y38 = TRUE; [B22] không được cả 2 cờ Q67 và Q69 đều FALSE; [B23] 01_1!F89 ≠ rỗng; [B24] 01_1!N89 ≠ rỗng; [B33] không được cả Y38 và AS38 đều FALSE; A13/C13/A23/C23 = 01_1!F89
-
-## File 01_TK_DK_ND373_v2.9.3_mau.xls1 (bản có dữ liệu)
-- Sheet 01: cùng bảng tính nhưng khác: [BI94, BJ94] = ROUND(AV92×AV93, 2/0) (không chia 100); [BI102, BJ102] = ROUND((AV96×AV92)+(AV100×AV101), 2/0) (không /100); bộ dung sai dùng ABS(BI..); [AB59] = TRIM(Header!V4); [AQ125] "       Ngày ..." = MID(TRIM(BM125)); không có [BK..] mã chỉ tiêu
-- Sheet 01_1: [V21] kỳ = IF(OR(W41 = "1", W41 = "2"), " Ngày " & MID(O41)..., " Tháng ..."); prefill + 4 tổng U91/Y91/AK91/AQ91
-- Sheet 01-KHBS, 01-1-KHBS: giống template
-- Sheet Header: [M2] + CONCATENATE + [E14..E20] thông báo ngưỡng + 7 cờ dung sai không ABS ([B14] AV107: IF(OR(AV107>BR107, AV107<BO107), 0, 1); [B15..B20] AV94/AV102/AV112/AV113/AV114/AV115) + [A13] 01_1!F89
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 01_TK_DK_ND373
-Thư mục: 18_DAU_KHI/01_TK_DK_ND373 (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 01_TK_DK_ND373
+VersionXML: 2.9.3
+Class: DkTk01Nd373Nckt293
+MenuID: R9
+Nguồn sha256: 2a1720c33de27c252c98033132a03323573159ae22f73752873ebc6478223bc8
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 01_TK_DK_ND373_v2.9.3_mau.xls ===
---- Sheet "01" ---
-P14: IF(OR(BQ14="1",UPPER(BQ14)="TRUE",UPPER(BQ14)="X",BQ14=TRUE),"X","")
-AE14: IF(OR(BR14="1",UPPER(BR14)="TRUE",UPPER(BR14)="X",BR14=TRUE),"X","")
-AS14: IF(OR(BS14="1",UPPER(BS14)="TRUE",UPPER(BS14)="X",BS14=TRUE),"X","")
-V21: "[04] Kỳ tính thuế:"&IF(Header!V30="D"," Ngày "&Header!V51&" tháng "&Header!V46&" năm "&Header!V48," Tháng "&Header!V46&" năm "&Header!V48)
-Y35: IF(Header!V29="","X","")
-AS35: IF(Header!V29="","",Header!V29)
-P46: TRIM(Header!C3)
-P50: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-AB59: TRIM(Header!V6)
-P63: TRIM(Header!V5)
-AN92: $BG$65
-AN94: $BG$65
-BI94: ROUND(AV92*(AV93/100),2)
-BJ94: ROUND(AV92*(AV93/100),0)
-BK94: IF($BQ$14=TRUE,"3751",IF($BR$14=TRUE,"3951","3801"))
-BM94: IF($BG$65="USD",BI94-5,BJ94-100000)
-BN94: IF($BG$65="USD",BI94-(BI94*0.001),BJ94-(BJ94*0.001))
-BO94: MAX(BM94*1,BN94*1)
-BP94: IF($BG$65="USD",BI94+5,BJ94+100000)
-BQ94: IF($BG$65="USD",BI94+(BI94*0.001),BJ94+(BJ94*0.001))
-BR94: MIN(BP94*1,BQ94*1)
-AN95: $BG$65
-BK95: IF($BQ$14=TRUE,"3755",IF($BR$14=TRUE,"3955","3805"))
-AN100: $BG$65
-AN102: $BG$65
-BI102: ROUND(((AV96/100)*AV92)+(AV100*(AV101/100)),2)
-BJ102: ROUND(((AV96/100)*AV92)+(AV100*(AV101/100)),0)
-BM102: IF($BG$65="USD",BI102-5,BJ102-100000)
-BN102: IF($BG$65="USD",BI102-(BI102*0.001),BJ102-(BJ102*0.001))
-BO102: MAX(BM102*1,BN102*1)
-BP102: IF($BG$65="USD",BI102+5,BJ102+100000)
-BQ102: IF($BG$65="USD",BI102+(BI102*0.001),BJ102+(BJ102*0.001))
-BR102: MIN(BP102*1,BQ102*1)
-BO103: MAX(ABS(BM103)*1,ABS(BN103)*1)
-BO104: MAX(ABS(BM104)*1,ABS(BN104)*1)
-BO105: MAX(ABS(BM105)*1,ABS(BN105)*1)
-AN106: $BG$65
-AN107: $BG$65
-BI107: ROUND(AV102-AV106,2)
-BJ107: ROUND(AV102-AV106,0)
-BK107: IF($BQ$14=TRUE,"3752",IF($BR$14=TRUE,"3952","3802"))
-BM107: IF($BG$65="USD",BI107-5,BJ107-100000)
-BN107: IF($BG$65="USD",BI107-(BI107*0.001),BJ107-(BJ107*0.001))
-BO107: MAX(BM107*1,BN107*1)
-BP107: IF($BG$65="USD",BI107+5,BJ107+100000)
-BQ107: IF($BG$65="USD",BI107+(BI107*0.001),BJ107+(BJ107*0.001))
-BR107: MIN(BP107*1,BQ107*1)
-AN108: $BG$65
-BI108: IF(AV112<>0,ROUND(AV112,2),ROUND(AV113,2))
-BJ108: IF(AV112<>0,ROUND(AV112,0),ROUND(AV113,0))
-BK108: IF($BQ$14=TRUE,"3756",IF($BR$14=TRUE,"3956","3806"))
-BM108: IF($BG$65="USD",BI108-5,BJ108-100000)
-BN108: IF($BG$65="USD",BI108-(BI108*0.001),BJ108-(BJ108*0.001))
-BO108: MAX(BM108*1,BN108*1)
-BP108: IF($BG$65="USD",BI108+5,BJ108+100000)
-BQ108: IF($BG$65="USD",BI108+(BI108*0.001),BJ108+(BJ108*0.001))
-BR108: MIN(BP108*1,BQ108*1)
-BO109: MAX(ABS(BM109)*1,ABS(BN109)*1)
-BO110: MAX(ABS(BM110)*1,ABS(BN110)*1)
-BO111: MAX(ABS(BM111)*1,ABS(BN111)*1)
-AN112: $BG$65
-BI112: IF(AND(1.2*AV88<AV87,AV87<=1.5*AV88),ROUND(0.5*(AV87-1.2*AV88)*AV86,2),0)
-BJ112: IF(AND(1.2*AV88<AV87,AV87<=1.5*AV88),ROUND((0.5*(AV87-1.2*AV88)*AV86)*AV116,0),0)
-BM112: IF($BG$65="USD",BI112-5,BJ112-100000)
-BN112: IF($BG$65="USD",BI112-(BI112*0.001),BJ112-(BJ112*0.001))
-BO112: MAX(BM112*1,BN112*1)
-BP112: IF($BG$65="USD",BI112+5,BJ112+100000)
-BQ112: IF($BG$65="USD",BI112+(BI112*0.001),BJ112+(BJ112*0.001))
-BR112: MIN(BP112*1,BQ112*1)
-AN113: $BG$65
-BI113: IF(AV87>(1.5*AV88),ROUND(AV114+AV115,2),0)
-BJ113: IF(AV87>(1.5*AV88),ROUND(AV114+AV115,0),0)
-BM113: IF($BG$65="USD",BI113-5,BJ113-100000)
-BN113: IF($BG$65="USD",BI113-(BI113*0.001),BJ113-(BJ113*0.001))
-BO113: MAX(BM113*1,BN113*1)
-BP113: IF($BG$65="USD",BI113+5,BJ113+100000)
-BQ113: IF($BG$65="USD",BI113+(BI113*0.001),BJ113+(BJ113*0.001))
-BR113: MIN(BP113*1,BQ113*1)
-AN114: $BG$65
-BI114: ROUND(0.5*((1.5*AV88)-(1.2*AV88))*AV86,2)
-BJ114: ROUND(0.5*((1.5*AV88)-(1.2*AV88))*AV86,0)
-BM114: IF($BG$65="USD",BI114-5,BJ114-100000)
-BN114: IF($BG$65="USD",BI114-(BI114*0.001),BJ114-(BJ114*0.001))
-BO114: MAX(BM114*1,BN114*1)
-BP114: IF($BG$65="USD",BI114+5,BJ114+100000)
-BQ114: IF($BG$65="USD",BI114+(BI114*0.001),BJ114+(BJ114*0.001))
-BR114: MIN(BP114*1,BQ114*1)
-AN115: $BG$65
-BI115: ROUND(0.6*(AV87-(1.5*AV88))*AV86,2)
-BJ115: ROUND(0.6*(AV87-(1.5*AV88))*AV86,0)
-BM115: IF($BG$65="USD",BI115-5,BJ115-100000)
-BN115: IF($BG$65="USD",BI115-(BI115*0.001),BJ115-(BJ115*0.001))
-BO115: MAX(BM115*1,BN115*1)
-BP115: IF($BG$65="USD",BI115+5,BJ115+100000)
-BQ115: IF($BG$65="USD",BI115+(BI115*0.001),BJ115+(BJ115*0.001))
-BR115: MIN(BP115*1,BQ115*1)
-U126: TRIM(Header!V15)
-AR126: IF(Header!V41="","",Header!V41)
-U128: TRIM(Header!V16)
-AR128: IF(Header!V42<>"",Header!V42,"")
---- Sheet "01_1" ---
-P14: 01!P14
-AE14: 01!AE14
-AS14: 01!AS14
-BQ14: 01!BQ14
-BR14: 01!BR14
-BS14: 01!BS14
-V21: 01!V21
-Y35: IF(Header!V29="","X","")
-AS35: IF(Header!V29="","",Header!V29)
-P46: TRIM(Header!C3)
-P50: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-Q59: IF(OR(01!Q59=TRUE,01!Q59="TRUE",01!Q59="X"),"X","")
-Y59: IF(OR(01!Y59=TRUE,01!Y59="TRUE",01!Y59="X"),"X","")
-AB59: 01!AB59
-P63: TRIM(Header!V5)
-T69: 01!AV94
-W71: 01!AV107
-Y86: 01!$BG$65
-AQ86: 01!$BG$65
-BQ89: IF(01!$BG$65="USD",ROUND($T$69*(U89/100),2),ROUND($T$69*(U89/100),0))
-BR89: IF(01!$BG$65="USD",ROUND($W$71*(AK89/100),2),ROUND($W$71*(AK89/100),0))
-U91: SUM(U88:X90)
-Y91: SUM(Y88:AJ90)
-AK91: SUM(AK88:AP90)
-AQ91: SUM(AQ88:AV90)
---- Sheet "01-KHBS" ---
-O36: O49
-O37: O88
-O38: O103
-O49: SUM(O46:T48)
-AF62: SUM(AF58:AI60)
-O88: SUM(O85:T87)
-O103: SUM(O100:T102)
---- Sheet "01-1-KHBS" ---
-AD46: IF(TRIM(BV46)<>"",Z46,0)
-BM46: IF(BW46=16,V46-R46,0)
-CB46: IF(BV46=0,AD46,0)
-CC46: IF(BV46=1,AD46,0)
-CD46: IF(BV46=2,AD46,0)
-AD48: SUM(CB45:CB47)
-AD49: SUM(CC45:CC47)
-AD50: SUM(CD45:CD47)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)="","","  - ")
-T8: CONCATENATE(1)
-A13: 01_1!F89
-C13: 01_1!F89
-E14: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A15: 01!AV94
-B15: IF(AND(01!$Q$69=TRUE,OR(ABS(01!AV94)>ABS(01!BR94),ABS(01!AV94)<ABS(01!BO94))),0,1)
-C15: 01!AV94
-E15: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A16: 01!AV102
-B16: IF(AND(01!$Q$69=TRUE,OR(ABS(01!AV102)>ABS(01!BR102),ABS(01!AV102)<ABS(01!BO102))),0,1)
-C16: 01!AV102
-E16: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A17: 01!AV112
-B17: IF(OR(ABS(01!AV112)>ABS(01!BR112),ABS(01!AV112)<ABS(01!BO112)),0,1)
-C17: 01!AV112
-E17: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A18: 01!AV113
-B18: IF(OR(ABS(01!AV113)>ABS(01!BR113),ABS(01!AV113)<ABS(01!BO113)),0,1)
-C18: 01!AV113
-E18: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A19: 01!AV114
-B19: IF(OR(ABS(01!AV114)>ABS(01!BR114),ABS(01!AV114)<ABS(01!BO114)),0,1)
-C19: 01!AV114
-E19: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A20: 01!AV115
-B20: IF(OR(ABS(01!AV115)>ABS(01!BR115),ABS(01!AV115)<ABS(01!BO115)),0,1)
-C20: 01!AV115
-E20: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A21: 01!Y40
-B21: IF(AND(TRIM(01!Y40)="",OR(01!AS38=TRUE,01!Y38=TRUE)),0,1)
-C21: 01!Y40
-A22: 01!Q67
-B22: IF(AND(01!Q67=FALSE,01!Q69=FALSE),0,1)
-C22: 01!Q67&01!Q69
-A23: 01_1!F89
-B23: IF(TRIM(01_1!F89)="",0,1)
-C23: 01_1!F89
-A24: 01_1!N89
-B24: IF(TRIM(01_1!N89)="",0,1)
-C24: 01_1!N89
-A31: 01!AV107
-B31: IF(AND(01!$Q$69=TRUE,OR(ABS(01!AV107)>ABS(01!BR107),ABS(01!AV107)<ABS(01!BO107))),0,1)
-C31: 01!AV107
-E31: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A32: 01!AV108
-B32: IF(OR(ABS(01!AV108)>ABS(01!BR108),ABS(01!AV108)<ABS(01!BO108)),0,1)
-C32: 01!AV108
-E32: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A33: 01!Y38
-B33: IF(AND(01!Y38=FALSE,01!AS38=FALSE),0,1)
-C33: 01!Y38
+## sheet: 01
+P14 | IF(OR(BQ14="1",UPPER(BQ14)="TRUE",UPPER(BQ14)="X",BQ14=TRUE),"X","") | [02] Condensate: | xls
+AE14 | IF(OR(BR14="1",UPPER(BR14)="TRUE",UPPER(BR14)="X",BR14=TRUE),"X","") | [03] Khí thiên nhiên: | xls
+AS14 | IF(OR(BS14="1",UPPER(BS14)="TRUE",UPPER(BS14)="X",BS14=TRUE),"X","") | [03] Khí thiên nhiên: | xls
+V21 | "[04] Kỳ tính thuế:"&IF(Header!V30="D"," Ngày "&Header!V51&" tháng "&Header!V46&" năm "&Header!V48," Tháng "&Header!V46&" năm "&Header!V48) |  | xls
+Y35 | IF(Header!V29="","X","") | [06] Lần đầu | xls
+AS35 | IF(Header!V29="","",Header!V29) | [07] Bổ sung lần thứ: | xls
+P46 | TRIM(Header!C3) | [11] Tên người nộp thuế: | xls
+P50 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | [12] Mã số thuế: | xls
+AB59 | TRIM(Header!V6) | chk | xls
+P63 | TRIM(Header!V5) | [21] Mã số thuế: | xls
+AN92 | $BG$65 | [35] | xls
+AN94 | $BG$65 | [37] | xls
+BI94 | ROUND(AV92*(AV93/100),2) | AV92*AV93 | xls
+BJ94 | ROUND(AV92*(AV93/100),0) | AV92*AV93 | xls
+BK94 | IF($BQ$14=TRUE,"3751",IF($BR$14=TRUE,"3951","3801")) | AV92*AV93 | xls
+BM94 | IF($BG$65="USD",BI94-5,BJ94-100000) | AV92*AV93 | xls
+BN94 | IF($BG$65="USD",BI94-(BI94*0.001),BJ94-(BJ94*0.001)) | AV92*AV93 | xls
+BO94 | MAX(BM94*1,BN94*1) | AV92*AV93 | xls
+BP94 | IF($BG$65="USD",BI94+5,BJ94+100000) | AV92*AV93 | xls
+BQ94 | IF($BG$65="USD",BI94+(BI94*0.001),BJ94+(BJ94*0.001)) | AV92*AV93 | xls
+BR94 | MIN(BP94*1,BQ94*1) | AV92*AV93 | xls
+AN95 | $BG$65 | [38] | xls
+BK95 | IF($BQ$14=TRUE,"3755",IF($BR$14=TRUE,"3955","3805")) | [38] | xls
+AN100 | $BG$65 | [40] | xls
+AN102 | $BG$65 | [42] | xls
+BI102 | ROUND(((AV96/100)*AV92)+(AV100*(AV101/100)),2) | [42]=[39]x[35]+[40]x[41] | xls
+BJ102 | ROUND(((AV96/100)*AV92)+(AV100*(AV101/100)),0) | [42]=[39]x[35]+[40]x[41] | xls
+BM102 | IF($BG$65="USD",BI102-5,BJ102-100000) | [42]=[39]x[35]+[40]x[41] | xls
+BN102 | IF($BG$65="USD",BI102-(BI102*0.001),BJ102-(BJ102*0.001)) | [42]=[39]x[35]+[40]x[41] | xls
+BO102 | MAX(BM102*1,BN102*1) | [42]=[39]x[35]+[40]x[41] | xls
+BP102 | IF($BG$65="USD",BI102+5,BJ102+100000) | [42]=[39]x[35]+[40]x[41] | xls
+BQ102 | IF($BG$65="USD",BI102+(BI102*0.001),BJ102+(BJ102*0.001)) | [42]=[39]x[35]+[40]x[41] | xls
+BR102 | MIN(BP102*1,BQ102*1) | [42]=[39]x[35]+[40]x[41] | xls
+BO103 | MAX(ABS(BM103)*1,ABS(BN103)*1) |  | xls
+BO104 | MAX(ABS(BM104)*1,ABS(BN104)*1) |  | xls
+BO105 | MAX(ABS(BM105)*1,ABS(BN105)*1) |  | xls
+AN106 | $BG$65 | [43] | xls
+AN107 | $BG$65 | [44] | xls
+BI107 | ROUND(AV102-AV106,2) | [44]= [42]-[43] | xls
+BJ107 | ROUND(AV102-AV106,0) | [44]= [42]-[43] | xls
+BK107 | IF($BQ$14=TRUE,"3752",IF($BR$14=TRUE,"3952","3802")) | [44]= [42]-[43] | xls
+BM107 | IF($BG$65="USD",BI107-5,BJ107-100000) | [44]= [42]-[43] | xls
+BN107 | IF($BG$65="USD",BI107-(BI107*0.001),BJ107-(BJ107*0.001)) | [44]= [42]-[43] | xls
+BO107 | MAX(BM107*1,BN107*1) | [44]= [42]-[43] | xls
+BP107 | IF($BG$65="USD",BI107+5,BJ107+100000) | [44]= [42]-[43] | xls
+BQ107 | IF($BG$65="USD",BI107+(BI107*0.001),BJ107+(BJ107*0.001)) | [44]= [42]-[43] | xls
+BR107 | MIN(BP107*1,BQ107*1) | [44]= [42]-[43] | xls
+AN108 | $BG$65 | [45] | xls
+BI108 | IF(AV112<>0,ROUND(AV112,2),ROUND(AV113,2)) | [45]=[46] hoặc [47] | xls
+BJ108 | IF(AV112<>0,ROUND(AV112,0),ROUND(AV113,0)) | [45]=[46] hoặc [47] | xls
+BK108 | IF($BQ$14=TRUE,"3756",IF($BR$14=TRUE,"3956","3806")) | [45]=[46] hoặc [47] | xls
+BM108 | IF($BG$65="USD",BI108-5,BJ108-100000) | [45]=[46] hoặc [47] | xls
+BN108 | IF($BG$65="USD",BI108-(BI108*0.001),BJ108-(BJ108*0.001)) | [45]=[46] hoặc [47] | xls
+BO108 | MAX(BM108*1,BN108*1) | [45]=[46] hoặc [47] | xls
+BP108 | IF($BG$65="USD",BI108+5,BJ108+100000) | [45]=[46] hoặc [47] | xls
+BQ108 | IF($BG$65="USD",BI108+(BI108*0.001),BJ108+(BJ108*0.001)) | [45]=[46] hoặc [47] | xls
+BR108 | MIN(BP108*1,BQ108*1) | [45]=[46] hoặc [47] | xls
+BO109 | MAX(ABS(BM109)*1,ABS(BN109)*1) |  | xls
+BO110 | MAX(ABS(BM110)*1,ABS(BN110)*1) |  | xls
+BO111 | MAX(ABS(BM111)*1,ABS(BN111)*1) |  | xls
+AN112 | $BG$65 | [46] | xls
+BI112 | IF(AND(1.2*AV88<AV87,AV87<=1.5*AV88),ROUND(0.5*(AV87-1.2*AV88)*AV86,2),0) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls
+BJ112 | IF(AND(1.2*AV88<AV87,AV87<=1.5*AV88),ROUND((0.5*(AV87-1.2*AV88)*AV86)*AV116,0),0) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls
+BM112 | IF($BG$65="USD",BI112-5,BJ112-100000) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls
+BN112 | IF($BG$65="USD",BI112-(BI112*0.001),BJ112-(BJ112*0.001)) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls
+BO112 | MAX(BM112*1,BN112*1) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls
+BP112 | IF($BG$65="USD",BI112+5,BJ112+100000) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls
+BQ112 | IF($BG$65="USD",BI112+(BI112*0.001),BJ112+(BJ112*0.001)) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls
+BR112 | MIN(BP112*1,BQ112*1) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls
+AN113 | $BG$65 | [47] | xls
+BI113 | IF(AV87>(1.5*AV88),ROUND(AV114+AV115,2),0) | [47]=[48] + [49] | xls
+BJ113 | IF(AV87>(1.5*AV88),ROUND(AV114+AV115,0),0) | [47]=[48] + [49] | xls
+BM113 | IF($BG$65="USD",BI113-5,BJ113-100000) | [47]=[48] + [49] | xls
+BN113 | IF($BG$65="USD",BI113-(BI113*0.001),BJ113-(BJ113*0.001)) | [47]=[48] + [49] | xls
+BO113 | MAX(BM113*1,BN113*1) | [47]=[48] + [49] | xls
+BP113 | IF($BG$65="USD",BI113+5,BJ113+100000) | [47]=[48] + [49] | xls
+BQ113 | IF($BG$65="USD",BI113+(BI113*0.001),BJ113+(BJ113*0.001)) | [47]=[48] + [49] | xls
+BR113 | MIN(BP113*1,BQ113*1) | [47]=[48] + [49] | xls
+AN114 | $BG$65 | [48] | xls
+BI114 | ROUND(0.5*((1.5*AV88)-(1.2*AV88))*AV86,2) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls
+BJ114 | ROUND(0.5*((1.5*AV88)-(1.2*AV88))*AV86,0) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls
+BM114 | IF($BG$65="USD",BI114-5,BJ114-100000) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls
+BN114 | IF($BG$65="USD",BI114-(BI114*0.001),BJ114-(BJ114*0.001)) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls
+BO114 | MAX(BM114*1,BN114*1) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls
+BP114 | IF($BG$65="USD",BI114+5,BJ114+100000) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls
+BQ114 | IF($BG$65="USD",BI114+(BI114*0.001),BJ114+(BJ114*0.001)) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls
+BR114 | MIN(BP114*1,BQ114*1) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls
+AN115 | $BG$65 | [49] | xls
+BI115 | ROUND(0.6*(AV87-(1.5*AV88))*AV86,2) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls
+BJ115 | ROUND(0.6*(AV87-(1.5*AV88))*AV86,0) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls
+BM115 | IF($BG$65="USD",BI115-5,BJ115-100000) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls
+BN115 | IF($BG$65="USD",BI115-(BI115*0.001),BJ115-(BJ115*0.001)) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls
+BO115 | MAX(BM115*1,BN115*1) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls
+BP115 | IF($BG$65="USD",BI115+5,BJ115+100000) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls
+BQ115 | IF($BG$65="USD",BI115+(BI115*0.001),BJ115+(BJ115*0.001)) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls
+BR115 | MIN(BP115*1,BQ115*1) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls
+U126 | TRIM(Header!V15) | Họ và tên: | xls
+AR126 | IF(Header!V41="","",Header!V41) | Người ký : | xls
+U128 | TRIM(Header!V16) | Chứng chỉ hành nghề số: | xls
+AR128 | IF(Header!V42<>"",Header!V42,"") | Ngày ký : | xls
+## sheet: 01_1
+P14 | '01'!P14 | [02] Condensate: | xls
+AE14 | '01'!AE14 | [03] Khí thiên nhiên: | xls
+AS14 | '01'!AS14 | [03] Khí thiên nhiên: | xls
+BQ14 | '01'!BQ14 | eof | xls
+BR14 | '01'!BR14 | eof | xls
+BS14 | '01'!BS14 | eof | xls
+V21 | '01'!V21 |  | xls
+Y35 | IF(Header!V29="","X","") | [06] Lần đầu | xls
+AS35 | IF(Header!V29="","",Header!V29) | [07] Bổ sung lần thứ: | xls
+P46 | TRIM(Header!C3) | [05] Tên người nộp thuế: | xls
+P50 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | [06] Mã số thuế: | xls
+Q59 | IF(OR('01'!Q59=TRUE,'01'!Q59="TRUE",'01'!Q59="X"),"X","") | hoặc Đại lý thuế | xls
+Y59 | IF(OR('01'!Y59=TRUE,'01'!Y59="TRUE",'01'!Y59="X"),"X","") | hoặc Đại lý thuế | xls
+AB59 | '01'!AB59 | hoặc Đại lý thuế | xls
+P63 | TRIM(Header!V5) | [08] Mã số thuế: | xls
+T69 | '01'!AV94 | [09] Số thuế Tài nguyên phải nộp: | xls
+W71 | '01'!AV107 | [10] Số thuế thu nhập doanh nghiệp phải nộp: | xls
+Y86 | '01'!$BG$65 | Tỷ lệ phân bổ | xls
+AQ86 | '01'!$BG$65 | Tỷ lệ phân bổ | xls
+BQ89 | IF('01'!$BG$65="USD",ROUND($T$69*(U89/100),2),ROUND($T$69*(U89/100),0)) |  | xls
+BR89 | IF('01'!$BG$65="USD",ROUND($W$71*(AK89/100),2),ROUND($W$71*(AK89/100),0)) |  | xls
+U91 | SUM(U88:X90) | Tổng cộng | xls
+Y91 | SUM(Y88:AJ90) | Tổng cộng | xls
+AK91 | SUM(AK88:AP90) | Tổng cộng | xls
+AQ91 | SUM(AQ88:AV90) | Tổng cộng | xls
+## sheet: 01-KHBS
+O36 | O49 | TONG SO THUE PHAI NOP | xls
+O37 | O88 | TONG SO THUE KHAU TRU | xls
+O38 | O103 | TONG SO THUE DE NGHI HOAN | xls
+O49 | SUM(O46:T48) | [10] | xls
+AF62 | SUM(AF58:AI60) | [11] | xls
+O88 | SUM(O85:T87) | [12] | xls
+O103 | SUM(O100:T102) | [13] | xls
+## sheet: 01-1-KHBS
+AD46 | IF(TRIM(BV46)<>"",Z46,0) | cbo | xls
+BM46 | IF(BW46=16,V46-R46,0) | 1 | xls
+CB46 | IF(BV46=0,AD46,0) | iiii | xls
+CC46 | IF(BV46=1,AD46,0) | iiii | xls
+CD46 | IF(BV46=2,AD46,0) | iiii | xls
+AD48 | SUM(CB45:CB47) | [07] | xls
+AD49 | SUM(CC45:CC47) | [08] | xls
+AD50 | SUM(CD45:CD47) | [09] | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)="","","  - ") | Year | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
+A13 | '01_1'!F89 | Mã số thuế không đúng, đề nghị nhập lại. | xls
+C13 | '01_1'!F89 | Mã số thuế không đúng, đề nghị nhập lại. | xls
+E14 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls
+A15 | '01'!AV94 | Y | xls
+B15 | IF(AND('01'!$Q$69=TRUE,OR(ABS('01'!AV94)>ABS('01'!BR94),ABS('01'!AV94)<ABS('01'!BO94))),0,1) | Y | xls
+C15 | '01'!AV94 | Y | xls
+E15 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls
+A16 | '01'!AV102 | Y | xls
+B16 | IF(AND('01'!$Q$69=TRUE,OR(ABS('01'!AV102)>ABS('01'!BR102),ABS('01'!AV102)<ABS('01'!BO102))),0,1) | Y | xls
+C16 | '01'!AV102 | Y | xls
+E16 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls
+A17 | '01'!AV112 | Y | xls
+B17 | IF(OR(ABS('01'!AV112)>ABS('01'!BR112),ABS('01'!AV112)<ABS('01'!BO112)),0,1) | Y | xls
+C17 | '01'!AV112 | Y | xls
+E17 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls
+A18 | '01'!AV113 | Y | xls
+B18 | IF(OR(ABS('01'!AV113)>ABS('01'!BR113),ABS('01'!AV113)<ABS('01'!BO113)),0,1) | Y | xls
+C18 | '01'!AV113 | Y | xls
+E18 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls
+A19 | '01'!AV114 | Y | xls
+B19 | IF(OR(ABS('01'!AV114)>ABS('01'!BR114),ABS('01'!AV114)<ABS('01'!BO114)),0,1) | Y | xls
+C19 | '01'!AV114 | Y | xls
+E19 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls
+A20 | '01'!AV115 | Y | xls
+B20 | IF(OR(ABS('01'!AV115)>ABS('01'!BR115),ABS('01'!AV115)<ABS('01'!BO115)),0,1) | Y | xls
+C20 | '01'!AV115 | Y | xls
+E20 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls
+A21 | '01'!Y40 | Bắt buộc nhập | xls
+B21 | IF(AND(TRIM('01'!Y40)="",OR('01'!AS38=TRUE,'01'!Y38=TRUE)),0,1) | Bắt buộc nhập | xls
+C21 | '01'!Y40 | Bắt buộc nhập | xls
+A22 | '01'!Q67 | Bắt buộc nhập | xls
+B22 | IF(AND('01'!Q67=FALSE,'01'!Q69=FALSE),0,1) | Bắt buộc nhập | xls
+C22 | '01'!Q67&'01'!Q69 | Bắt buộc nhập | xls
+A23 | '01_1'!F89 | Bắt buộc nhập | xls
+B23 | IF(TRIM('01_1'!F89)="",0,1) | Bắt buộc nhập | xls
+C23 | '01_1'!F89 | Bắt buộc nhập | xls
+A24 | '01_1'!N89 | Bắt buộc nhập | xls
+B24 | IF(TRIM('01_1'!N89)="",0,1) | Bắt buộc nhập | xls
+C24 | '01_1'!N89 | Bắt buộc nhập | xls
+A31 | '01'!AV107 | Y | xls
+B31 | IF(AND('01'!$Q$69=TRUE,OR(ABS('01'!AV107)>ABS('01'!BR107),ABS('01'!AV107)<ABS('01'!BO107))),0,1) | Y | xls
+C31 | '01'!AV107 | Y | xls
+E31 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls
+A32 | '01'!AV108 | Y | xls
+B32 | IF(OR(ABS('01'!AV108)>ABS('01'!BR108),ABS('01'!AV108)<ABS('01'!BO108)),0,1) | Y | xls
+C32 | '01'!AV108 | Y | xls
+E32 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls
+A33 | '01'!Y38 | Bắt buộc tích chọn chỉ tiêu [08] hoặc [09] | xls
+B33 | IF(AND('01'!Y38=FALSE,'01'!AS38=FALSE),0,1) | Bắt buộc tích chọn chỉ tiêu [08] hoặc [09] | xls
+C33 | '01'!Y38 | Bắt buộc tích chọn chỉ tiêu [08] hoặc [09] | xls
 => 192 cell công thức trong file này
 
+MaFile: 01_TK_DK_ND373
+VersionXML: 2.9.3
+Class: DkTk01Nd373Nckt293
+MenuID: R9
+Nguồn sha256: aca501ea024244196530abea44d7e5d4c49965aa2e078392332824437599ae92
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 01_TK_DK_ND373_v2.9.3_mau.xls1 ===
---- Sheet "01" ---
-P14: IF(OR(BQ14="1",UPPER(BQ14)="TRUE",UPPER(BQ14)="X",BQ14=TRUE),"X","")
-AE14: IF(OR(BR14="1",UPPER(BR14)="TRUE",UPPER(BR14)="X",BR14=TRUE),"X","")
-AS14: IF(OR(BS14="1",UPPER(BS14)="TRUE",UPPER(BS14)="X",BS14=TRUE),"X","")
-V21: "[04] Kỳ tính thuế:"&IF(Header!V30="D"," Ngày "&Header!V51&" tháng "&Header!V46&" năm "&Header!V48," Tháng "&Header!V46&" năm "&Header!V48)
-Y35: IF(Header!V29="","X","")
-AS35: IF(Header!V29="","",Header!V29)
-P46: TRIM(Header!C3)
-P50: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-AB59: TRIM(Header!V4)
-P63: TRIM(Header!V5)
-AN92: $BG$65
-AN94: $BG$65
-BI94: ROUND(AV92*AV93,2)
-BJ94: ROUND(AV92*AV93,0)
-BM94: IF($BG$65="USD",ABS(BI94)-5,ABS(BJ94)-100000)
-BN94: IF($BG$65="USD",ABS(BI94)-(ABS(BI94)*0.001),ABS(BJ94)-(ABS(BJ94)*0.001))
-BO94: MAX(BM94*1,BN94*1)
-BP94: IF($BG$65="USD",ABS(BI94)+5,ABS(BJ94)+100000)
-BQ94: IF($BG$65="USD",ABS(BI94)+(ABS(BI94)*0.001),ABS(BJ94)+(ABS(BJ94)*0.001))
-BR94: MIN(BP94*1,BQ94*1)
-AN95: $BG$65
-AN100: $BG$65
-AN102: $BG$65
-BI102: ROUND((AV96*AV92)+(AV100*AV101),2)
-BJ102: ROUND((AV96*AV92)+(AV100*AV101),0)
-BM102: IF($BG$65="USD",ABS(BI102)-5,ABS(BJ102)-100000)
-BN102: IF($BG$65="USD",ABS(BI102)-(ABS(BI102)*0.001),ABS(BJ102)-(ABS(BJ102)*0.001))
-BO102: MAX(BM102*1,BN102*1)
-BP102: IF($BG$65="USD",ABS(BI102)+5,ABS(BJ102)+100000)
-BQ102: IF($BG$65="USD",ABS(BI102)+(ABS(BI102)*0.001),ABS(BJ102)+(ABS(BJ102)*0.001))
-BR102: MIN(BP102*1,BQ102*1)
-BO103: MAX(BM103*1,BN103*1)
-BO104: MAX(BM104*1,BN104*1)
-BO105: MAX(BM105*1,BN105*1)
-AN106: $BG$65
-AN107: $BG$65
-BI107: ROUND(AV102-AV106,2)
-BJ107: ROUND(AV102-AV106,0)
-BM107: IF($BG$65="USD",ABS(BI107)-5,ABS(BJ107)-100000)
-BN107: IF($BG$65="USD",ABS(BI107)-(ABS(BI107)*0.001),ABS(BJ107)-(ABS(BJ107)*0.001))
-BO107: MAX(BM107*1,BN107*1)
-BP107: IF($BG$65="USD",ABS(BI107)+5,ABS(BJ107)+100000)
-BQ107: IF($BG$65="USD",ABS(BI107)+(ABS(BI107)*0.001),ABS(BJ107)+(ABS(BJ107)*0.001))
-BR107: MIN(BP107*1,BQ107*1)
-BI112: IF(AND(1.2*AV88<AV87,AV87<=1.5*AV88),ROUND(0.5*(AV87-1.2*AV88)*AV86,2),0)
-BJ112: IF(AND(1.2*AV88<AV87,AV87<=1.5*AV88),ROUND(0.5*(AV87-1.2*AV88)*AV86,0),0)
-BM112: IF($BG$65="USD",ABS(BI112)-5,ABS(BJ112)-100000)
-BN112: IF($BG$65="USD",ABS(BI112)-(ABS(BI112)*0.001),ABS(BJ112)-(ABS(BJ112)*0.001))
-BO112: MAX(BM112*1,BN112*1)
-BP112: IF($BG$65="USD",ABS(BI112)+5,ABS(BJ112)+100000)
-BQ112: IF($BG$65="USD",ABS(BI112)+(ABS(BI112)*0.001),ABS(BJ112)+(ABS(BJ112)*0.001))
-BR112: MIN(BP112*1,BQ112*1)
-BI113: IF(AV87>(1.5*AV88),ROUND(AV114+AV115,2),0)
-BJ113: IF(AV87>(1.5*AV88),ROUND(AV114+AV115,0),0)
-BM113: IF($BG$65="USD",ABS(BI113)-5,ABS(BJ113)-100000)
-BN113: IF($BG$65="USD",ABS(BI113)-(ABS(BI113)*0.001),ABS(BJ113)-(ABS(BJ113)*0.001))
-BO113: MAX(BM113*1,BN113*1)
-BP113: IF($BG$65="USD",ABS(BI113)+5,ABS(BJ113)+100000)
-BQ113: IF($BG$65="USD",ABS(BI113)+(ABS(BI113)*0.001),ABS(BJ113)+(ABS(BJ113)*0.001))
-BR113: MIN(BP113*1,BQ113*1)
-BI114: ROUND(0.5*((1.5*AV88)-(1.2*AV88))*AV86,2)
-BJ114: ROUND(0.5*((1.5*AV88)-(1.2*AV88))*AV86,0)
-BM114: IF($BG$65="USD",ABS(BI114)-5,ABS(BJ114)-100000)
-BN114: IF($BG$65="USD",ABS(BI114)-(ABS(BI114)*0.001),ABS(BJ114)-(ABS(BJ114)*0.001))
-BO114: MAX(BM114*1,BN114*1)
-BP114: IF($BG$65="USD",ABS(BI114)+5,ABS(BJ114)+100000)
-BQ114: IF($BG$65="USD",ABS(BI114)+(ABS(BI114)*0.001),ABS(BJ114)+(ABS(BJ114)*0.001))
-BR114: MIN(BP114*1,BQ114*1)
-BI115: ROUND(0.6*(AV87-(1.5*AV88))*AV86,2)
-BJ115: ROUND(0.6*(AV87-(1.5*AV88))*AV86,0)
-BM115: IF($BG$65="USD",ABS(BI115)-5,ABS(BJ115)-100000)
-BN115: IF($BG$65="USD",ABS(BI115)-(ABS(BI115)*0.001),ABS(BJ115)-(ABS(BJ115)*0.001))
-BO115: MAX(BM115*1,BN115*1)
-BP115: IF($BG$65="USD",ABS(BI115)+5,ABS(BJ115)+100000)
-BQ115: IF($BG$65="USD",ABS(BI115)+(ABS(BI115)*0.001),ABS(BJ115)+(ABS(BJ115)*0.001))
-BR115: MIN(BP115*1,BQ115*1)
-AQ125: "       Ngày "&MID(TRIM(BM125),1,2)&" tháng "&MID(TRIM(BM125),4,2)&" năm "&MID(TRIM(BM125),7,4)
---- Sheet "01_1" ---
-P14: 01!P14
-AE14: 01!AE14
-AS14: 01!AS14
-BQ14: 01!BQ14
-BR14: 01!BR14
-BS14: 01!BS14
-V21: "[04] Kỳ tính thuế:"&IF(OR(W41="1",W41="2")," Ngày "&MID(TRIM(O41),1,2)&" tháng "&MID(TRIM(O41),4,2)&" năm "&MID(TRIM(O41),7,4)," Tháng "&Header!V46&" năm "&Header!V48)
-Y35: IF(Header!V29="","X","")
-AS35: IF(Header!V29="","",Header!V29)
-P46: TRIM(Header!C3)
-P50: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-Q59: 01!Q59
-Y59: 01!Y59
-AB59: TRIM(Header!V4)
-P63: TRIM(Header!V5)
-T69: 01!AV94
-W71: 01!AV107
-Y86: 01!$BG$65
-AQ86: 01!$BG$65
-U91: SUM(U88:X90)
-Y91: SUM(Y88:AJ90)
-AK91: SUM(AK88:AP90)
-AQ91: SUM(AQ88:AV90)
---- Sheet "01-KHBS" ---
-O36: O49
-O37: O88
-O38: O103
-O49: SUM(O46:T48)
-AF62: SUM(AF58:AI60)
-O88: SUM(O85:T87)
-O103: SUM(O100:T102)
---- Sheet "01-1-KHBS" ---
-AD46: IF(TRIM(BV46)<>"",Z46,0)
-BM46: IF(BW46=16,V46-R46,0)
-CB46: IF(BV46=0,AD46,0)
-CC46: IF(BV46=1,AD46,0)
-CD46: IF(BV46=2,AD46,0)
-AD48: SUM(CB45:CB47)
-AD49: SUM(CC45:CC47)
-AD50: SUM(CD45:CD47)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)="","","  - ")
-T8: CONCATENATE(1)
-A13: 01_1!F89
-C13: 01_1!F89
-A14: 01!AV107
-B14: IF(OR(01!AV107>01!BR107,01!AV107<01!BO107),0,1)
-C14: 01!AV107
-E14: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A15: 01!AV94
-B15: IF(OR(01!AV94>01!BR94,01!AV94<01!BO94),0,1)
-C15: 01!AV94
-E15: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A16: 01!AV102
-B16: IF(OR(01!AV102>01!BR102,01!AV102<01!BO102),0,1)
-C16: 01!AV102
-E16: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A17: 01!AV112
-B17: IF(OR(01!AV112>01!BR112,01!AV112<01!BO112),0,1)
-C17: 01!AV112
-E17: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A18: 01!AV113
-B18: IF(OR(01!AV113>01!BR113,01!AV113<01!BO113),0,1)
-C18: 01!AV113
-E18: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A19: 01!AV114
-B19: IF(OR(01!AV114>01!BR114,01!AV114<01!BO114),0,1)
-C19: 01!AV114
-E19: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
-A20: 01!AV115
-B20: IF(OR(01!AV115>01!BR115,01!AV115<01!BO115),0,1)
-C20: 01!AV115
-E20: IF(01!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%")
+## sheet: 01
+P14 | IF(OR(BQ14="1",UPPER(BQ14)="TRUE",UPPER(BQ14)="X",BQ14=TRUE),"X","") | [02] Condensate: | xls1
+AE14 | IF(OR(BR14="1",UPPER(BR14)="TRUE",UPPER(BR14)="X",BR14=TRUE),"X","") | [03] Khí thiên nhiên: | xls1
+AS14 | IF(OR(BS14="1",UPPER(BS14)="TRUE",UPPER(BS14)="X",BS14=TRUE),"X","") | [03] Khí thiên nhiên: | xls1
+V21 | "[04] Kỳ tính thuế:"&IF(Header!V30="D"," Ngày "&Header!V51&" tháng "&Header!V46&" năm "&Header!V48," Tháng "&Header!V46&" năm "&Header!V48) |  | xls1
+Y35 | IF(Header!V29="","X","") | [06] Lần đầu | xls1
+AS35 | IF(Header!V29="","",Header!V29) | [07] Bổ sung lần thứ: | xls1
+P46 | TRIM(Header!C3) | [11] Tên người nộp thuế: | xls1
+P50 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | [12] Mã số thuế: | xls1
+AB59 | TRIM(Header!V4) | chk | xls1
+P63 | TRIM(Header!V5) | [21] Mã số thuế: | xls1
+AN92 | $BG$65 | [35] | xls1
+AN94 | $BG$65 | [37] | xls1
+BI94 | ROUND(AV92*AV93,2) | AV92*AV93 | xls1
+BJ94 | ROUND(AV92*AV93,0) | AV92*AV93 | xls1
+BM94 | IF($BG$65="USD",ABS(BI94)-5,ABS(BJ94)-100000) | AV92*AV93 | xls1
+BN94 | IF($BG$65="USD",ABS(BI94)-(ABS(BI94)*0.001),ABS(BJ94)-(ABS(BJ94)*0.001)) | AV92*AV93 | xls1
+BO94 | MAX(BM94*1,BN94*1) | AV92*AV93 | xls1
+BP94 | IF($BG$65="USD",ABS(BI94)+5,ABS(BJ94)+100000) | AV92*AV93 | xls1
+BQ94 | IF($BG$65="USD",ABS(BI94)+(ABS(BI94)*0.001),ABS(BJ94)+(ABS(BJ94)*0.001)) | AV92*AV93 | xls1
+BR94 | MIN(BP94*1,BQ94*1) | AV92*AV93 | xls1
+AN95 | $BG$65 | [38] | xls1
+AN100 | $BG$65 | [40] | xls1
+AN102 | $BG$65 | [42] | xls1
+BI102 | ROUND((AV96*AV92)+(AV100*AV101),2) | [42]=[39]x[35]+[40]x[41] | xls1
+BJ102 | ROUND((AV96*AV92)+(AV100*AV101),0) | [42]=[39]x[35]+[40]x[41] | xls1
+BM102 | IF($BG$65="USD",ABS(BI102)-5,ABS(BJ102)-100000) | [42]=[39]x[35]+[40]x[41] | xls1
+BN102 | IF($BG$65="USD",ABS(BI102)-(ABS(BI102)*0.001),ABS(BJ102)-(ABS(BJ102)*0.001)) | [42]=[39]x[35]+[40]x[41] | xls1
+BO102 | MAX(BM102*1,BN102*1) | [42]=[39]x[35]+[40]x[41] | xls1
+BP102 | IF($BG$65="USD",ABS(BI102)+5,ABS(BJ102)+100000) | [42]=[39]x[35]+[40]x[41] | xls1
+BQ102 | IF($BG$65="USD",ABS(BI102)+(ABS(BI102)*0.001),ABS(BJ102)+(ABS(BJ102)*0.001)) | [42]=[39]x[35]+[40]x[41] | xls1
+BR102 | MIN(BP102*1,BQ102*1) | [42]=[39]x[35]+[40]x[41] | xls1
+BO103 | MAX(BM103*1,BN103*1) |  | xls1
+BO104 | MAX(BM104*1,BN104*1) |  | xls1
+BO105 | MAX(BM105*1,BN105*1) |  | xls1
+AN106 | $BG$65 | [43] | xls1
+AN107 | $BG$65 | [44] | xls1
+BI107 | ROUND(AV102-AV106,2) | [44]= [42]-[43] | xls1
+BJ107 | ROUND(AV102-AV106,0) | [44]= [42]-[43] | xls1
+BM107 | IF($BG$65="USD",ABS(BI107)-5,ABS(BJ107)-100000) | [44]= [42]-[43] | xls1
+BN107 | IF($BG$65="USD",ABS(BI107)-(ABS(BI107)*0.001),ABS(BJ107)-(ABS(BJ107)*0.001)) | [44]= [42]-[43] | xls1
+BO107 | MAX(BM107*1,BN107*1) | [44]= [42]-[43] | xls1
+BP107 | IF($BG$65="USD",ABS(BI107)+5,ABS(BJ107)+100000) | [44]= [42]-[43] | xls1
+BQ107 | IF($BG$65="USD",ABS(BI107)+(ABS(BI107)*0.001),ABS(BJ107)+(ABS(BJ107)*0.001)) | [44]= [42]-[43] | xls1
+BR107 | MIN(BP107*1,BQ107*1) | [44]= [42]-[43] | xls1
+BI112 | IF(AND(1.2*AV88<AV87,AV87<=1.5*AV88),ROUND(0.5*(AV87-1.2*AV88)*AV86,2),0) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls1
+BJ112 | IF(AND(1.2*AV88<AV87,AV87<=1.5*AV88),ROUND(0.5*(AV87-1.2*AV88)*AV86,0),0) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls1
+BM112 | IF($BG$65="USD",ABS(BI112)-5,ABS(BJ112)-100000) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls1
+BN112 | IF($BG$65="USD",ABS(BI112)-(ABS(BI112)*0.001),ABS(BJ112)-(ABS(BJ112)*0.001)) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls1
+BO112 | MAX(BM112*1,BN112*1) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls1
+BP112 | IF($BG$65="USD",ABS(BI112)+5,ABS(BJ112)+100000) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls1
+BQ112 | IF($BG$65="USD",ABS(BI112)+(ABS(BI112)*0.001),ABS(BJ112)+(ABS(BJ112)*0.001)) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls1
+BR112 | MIN(BP112*1,BQ112*1) | [46] = 50%x{[33]–1,2x[34]}x[32] | xls1
+BI113 | IF(AV87>(1.5*AV88),ROUND(AV114+AV115,2),0) | [47]=[48] + [49] | xls1
+BJ113 | IF(AV87>(1.5*AV88),ROUND(AV114+AV115,0),0) | [47]=[48] + [49] | xls1
+BM113 | IF($BG$65="USD",ABS(BI113)-5,ABS(BJ113)-100000) | [47]=[48] + [49] | xls1
+BN113 | IF($BG$65="USD",ABS(BI113)-(ABS(BI113)*0.001),ABS(BJ113)-(ABS(BJ113)*0.001)) | [47]=[48] + [49] | xls1
+BO113 | MAX(BM113*1,BN113*1) | [47]=[48] + [49] | xls1
+BP113 | IF($BG$65="USD",ABS(BI113)+5,ABS(BJ113)+100000) | [47]=[48] + [49] | xls1
+BQ113 | IF($BG$65="USD",ABS(BI113)+(ABS(BI113)*0.001),ABS(BJ113)+(ABS(BJ113)*0.001)) | [47]=[48] + [49] | xls1
+BR113 | MIN(BP113*1,BQ113*1) | [47]=[48] + [49] | xls1
+BI114 | ROUND(0.5*((1.5*AV88)-(1.2*AV88))*AV86,2) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls1
+BJ114 | ROUND(0.5*((1.5*AV88)-(1.2*AV88))*AV86,0) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls1
+BM114 | IF($BG$65="USD",ABS(BI114)-5,ABS(BJ114)-100000) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls1
+BN114 | IF($BG$65="USD",ABS(BI114)-(ABS(BI114)*0.001),ABS(BJ114)-(ABS(BJ114)*0.001)) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls1
+BO114 | MAX(BM114*1,BN114*1) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls1
+BP114 | IF($BG$65="USD",ABS(BI114)+5,ABS(BJ114)+100000) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls1
+BQ114 | IF($BG$65="USD",ABS(BI114)+(ABS(BI114)*0.001),ABS(BJ114)+(ABS(BJ114)*0.001)) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls1
+BR114 | MIN(BP114*1,BQ114*1) | [48] = 50%x{1,5x[34]–1,2x[34]}x[32] | xls1
+BI115 | ROUND(0.6*(AV87-(1.5*AV88))*AV86,2) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls1
+BJ115 | ROUND(0.6*(AV87-(1.5*AV88))*AV86,0) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls1
+BM115 | IF($BG$65="USD",ABS(BI115)-5,ABS(BJ115)-100000) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls1
+BN115 | IF($BG$65="USD",ABS(BI115)-(ABS(BI115)*0.001),ABS(BJ115)-(ABS(BJ115)*0.001)) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls1
+BO115 | MAX(BM115*1,BN115*1) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls1
+BP115 | IF($BG$65="USD",ABS(BI115)+5,ABS(BJ115)+100000) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls1
+BQ115 | IF($BG$65="USD",ABS(BI115)+(ABS(BI115)*0.001),ABS(BJ115)+(ABS(BJ115)*0.001)) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls1
+BR115 | MIN(BP115*1,BQ115*1) | [49] = 60%x{[33]–1,5x[34]}x[32] | xls1
+AQ125 | "       Ngày "&MID(TRIM(BM125),1,2)&" tháng "&MID(TRIM(BM125),4,2)&" năm "&MID(TRIM(BM125),7,4) | 25/10/2000 | xls1
+## sheet: 01_1
+P14 | '01'!P14 | [02] Condensate: | xls1
+AE14 | '01'!AE14 | [03] Khí thiên nhiên: | xls1
+AS14 | '01'!AS14 | [03] Khí thiên nhiên: | xls1
+BQ14 | '01'!BQ14 | [03] Khí thiên nhiên: | xls1
+BR14 | '01'!BR14 | [03] Khí thiên nhiên: | xls1
+BS14 | '01'!BS14 | [03] Khí thiên nhiên: | xls1
+V21 | "[04] Kỳ tính thuế:"&IF(OR(W41="1",W41="2")," Ngày "&MID(TRIM(O41),1,2)&" tháng "&MID(TRIM(O41),4,2)&" năm "&MID(TRIM(O41),7,4)," Tháng "&Header!V46&" năm "&Header!V48) |  | xls1
+Y35 | IF(Header!V29="","X","") | [06] Lần đầu | xls1
+AS35 | IF(Header!V29="","",Header!V29) | [07] Bổ sung lần thứ: | xls1
+P46 | TRIM(Header!C3) | [05] Tên người nộp thuế: | xls1
+P50 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | [06] Mã số thuế: | xls1
+Q59 | '01'!Q59 | hoặc Đại lý thuế | xls1
+Y59 | '01'!Y59 | hoặc Đại lý thuế | xls1
+AB59 | TRIM(Header!V4) | hoặc Đại lý thuế | xls1
+P63 | TRIM(Header!V5) | [08] Mã số thuế: | xls1
+T69 | '01'!AV94 | [09] Số thuế Tài nguyên phải nộp: | xls1
+W71 | '01'!AV107 | [10] Số thuế thu nhập doanh nghiệp phải nộp: | xls1
+Y86 | '01'!$BG$65 | Tỷ lệ phân bổ | xls1
+AQ86 | '01'!$BG$65 | Tỷ lệ phân bổ | xls1
+U91 | SUM(U88:X90) | Tổng cộng | xls1
+Y91 | SUM(Y88:AJ90) | Tổng cộng | xls1
+AK91 | SUM(AK88:AP90) | Tổng cộng | xls1
+AQ91 | SUM(AQ88:AV90) | Tổng cộng | xls1
+## sheet: 01-KHBS
+O36 | O49 | TONG SO THUE PHAI NOP | xls1
+O37 | O88 | TONG SO THUE KHAU TRU | xls1
+O38 | O103 | TONG SO THUE DE NGHI HOAN | xls1
+O49 | SUM(O46:T48) | [10] | xls1
+AF62 | SUM(AF58:AI60) | [11] | xls1
+O88 | SUM(O85:T87) | [12] | xls1
+O103 | SUM(O100:T102) | [13] | xls1
+## sheet: 01-1-KHBS
+AD46 | IF(TRIM(BV46)<>"",Z46,0) | cbo | xls1
+BM46 | IF(BW46=16,V46-R46,0) | 1 | xls1
+CB46 | IF(BV46=0,AD46,0) | iiii | xls1
+CC46 | IF(BV46=1,AD46,0) | iiii | xls1
+CD46 | IF(BV46=2,AD46,0) | iiii | xls1
+AD48 | SUM(CB45:CB47) | [07] | xls1
+AD49 | SUM(CC45:CC47) | [08] | xls1
+AD50 | SUM(CD45:CD47) | [09] | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)="","","  - ") | Year | xls1
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls1
+A13 | '01_1'!F89 | Mã số thuế không đúng, đề nghị nhập lại. | xls1
+C13 | '01_1'!F89 | Mã số thuế không đúng, đề nghị nhập lại. | xls1
+A14 | '01'!AV107 | Y | xls1
+B14 | IF(OR('01'!AV107>'01'!BR107,'01'!AV107<'01'!BO107),0,1) | Y | xls1
+C14 | '01'!AV107 | Y | xls1
+E14 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls1
+A15 | '01'!AV94 | Y | xls1
+B15 | IF(OR('01'!AV94>'01'!BR94,'01'!AV94<'01'!BO94),0,1) | Y | xls1
+C15 | '01'!AV94 | Y | xls1
+E15 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls1
+A16 | '01'!AV102 | Y | xls1
+B16 | IF(OR('01'!AV102>'01'!BR102,'01'!AV102<'01'!BO102),0,1) | Y | xls1
+C16 | '01'!AV102 | Y | xls1
+E16 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls1
+A17 | '01'!AV112 | Y | xls1
+B17 | IF(OR('01'!AV112>'01'!BR112,'01'!AV112<'01'!BO112),0,1) | Y | xls1
+C17 | '01'!AV112 | Y | xls1
+E17 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls1
+A18 | '01'!AV113 | Y | xls1
+B18 | IF(OR('01'!AV113>'01'!BR113,'01'!AV113<'01'!BO113),0,1) | Y | xls1
+C18 | '01'!AV113 | Y | xls1
+E18 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls1
+A19 | '01'!AV114 | Y | xls1
+B19 | IF(OR('01'!AV114>'01'!BR114,'01'!AV114<'01'!BO114),0,1) | Y | xls1
+C19 | '01'!AV114 | Y | xls1
+E19 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls1
+A20 | '01'!AV115 | Y | xls1
+B20 | IF(OR('01'!AV115>'01'!BR115,'01'!AV115<'01'!BO115),0,1) | Y | xls1
+C20 | '01'!AV115 | Y | xls1
+E20 | IF('01'!$BG$65="USD","Sửa trong ngưỡng +-5USD hoặc 0. 1%","Sửa trong ngưỡng 100.000 hoặc 0. 1%") | Y | xls1
 => 147 cell công thức trong file này
-
-
-TỔNG CỘNG: 339 cell công thức trong 2 file

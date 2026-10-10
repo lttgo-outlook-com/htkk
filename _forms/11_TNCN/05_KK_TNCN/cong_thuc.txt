@@ -1,225 +1,125 @@
-CÔNG THỨC TÍNH (human-readable) — 05_KK_TNCN (Tờ khai thuế TNCN 05/KK-TNCN + Danh sách cá nhân nhận thu nhập 05/DS-TNCN)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-
-## File 05_KK_TNCN_v2.1.6_mau.xls
-
-### Sheet "01" (tờ khai chính)
-- [K3] [01] Kỳ tính thuế = nếu Header!V30="M" thì "Tháng "&V46&" năm "&V48, ngược lại "Quý "&V47&" năm "&V48
-- [L4] [02] Lần đầu = IF(Header!V29="","[X]","")
-- [R4, I63] [03] Bổ sung lần thứ = IF(Header!V29="","",Header!V29)
-- [I5] Tên người nộp thuế = TRIM(Header!C3)
-- [I6] Mã số thuế = nối 10 ô Header!C2..K2, mỗi ô TRIM, ô rỗng → " " (IF+ISBLANK)
-- [I7] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
-- [I8] Mã số thuế đại lý = TRIM(Header!V5)
-- [U40] "Số người/Số tiền" = U41 + U42 (tổng 2 dòng dưới)
-- [U43] VNĐ = U44 + U45
-- [U46] VNĐ = U47 + U48
-- [U49] VNĐ = U50 + U51
-- [U53] VNĐ = ROUND(U52 × 0.1, 0) (10% của dòng 52, làm tròn)
-- [D54] chi tieu 34 = ROUND(#REF! × 0.1, 0) (công thức bị lỗi #REF! trong mẫu)
-- [M54] chi tieu 35 = ROUND(U48 × 0.2, 0) (20% của ô U48, làm tròn)
-- [H57, R57, H59, R59] Khổ ký: Họ và tên = TRIM(Header!V15); Người ký = TRIM(Header!V41); Chứng chỉ hành nghề số = TRIM(Header!V16); Ngày ký = IF(Header!V42<>"",Header!V42,"")
-- [C63] Cờ chính thức = IF(Header!V29="","1",""); [F63] Cờ bổ sung = IF(Header!V29="","","1")
-- [U63] Tờ khai tháng/quý = IF(Header!V30="M","1","0")
-
-### Sheet "KHBS" (khai bổ sung)
-- [B6] STT = B5 + 1 (các dòng kế tiếp lặp theo cách này)
-- [G6] = F6 − E6 (chênh lệch 2 cột cùng dòng)
-- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
-
-### Sheet "Header"
-- [M2] Dấu ngăn cách địa chỉ: nếu 3 ô N2, O2, P2 bên cạnh cùng rỗng thì " ", ngược lại " - " (IF(TRIM(N2&O2&P2)))
-- [T8] Giá trị cố định = CONCATENATE(1)
-- [B15..B22, C15..C22] Khối so sánh từng cặp ô của sheet "01": C15..C22 = giá trị 01!U39, U41, U42, U47, U48, U50, U51, U40; B15..B22 = cờ: giá trị lớn hơn ô mốc (U38 hoặc U44 hoặc U45 hoặc U47 hoặc U48) → "1", không → "0" (IF)
-
-## File 05_KK_TNCN_v2.1.6_mau.xls1
-
-### Sheet "01" (bản cũ — mã số thuế tách từng ô)
-- [L6] [01] Kỳ tính thuế = nếu U61="1" thì "Tháng "&V46&" năm "&V48, ngược lại "Quý "&V47&" năm "&V48
-- [L8] Lần đầu = IF(Header!V29="","[X]",""); [R8] Bổ sung lần thứ = IF(Header!V29="","",Header!V29)
-- [H10] Tên người nộp thuế = TRIM(Header!C3)
-- [F11, G11, H11, I11, J11, K11, L11, M11, N11, O11, P11, Q11, R11, S11] 14 ô mã số thuế = lần lượt Header!C2..P2
-- [F12, F13, P13, F14, M14, S14] Thông tin NNT: Địa chỉ = TRIM(Header!C4); Quận/Huyện = C5; Tỉnh/Thành phố = C6; Điện thoại = C7; Fax = C8; Email = C9
-- [H15] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
-- [F16, G16, H16, I16, J16, K16, L16, M16, N16, O16, P16, Q16, R16, S16] 14 ô mã số thuế đại lý = mỗi ký tự của TRIM(Header!V5) (MID 1..13); riêng P16 = TRIM(Header!M2)
-- [F17, F18, P18, F19, M19, S19] Địa chỉ đại lý: TRIM(Header!V7..V12) (địa chỉ, quận/huyện, tỉnh/thành phố, điện thoại, fax, email)
-- [L20] Số (hợp đồng) = TRIM(Header!V13); [S20] Ngày = TRIM(Header!V14)
-- [P62] "Ngày " + dd/mm/yyyy rút từ ô R60 của chính sheet (MID+TRIM)
-- [D64, G65] Họ và tên = TRIM(Header!V15); Chứng chỉ hành nghề số = TRIM(Header!V16)
-
-### Sheet "KHBS" (khai bổ sung — giống file trước)
-- [B6] STT = B5 + 1; [G6] = F6 − E6
-- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
-
-### Sheet "Header" (bản cũ)
-- [M2] Dấu ngăn cách địa chỉ: nếu 3 ô N2, O2, P2 cùng rỗng thì " ", ngược lại " - " (IF(TRIM(N2&O2&P2)))
-- [T8] Giá trị cố định = CONCATENATE(1)
-
-## File 5_ds_tncn_216.xls
-
-### Sheet "01" (DANH SÁCH CÁ NHÂN NHẬN THU NHẬP — 05/DS-TNCN)
-- [E5] [01] Kỳ tính thuế = TRIM(Header!V48)
-- [G5] Từ tháng = TRIM(Header!V34); [I5] Đến tháng = TRIM(Header!V35)
-- [D7] [02] Tên người nộp thuế = TRIM(Header!C3)
-- [D9] [03] Mã số thuế = nối 10 ô Header!C2..K2 (IF+ISBLANK; ô rỗng bỏ qua)
-- [D11] [04] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
-- [D13] [05] Mã số thuế (đại lý) = TRIM(Header!V5)
-- [D15] [22] Cơ quan thuế cấp cục = TRIM(Header!V45); [O15] Ô không nhãn = TRIM(Header!R6)
-- [D17] [23] Cơ quan thuế quản lý = TRIM(Header!V37); [O17] Ô không nhãn = TRIM(Header!R7)
-- [K26] [15] = IF((F26−G26−H26−I26−J26)<0, 0, F26−G26−H26−I26−J26) (hiệu 5 ô cùng dòng, âm thì 0)
-- [F28, G28, H28, I28, J28, K28] Tổng cộng = ROUND(SUM(F25:F27)..SUM(K25:K27), 0) (tổng 3 dòng bảng trên làm tròn)
-- [D32, I32, D34, I34] Khổ ký: Họ và tên nhân viên đại lý thuế = TRIM(Header!V15); Người ký = TRIM(Header!V41); Chứng chỉ hành nghề số = TRIM(Header!V16); Ngày ký = Header!V42
-
-### Sheet "KHBS" (khai bổ sung)
-- [B6] STT = B5 + 1; [G6] = F6 − E6
-- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
-
-### Sheet "Header"
-- [M2] Dấu ngăn cách địa chỉ: nếu 3 ô N2, O2, P2 cùng rỗng thì "", ngược lại "-" (IF(TRIM(N2&O2&P2)))
-- [T8] Giá trị cố định = CONCATENATE(1)
-
-## File 5_ds_tncn_216.xls1
-
-### Sheet "01" (bản cũ)
-- [O6] [01] "Kỳ tính thuế: Năm … (Từ tháng … đến tháng …)" = nối Header!V48, V34, V35
-- [I7] Tên người nộp thuế = TRIM(Header!C3)
-- [I8, J8, K8, L8, M8, N8, O8, P8, Q8, R8, S8, T8, U8, V8] 14 ô mã số thuế = lần lượt Header!C2..P2
-- [I9] Tên đại lý thuế (nếu có) = TRIM(Header!V6)
-- [I10, J10, K10, L10, M10, N10, O10, P10, Q10, R10, T10, U10, V10] 13 ô mã số thuế đại lý = mỗi ký tự của TRIM(Header!V5) (MID 1..13)
-- [B19] [06] = B18 + 1 (số thứ tự tăng dần theo dòng)
-- [Z26] "Ngày " + dd/mm/yyyy rút từ ô Z24 của chính sheet (MID+TRIM)
-
-### Sheet "KHBS" (khai bổ sung)
-- [B6] STT = B5 + 1; [G6] = F6 − E6
-- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
-
-### Sheet "Header" (bản cũ)
-- [M2] Dấu ngăn cách địa chỉ: nếu 3 ô N2, O2, P2 cùng rỗng thì " ", ngược lại " - " (IF(TRIM(N2&O2&P2)))
-- [V4] "Mã số thuế đơn vị chủ quản" = IF(LEN(TRIM(V5))>10, "-", "") (dài hơn 10 ký tự thì "-", không thì rỗng)
-- [T8] Giá trị cố định = CONCATENATE(1)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 05_KK_TNCN
-Thư mục: 11_TNCN/05_KK_TNCN (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 05_KK_TNCN
+VersionXML: 2.1.6
+Class: TncnKk05Nckt216
+MenuID: 32
+Nguồn sha256: 7cc72c92459cef9885a628594c51aea3c2ebdbe9f5ef45385dbfe61203ac879f
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 05_KK_TNCN_v2.1.6_mau.xls ===
---- Sheet "01" ---
-K3: IF(TRIM(Header!V30)="M"," Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48," Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48)
-L4: IF(Header!V29="","[X]","")
-R4: IF(Header!V29="","",Header!V29)
-I5: TRIM(Header!C3)
-I6: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-I7: TRIM(Header!V6)
-I8: TRIM(Header!V5)
-U40: U41+U42
-U43: U44+U45
-U46: U47+U48
-U49: U50+U51
-U53: ROUND(U52*0.1,0)
-D54: ROUND(#REF!*0.1,0)
-M54: ROUND(U48*0.2,0)
-H57: TRIM(Header!V15)
-R57: TRIM(Header!V41)
-H59: TRIM(Header!V16)
-R59: IF(Header!V42<>"",Header!V42,"")
-C63: IF(Header!V29="","1","")
-F63: IF(Header!V29="","","1")
-I63: IF(Header!V29="","",Header!V29)
-U63: IF(Header!V30="M","1","0")
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
-B15: IF(01!U39>01!U38,"0","1")
-C15: 01!U39
-B16: IF(01!U41>01!U38,"0","1")
-C16: 01!U41
-B17: IF(01!U42>01!U38,"0","1")
-C17: 01!U42
-B18: IF(01!U47>01!U44,"0","1")
-C18: 01!U47
-B19: IF(01!U48>01!U45,"0","1")
-C19: 01!U48
-B20: IF(01!U50>01!U47,"0","1")
-C20: 01!U50
-B21: IF(01!U51>01!U48,"0","1")
-C21: 01!U51
-B22: IF(01!U40>01!U38,"0","1")
-C22: 01!U40
+## sheet: 01
+K3 | IF(TRIM(Header!V30)="M"," Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48," Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48) | [01] | xls
+L4 | IF(Header!V29="","[X]","") | [03] Bổ sung lần thứ: | xls
+R4 | IF(Header!V29="","",Header!V29) | [03] Bổ sung lần thứ: | xls
+I5 | TRIM(Header!C3) | Tên người nộp thuế: | xls
+I6 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+I7 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
+I8 | TRIM(Header!V5) | Mã số thuế đại lý: | xls
+U40 | U41+U42 | Người | xls
+U43 | U44+U45 | VNĐ | xls
+U46 | U47+U48 | VNĐ | xls
+U49 | U50+U51 | VNĐ | xls
+U53 | ROUND(U52*0.1,0) | VNĐ | xls
+D54 | ROUND(#REF!*0.1,0) | chi tieu 34 | xls
+M54 | ROUND(U48*0.2,0) | chi tieu 35 | xls
+H57 | TRIM(Header!V15) | Họ và tên: | xls
+R57 | TRIM(Header!V41) | Người ký: | xls
+H59 | TRIM(Header!V16) | Chứng chỉ hành nghề số: | xls
+R59 | IF(Header!V42<>"",Header!V42,"") | Ngày ký: | xls
+C63 | IF(Header!V29="","1","") | Chinh thuc | xls
+F63 | IF(Header!V29="","","1") | Bo sung | xls
+I63 | IF(Header!V29="","",Header!V29) | Lan | xls
+U63 | IF(Header!V30="M","1","0") | Tờ khai tháng/quý | xls
+## sheet: KHBS
+B6 | B5+1 |  | xls
+G6 | F6-E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
+B15 | IF('01'!U39>'01'!U38,"0","1") | Chỉ tiêu [22] phải <= [21] | xls
+C15 | '01'!U39 | Chỉ tiêu [22] phải <= [21] | xls
+B16 | IF('01'!U41>'01'!U38,"0","1") | Chỉ tiêu [24] phải <= [21] | xls
+C16 | '01'!U41 | Chỉ tiêu [24] phải <= [21] | xls
+B17 | IF('01'!U42>'01'!U38,"0","1") | Chỉ tiêu [25] phải <= [21] | xls
+C17 | '01'!U42 | Chỉ tiêu [25] phải <= [21] | xls
+B18 | IF('01'!U47>'01'!U44,"0","1") | Chỉ tiêu [30] phải <= [27] | xls
+C18 | '01'!U47 | Chỉ tiêu [30] phải <= [27] | xls
+B19 | IF('01'!U48>'01'!U45,"0","1") | Chỉ tiêu [31] phải <= [28] | xls
+C19 | '01'!U48 | Chỉ tiêu [31] phải <= [28] | xls
+B20 | IF('01'!U50>'01'!U47,"0","1") | Chỉ tiêu [33] phải <= [30] | xls
+C20 | '01'!U50 | Chỉ tiêu [33] phải <= [30] | xls
+B21 | IF('01'!U51>'01'!U48,"0","1") | Chỉ tiêu [34] phải <= [31] | xls
+C21 | '01'!U51 | Chỉ tiêu [34] phải <= [31] | xls
+B22 | IF('01'!U40>'01'!U38,"0","1") | Chỉ tiêu [23] phải <= [21] | xls
+C22 | '01'!U40 | Chỉ tiêu [23] phải <= [21] | xls
 => 45 cell công thức trong file này
 
+MaFile: 05_KK_TNCN
+VersionXML: 2.1.6
+Class: TncnKk05Nckt216
+MenuID: 32
+Nguồn sha256: 5e7cac2963e7d3fd316ad13f0db9e12b169ab86b75b6d88356dca8524df791b9
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 05_KK_TNCN_v2.1.6_mau.xls1 ===
---- Sheet "01" ---
-L6:  IF(U61="1"," Kỳ tính thuế: Tháng " &Header!V46&" năm " &Header!V48," Kỳ tính thuế: Quý " &Header!V47&" năm " &Header!V48)
-L8: IF(Header!V29="","[X]","")
-R8: IF(Header!V29="","",Header!V29)
-H10: TRIM(Header!C3)
-F11: Header!C2
-G11: Header!D2
-H11: Header!E2
-I11: Header!F2
-J11: Header!G2
-K11: Header!H2
-L11: Header!I2
-M11: Header!J2
-N11: Header!K2
-O11: Header!L2
-P11: Header!M2
-Q11: Header!N2
-R11: Header!O2
-S11: Header!P2
-F12: TRIM(Header!C4)
-F13: TRIM(Header!C5)
-P13: TRIM(Header!C6)
-F14: TRIM(Header!C7)
-M14: TRIM(Header!C8)
-S14: TRIM(Header!C9)
-H15: TRIM(Header!V6)
-F16: MID(TRIM(Header!V5),1,1)
-G16: MID(TRIM(Header!V5),2,1)
-H16: MID(TRIM(Header!V5),3,1)
-I16: MID(TRIM(Header!V5),4,1)
-J16: MID(TRIM(Header!V5),5,1)
-K16: MID(TRIM(Header!V5),6,1)
-L16: MID(TRIM(Header!V5),7,1)
-M16: MID(TRIM(Header!V5),8,1)
-N16: MID(TRIM(Header!V5),9,1)
-O16: MID(TRIM(Header!V5),10,1)
-P16: TRIM(Header!M2)
-Q16: MID(TRIM(Header!V5),11,1)
-R16: MID(TRIM(Header!V5),12,1)
-S16: MID(TRIM(Header!V5),13,1)
-F17: TRIM(Header!V7)
-F18: TRIM(Header!V8)
-P18: TRIM(Header!V9)
-F19: TRIM(Header!V10)
-M19: TRIM(Header!V11)
-S19: TRIM(Header!V12)
-L20: TRIM(Header!V13)
-S20: TRIM(Header!V14)
-P62: "       Ngày " & MID(TRIM(R60),1,2) &" tháng " &MID(TRIM(R60),4,2) & " năm " & MID(TRIM(R60),7,4)
-D64: TRIM(Header!V15)
-G65: TRIM(Header!V16)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
+## sheet: 01
+L6 |  IF(U61="1",  " Kỳ tính thuế: Tháng "&Header!V46&" năm "&Header!V48,  " Kỳ tính thuế: Quý "&Header!V47&" năm "&Header!V48) | [01] | xls1
+L8 | IF(Header!V29="","[X]","") | Lần đầu: | xls1
+R8 | IF(Header!V29="","",Header!V29) | Bổ sung lần thứ: | xls1
+H10 | TRIM(Header!C3) | Tên người nộp thuế: | xls1
+F11 | Header!C2 | Mã số thuế: | xls1
+G11 | Header!D2 | Mã số thuế: | xls1
+H11 | Header!E2 | Mã số thuế: | xls1
+I11 | Header!F2 | Mã số thuế: | xls1
+J11 | Header!G2 | Mã số thuế: | xls1
+K11 | Header!H2 | Mã số thuế: | xls1
+L11 | Header!I2 | Mã số thuế: | xls1
+M11 | Header!J2 | Mã số thuế: | xls1
+N11 | Header!K2 | Mã số thuế: | xls1
+O11 | Header!L2 | Mã số thuế: | xls1
+P11 | Header!M2 | Mã số thuế: | xls1
+Q11 | Header!N2 | Mã số thuế: | xls1
+R11 | Header!O2 | Mã số thuế: | xls1
+S11 | Header!P2 | Mã số thuế: | xls1
+F12 | TRIM(Header!C4) | Địa chỉ: | xls1
+F13 | TRIM(Header!C5) | Quận/Huyện: | xls1
+P13 | TRIM(Header!C6) | Tỉnh/Thành phố: | xls1
+F14 | TRIM(Header!C7) | Điện thoại: | xls1
+M14 | TRIM(Header!C8) | Fax: | xls1
+S14 | TRIM(Header!C9) | Email: | xls1
+H15 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls1
+F16 | MID(TRIM(Header!V5),1,1) | Mã số thuế: | xls1
+G16 | MID(TRIM(Header!V5),2,1) | Mã số thuế: | xls1
+H16 | MID(TRIM(Header!V5),3,1) | Mã số thuế: | xls1
+I16 | MID(TRIM(Header!V5),4,1) | Mã số thuế: | xls1
+J16 | MID(TRIM(Header!V5),5,1) | Mã số thuế: | xls1
+K16 | MID(TRIM(Header!V5),6,1) | Mã số thuế: | xls1
+L16 | MID(TRIM(Header!V5),7,1) | Mã số thuế: | xls1
+M16 | MID(TRIM(Header!V5),8,1) | Mã số thuế: | xls1
+N16 | MID(TRIM(Header!V5),9,1) | Mã số thuế: | xls1
+O16 | MID(TRIM(Header!V5),10,1) | Mã số thuế: | xls1
+P16 | TRIM(Header!M2) | Mã số thuế: | xls1
+Q16 | MID(TRIM(Header!V5),11,1) | Mã số thuế: | xls1
+R16 | MID(TRIM(Header!V5),12,1) | Mã số thuế: | xls1
+S16 | MID(TRIM(Header!V5),13,1) | Mã số thuế: | xls1
+F17 | TRIM(Header!V7) | Địa chỉ: | xls1
+F18 | TRIM(Header!V8) | Quận/Huyện: | xls1
+P18 | TRIM(Header!V9) | Tỉnh/Thành phố: | xls1
+F19 | TRIM(Header!V10) | Điện thoại: | xls1
+M19 | TRIM(Header!V11) | Fax: | xls1
+S19 | TRIM(Header!V12) | Email: | xls1
+L20 | TRIM(Header!V13) | Số: | xls1
+S20 | TRIM(Header!V14) | Ngày: | xls1
+P62 |      "       Ngày "& MID(TRIM(R60),1,2)&" tháng "&MID(TRIM(R60),4,2)& " năm "& MID(TRIM(R60),7,4) |  | xls1
+D64 | TRIM(Header!V15) | Họ và tên: | xls1
+G65 | TRIM(Header!V16) | Chứng chỉ hành nghề số: | xls1
+## sheet: KHBS
+B6 | B5+1 |  | xls1
+G6 | F6-E6 |  | xls1
+E8 | SUM(E5:E7) | Tổng cộng | xls1
+F8 | SUM(F5:F7) | Tổng cộng | xls1
+G8 | SUM(G5:G7) | Tổng cộng | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls1
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls1
 => 57 cell công thức trong file này
-
-
-TỔNG CỘNG: 102 cell công thức trong 2 file

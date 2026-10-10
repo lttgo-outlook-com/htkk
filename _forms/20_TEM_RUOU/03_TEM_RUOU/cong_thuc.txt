@@ -1,108 +1,77 @@
-CÔNG THỨC TÍNH (human-readable) — Tờ khai 03/TEM-RUOU — báo cáo phát hiện bị mất tem rượu
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-Folder có 1 phiên bản 03_TEM_RUOU_v2.2.3_mau.xls + .xls1 (bản có dữ liệu). 3 sheet mỗi file: 01 (tờ khai chính), KHBS, Header. Đây là văn bản báo cáo (không có khối tính thuế): toàn bộ công thức là prefill, nối chuỗi và cờ kiểm tra.
-
-## File 03_TEM_RUOU_v2.2.3_mau.xls (template)
-
-### Sheet "01" (tờ khai chính)
-- [N3, I51] "Kính gửi" = IF(Header!V37="", "", Header!V37)
-- [H5] NNT = TRIM(Header!C3); [H6] MST nối ký tự ISBLANK; [H7] Địa chỉ = TRIM(C4)&" - "&TRIM(C5)&" - "&TRIM(C6)
-- [O10] = TEXT(K9,"dd/MM/yyyy")&" "&TEXT(TIMEVALUE(#REF!&":"&#REF!), "HH:mm") (ngày + giờ; phần giờ có artifact #REF! còn sót)
-- Cờ kiểm tra: [AB44] "cbo | Kiểm tra số lượng" = IF(X44<=0, 1, 0); [AC44] "cbo | Kiểm tra từ số" = IF(S44=0, 1, 0); [AD44] "cbo | Kiểm tra đến số" = IF(V44=0, 1, 0)
-- [I49] "Cơ quan Thuế cấp Cục" = IF(Header!V45="", "", Header!V45); [AD49] "ma CT" = IF(Header!V44="", "", Header!V44); [AD51] "ma CCT" = IF(Header!V36="", "", Header!V36)
-- [Y54] "Người đại diện theo pháp luật" = Header!V41; [Y56] "Ngày lập báo cáo" = IF(Header!V42="", "", Header!V42)
-
-### Sheet "KHBS"
-- [B6] STT = B5+1; [G6] = F6−E6; [E8, F8, G8] "Tổng cộng" = SUM(E5:E7)/SUM(F5:F7)/SUM(G5:G7)
-
-### Sheet "Header"
-- [M2] định dạng MST + [T8] = CONCATENATE(1) (không có bộ cờ)
-
-## File 03_TEM_RUOU_v2.2.3_mau.xls1 (bản có dữ liệu)
-- Sheet 01: [F3] "Độc lập - Tự do - Hạnh phúc" = "…………., Ngày "&MID(TRIM(R58)) (tách d/m/n)
-- [G6] "Kính gửi: " = "Kính gửi: "&AC6; [N8] NNT = TRIM(Header!C3)
-- MST tách ký tự [F9..S9] = TRIM(C2..P2) (riêng P9 = Header!M2 không TRIM); [E10] Địa chỉ = TRIM(C4)&" - "&TRIM(C5)&" - "&TRIM(C6)
-- [B12] (ô nhãn "Địa chỉ") = " Ngày "&MID(TRIM(H15))...&", (tổ chức, cá nhân) phát hiện bị mất tem rượu như sau:"
-- [B40] STT = B39+1; [R40] "5" = AC40&" - "&AD40 (khoảng số tem: từ số - đến số)
-- [B52] "Lý do mất tem rượu" = " Nay đơn vị báo cáo với "&H49&" để phối hợp truy tìm, ngăn chặn lợi dụng và thông báo số tem rượu trên không còn giá trị sử dụng."
-- [R56] "Người ký" = Header!T5; [P60] "            Ngày " = MID(TRIM(R58))
-- Sheet KHBS: [B6] = B5+1; [G6] = F6−E6; [E8, F8, G8] = SUM(...5:7)
-- Sheet Header: [M2] + [T8] = CONCATENATE(1); [B15] = 1 nếu 01!R58 (ngày) ≠ rỗng (C15 = 01!R58)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 03_TEM_RUOU
-Thư mục: 20_TEM_RUOU/03_TEM_RUOU (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 03_TEM_RUOU
+VersionXML: 2.2.3
+Class: TemRuou03Nckt223
+MenuID: 61
+Nguồn sha256: 66a47cb7aea085adfc2426da155302abe24986e33898bcb1505ea1a8eb19ed60
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 03_TEM_RUOU_v2.2.3_mau.xls ===
---- Sheet "01" ---
-N3: IF(Header!V37="","",Header!V37)
-H5: TRIM(Header!C3)
-H6: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-H7: TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6)
-O10: TEXT(K9,"dd/MM/yyyy")&" "&TEXT(TIMEVALUE(#REF!&":"&#REF!),"HH:mm")
-AB44: IF(X44<=0,1,0)
-AC44: IF(S44=0,1,0)
-AD44: IF(V44=0,1,0)
-I49: IF(Header!V45="","",Header!V45)
-AD49: IF(Header!V44="","",Header!V44)
-I51: IF(Header!V37="","",Header!V37)
-AD51: IF(Header!V36="","",Header!V36)
-Y54: Header!V41
-Y56: IF(Header!V42="","",Header!V42)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
+## sheet: 01
+N3 | IF(Header!V37="","",Header!V37) | Kính gửi: | xls
+H5 | TRIM(Header!C3) | Tên tổ chức, cá nhân: | xls
+H6 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+H7 | TRIM(Header!C4)&" - "&TRIM(Header!C5)&" - "&TRIM(Header!C6) | Địa chỉ : | xls
+O10 | TEXT(K9,"dd/MM/yyyy")&" "&TEXT(TIMEVALUE(#REF!&":"&#REF!),"HH:mm") |  | xls
+AB44 | IF(X44<=0,1,0) | cbo | xls
+AC44 | IF(S44=0,1,0) | cbo | xls
+AD44 | IF(V44=0,1,0) | cbo | xls
+I49 | IF(Header!V45="","",Header!V45) | Cơ quan Thuế cấp Cục: | xls
+AD49 | IF(Header!V44="","",Header!V44) | ma CT | xls
+I51 | IF(Header!V37="","",Header!V37) | Cơ quan thuế trực tiếp quản lý: | xls
+AD51 | IF(Header!V36="","",Header!V36) | ma CCT | xls
+Y54 | Header!V41 | Người đại diện theo pháp luật: | xls
+Y56 | IF(Header!V42="","",Header!V42) | Ngày lập báo cáo: | xls
+## sheet: KHBS
+B6 | B5+1 |  | xls
+G6 | F6-E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+T8 | CONCATENATE(1) | Fax | xls
 => 21 cell công thức trong file này
 
+MaFile: 03_TEM_RUOU
+VersionXML: 2.2.3
+Class: TemRuou03Nckt223
+MenuID: 61
+Nguồn sha256: e9244ed8528f1c7e9d57b5622561cc8a724065959823f318fa597ca1c859979c
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 03_TEM_RUOU_v2.2.3_mau.xls1 ===
---- Sheet "01" ---
-F3: "…………., Ngày " & MID(TRIM(R58),1,2) &" tháng " &MID(TRIM(R58),4,2) & " năm " & MID(TRIM(R58),7,4)
-G6: "Kính gửi: " & AC6
-N8: TRIM(Header!C3)
-F9: TRIM(Header!C2)
-G9: TRIM(Header!D2)
-H9: TRIM(Header!E2)
-I9: TRIM(Header!F2)
-J9: TRIM(Header!G2)
-K9: TRIM(Header!H2)
-L9: TRIM(Header!I2)
-M9: TRIM(Header!J2)
-N9: TRIM(Header!K2)
-O9: TRIM(Header!L2)
-P9: Header!M2
-Q9: TRIM(Header!N2)
-R9: TRIM(Header!O2)
-S9: TRIM(Header!P2)
-E10: TRIM(Header!C4) & " - " & TRIM(Header!C5) & " - " & TRIM(Header!C6)
-B12: " Ngày " & MID(TRIM(H15),1,2) &" tháng " &MID(TRIM(H15),4,2) & " năm " & MID(TRIM(H15),7,4) & ", (tổ chức, cá nhân) phát hiện bị mất tem rượu như sau: "
-B40: B39+1
-R40: AC40 & " - " & AD40
-B52: " Nay đơn vị báo cáo với " & H49 & " để phối hợp truy tìm, ngăn chặn lợi dụng và thông báo số tem rượu trên không còn giá trị sử dụng."
-R56: Header!T5
-P60: "            Ngày " & MID(TRIM(R58),1,2) &" tháng " &MID(TRIM(R58),4,2) & " năm " & MID(TRIM(R58),7,4)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
-B15: IF(LEN(01!R58)=0,"0","1")
-C15: 01!R58
+## sheet: 01
+F3 |      "…………., Ngày "& MID(TRIM(R58),1,2)&" tháng "&MID(TRIM(R58),4,2)& " năm "& MID(TRIM(R58),7,4) |  | xls1
+G6 |  "Kính gửi: "& AC6 |  | xls1
+N8 | TRIM(Header!C3) | Tên tổ chức, cá nhân: | xls1
+F9 | TRIM(Header!C2) | Mã số thuế: | xls1
+G9 | TRIM(Header!D2) | Mã số thuế: | xls1
+H9 | TRIM(Header!E2) | Mã số thuế: | xls1
+I9 | TRIM(Header!F2) | Mã số thuế: | xls1
+J9 | TRIM(Header!G2) | Mã số thuế: | xls1
+K9 | TRIM(Header!H2) | Mã số thuế: | xls1
+L9 | TRIM(Header!I2) | Mã số thuế: | xls1
+M9 | TRIM(Header!J2) | Mã số thuế: | xls1
+N9 | TRIM(Header!K2) | Mã số thuế: | xls1
+O9 | TRIM(Header!L2) | Mã số thuế: | xls1
+P9 | Header!M2 | Mã số thuế: | xls1
+Q9 | TRIM(Header!N2) | Mã số thuế: | xls1
+R9 | TRIM(Header!O2) | Mã số thuế: | xls1
+S9 | TRIM(Header!P2) | Mã số thuế: | xls1
+E10 |     TRIM(Header!C4)& " - "& TRIM(Header!C5)& " - "& TRIM(Header!C6) | Địa chỉ : | xls1
+B12 |       " Ngày "& MID(TRIM(H15),1,2)&" tháng "&MID(TRIM(H15),4,2)& " năm "& MID(TRIM(H15),7,4)& ", (tổ chức, cá nhân) phát hiện bị mất tem rượu như sau: " |  | xls1
+B40 | B39+1 | 000000000001 | xls1
+R40 |   AC40& " - "& AD40 | 000000000001 | xls1
+B52 |   " Nay đơn vị báo cáo với "& H49& " để phối hợp truy tìm, ngăn chặn lợi dụng và thông báo số tem rượu trên không còn giá trị sử dụng." |  | xls1
+R56 | Header!T5 | Người ký: | xls1
+P60 |      "            Ngày "& MID(TRIM(R58),1,2)&" tháng "&MID(TRIM(R58),4,2)& " năm "& MID(TRIM(R58),7,4) |  | xls1
+## sheet: KHBS
+B6 | B5+1 |  | xls1
+G6 | F6-E6 |  | xls1
+E8 | SUM(E5:E7) | Tổng cộng | xls1
+F8 | SUM(F5:F7) | Tổng cộng | xls1
+G8 | SUM(G5:G7) | Tổng cộng | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls1
+T8 | CONCATENATE(1) | Fax | xls1
+B15 | IF(LEN('01'!R58)=0,"0","1") | Thông tin ngày ký bắt buộc nhập. Đề nghị hãy nhập thông tin… | xls1
+C15 | '01'!R58 | Thông tin ngày ký bắt buộc nhập. Đề nghị hãy nhập thông tin… | xls1
 => 33 cell công thức trong file này
-
-
-TỔNG CỘNG: 54 cell công thức trong 2 file

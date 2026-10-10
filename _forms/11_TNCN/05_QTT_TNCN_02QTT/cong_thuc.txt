@@ -1,175 +1,122 @@
-CÔNG THỨC TÍNH (human-readable) — 05_QTT_TNCN_02QTT
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-Bảng kê quyết toán thuế TNCN 02/QTT-TNCN (05-1): bảng tính thuế từng người nộp thuế theo năm, thuế TNCN lũy tiến theo mức thu nhập (các khung thuế cũ 2009/2011/2012). Folder gồm 1 cặp file .xls (bảng kê + tính toán) và .xls1 (pre-fill XML).
-
-## File 05_QTT_TNCN_02QTT_v1.0.0_mau.xls
-
-### Sheet "05-1" (bảng kê chính)
-- [G5, AB5] Năm tính = Header!T2
-- [E7] Tên tổ chức/cá nhân trả thu nhập = TRIM(Header!C3); [E9] Mã số thuế = nối từng ký tự TRIM của Header!C2:…
-- [B22] Số thứ tự = B21 + 1
-- [X22] Thu nhập của người phụ thuộc được giảm trừ = AQ22 − W22 nếu > 0, nếu không 0
-- [AN22] "Có"/"Không" theo ô AF22 = 0
-- [AI21, AI22, AI23] Chia 6 = AB21/6, AB22/6, AB23/6 — thu nhập (AB) chia 6 tháng (kỳ nửa năm)
-- [AJ21, AJ22, AJ23] Chia 12 = AB21/12, AB22/12, AB23/12 — thu nhập chia 12 tháng (kỳ năm)
-- [AK21] Thuế phải nộp (năm 2009, nhân 6) = 6 × thuế lũy tiến theo AI21, các khung: >80tr → (AI−80tr)×35% + 18,15tr; >52tr–80tr → (AI−52tr)×30% + 9,75tr; >32tr–52tr → (AI−32tr)×25% + 4,75tr; >18tr–32tr → (AI−18tr)×20% + 1,95tr; >10tr–18tr → (AI−10tr)×15% + 750k; >5tr–10tr → (AI−5tr)×10% + 250k; khung thấp hơn theo IF lồng tiếp
-- [AK22] Thuế phải nộp (2011/2012, thu nhập ≤ 5tr) = (2011→7, 2012→12) × thuế lũy tiến theo AJ22, cùng các khung 35/30/25/20/15/10% (trên cơ sở AJ22)
-- [AL21] Thuế miễn/giảm = AK21 × O21/#REF!/2 nếu #REF! > 0, nếu không 0 (tham chiếu hỏng trong template)
-- [AM21] Thuế còn phải nộp = AK21 − AD21 − AE21
-- [AL22] Thuế miễn/giảm = ROUND(AP22 × J22/H22/2, 0) nếu H22 > 0, nếu không 0
-- [AM22] Thuế còn phải nộp = ROUND(AP22 − AD22 − AE22, 0), nếu giá trị tuyệt đối < 3 thì 0
-- [AP22] Thuế phải nộp 1 = AK22/2 nếu (G5="2012" và AJ22 ≤ 5tr), nếu không AK22
-- [H24:AF24] Dòng "Tổng cộng" = SUM(3 dòng 21:23) của từng cột (H, J, K, L, M, O, P, S, T, U, V, W, X, Y, Z, AA, AB, AC, AD, AE, AF)
-
-### Sheet "KHBS" (bổ sung, điều chỉnh)
-- [B6] Số thứ tự STT = B5 + 1
-- [G6] Chênh lệch = F6 − E6
-- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
-
-### Sheet "Header" (cờ kiểm tra nội bộ)
-- [M2] Dấu " - " nếu N2:P2 trống; [T8] CONCATENATE(1)
-
-## File 05_QTT_TNCN_02QTT_v1.0.0_mau.xls1 (pre-fill XML)
-
-### Sheet "05-1"
-- [R13] [01] Kỳ tính thuế: Năm = TRIM(Header!V48); [L15] năm = TRIM(D6); [L17:Y17] Tách 1 chuỗi (E6) thành từng ký tự bằng MID
-- Khối tổng hợp tiền (cột W):
-  - [W42] = W43 + W46; [W43] = S6; [W44] = I6; [W45] = J6; [W47] = T6
-  - [W48] = SUM(W49:W53); [W49:W53] = U6, V6, W6, X6, Y6 (copy từng ô)
-  - [W54] = Z6; [W55] = AA6
-  - [W56] = W57 + W58 + W59 + W60; [W57] = AC6
-  - [W61] = W62 + W63; [W62] = R6
-  - [W64] = W55 − W56 − W61 nếu > 0, nếu không 0 — số thuế còn phải nộp (phần dương)
-  - [W65] = ABS(W55 − W56 − W61) nếu W55 − W56 − W61 < 0, nếu không 0 — số thuế đề nghị hoàn (phần âm)
-  - [W66] = W67 + W68
-  - [W69] = W65 − W66
-- [N109] "…………., Ngày dd tháng mm năm yyyy" (định dạng lại L115)
-- [R121] = TRIM(F115)
-
-### Sheet "KHBS"
-- Cùng công thức sheet "KHBS" file chính (STT, chênh lệch, tổng cộng 3 cột)
-
-### Sheet "Header"
-- [M2] Dấu nối; [T8] "nguoi ky" CONCATENATE(1)
-- [V4] Dấu "-" nếu mã số thuế (V5) dài hơn 10 ký tự
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 05_QTT_TNCN_02QTT
-Thư mục: 11_TNCN/05_QTT_TNCN_02QTT (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 05_QTT_TNCN_02QTT
+VersionXML: 1.0.0
+Class: TncnHoTroInQttNckt100
+MenuID: 57
+Nguồn sha256: d0edb05dff5b8a2930a8d0376df0b35635bd599ec614ddb8af1303ae8b8e4496
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 05_QTT_TNCN_02QTT_v1.0.0_mau.xls ===
---- Sheet "05-1" ---
-G5: Header!T2
-AB5: Header!T2
-E7: TRIM(Header!C3)
-E9: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-AI21: AB21/6
-AJ21: AB21/12
-AK21: IF($G$5="2009",6*IF(AI21>80000000,((AI21-80000000)*0.35+18150000),IF(AND(AI21>52000000,AI21<=80000000),((AI21-52000000)*0.3+9750000),IF(AND(AI21>32000000,AI21<=52000000),((AI21-32000000)*0.25+4750000),IF(AND(AI21>18000000,AI21<=32000000),((AI21-18000000)*0.2+1950000),IF(AND(AI21>10000000,AI21<=18000000),((AI21-10000000)*0.15+750000),IF(AND(AI21>5000000,AI21<=10000000),((AI21-5000000)*0.1+250000),(AI21*0.05))))))),12*IF(AJ21>80000000,((AJ21-80000000)*0.35+18150000),IF(AND(AJ21>52000000,AJ21<=80000000),((AJ21-52000000)*0.3+9750000),IF(AND(AJ21>32000000,AJ21<=52000000),((AJ21-32000000)*0.25+4750000),IF(AND(AJ21>18000000,AJ21<=32000000),((AJ21-18000000)*0.2+1950000),IF(AND(AJ21>10000000,AJ21<=18000000),((AJ21-10000000)*0.15+750000),IF(AND(AJ21>5000000,AJ21<=10000000),((AJ21-5000000)*0.1+250000),(AJ21*0.05))))))))
-AL21: IF(#REF!>0,AK21*O21/#REF!/2,0)
-AM21: AK21-AD21-AE21
-B22: B21+1
-X22: IF(AQ22-W22>0,AQ22-W22,0)
-AI22: AB22/6
-AJ22: AB22/12
-AK22: IF(AND(OR($G$5="2011",$G$5="2012"),AJ22<=5000000),IF($G$5="2011",7,12)*IF(AJ22>80000000,((AJ22-80000000)*0.35+18150000),IF(AND(AJ22>52000000,AJ22<=80000000),((AJ22-52000000)*0.3+9750000),IF(AND(AJ22>32000000,AJ22<=52000000),((AJ22-32000000)*0.25+4750000),IF(AND(AJ22>18000000,AJ22<=32000000),((AJ22-18000000)*0.2+1950000),IF(AND(AJ22>10000000,AJ22<=18000000),((AJ22-10000000)*0.15+750000),IF(AND(AJ22>5000000,AJ22<=10000000),((AJ22-5000000)*0.1+250000),(AJ22*0.05))))))),12*IF(AJ22>80000000,((AJ22-80000000)*0.35+18150000),IF(AND(AJ22>52000000,AJ22<=80000000),((AJ22-52000000)*0.3+9750000),IF(AND(AJ22>32000000,AJ22<=52000000),((AJ22-32000000)*0.25+4750000),IF(AND(AJ22>18000000,AJ22<=32000000),((AJ22-18000000)*0.2+1950000),IF(AND(AJ22>10000000,AJ22<=18000000),((AJ22-10000000)*0.15+750000),IF(AND(AJ22>5000000,AJ22<=10000000),((AJ22-5000000)*0.1+250000),(AJ22*0.05))))))))
-AL22: IF(H22>0,ROUND(AP22*J22/H22/2,0),0)
-AM22: IF(ABS(ROUND(AP22-AD22-AE22,0))<3,0,ROUND(AP22-AD22-AE22,0))
-AN22: IF(AF22=0,"Không","Có")
-AP22: IF(AND($G$5="2012",AJ22<=5000000),AK22/2,AK22)
-AI23: AB23/6
-AJ23: AB23/12
-AK23: IF($G$5="2009",6*IF(AI23>80000000,((AI23-80000000)*0.35+18150000),IF(AND(AI23>52000000,AI23<=80000000),((AI23-52000000)*0.3+9750000),IF(AND(AI23>32000000,AI23<=52000000),((AI23-32000000)*0.25+4750000),IF(AND(AI23>18000000,AI23<=32000000),((AI23-18000000)*0.2+1950000),IF(AND(AI23>10000000,AI23<=18000000),((AI23-10000000)*0.15+750000),IF(AND(AI23>5000000,AI23<=10000000),((AI23-5000000)*0.1+250000),(AI23*0.05))))))),12*IF(AJ23>80000000,((AJ23-80000000)*0.35+18150000),IF(AND(AJ23>52000000,AJ23<=80000000),((AJ23-52000000)*0.3+9750000),IF(AND(AJ23>32000000,AJ23<=52000000),((AJ23-32000000)*0.25+4750000),IF(AND(AJ23>18000000,AJ23<=32000000),((AJ23-18000000)*0.2+1950000),IF(AND(AJ23>10000000,AJ23<=18000000),((AJ23-10000000)*0.15+750000),IF(AND(AJ23>5000000,AJ23<=10000000),((AJ23-5000000)*0.1+250000),(AJ23*0.05))))))))
-AL23: IF(#REF!>0,AK23*O23/#REF!/2,0)
-AM23: AK23-AD23-AE23
-H24: SUM(H21:H23)
-J24: SUM(J21:J23)
-K24: SUM(K21:K23)
-L24: SUM(L21:L23)
-M24: SUM(M21:M23)
-O24: SUM(O21:O23)
-P24: SUM(P21:P23)
-S24: SUM(S21:S23)
-T24: SUM(T21:T23)
-U24: SUM(U21:U23)
-V24: SUM(V21:V23)
-W24: SUM(W21:W23)
-X24: SUM(X21:X23)
-Y24: SUM(Y21:Y23)
-Z24: SUM(Z21:Z23)
-AA24: SUM(AA21:AA23)
-AB24: SUM(AB21:AB23)
-AC24: SUM(AC21:AC23)
-AD24: SUM(AD21:AD23)
-AE24: SUM(AE21:AE23)
-AF24: SUM(AF21:AF23)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
+## sheet: 05-1
+G5 | Header!T2 | Kỳ tính thuế: Năm | xls
+AB5 | Header!T2 | Kỳ tính thuế: Năm | xls
+E7 | TRIM(Header!C3) | Tên tổ chức, cá nhân trả thu nhập: | xls
+E9 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+AI21 | AB21/6 |  | xls
+AJ21 | AB21/12 |  | xls
+AK21 | IF($G$5="2009",6*IF(AI21>80000000,((AI21-80000000)*0.35+18150000),IF(AND(AI21>52000000,AI21<=80000000),((AI21-52000000)*0.3+9750000),IF(AND(AI21>32000000,AI21<=52000000),((AI21-32000000)*0.25+4750000),IF(AND(AI21>18000000,AI21<=32000000),((AI21-18000000)*0.2+1950000),IF(AND(AI21>10000000,AI21<=18000000),((AI21-10000000)*0.15+750000),IF(AND(AI21>5000000,AI21<=10000000),((AI21-5000000)*0.1+250000),(AI21*0.05))))))),12*IF(AJ21>80000000,((AJ21-80000000)*0.35+18150000),IF(AND(AJ21>52000000,AJ21<=80000000),((AJ21-52000000)*0.3+9750000),IF(AND(AJ21>32000000,AJ21<=52000000),((AJ21-32000000)*0.25+4750000),IF(AND(AJ21>18000000,AJ21<=32000000),((AJ21-18000000)*0.2+1950000),IF(AND(AJ21>10000000,AJ21<=18000000),((AJ21-10000000)*0.15+750000),IF(AND(AJ21>5000000,AJ21<=10000000),((AJ21-5000000)*0.1+250000),(AJ21*0.05)))))))) |  | xls
+AL21 | IF(#REF!>0,AK21*O21/#REF!/2,0) |  | xls
+AM21 | AK21-AD21-AE21 |  | xls
+B22 | B21+1 | chk | xls
+X22 | IF(AQ22-W22>0,AQ22-W22,0) | chk | xls
+AI22 | AB22/6 | eof | xls
+AJ22 | AB22/12 | eof | xls
+AK22 | IF(AND(OR($G$5="2011",$G$5="2012"),AJ22<=5000000),IF($G$5="2011",7,12)*IF(AJ22>80000000,((AJ22-80000000)*0.35+18150000),IF(AND(AJ22>52000000,AJ22<=80000000),((AJ22-52000000)*0.3+9750000),IF(AND(AJ22>32000000,AJ22<=52000000),((AJ22-32000000)*0.25+4750000),IF(AND(AJ22>18000000,AJ22<=32000000),((AJ22-18000000)*0.2+1950000),IF(AND(AJ22>10000000,AJ22<=18000000),((AJ22-10000000)*0.15+750000),IF(AND(AJ22>5000000,AJ22<=10000000),((AJ22-5000000)*0.1+250000),(AJ22*0.05))))))),12*IF(AJ22>80000000,((AJ22-80000000)*0.35+18150000),IF(AND(AJ22>52000000,AJ22<=80000000),((AJ22-52000000)*0.3+9750000),IF(AND(AJ22>32000000,AJ22<=52000000),((AJ22-32000000)*0.25+4750000),IF(AND(AJ22>18000000,AJ22<=32000000),((AJ22-18000000)*0.2+1950000),IF(AND(AJ22>10000000,AJ22<=18000000),((AJ22-10000000)*0.15+750000),IF(AND(AJ22>5000000,AJ22<=10000000),((AJ22-5000000)*0.1+250000),(AJ22*0.05)))))))) | eof | xls
+AL22 | IF(H22>0,ROUND(AP22*J22/H22/2,0),0) | eof | xls
+AM22 | IF(ABS(ROUND(AP22-AD22-AE22,0))<3,0,ROUND(AP22-AD22-AE22,0)) | eof | xls
+AN22 | IF(AF22=0,"Không","Có") | eof | xls
+AP22 | IF(AND($G$5="2012",AJ22<=5000000),AK22/2,AK22) | eof | xls
+AI23 | AB23/6 | aa | xls
+AJ23 | AB23/12 | aa | xls
+AK23 | IF($G$5="2009",6*IF(AI23>80000000,((AI23-80000000)*0.35+18150000),IF(AND(AI23>52000000,AI23<=80000000),((AI23-52000000)*0.3+9750000),IF(AND(AI23>32000000,AI23<=52000000),((AI23-32000000)*0.25+4750000),IF(AND(AI23>18000000,AI23<=32000000),((AI23-18000000)*0.2+1950000),IF(AND(AI23>10000000,AI23<=18000000),((AI23-10000000)*0.15+750000),IF(AND(AI23>5000000,AI23<=10000000),((AI23-5000000)*0.1+250000),(AI23*0.05))))))),12*IF(AJ23>80000000,((AJ23-80000000)*0.35+18150000),IF(AND(AJ23>52000000,AJ23<=80000000),((AJ23-52000000)*0.3+9750000),IF(AND(AJ23>32000000,AJ23<=52000000),((AJ23-32000000)*0.25+4750000),IF(AND(AJ23>18000000,AJ23<=32000000),((AJ23-18000000)*0.2+1950000),IF(AND(AJ23>10000000,AJ23<=18000000),((AJ23-10000000)*0.15+750000),IF(AND(AJ23>5000000,AJ23<=10000000),((AJ23-5000000)*0.1+250000),(AJ23*0.05)))))))) | aa | xls
+AL23 | IF(#REF!>0,AK23*O23/#REF!/2,0) | aa | xls
+AM23 | AK23-AD23-AE23 | aa | xls
+H24 | SUM(H21:H23) | Tổng cộng | xls
+J24 | SUM(J21:J23) | Tổng cộng | xls
+K24 | SUM(K21:K23) | Tổng cộng | xls
+L24 | SUM(L21:L23) | Tổng cộng | xls
+M24 | SUM(M21:M23) | Tổng cộng | xls
+O24 | SUM(O21:O23) | Tổng cộng | xls
+P24 | SUM(P21:P23) | Tổng cộng | xls
+S24 | SUM(S21:S23) | Tổng cộng | xls
+T24 | SUM(T21:T23) | Tổng cộng | xls
+U24 | SUM(U21:U23) | Tổng cộng | xls
+V24 | SUM(V21:V23) | Tổng cộng | xls
+W24 | SUM(W21:W23) | Tổng cộng | xls
+X24 | SUM(X21:X23) | Tổng cộng | xls
+Y24 | SUM(Y21:Y23) | Tổng cộng | xls
+Z24 | SUM(Z21:Z23) | Tổng cộng | xls
+AA24 | SUM(AA21:AA23) | Tổng cộng | xls
+AB24 | SUM(AB21:AB23) | Tổng cộng | xls
+AC24 | SUM(AC21:AC23) | Tổng cộng | xls
+AD24 | SUM(AD21:AD23) | Tổng cộng | xls
+AE24 | SUM(AE21:AE23) | Tổng cộng | xls
+AF24 | SUM(AF21:AF23) | Tổng cộng | xls
+## sheet: KHBS
+B6 | B5+1 |  | xls
+G6 | F6-E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+T8 | CONCATENATE(1) | Fax | xls
 => 51 cell công thức trong file này
 
+MaFile: 05_QTT_TNCN_02QTT
+VersionXML: 1.0.0
+Class: TncnHoTroInQttNckt100
+MenuID: 57
+Nguồn sha256: 254b6335a1997aa4b381dcd06a73653d5f9bcf5ca9658267fe6ecdcbf072faf0
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 05_QTT_TNCN_02QTT_v1.0.0_mau.xls1 ===
---- Sheet "05-1" ---
-R13: TRIM(Header!V48)
-L15: TRIM(D6)
-L17: MID(E6,1,1)
-M17: MID(E6,2,1)
-N17: MID(E6,3,1)
-O17: MID(E6,4,1)
-P17: MID(E6,5,1)
-Q17: MID(E6,6,1)
-R17: MID(E6,7,1)
-S17: MID(E6,8,1)
-T17: MID(E6,9,1)
-U17: MID(E6,10,1)
-W17: MID(E6,11,1)
-X17: MID(E6,12,1)
-Y17: MID(E6,13,1)
-W42: W43+W46
-W43: S6
-W44: I6
-W45: J6
-W47: T6
-W48: SUM(W49:W53)
-W49: U6
-W50: V6
-W51: W6
-W52: X6
-W53: Y6
-W54: Z6
-W55: AA6
-W56: W57+W58+W59+W60
-W57: AC6
-W61: W62+W63
-W62: R6
-W64: IF(W55-W56-W61>0,W55-W56-W61,0)
-W65: IF(W55-W56-W61>0,0,ABS(W55-W56-W61))
-W66: W67+W68
-W69: W65-W66
-N109: "      ………., Ngày  " & MID(TRIM(L115),1,2) &"  tháng  " &MID(TRIM(L115),4,2) & "  năm " & MID(TRIM(L115),7,4)
-R121: TRIM(F115)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-V4: IF(LEN(TRIM(V5))>10,"-","")
-T8: CONCATENATE(1)
+## sheet: 05-1
+R13 | TRIM(Header!V48) | [01] Kỳ tính thuế: Năm | xls1
+L15 | TRIM(D6) | [04] Tên người nộp thuế: | xls1
+L17 | MID(E6,1,1) | [05] Mã số thuế: | xls1
+M17 | MID(E6,2,1) | [05] Mã số thuế: | xls1
+N17 | MID(E6,3,1) | [05] Mã số thuế: | xls1
+O17 | MID(E6,4,1) | [05] Mã số thuế: | xls1
+P17 | MID(E6,5,1) | [05] Mã số thuế: | xls1
+Q17 | MID(E6,6,1) | [05] Mã số thuế: | xls1
+R17 | MID(E6,7,1) | [05] Mã số thuế: | xls1
+S17 | MID(E6,8,1) | [05] Mã số thuế: | xls1
+T17 | MID(E6,9,1) | [05] Mã số thuế: | xls1
+U17 | MID(E6,10,1) | [05] Mã số thuế: | xls1
+W17 | MID(E6,11,1) | [05] Mã số thuế: | xls1
+X17 | MID(E6,12,1) | [05] Mã số thuế: | xls1
+Y17 | MID(E6,13,1) | [05] Mã số thuế: | xls1
+W42 | W43+W46 | VNĐ | xls1
+W43 | S6 | VNĐ | xls1
+W44 | I6 | VNĐ | xls1
+W45 | J6 | VNĐ | xls1
+W47 | T6 | Người | xls1
+W48 | SUM(W49:W53) | VNĐ | xls1
+W49 | U6 | VNĐ | xls1
+W50 | V6 | VNĐ | xls1
+W51 | W6 | VNĐ | xls1
+W52 | X6 | VNĐ | xls1
+W53 | Y6 | VNĐ | xls1
+W54 | Z6 | VNĐ | xls1
+W55 | AA6 | VNĐ | xls1
+W56 | W57+W58+W59+W60 | VNĐ | xls1
+W57 | AC6 | VNĐ | xls1
+W61 | W62+W63 | VNĐ | xls1
+W62 | R6 | VNĐ | xls1
+W64 | IF(W55-W56-W61>0,W55-W56-W61,0) | VNĐ | xls1
+W65 | IF(W55-W56-W61>0,0,ABS(W55-W56-W61)) | VNĐ | xls1
+W66 | W67+W68 | VNĐ | xls1
+W69 | W65-W66 | VNĐ | xls1
+N109 |      "      ………., Ngày  "& MID(TRIM(L115),1,2)&"  tháng  "&MID(TRIM(L115),4,2)& "  năm "& MID(TRIM(L115),7,4) | NHÂN VIÊN ĐẠI LÝ THUẾ | xls1
+R121 | TRIM(F115) |  | xls1
+## sheet: KHBS
+B6 | B5+1 |  | xls1
+G6 | F6-E6 |  | xls1
+E8 | SUM(E5:E7) | Tổng cộng | xls1
+F8 | SUM(F5:F7) | Tổng cộng | xls1
+G8 | SUM(G5:G7) | Tổng cộng | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls1
+V4 | IF(LEN(TRIM(V5))>10,"-","") | Mã số thuế đơn vị chủ quản: | xls1
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls1
 => 46 cell công thức trong file này
-
-
-TỔNG CỘNG: 97 cell công thức trong 2 file
+## SUPBOOK (tham chiếu ngoài)
+[ext:0] projects/TaxProject_II/Init_01-TNCN.xls | sheet: Chu y,01TNCN,01TCKT,Danh mục quốc gia,Danh mục tỉnh,Danh mục quận huyện,Danh mục phường xã,Danh mục cơ quan thuế,Danh mục NNKD

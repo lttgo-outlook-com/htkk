@@ -13,6 +13,7 @@
 | `catalog` | Danh mục XML (maptentk, replacedatafile, validcombobox, versiontokhai) sang JSON | `_extracted`, `_decompiled` | `tools/catalog.py` | `python3 -I _spec/tools/catalog.py [--src DIR] [--dec DIR] [--out DIR]` | T6 đạt |
 | `app` | Các điểm rẽ nhánh theo menuID/MaFile/MaToKhai trong ứng dụng | `_decompiled`, `menu.xml` + bản menu cũ | `tools/app_branches.py` rồi `tools/menu_source.py` | `python3 -I _spec/tools/app_branches.py` rồi `python3 -I _spec/tools/menu_source.py`; độ đúng: `app_branches.py --accuracy` | T7 đạt; phân loại tác động chỉ là gợi ý (13/20) |
 | `dv` | Data validation (DV/DVAL) trong template .xls | `_forms` | `tools/biff_dv.py` | `python3 -I _spec/tools/biff_dv.py _spec/dv /Users/tuanle/codes/HTKK/_forms` (xem `dv/README.md`) | T9: DV kiểu list có tác dụng theo tài liệu FarPoint; loại khác chưa xác định |
+| `_forms/**/cong_thuc.txt` (view) | Công thức từng tệp bảng tính trong `_forms`, mỗi ô một dòng `REF | công thức | nhãn | nguồn` | `formulas`, `csharp/classes.json`, `config/mapcongthucchosua.xml.json`, `_forms/_manifest.csv`, T2 `rules` (tùy chọn) | `tools/render_cong_thuc.py` | `/tmp/audit_venv/bin/python -I _spec/tools/render_cong_thuc.py --repo . [--rules _spec/rules]`; kiểm: `verify_formulas.py`, `_re/check_mapping.py` | Sinh lại toàn bộ, không sửa tay; render hai lần giống từng byte |
 | `tools` | Mã sinh và kiểm cho các thư mục trên | n/a | n/a | n/a | n/a |
 
 ## Trạng thái gộp

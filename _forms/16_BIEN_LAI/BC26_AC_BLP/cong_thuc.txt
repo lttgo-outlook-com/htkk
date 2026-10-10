@@ -1,185 +1,140 @@
-CÔNG THỨC TÍNH (human-readable) — BC26_AC_BLP
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-Báo cáo tình hình sử dụng biên lai thu phí, lệ phí (BC26, mã BC7/AC theo header): bảng tồn đầu kỳ/nhập trong kỳ/phát sinh/tồn cuối kỳ, 3 dòng chi tiết. Folder gồm 3 file: bc26_ac_blp_200.xls (sheet "BC26"), bc26_ac_blp_200.xls1 và bc26_ac_blp_216.xls (cùng layout, sheet "01" — 216 là bản cập nhật 200, cùng công thức).
-
-## File bc26_ac_blp_200.xls
-
-### Sheet "BC26"
-- [E5] Kỳ báo cáo = "Quý <V47> năm <V48>" nếu Header!V30 ≠ "M", nếu không "Tháng <V46> năm <V48>"
-- [E6] "(từ <V32> đến <V33>)" — khoảng thời gian
-- [E7] [02] Tên đơn vị = TRIM(Header!C3); [E9] [03] Mã số thuế = TRIM(nối từng ký tự TRIM của Header!C2:…)
-- [E11] [04] Địa chỉ = TRIM(Header!C4)
-- [E13, F13] Từ/đến = TRIM(Header!V32/V33)
-- [AB16] Tồn cuối kỳ = copy AB24 (ô tổng)
-- [N22] Cộng = P22 + Q22 + S22 + U22 — cộng 4 cột
-- [G24, N24, Q24, S24, U24, Z24, AB24] Dòng "Tổng cộng" = SUM(3 dòng 21:23) của từng cột
-- [N30] Thủ trưởng đơn vị = TRIM(Header!V41); [N32] Ngày lập báo cáo = TRIM(V42)
-
-### Sheet "KHBS" (bổ sung, điều chỉnh)
-- [B6] Số thứ tự STT = B5 + 1
-- [G6] Chênh lệch = F6 − E6
-- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7)
-
-### Sheet "Header" (cờ kiểm tra nội bộ)
-- [M2] Dấu "-" nếu N2:P2 trống; [T8] CONCATENATE(1)
-- [B46, B47] = 1 (cờ); [C46, C47] giá trị BC26!Z24
-
-## File bc26_ac_blp_200.xls1 (pre-fill XML)
-
-### Sheet "01"
-- [I6] "Quý <V47> năm <V48>" / "Tháng <V46> năm <V48>" theo Header!V30 — cùng logic file chính
-- [E7] Tên đơn vị = TRIM(Header!C3); [E9] MST = TRIM(nối từng ký tự); [E11] Địa chỉ = TRIM(C4) & " - " & TRIM(C5) & " - " & TRIM(C6) (nối 3 phần)
-- [AB16] Tồn cuối kỳ = copy AB24
-- [B22] Số thứ tự = B21 + 1
-- [K30] Người ký = Header!T5; [Q34] "Ngày dd tháng mm năm yyyy" (định dạng lại K32)
-- [D40] = E30; [Q40] = TRIM(K30)
-
-### Sheet "KHBS"
-- Cùng công thức sheet "KHBS" (STT, chênh lệch, tổng cộng 3 cột)
-
-### Sheet "Header"
-- [M2] Dấu nối; [T8] "nguoi ky" CONCATENATE(1)
-
-## File bc26_ac_blp_216.xls (bản 216 — cùng công thức file .xls1)
-
-### Sheet "01"
-- Cùng công thức sheet "01" của bc26_ac_blp_200.xls1 (kỳ báo cáo quý/tháng, tên/MST/địa chỉ pre-fill, tồn cuối kỳ, số thứ tự, người ký, ngày lập)
-
-### Sheet "KHBS"
-- Cùng công thức sheet "KHBS"
-
-### Sheet "Header"
-- [M2] Dấu nối; [T8] "nguoi ky" CONCATENATE(1)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — BC26_AC_BLP
-Thư mục: 16_BIEN_LAI/BC26_AC_BLP (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: BC7_AC
+VersionXML: 2.0.0
+Class: BlpBcAc26Nckt200
+MenuID: 14
+Nguồn sha256: 8c999dea25fffb72a8cc5edd2bd8196432dd1eb2f89f1b80fc15955ae978e9c2
+Generator: render_cong_thuc.py@1.0.0
 === FILE: BC26_AC_BLP_v2.0.0_mau.xls ===
---- Sheet "BC26" ---
-E5: IF(Header!V30<>"M","Kỳ báo cáo: Quý "&Header!V47&" năm "&Header!V48,"Kỳ báo cáo: Tháng "&Header!V46&" năm "&Header!V48)
-E6: "("&" từ "&Header!V32&" đến "&Header!V33&")"
-E7: TRIM(Header!C3)
-E9: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
-E11: TRIM(Header!C4)
-E13: TRIM(Header!V32)
-F13: TRIM(Header!V33)
-AB16: AB24
-N22: P22+Q22+S22+U22
-G24: SUM(G21:G23)
-N24: SUM(N21:N23)
-Q24: SUM(Q21:Q23)
-S24: SUM(S21:S23)
-U24: SUM(U21:U23)
-Z24: SUM(Z21:Z23)
-AB24: SUM(AB21:AB23)
-N30: TRIM(Header!V41)
-N32: TRIM(Header!V42)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)="","","-")
-T8: CONCATENATE(1)
-B46: 1
-C46: BC26!Z24
-B47: 1
-C47: BC26!Z24
+## sheet: BC26
+E5 | IF(Header!V30<>"M","Kỳ báo cáo: Quý "&Header!V47&" năm "&Header!V48,"Kỳ báo cáo: Tháng "&Header!V46&" năm "&Header!V48) |  | xls
+E6 | "("&" từ "&Header!V32&" đến "&Header!V33&")" |  | xls
+E7 | TRIM(Header!C3) | [02]Tên đơn vị: | xls
+E9 | TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))&IF(ISBLANK(Header!M2),"",Header!M2)&IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2))) | [03] Mã số thuế: | xls
+E11 | TRIM(Header!C4) | [04] Địa chỉ | xls
+E13 | TRIM(Header!V32) | 1 | xls
+F13 | TRIM(Header!V33) | 1 | xls
+AB16 | AB24 | Tồn cuối kỳ | xls
+N22 | P22+Q22+S22+U22 | cbo | xls
+G24 | SUM(G21:G23) | Tổng cộng | xls
+N24 | SUM(N21:N23) | Tổng cộng | xls
+Q24 | SUM(Q21:Q23) | Tổng cộng | xls
+S24 | SUM(S21:S23) | Tổng cộng | xls
+U24 | SUM(U21:U23) | Tổng cộng | xls
+Z24 | SUM(Z21:Z23) | Tổng cộng | xls
+AB24 | SUM(AB21:AB23) | Tổng cộng | xls
+N30 | TRIM(Header!V41) | Thủ trưởng đơn vị : | xls
+N32 | TRIM(Header!V42) | Ngày lập báo cáo: | xls
+## sheet: KHBS
+B6 | B5+1 |  | xls
+G6 | F6-E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)="","","-") | 0 | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
+B46 | 1 | Số lượng tồn cuối kỳ trên báo cáo BC26/AC không khớp với số… | xls
+C46 | 'BC26'!Z24 | Số lượng tồn cuối kỳ trên báo cáo BC26/AC không khớp với số… | xls
+B47 | 1 | Số lượng tồn cuối kỳ trên báo cáo BC26/AC không khớp với số… | xls
+C47 | 'BC26'!Z24 | Số lượng tồn cuối kỳ trên báo cáo BC26/AC không khớp với số… | xls
 => 29 cell công thức trong file này
 
+MaFile: BC7_AC
+VersionXML: 2.0.0
+Class: BlpBcAc26Nckt200
+MenuID: 14
+Nguồn sha256: ad93af924d2f1d997d11bbb371a2f9e8ba4a241e9c481e123fe5089f4db75767
+Generator: render_cong_thuc.py@1.0.0
 === FILE: BC26_AC_BLP_v2.0.0_mau.xls1 ===
---- Sheet "01" ---
-I6: IF(Header!V30<>"M","Quý " & Header!V47 & " năm " & Header!V48, "Tháng " & Header!V46 & " năm " & Header!V48)
-E7: TRIM(Header!C3)
-E9: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2)) & IF(ISBLANK(Header!M2),"",Header!M2) & IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
-E11: TRIM(Header!C4) & " - " & TRIM(Header!C5) & " - " & TRIM(Header!C6)
-AB16: AB24
-B22: B21+1
-K30: Header!T5
-Q34: "Ngày " & MID(TRIM(K32),1,2) &" tháng " &MID(TRIM(K32),4,2) & " năm " & MID(TRIM(K32),7,4)
-D40: E30
-Q40: TRIM(K30)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)="","","-")
-T8: CONCATENATE(1)
+## sheet: 01
+I6 | IF(Header!V30<>"M",   "Quý "& Header!V47& " năm "& Header!V48,    "Tháng "& Header!V46& " năm "& Header!V48) |  | xls1
+E7 | TRIM(Header!C3) | 1. Tên đơn vị: | xls1
+E9 | TRIM(  IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))& IF(ISBLANK(Header!M2),"",Header!M2)& IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2))) | 2. Mã số thuế: | xls1
+E11 |     TRIM(Header!C4)& " - "& TRIM(Header!C5)& " - "& TRIM(Header!C6) | 3. Địa chỉ: | xls1
+AB16 | AB24 | Tồn cuối kỳ | xls1
+B22 | B21+1 | chk | xls1
+K30 | Header!T5 | Người ký: | xls1
+Q34 |      "Ngày "& MID(TRIM(K32),1,2)&" tháng "&MID(TRIM(K32),4,2)& " năm "& MID(TRIM(K32),7,4) |  | xls1
+D40 | E30 |  | xls1
+Q40 | TRIM(K30) |  | xls1
+## sheet: KHBS
+B6 | B5+1 |  | xls1
+G6 | F6-E6 |  | xls1
+E8 | SUM(E5:E7) | Tổng cộng | xls1
+F8 | SUM(F5:F7) | Tổng cộng | xls1
+G8 | SUM(G5:G7) | Tổng cộng | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)="","","-") | 0 | xls1
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls1
 => 17 cell công thức trong file này
 
+MaFile: BC7_AC
+VersionXML: 2.1.6
+Class: -
+MenuID: 14
+Nguồn sha256: b54ca1da30ee6e11ecb377f6325f25d8c5627d530a4cf4113ac3648708c0666c
+Generator: render_cong_thuc.py@1.0.0
 === FILE: BC26_AC_BLP_v2.1.6_mau.xls ===
---- Sheet "01" ---
-I6: IF(Header!V30<>"M","Quý " & Header!V47 & " năm " & Header!V48, "Tháng " & Header!V46 & " năm " & Header!V48)
-E7: TRIM(Header!C3)
-E9: TRIM(IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2)) & IF(ISBLANK(Header!M2),"",Header!M2) & IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2)))
-E11: TRIM(Header!C4) & " - " & TRIM(Header!C5) & " - " & TRIM(Header!C6)
-AB16: AB24
-B22: B21+1
-K30: Header!T5
-Q34: "Ngày " & MID(TRIM(K32),1,2) &" tháng " &MID(TRIM(K32),4,2) & " năm " & MID(TRIM(K32),7,4)
-D40: E30
-Q40: TRIM(K30)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)="","","-")
-T8: CONCATENATE(1)
+## sheet: 01
+I6 | IF(Header!V30<>"M",   "Quý "& Header!V47& " năm "& Header!V48,    "Tháng "& Header!V46& " năm "& Header!V48) |  | xls
+E7 | TRIM(Header!C3) | 1. Tên đơn vị: | xls
+E9 | TRIM(  IF(ISBLANK(Header!C2),"",TRIM(Header!C2))&IF(ISBLANK(Header!D2),"",TRIM(Header!D2))&IF(ISBLANK(Header!E2),"",TRIM(Header!E2))&IF(ISBLANK(Header!F2),"",TRIM(Header!F2))&IF(ISBLANK(Header!G2),"",TRIM(Header!G2))&IF(ISBLANK(Header!H2),"",TRIM(Header!H2))&IF(ISBLANK(Header!I2),"",TRIM(Header!I2))&IF(ISBLANK(Header!J2),"",TRIM(Header!J2))&IF(ISBLANK(Header!K2),"",TRIM(Header!K2))&IF(ISBLANK(Header!L2),"",TRIM(Header!L2))& IF(ISBLANK(Header!M2),"",Header!M2)& IF(ISBLANK(Header!N2),"",TRIM(Header!N2))&IF(ISBLANK(Header!O2),"",TRIM(Header!O2))&IF(ISBLANK(Header!P2),"",TRIM(Header!P2))) | 2. Mã số thuế: | xls
+E11 |     TRIM(Header!C4)& " - "& TRIM(Header!C5)& " - "& TRIM(Header!C6) | 3. Địa chỉ: | xls
+AB16 | AB24 | Tồn cuối kỳ | xls
+B22 | B21+1 | chk | xls
+K30 | Header!T5 | Người ký: | xls
+Q34 |      "Ngày "& MID(TRIM(K32),1,2)&" tháng "&MID(TRIM(K32),4,2)& " năm "& MID(TRIM(K32),7,4) |  | xls
+D40 | E30 |  | xls
+Q40 | TRIM(K30) |  | xls
+## sheet: KHBS
+B6 | B5+1 |  | xls
+G6 | F6-E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)="","","-") | 0 | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
 => 17 cell công thức trong file này
 
+MaFile: -
+VersionXML: -
+Class: -
+MenuID: -
+Nguồn sha256: d1d6f2942f7a34fb2b8906c06cdabef1483477cd9004cc8cf0136cd20fb926ef
+Generator: render_cong_thuc.py@1.0.0
 === FILE: bao_cao_bc26_ac_blp.xls ===
---- Sheet "BC26" ---
-E5: IF(#REF!V30<>"M","Kỳ báo cáo: Quý "&#REF!V47&" năm "&#REF!V48,"Kỳ báo cáo: Tháng "&#REF!V46&" năm "&#REF!V48)
-E6: "("&" từ "&#REF!V32&" đến "&#REF!V33&")"
-E7: TRIM(#REF!C3)
-E9: TRIM(IF(ISBLANK(#REF!C2),"",TRIM(#REF!C2))&IF(ISBLANK(#REF!D2),"",TRIM(#REF!D2))&IF(ISBLANK(#REF!E2),"",TRIM(#REF!E2))&IF(ISBLANK(#REF!F2),"",TRIM(#REF!F2))&IF(ISBLANK(#REF!G2),"",TRIM(#REF!G2))&IF(ISBLANK(#REF!H2),"",TRIM(#REF!H2))&IF(ISBLANK(#REF!I2),"",TRIM(#REF!I2))&IF(ISBLANK(#REF!J2),"",TRIM(#REF!J2))&IF(ISBLANK(#REF!K2),"",TRIM(#REF!K2))&IF(ISBLANK(#REF!L2),"",TRIM(#REF!L2))&IF(ISBLANK(#REF!M2),"",#REF!M2)&IF(ISBLANK(#REF!N2),"",TRIM(#REF!N2))&IF(ISBLANK(#REF!O2),"",TRIM(#REF!O2))&IF(ISBLANK(#REF!P2),"",TRIM(#REF!P2)))
-E11: TRIM(#REF!C4)
-E13: TRIM(#REF!V32)
-F13: TRIM(#REF!V33)
-AB16: AB28
-D22: IF(ISNA(""&VLOOKUP(C22,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C22,Data!$B$4:$C$5,2,FALSE))
-E22: TRIM(C22)
-N22: P22+Q22+S22+U22
-D23: IF(ISNA(""&VLOOKUP(C23,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C23,Data!$B$4:$C$5,2,FALSE))
-E23: TRIM(C23)
-N23: P23+Q23+S23+U23
-D24: IF(ISNA(""&VLOOKUP(C24,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C24,Data!$B$4:$C$5,2,FALSE))
-E24: TRIM(C24)
-N24: P24+Q24+S24+U24
-D25: IF(ISNA(""&VLOOKUP(C25,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C25,Data!$B$4:$C$5,2,FALSE))
-E25: TRIM(C25)
-N25: P25+Q25+S25+U25
-D26: IF(ISNA(""&VLOOKUP(C26,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C26,Data!$B$4:$C$5,2,FALSE))
-E26: TRIM(C26)
-N26: P26+Q26+S26+U26
-G28: SUM(G21:G27)
-N28: SUM(N21:N27)
-Q28: SUM(Q21:Q27)
-S28: SUM(S21:S27)
-U28: SUM(U21:U27)
-Z28: SUM(Z21:Z27)
-AB28: SUM(AB21:AB27)
-N34: TRIM(#REF!V41)
-N36: TRIM(#REF!V42)
---- Sheet "Data" ---
-(không có cell công thức)
---- Sheet "Sheet1" ---
-(không có cell công thức)
+## sheet: BC26
+E5 | IF(#REF!<>"M","Kỳ báo cáo: Quý "&#REF!&" năm "&#REF!,"Kỳ báo cáo: Tháng "&#REF!&" năm "&#REF!) |  | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 29, "col": 21, "ref_a1": "V30"}, {"token_index": 5, "ptg": "0x3A", "row": 46, "col": 21, "ref_a1": "V47"}, {"token_index": 9, "ptg": "0x3A", "row": 47, "col": 21, "ref_a1": "V48"}, {"token_index": 13, "ptg": "0x3A", "row": 45, "col": 21, "ref_a1": "V46"}, {"token_index": 17, "ptg": "0x3A", "row": 47, "col": 21, "ref_a1": "V48"}]
+E6 | "("&" từ "&#REF!&" đến "&#REF!&")" |  | xls | mất tham chiếu: [{"token_index": 3, "ptg": "0x3A", "row": 31, "col": 21, "ref_a1": "V32"}, {"token_index": 7, "ptg": "0x3A", "row": 32, "col": 21, "ref_a1": "V33"}]
+E7 | TRIM(#REF!) | [02]Tên đơn vị: | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 2, "col": 2, "ref_a1": "C3"}]
+E9 | TRIM(IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",#REF!)&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))&IF(ISBLANK(#REF!),"",TRIM(#REF!))) | [03] Mã số thuế: | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 1, "col": 2, "ref_a1": "C2"}, {"token_index": 5, "ptg": "0x3A", "row": 1, "col": 2, "ref_a1": "C2"}, {"token_index": 9, "ptg": "0x3A", "row": 1, "col": 3, "ref_a1": "D2"}, {"token_index": 14, "ptg": "0x3A", "row": 1, "col": 3, "ref_a1": "D2"}, {"token_index": 19, "ptg": "0x3A", "row": 1, "col": 4, "ref_a1": "E2"}, {"token_index": 24, "ptg": "0x3A", "row": 1, "col": 4, "ref_a1": "E2"}, {"token_index": 29, "ptg": "0x3A", "row": 1, "col": 5, "ref_a1": "F2"}, {"token_index": 34, "ptg": "0x3A", "row": 1, "col": 5, "ref_a1": "F2"}, {"token_index": 39, "ptg": "0x3A", "row": 1, "col": 6, "ref_a1": "G2"}, {"token_index": 44, "ptg": "0x3A", "row": 1, "col": 6, "ref_a1": "G2"}, {"token_index": 49, "ptg": "0x3A", "row": 1, "col": 7, "ref_a1": "H2"}, {"token_index": 54, "ptg": "0x3A", "row": 1, "col": 7, "ref_a1": "H2"}, {"token_index": 59, "ptg": "0x3A", "row": 1, "col": 8, "ref_a1": "I2"}, {"token_index": 64, "ptg": "0x3A", "row": 1, "col": 8, "ref_a1": "I2"}, {"token_index": 69, "ptg": "0x3A", "row": 1, "col": 9, "ref_a1": "J2"}, {"token_index": 74, "ptg": "0x3A", "row": 1, "col": 9, "ref_a1": "J2"}, {"token_index": 79, "ptg": "0x3A", "row": 1, "col": 10, "ref_a1": "K2"}, {"token_index": 84, "ptg": "0x3A", "row": 1, "col": 10, "ref_a1": "K2"}, {"token_index": 89, "ptg": "0x3A", "row": 1, "col": 11, "ref_a1": "L2"}, {"token_index": 94, "ptg": "0x3A", "row": 1, "col": 11, "ref_a1": "L2"}, {"token_index": 99, "ptg": "0x3A", "row": 1, "col": 12, "ref_a1": "M2"}, {"token_index": 104, "ptg": "0x3A", "row": 1, "col": 12, "ref_a1": "M2"}, {"token_index": 108, "ptg": "0x3A", "row": 1, "col": 13, "ref_a1": "N2"}, {"token_index": 113, "ptg": "0x3A", "row": 1, "col": 13, "ref_a1": "N2"}, {"token_index": 118, "ptg": "0x3A", "row": 1, "col": 14, "ref_a1": "O2"}, {"token_index": 123, "ptg": "0x3A", "row": 1, "col": 14, "ref_a1": "O2"}, {"token_index": 128, "ptg": "0x3A", "row": 1, "col": 15, "ref_a1": "P2"}, {"token_index": 133, "ptg": "0x3A", "row": 1, "col": 15, "ref_a1": "P2"}]
+E11 | TRIM(#REF!) | [04] Địa chỉ | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 3, "col": 2, "ref_a1": "C4"}]
+E13 | TRIM(#REF!) | 1 | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 31, "col": 21, "ref_a1": "V32"}]
+F13 | TRIM(#REF!) | 1 | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 32, "col": 21, "ref_a1": "V33"}]
+AB16 | AB28 | Tồn cuối kỳ | xls
+D22 | IF(ISNA(""&VLOOKUP(C22,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C22,Data!$B$4:$C$5,2,FALSE)) | cbo | xls
+E22 | TRIM(C22) | cbo | xls
+N22 | P22+Q22+S22+U22 | cbo | xls
+D23 | IF(ISNA(""&VLOOKUP(C23,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C23,Data!$B$4:$C$5,2,FALSE)) | cbo | xls
+E23 | TRIM(C23) | cbo | xls
+N23 | P23+Q23+S23+U23 | cbo | xls
+D24 | IF(ISNA(""&VLOOKUP(C24,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C24,Data!$B$4:$C$5,2,FALSE)) | cbo | xls
+E24 | TRIM(C24) | cbo | xls
+N24 | P24+Q24+S24+U24 | cbo | xls
+D25 | IF(ISNA(""&VLOOKUP(C25,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C25,Data!$B$4:$C$5,2,FALSE)) | cbo | xls
+E25 | TRIM(C25) | cbo | xls
+N25 | P25+Q25+S25+U25 | cbo | xls
+D26 | IF(ISNA(""&VLOOKUP(C26,Data!$B$4:$C$5,2,FALSE)),"",""&VLOOKUP(C26,Data!$B$4:$C$5,2,FALSE)) | cbo | xls
+E26 | TRIM(C26) | cbo | xls
+N26 | P26+Q26+S26+U26 | cbo | xls
+G28 | SUM(G21:G27) | Tổng cộng | xls
+N28 | SUM(N21:N27) | Tổng cộng | xls
+Q28 | SUM(Q21:Q27) | Tổng cộng | xls
+S28 | SUM(S21:S27) | Tổng cộng | xls
+U28 | SUM(U21:U27) | Tổng cộng | xls
+Z28 | SUM(Z21:Z27) | Tổng cộng | xls
+AB28 | SUM(AB21:AB27) | Tổng cộng | xls
+N34 | TRIM(#REF!) | Thủ trưởng đơn vị : | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 40, "col": 21, "ref_a1": "V41"}]
+N36 | TRIM(#REF!) | Ngày lập báo cáo: | xls | mất tham chiếu: [{"token_index": 0, "ptg": "0x3A", "row": 41, "col": 21, "ref_a1": "V42"}]
 => 32 cell công thức trong file này
-
-
-TỔNG CỘNG: 95 cell công thức trong 4 file

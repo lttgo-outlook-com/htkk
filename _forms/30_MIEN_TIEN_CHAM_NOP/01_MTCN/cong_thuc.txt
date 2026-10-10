@@ -1,136 +1,83 @@
-CÔNG THỨC TÍNH (human-readable) — 01_MTCN (30_MIEN_TIEN_CHAM_NOP)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-1 version (v2.5.0), gồm cặp .xls + .xls1; .xls = lớp công thức (khối nội dung + kiểm tra), .xls1 = lớp prefill/hiển thị (đoạn văn của đơn).
-
-## File 01_MTCN_v2.5.0_mau.xls
-
-### Sheet "01"
-- [K5] (không có nhãn) = TRIM(Header!C3) — tên người nộp thuế (pattern lặp 3 ô trong khối thông tin)
-- [K7] (không có nhãn) = nối 13 đoạn Header!C2..P2, mỗi đoạn TRIM (khoảng trắng nếu ISBLANK) — mã số thuế
-- [K9] (không có nhãn) = TRIM(Header!C4) + " - " + TRIM(Header!C5) + " - " + TRIM(Header!C6) — địa chỉ (đường/phường/tỉnh)
-- [G11] Điện thoại = TRIM(Header!C7); [O11] E-mail = TRIM(Header!C9)
-- [B50] (không có nhãn) = TRIM(Header!C3) + " đề nghị " + TRIM(G4) + " miễn tiền chậm nộp phát sinh trong năm 2020 và năm 2021 còn nợ theo Nghị quyết số 406/NQ-UBTVQH15 do phát sinh lỗ trong kỳ tính thuế năm 2020 với số tiền là:" — câu nội dung chính của đơn
-- [J51] (không có nhãn) = " đồng (Viết bằng chữ: " + AD51 + ")."
-- [D53] (không có nhãn) = TRIM(Header!C3) + " xin gửi kèm các tài liệu (nếu có):"
-- [Q184] Người ký = TRIM(Header!V41); [Q186] Ngày ký = Header!V42 nếu có, bằng không trống
-- [D188, G188] Cờ chính thức/bổ sung (khối chữ ký) = "1" tuỳ Header!V29 trống hay có; [K188] Lần = Header!V29; [P188] Từ tháng = TRIM(Header!V34); [S188] đến tháng = TRIM(Header!V35)
-
-### Sheet "KHBS" (khối hồ sơ)
-- [B6] STT tiếp = B5+1
-- [G6] (không có nhãn) = F6 − E6 (hiệu hai cột cùng dòng)
-- [E8, F8, G8] Tổng cộng = SUM(E5:E7), SUM(F5:F7), SUM(G5:G7) (tổng từng cột 3 dòng)
-
-### Sheet "Header"
-- [M2] = " " nếu N2&O2&P2 trống, bằng không " - "; [T8] "nguoi ky" = CONCATENATE(1)
-- [B15] Cờ "0" nếu 01!K9 rỗng, "1" nếu có; [C15] = 01!K9 (bản sao)
-- [B16] Cờ "0" nếu 01!G11 rỗng; [C16] = 01!G11
-- [B17] Cờ "0" nếu 01!O11 rỗng; [C17] = 01!O11
-- [B18] Cờ "0" nếu 01!K13 rỗng; [C18] = 01!K13
-- [B19] Cờ "0" nếu 01!K15 rỗng; [C19] = 01!K15
-- [B20] Cờ "0" nếu 01!D51 = 0; [C20] = 01!D51 (số tiền đề nghị miễn)
-
-## File 01_MTCN_v2.5.0_mau.xls1 (lớp prefill/hiển thị)
-
-### Sheet "01"
-- [C2, J11] (không có nhãn) = TRIM(Header!C3) — tên NNT (lặp 2 chỗ)
-- [C4] (không có nhãn) = "Số: " + AJ4 (số văn bản)
-- [N7] (không có nhãn) = AJ75 + ", Ngày " + MID(TRIM(S66),1,2) + " tháng " + MID(TRIM(S66),4,2) + " năm " + MID(TRIM(S66),7,4) — nơi + ngày (tách ngày từ S66)
-- [J12] Mã số thuế = nối 13 đoạn Header!C2..P2 (TRIM, khoảng trắng nếu ISBLANK)
-- [J14, S14] Số điện thoại = TRIM(Header!C7)
-- [C48] (không có nhãn) = "        " + TRIM(Header!C3) + " đề nghị " + TRIM(J9) + " miễn tiền chậm nộp phát sinh trong năm 2020 và năm 2021 còn nợ theo Nghị quyết số 406/NQ-UBTVQH15 do phát sinh lỗ trong kỳ tính thuế năm 2020 với số tiền là:  " + AJ48 + " đồng" — đoạn văn chính của đơn
-- [C49] = "(Viết bằng chữ: " + AI48 + "). "
-- [C51] = TRIM(Header!C3) + " xin gửi kèm các tài liệu (nếu có):"
-- [C53, C54] = "( " + B53 + " )" và "( " + B54 + " )" — đặt tên tài liệu kèm theo trong ngoặc
-- [D65, G65] Cờ chính thức/bổ sung = "1" tuỳ Header!V29; [K65] Lần = V29; [P65] Từ tháng = TRIM(V34); [S65] đến tháng = TRIM(V35)
-- [C68] = "        " + TRIM(Header!C3) + " xin chịu trách nhiệm trước pháp luật về tính chính xác của kết quả sản xuất kinh doanh nêu trên./."
-- [N69] (không có nhãn) = AJ75 + " ,Ngày " + MID(TRIM(S66),...) — nơi + ngày (khối chữ ký)
-
-### Sheet "KHBS"
-- [B6] STT tiếp = B5+1; [G6] = F6 − E6; [E8, F8, G8] Tổng cộng = SUM(E5:E7)/SUM(F5:F7)/SUM(G5:G7) (giống hệt .xls)
-
-### Sheet "Header"
-- [M2] = " " nếu N2&O2&P2 trống, bằng không " - "; [T8] = CONCATENATE(1)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 01_MTCN
-Thư mục: 30_MIEN_TIEN_CHAM_NOP/01_MTCN (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 01_MTCN
+VersionXML: 2.5.0
+Class: Mtcn01Nckt250
+MenuID: M5
+Nguồn sha256: 4b90e4a9449807d26bff56886bd30efcf0c287b06969bbf49dbfb93657850d3d
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 01_MTCN_v2.5.0_mau.xls ===
---- Sheet "01" ---
-K5: TRIM(Header!C3)
-K7: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-K9: TRIM(Header!C4)&" - " & TRIM(Header!C5) & " - " & TRIM(Header!C6)
-G11: TRIM(Header!C7)
-O11: TRIM(Header!C9)
-B50: TRIM(Header!C3) &" đề nghị "& TRIM(G4) &" miễn tiền chậm nộp phát sinh trong năm 2020 và năm 2021 còn nợ theo Nghị quyết số 406/NQ-UBTVQH15 do phát sinh lỗ trong kỳ tính thuế năm 2020 với số tiền là:"
-J51: " đồng (Viết bằng chữ: " & AD51 & ")."
-D53: TRIM(Header!C3) & " xin gửi kèm các tài liệu (nếu có):"
-Q184: TRIM(Header!V41)
-Q186: IF(Header!V42<>"",Header!V42,"")
-D188: IF(Header!V29="","1","")
-G188: IF(Header!V29="","","1")
-K188: IF(Header!V29="","",Header!V29)
-P188: TRIM(Header!V34)
-S188: TRIM(Header!V35)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
-B15: IF(TRIM(01!K9)="",0,1)
-C15: 01!K9
-B16: IF(TRIM(01!G11)="",0,1)
-C16: 01!G11
-B17: IF(TRIM(01!O11)="",0,1)
-C17: 01!O11
-B18: IF(TRIM(01!K13)="",0,1)
-C18: 01!K13
-B19: IF(TRIM(01!K15)="",0,1)
-C19: 01!K15
-B20: IF(01!D51=0,0,1)
-C20: 01!D51
+## sheet: 01
+K5 | TRIM(Header!C3) | Tên người nộp thuế: | xls
+K7 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+K9 |    TRIM(Header!C4)&" - "& TRIM(Header!C5)& " - "& TRIM(Header!C6) | Địa chỉ nhận thông báo: | xls
+G11 | TRIM(Header!C7) | E-mail: | xls
+O11 | TRIM(Header!C9) | E-mail: | xls
+B50 |   TRIM(Header!C3)&" đề nghị "& TRIM(G4)&" miễn tiền chậm nộp phát sinh trong năm 2020 và năm 2021 còn nợ theo Nghị quyết số 406/NQ-UBTVQH15 do phát sinh lỗ trong kỳ tính thuế năm 2020 với số tiền là:" |  | xls
+J51 |   " đồng (Viết bằng chữ: "& AD51& ")." | Hai trăm nghìn | xls
+D53 |  TRIM(Header!C3)& " xin gửi kèm các tài liệu (nếu có):" |  | xls
+Q184 | TRIM(Header!V41) | Người ký: | xls
+Q186 | IF(Header!V42<>"",Header!V42,"") | Ngày ký: | xls
+D188 | IF(Header!V29="","1","") | Chinh thuc | xls
+G188 | IF(Header!V29="","","1") | Bo sung | xls
+K188 | IF(Header!V29="","",Header!V29) | Lan | xls
+P188 | TRIM(Header!V34) | Từ tháng | xls
+S188 | TRIM(Header!V35) | đến tháng | xls
+## sheet: KHBS
+B6 | B5+1 |  | xls
+G6 | F6-E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls
+B15 | IF(TRIM('01'!K9)="",0,1) | Dữ liệu bắt buộc nhập. Bạn vui lòng vào mục Thông tin chung… | xls
+C15 | '01'!K9 | Dữ liệu bắt buộc nhập. Bạn vui lòng vào mục Thông tin chung… | xls
+B16 | IF(TRIM('01'!G11)="",0,1) | Dữ liệu bắt buộc nhập. Bạn vui lòng vào mục Thông tin chung… | xls
+C16 | '01'!G11 | Dữ liệu bắt buộc nhập. Bạn vui lòng vào mục Thông tin chung… | xls
+B17 | IF(TRIM('01'!O11)="",0,1) | Dữ liệu bắt buộc nhập. Bạn vui lòng vào mục Thông tin chung… | xls
+C17 | '01'!O11 | Dữ liệu bắt buộc nhập. Bạn vui lòng vào mục Thông tin chung… | xls
+B18 | IF(TRIM('01'!K13)="",0,1) | Dữ liệu bắt buộc nhập | xls
+C18 | '01'!K13 | Dữ liệu bắt buộc nhập | xls
+B19 | IF(TRIM('01'!K15)="",0,1) | Dữ liệu bắt buộc nhập | xls
+C19 | '01'!K15 | Dữ liệu bắt buộc nhập | xls
+B20 | IF('01'!D51=0,0,1) | Dữ liệu bắt buộc nhập | xls
+C20 | '01'!D51 | Dữ liệu bắt buộc nhập | xls
 => 34 cell công thức trong file này
 
+MaFile: 01_MTCN
+VersionXML: 2.5.0
+Class: Mtcn01Nckt250
+MenuID: M5
+Nguồn sha256: e778b6735d772f1c7666c628c2704f74632c9fc71960ff0eb4341a3dbdd7326b
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 01_MTCN_v2.5.0_mau.xls1 ===
---- Sheet "01" ---
-C2: TRIM(Header!C3)
-C4: "Số: "&AJ4
-N7: AJ75 &", Ngày " & MID(TRIM(S66),1,2) &" tháng " &MID(TRIM(S66),4,2) & " năm " & MID(TRIM(S66),7,4)
-J11: TRIM(Header!C3)
-J12: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-J14: TRIM(Header!C7)
-S14: TRIM(Header!C7)
-C48: "        " &TRIM(Header!C3) & " đề nghị " &TRIM(J9) & " miễn tiền chậm nộp phát sinh trong năm 2020 và năm 2021 còn nợ theo Nghị quyết số 406/NQ-UBTVQH15 do phát sinh lỗ trong kỳ tính thuế năm 2020 với số tiền là:  "&AJ48 & " đồng"
-C49:  "(Viết bằng chữ: "&AI48 &"). "
-C51: TRIM(Header!C3) & " xin gửi kèm các tài liệu (nếu có):"
-C53:  "( "&B53 & " )"
-C54:  "( "&B54 & " )"
-D65: IF(Header!V29="","1","")
-G65: IF(Header!V29="","","1")
-K65: IF(Header!V29="","",Header!V29)
-P65: TRIM(Header!V34)
-S65: TRIM(Header!V35)
-C68: "        "&TRIM(Header!C3) & " xin chịu trách nhiệm trước pháp luật về tính chính xác của kết quả sản xuất kinh doanh nêu trên./."
-N69: AJ75 &" ,Ngày " & MID(TRIM(S66),1,2) &" tháng " &MID(TRIM(S66),4,2) & " năm " & MID(TRIM(S66),7,4)
---- Sheet "KHBS" ---
-B6: B5+1
-G6: F6-E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-T8: CONCATENATE(1)
+## sheet: 01
+C2 | TRIM(Header!C3) | CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM | xls1
+C4 | "Số: "&AJ4 | Độc lập - Tự do - Hạnh phúc | xls1
+N7 |       AJ75&", Ngày "& MID(TRIM(S66),1,2)&" tháng "&MID(TRIM(S66),4,2)& " năm "& MID(TRIM(S66),7,4) | V/v: Đề nghị miễn tiền chậm nộp | xls1
+J11 | TRIM(Header!C3) | Tên người nộp thuế: | xls1
+J12 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls1
+J14 | TRIM(Header!C7) | E-mail: | xls1
+S14 | TRIM(Header!C7) | E-mail: | xls1
+C48 |      "        "&TRIM(Header!C3)& " đề nghị "&TRIM(J9)& " miễn tiền chậm nộp phát sinh trong năm 2020 và năm 2021 còn nợ theo Nghị quyết số 406/NQ-UBTVQH15 do phát sinh lỗ trong kỳ tính thuế năm 2020 với số tiền là:  "&AJ48& " đồng" | 100.000.000 | xls1
+C49 |   "(Viết bằng chữ: "&AI48&"). " |  | xls1
+C51 |  TRIM(Header!C3)& " xin gửi kèm các tài liệu (nếu có):" |  | xls1
+C53 |   "( "&B53& " )" |  | xls1
+C54 |   "( "&B54& " )" |  | xls1
+D65 | IF(Header!V29="","1","") | Chinh thuc | xls1
+G65 | IF(Header!V29="","","1") | Bo sung | xls1
+K65 | IF(Header!V29="","",Header!V29) | Lan | xls1
+P65 | TRIM(Header!V34) | Từ tháng | xls1
+S65 | TRIM(Header!V35) | đến tháng | xls1
+C68 |  "        "&TRIM(Header!C3)& " xin chịu trách nhiệm trước pháp luật về tính chính xác của kết quả sản xuất kinh doanh nêu trên./." |  | xls1
+N69 |       AJ75&" ,Ngày "& MID(TRIM(S66),1,2)&" tháng "&MID(TRIM(S66),4,2)& " năm "& MID(TRIM(S66),7,4) |  | xls1
+## sheet: KHBS
+B6 | B5+1 |  | xls1
+G6 | F6-E6 |  | xls1
+E8 | SUM(E5:E7) | Tổng cộng | xls1
+F8 | SUM(F5:F7) | Tổng cộng | xls1
+G8 | SUM(G5:G7) | Tổng cộng | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls1
+T8 | CONCATENATE(1) | Quận / huyện ĐL | xls1
 => 26 cell công thức trong file này
-
-
-TỔNG CỘNG: 60 cell công thức trong 2 file

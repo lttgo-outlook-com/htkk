@@ -1,322 +1,253 @@
-CÔNG THỨC TÍNH (human-readable) — 4_B01_01 (06_BCTC)
-Bản tóm tắt có nhãn bằng tiếng Việt; chi tiết từng cell ở cong_thuc.txt.
-Chỉ có 1 version file (4_b01_01_bctc_tt24_290), gồm cặp .xls (lớp tính) và .xls1 (lớp prefill — nhưng .xls1 cũng mang đầy đủ công thức tính, gần như lặp lại .xls). BCTC năm theo TT24 (dòng nhãn 100–300 / 400–525 / 610–700).
-
-## File 4_b01_01_bctc_tt24_290.xls
-
-### Sheet "01" (tờ khai chính — bảng cân đối)
-- [C3] "Tại ngày " + ngày/tháng/năm tách từ Header!V33
-- [G12] Đơn vị báo cáo = TRIM(Header!C3); [G14] Mã số thuế = nối 15 đoạn C2..P2 của sheet Header (mỗi đoạn TRIM, đoạn trống thành khoảng trắng)
-- [G16, H122] Tên đại lý thuế = TRIM(Header!V6); [G18] Mã số thuế của đại lý = TRIM(Header!V5)
-- Cột R (cột 1) và cột W (cột 2), dòng theo nhãn:
-  - [R48, W48] 100 = 110+120+130+140+150 (R49+R50+R53+R59+R62)
-  - [R50, W50] 120 = 2 dòng; [R53, W53] 130 = SUM(dòng 54:58, 5 dòng)
-  - [R59, W59] 140 = 2 dòng (R60+R61)
-  - [R63, W63] 160 = 6 dòng (R64+R67+R72+R79+R86+R90)
-  - [R64, W64] 170 = 2 dòng; [R67, W67] 180 = SUM(dòng 68:71); [R72, W72] 190 = 2 dòng
-  - [R73, W73] 191 = 2 dòng; [R76, W76] 194 = 2 dòng
-  - [R79, W79] 200 = 2 dòng; [R80, W80] 201 = 2 dòng; [R83, W83] 204 = 2 dòng
-  - [R86, W86] 210 = SUM(dòng 87:89)
-  - [R91, W91] 230 (tổng tài sản) = 100+160 (R48+R63)
-  - [R93, W93] 240 = 2 dòng (R94+R102); [R94, W94] 250 = SUM(dòng 95:101, 7 dòng)
-  - [R102, W102] 260 = SUM(dòng 103:107); [R108, W108] 280 = SUM(dòng 109:113, 5 dòng)
-  - [R114, W114] 300 (tổng nguồn vốn) = 240+280 (R93+R108)
-- [R116] Người đại diện theo pháp luật = Header!V41; [R118] Ngày lập = Header!V42
-- [H120] Chứng chỉ hành nghề số = TRIM(Header!V16)
-- [F124] Từ ngày = Header!V32; [H124] đến ngày = Header!V33
-
-### Sheet "01-1" (bảng phụ 1, dòng 400–525)
-- [C3] "Năm " + Header!V48
-- [E4] Tên cơ quan cấp trên = 01!G10; [E6] Người nộp thuế = TRIM(Header!C3); [E8] Mã số thuế = nối 15 đoạn C2..P2 (như sheet 01); [E10] Tên đại lý thuế = TRIM(Header!V6); [E12] mã số đại lý = TRIM(Header!V5)
-- Cột N (cột 1), O (cột 2), Q (cột 3), dòng theo nhãn:
-  - [N27, O27, Q27] 400 = SUM(dòng 28:33) + dòng 36
-  - [N33, O33, Q33] 416 = 2 dòng; [N37, O37, Q37] 450 = SUM(dòng 38:45, 8 dòng)
-  - [N47, O47, Q47] 500 = 400 − 450 − dòng 46 (N27−N37−N46)
-  - [N49, O49, Q49] 520 = 2 dòng; [N52, O52, Q52] 525 = 520 − 2 dòng (N49−N50−N51)
-
-### Sheet "01-2" (lưu chuyển tiền tệ, dòng 610–700)
-- [C3] "Năm " + Header!V48; khối tên NNT/cơ quan cấp trên/đại lý giống sheet 01-1
-- Cột K (cột 1), L (cột 2), M (cột 3), dòng theo nhãn:
-  - [K28, L28, M28] 610 = SUM(dòng 29:33) + (dòng 36:37)
-  - [K33, L33, M33] 615 = 2 dòng; [K38, L38, M38] 620 = SUM(dòng 39:43, 5 dòng)
-  - [K44, L44, M44] 630 - Lưu chuyển tiền thuần từ hoạt động chính = 610+620 (K28+K38)
-  - [K52, L52, M52] 650 = SUM(dòng 46:51, 6 dòng)
-  - [K59, L59, M59] 670 = SUM(dòng 54:58, 5 dòng)
-  - [K60, L60, M60] 680 = 630+650+670 (K44+K52+K59)
-  - [K63, L63, M63] 700 = 680 + 2 dòng (K60+K61+K62)
-
-### Sheet "KHBS" (khối hồ sơ)
-- [B6] = B5:B5+1, [G6] = F6:F6-E6:E6 — 2 công thức LẠC MÂU trong template gốc (không phải phép cộng bình thường; giữ nguyên như vậy)
-- [E8, F8, G8] Tổng cộng = SUM(dòng 5:7) từng cột
-
-### Sheet "Header"
-- [M2] " - " nếu cả 3 ô N2, O2, P2 trống
-- Các ô cờ kiểm tra (cột B = "0"/"1", cột C = giá trị nguồn): B15 = 4 ô tên/địa chỉ C3..C6 có nhập; B18 = 01!R114 <> 01!R91 (300 ≠ 230, tổng nguồn vốn ≠ tổng tài sản); B19 = 01!R114 = 0 (tổng nguồn vốn bằng 0); B21 = 01!W114 <> 01!W91 (tương tự cột W); C18/C19 = 01!R114, C21 = 01!W114 (giá trị nguồn)
-
-## File 4_b01_01_bctc_tt24_290.xls1 (lớp prefill/hiển thị)
-### Sheet "01"
-- Công thức tính như file .xls (cùng các dòng 100–300 ở cột R/W), khác 1 điểm: [R59, W59] 140 = 7 dòng (R49+R50+R53+R55+R56+R57+R58) thay vì 2 dòng như .xls
-- Prefill: [F7] ĐƠN VỊ BÁO CÁO = Header!C3 (không TRIM); [C25] "Tại ngày " + ngày tách từ Header!V33; [S125] "Lập, ngày " + ngày tách từ Header!V33
-### Sheet "01-1"
-- Công thức tính như file .xls (cùng các dòng 400–525)
-- Prefill: [D6] TÊN CƠ QUAN CẤP TRÊN = TRIM(01!G6); [B7] "ĐƠN VỊ BÁO CÁO: " + Header!C3; [B23] "Năm " + năm tách từ Header!V33; [N54] "Lập, ngày " + ngày tách từ Header!V33
-### Sheet "01-2"
-- Công thức tính như file .xls (cùng các dòng 610–700)
-- Prefill: [D6] TÊN CƠ QUAN CẤP TRÊN = TRIM(01!G6); [D7] ĐƠN VỊ BÁO CÁO = Header!C3; [C20] "Năm " + Header!V48; [K66] "Lập, ngày " + ngày tách từ Header!V33
-### Sheet "Header"
-- Như .xls nhưng chỉ có: [M2] " - " nếu N2, O2, P2 trống; B15/B18/B19 các cờ kiểm tra (không có B21)
-- (không có sheet KHBS)
-
-==============================================================================
-DƯỚI ĐÂY LÀ DANH SÁCH CELL CÔNG THỨC NGUYÊN THÔ (RAW)
-==============================================================================
-
-CÔNG THỨC TÍNH — 24_B01_01_BCTC_TT24
-Thư mục: 06_BCTC/24_B01_01_BCTC_TT24 (HTKK 5.7.9, _forms/)
-Trích xuất: 2026-10-08 — mọi cell chứa công thức trong các file Excel (mẫu CMC) của form này, theo từng file để không lẫn.
-Ghi chú: sheet "Header" = khối thông tin chung người nộp thuế; cell dạng "REF: công thức" (REF = địa chỉ ô, A1 notation, tham chiếu sheet khác dạng "Sheet!REF").
-
+MaFile: 24_B01_BCTC
+VersionXML: 2.9.0
+Class: BctcB01Tt24Nckt290
+MenuID: P8
+Nguồn sha256: 7f3ce4c14e55fe8166d3855712b3e59958c83e4430a0963030736b21a59585cc
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 24_B01_01_BCTC_TT24_v2.9.0_mau.xls ===
---- Sheet "01" ---
-C3: "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4)
-G12: TRIM(Header!C3)
-G14: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",TRIM(Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)))
-G16: TRIM(Header!V6)
-G18: TRIM(Header!V5)
-R48: R49+R50+R53+R59+R62
-W48: W49+W50+W53+W59+W62
-R50: R51+R52
-W50: W51+W52
-R53: SUM(R54:V58)
-W53: SUM(W54:AA58)
-R59: R60+R61
-W59: W60+W61
-R63: R64+R67+R72+R79+R86+R90
-W63: W64+W67+W72+W79+W86+W90
-R64: R65+R66
-W64: W65+W66
-R67: SUM(R68:V71)
-W67: SUM(W68:AA71)
-R72: R73+R76
-W72: W73+W76
-R73: R74+R75
-W73: W74+W75
-R76: R77+R78
-W76: W77+W78
-R79: R80+R83
-W79: W80+W83
-R80: R81+R82
-W80: W81+W82
-R83: R84+R85
-W83: W84+W85
-R86: SUM(R87:V89)
-W86: SUM(W87:AA89)
-R91: R48+R63
-W91: W48+W63
-R93: R94+R102
-W93: W94+W102
-R94: SUM(R95:V101)
-W94: SUM(W95:AA101)
-R102: SUM(R103:V107)
-W102: SUM(W103:AA107)
-R108: SUM(R109:V113)
-W108: SUM(W109:AA113)
-R114: R93+R108
-W114: W93+W108
-R116: Header!V41
-R118: Header!V42
-H120: TRIM(Header!V16)
-H122: TRIM(Header!V6)
-F124: Header!V32
-H124: Header!V33
---- Sheet "01-1" ---
-C3: "Năm "&Header!V48
-E4: 01!G10
-E6: TRIM(Header!C3)
-E8: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-E10: TRIM(Header!V6)
-E12: TRIM(Header!V5)
-N27: SUM(N28:N33,N36)
-O27: SUM(O28:O33,O36)
-Q27: SUM(Q28:Q33,Q36)
-N33: N34+N35
-O33: O34+O35
-Q33: Q34+Q35
-N37: SUM(N38:N45)
-O37: SUM(O38:O45)
-Q37: SUM(Q38:Q45)
-N47: N27-N37-N46
-O47: O27-O37-O46
-Q47: Q27-Q37-Q46
-N49: N47+N48
-O49: O47+O48
-Q49: Q47+Q48
-N52: N49-N50-N51
-O52: O49-O50-O51
-Q52: Q49-Q50-Q51
---- Sheet "01-2" ---
-C3: "Năm "&Header!V48
-E4: 01!G10
-E6: TRIM(Header!C3)
-E8: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))
-E10: TRIM(Header!V6)
-E12: TRIM(Header!V5)
-K28: SUM(K29:K33,K36:K37)
-L28: SUM(L29:L33,L36:L37)
-M28: SUM(M29:M33,M36:M37)
-K33: K34+K35
-L33: L34+L35
-M33: M34+M35
-K38: SUM(K39:K43)
-L38: SUM(L39:L43)
-M38: SUM(M39:M43)
-K44: K28+K38
-L44: L28+L38
-M44: M28+M38
-K52: SUM(K46:K51)
-L52: SUM(L46:L51)
-M52: SUM(M46:M51)
-K59: SUM(K54:K58)
-L59: SUM(L54:L58)
-M59: SUM(M54:M58)
-K60: K44+K52+K59
-L60: L44+L52+L59
-M60: M44+M52+M59
-K63: K60+K61+K62
-L63: L60+L61+L62
-M63: M60+M61+M62
---- Sheet "KHBS" ---
-B6: B5:B5+1
-G6: F6:F6-E6:E6
-E8: SUM(E5:E7)
-F8: SUM(F5:F7)
-G8: SUM(G5:G7)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-B15: IF(OR(LEN(C3:C3)=0,LEN(C4:C4)=0,LEN(C5:C5)=0,LEN(C6:C6)=0),"0","1")
-B18: IF(01!R114<>01!R91,0,1)
-C18: 01!R114
-B19: IF(01!R114=0,0,1)
-C19: 01!R114
-B21: IF(01!W114<>01!W91,0,1)
-C21: 01!W114
+## sheet: 01
+C3 | "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4) |  | xls
+G12 | TRIM(Header!C3) | Đơn vị báo cáo: | xls
+G14 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",TRIM(Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))) | Mã số thuế: | xls
+G16 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
+G18 | TRIM(Header!V5) | Mã số thuế: | xls
+R48 | R49+R50+R53+R59+R62 | 100 | xls
+W48 | W49+W50+W53+W59+W62 | 100 | xls
+R50 | R51+R52 | 120 | xls
+W50 | W51+W52 | 120 | xls
+R53 | SUM(R54:V58) | 130 | xls
+W53 | SUM(W54:AA58) | 130 | xls
+R59 | R60+R61 | 140 | xls
+W59 | W60+W61 | 140 | xls
+R63 | R64+R67+R72+R79+R86+R90 | 160 | xls
+W63 | W64+W67+W72+W79+W86+W90 | 160 | xls
+R64 | R65+R66 | 170 | xls
+W64 | W65+W66 | 170 | xls
+R67 | SUM(R68:V71) | 180 | xls
+W67 | SUM(W68:AA71) | 180 | xls
+R72 | R73+R76 | 190 | xls
+W72 | W73+W76 | 190 | xls
+R73 | R74+R75 | 191 | xls
+W73 | W74+W75 | 191 | xls
+R76 | R77+R78 | 194 | xls
+W76 | W77+W78 | 194 | xls
+R79 | R80+R83 | 200 | xls
+W79 | W80+W83 | 200 | xls
+R80 | R81+R82 | 201 | xls
+W80 | W81+W82 | 201 | xls
+R83 | R84+R85 | 204 | xls
+W83 | W84+W85 | 204 | xls
+R86 | SUM(R87:V89) | 210 | xls
+W86 | SUM(W87:AA89) | 210 | xls
+R91 | R48+R63 | 230 | xls
+W91 | W48+W63 | 230 | xls
+R93 | R94+R102 | 240 | xls
+W93 | W94+W102 | 240 | xls
+R94 | SUM(R95:V101) | 250 | xls
+W94 | SUM(W95:AA101) | 250 | xls
+R102 | SUM(R103:V107) | 260 | xls
+W102 | SUM(W103:AA107) | 260 | xls
+R108 | SUM(R109:V113) | 280 | xls
+W108 | SUM(W109:AA113) | 280 | xls
+R114 | R93+R108 | 300 | xls
+W114 | W93+W108 | 300 | xls
+R116 | Header!V41 | Người đại diện theo pháp luật: | xls
+R118 | Header!V42 | Ngày lập: | xls
+H120 | TRIM(Header!V16) | Chứng chỉ hành nghề số: | xls
+H122 | TRIM(Header!V6) | Đơn vị cung cấp dịch vụ kế toán: | xls
+F124 | Header!V32 | Từ ngày | xls
+H124 | Header!V33 | đến ngày | xls
+## sheet: 01-1
+C3 | "Năm "&Header!V48 |  | xls
+E4 | '01'!G10 | Tên cơ quan cấp trên: | xls
+E6 | TRIM(Header!C3) | Người nộp thuế: | xls
+E8 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+E10 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
+E12 | TRIM(Header!V5) | Mã số thuế: | xls
+N27 | SUM(N28:N33,N36) | 400 | xls
+O27 | SUM(O28:O33,O36) | 400 | xls
+Q27 | SUM(Q28:Q33,Q36) | 400 | xls
+N33 | N34+N35 | 416 | xls
+O33 | O34+O35 | 416 | xls
+Q33 | Q34+Q35 | 416 | xls
+N37 | SUM(N38:N45) | 450 | xls
+O37 | SUM(O38:O45) | 450 | xls
+Q37 | SUM(Q38:Q45) | 450 | xls
+N47 | N27-N37-N46 | 500 | xls
+O47 | O27-O37-O46 | 500 | xls
+Q47 | Q27-Q37-Q46 | 500 | xls
+N49 | N47+N48 | 520 | xls
+O49 | O47+O48 | 520 | xls
+Q49 | Q47+Q48 | 520 | xls
+N52 | N49-N50-N51 | 525 | xls
+O52 | O49-O50-O51 | 525 | xls
+Q52 | Q49-Q50-Q51 | 525 | xls
+## sheet: 01-2
+C3 | "Năm "&Header!V48 |  | xls
+E4 | '01'!G10 | Tên cơ quan cấp trên: | xls
+E6 | TRIM(Header!C3) | Người nộp thuế: | xls
+E8 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)) | Mã số thuế: | xls
+E10 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
+E12 | TRIM(Header!V5) | Mã số thuế: | xls
+K28 | SUM(K29:K33,K36:K37) | 610 | xls
+L28 | SUM(L29:L33,L36:L37) | 610 | xls
+M28 | SUM(M29:M33,M36:M37) | 610 | xls
+K33 | K34+K35 | 615 | xls
+L33 | L34+L35 | 615 | xls
+M33 | M34+M35 | 615 | xls
+K38 | SUM(K39:K43) | 620 | xls
+L38 | SUM(L39:L43) | 620 | xls
+M38 | SUM(M39:M43) | 620 | xls
+K44 | K28+K38 | Lưu chuyển tiền thuần từ hoạt động chính 630 = 610 + 620 | xls
+L44 | L28+L38 | Lưu chuyển tiền thuần từ hoạt động chính 630 = 610 + 620 | xls
+M44 | M28+M38 | Lưu chuyển tiền thuần từ hoạt động chính 630 = 610 + 620 | xls
+K52 | SUM(K46:K51) | 650 | xls
+L52 | SUM(L46:L51) | 650 | xls
+M52 | SUM(M46:M51) | 650 | xls
+K59 | SUM(K54:K58) | 670 | xls
+L59 | SUM(L54:L58) | 670 | xls
+M59 | SUM(M54:M58) | 670 | xls
+K60 | K44+K52+K59 | 680 | xls
+L60 | L44+L52+L59 | 680 | xls
+M60 | M44+M52+M59 | 680 | xls
+K63 | K60+K61+K62 | 700 | xls
+L63 | L60+L61+L62 | 700 | xls
+M63 | M60+M61+M62 | 700 | xls
+## sheet: KHBS
+B6 | B5:B5+1 |  | xls
+G6 | F6:F6-E6:E6 |  | xls
+E8 | SUM(E5:E7) | Tổng cộng | xls
+F8 | SUM(F5:F7) | Tổng cộng | xls
+G8 | SUM(G5:G7) | Tổng cộng | xls
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls
+B15 | IF(OR(LEN(C3:C3)=0,LEN(C4:C4)=0,LEN(C5:C5)=0,LEN(C6:C6)=0),"0","1") | Đề nghị nhập tất cả các trường: Tên cơ sở kinh doanh, Địa c… | xls
+B18 | IF('01'!R114<>'01'!R91,0,1) | Kiểm tra Tổng nguồn vốn = Tổng tài sản | xls
+C18 | '01'!R114 | Kiểm tra Tổng nguồn vốn = Tổng tài sản | xls
+B19 | IF('01'!R114=0,0,1) | Tổng nguồn vốn phải khác 0 | xls
+C19 | '01'!R114 | Tổng nguồn vốn phải khác 0 | xls
+B21 | IF('01'!W114<>'01'!W91,0,1) | Kiểm tra Tổng nguồn vốn = Tổng tài sản | xls
+C21 | '01'!W114 | Kiểm tra Tổng nguồn vốn = Tổng tài sản | xls
 => 118 cell công thức trong file này
 
+MaFile: 24_B01_BCTC
+VersionXML: 2.9.0
+Class: BctcB01Tt24Nckt290
+MenuID: P8
+Nguồn sha256: 85845219a264ce0a7296f8f340974b2aca50905d756b641cb3b81a4a31339e91
+Generator: render_cong_thuc.py@1.0.0
 === FILE: 24_B01_01_BCTC_TT24_v2.9.0_mau.xls1 ===
---- Sheet "01" ---
-F7: Header!C3
-G12: TRIM(Header!C3)
-G14: IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",TRIM(Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2)))
-G16: TRIM(Header!V6)
-G18: TRIM(Header!V5)
-C25: "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4)
-R48: R49+R50+R53+R59+R62
-W48: W49+W50+W53+W59+W62
-R50: R51+R52
-W50: W51+W52
-R53: SUM(R54:V58)
-W53: SUM(W54:AA58)
-R59: R49+R50+R53+R55+R56+R57+R58
-W59: W49+W50+W53+W55+W56+W57+W58
-R63: R64+R67+R72+R79+R86+R90
-W63: W64+W67+W72+W79+W86+W90
-R64: R65+R66
-W64: W65+W66
-R67: SUM(R68:V71)
-W67: SUM(W68:AA71)
-R72: R73+R76
-W72: W73+W76
-R73: R74+R75
-W73: W74+W75
-R76: R77+R78
-W76: W77+W78
-R79: R80+R83
-W79: W80+W83
-R80: R81+R82
-W80: W81+W82
-R83: R84+R85
-W83: W84+W85
-R86: SUM(R87:V89)
-W86: SUM(W87:AA89)
-R91: R48+R63
-W91: W48+W63
-R93: R94+R102
-W93: W94+W102
-R94: SUM(R95:V101)
-W94: SUM(W95:AA101)
-R102: SUM(R103:V107)
-W102: SUM(W103:AA107)
-R108: SUM(R109:V113)
-W108: SUM(W109:AA113)
-R114: R93+R108
-W114: W93+W108
-R116: Header!V41
-R118: Header!V42
-H120: TRIM(Header!V16)
-H122: TRIM(Header!V6)
-F124: Header!V32
-H124: Header!V33
-S125: "Lập, ngày "&MID(Header!$V$33,1,2)&" tháng "&MID(Header!$V$33,4,2)&" năm "&MID(Header!$V$33,7,4)
---- Sheet "01-1" ---
-D6: TRIM(01!G6)
-B7: "ĐƠN VỊ BÁO CÁO: " & Header!C3
-B23: "Năm "&MID(Header!V33,7,4)
-N27: SUM(N28:N33,N36)
-O27: SUM(O28:O33,O36)
-Q27: SUM(Q28:Q33,Q36)
-N33: N34+N35
-O33: O34+O35
-Q33: Q34+Q35
-N37: SUM(N38:N45)
-O37: SUM(O38:O45)
-Q37: SUM(Q38:Q45)
-N47: N27-N37-N46
-O47: O27-O37-O46
-Q47: Q27-Q37-Q46
-N49: N47+N48
-O49: O47+O48
-Q49: Q47+Q48
-N52: N49-N50-N51
-O52: O49-O50-O51
-Q52: Q49-Q50-Q51
-N54: "Lập, ngày "&MID(Header!$V$33,1,2)&" tháng "&MID(Header!$V$33,4,2)&" năm "&MID(Header!$V$33,7,4)
---- Sheet "01-2" ---
-D6: TRIM(01!G6)
-D7: Header!C3
-C20: "Năm "&Header!V48
-K28: SUM(K29:K33,K36:K37)
-L28: SUM(L29:L33,L36:L37)
-M28: SUM(M29:M33,M36:M37)
-K33: K34+K35
-L33: L34+L35
-M33: M34+M35
-K38: SUM(K39:K43)
-L38: SUM(L39:L43)
-M38: SUM(M39:M43)
-K44: K28+K38
-L44: L28+L38
-M44: M28+M38
-K52: SUM(K46:K51)
-L52: SUM(L46:L51)
-M52: SUM(M46:M51)
-K59: SUM(K54:K58)
-L59: SUM(L54:L58)
-M59: SUM(M54:M58)
-K60: K44+K52+K59
-L60: L44+L52+L59
-M60: M44+M52+M59
-K63: K60+K61+K62
-L63: L60+L61+L62
-M63: M60+M61+M62
-K66: "Lập, ngày "&MID(Header!$V$33,1,2)&" tháng "&MID(Header!$V$33,4,2)&" năm "&MID(Header!$V$33,7,4)
---- Sheet "Header" ---
-M2: IF(TRIM(N2&O2&P2)=""," "," - ")
-B15: IF(OR(LEN(C3:C3)=0,LEN(C4:C4)=0,LEN(C5:C5)=0,LEN(C6:C6)=0),"0","1")
-B18: IF(01!R114<>01!R91,0,1)
-C18: 01!R114
-B19: IF(01!R114=0,0,1)
-C19: 01!R114
+## sheet: 01
+F7 | Header!C3 | ĐƠN VỊ BÁO CÁO: | xls1
+G12 | TRIM(Header!C3) | Đơn vị báo cáo: | xls1
+G14 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(Header!D2))&IF(ISBLANK(Header!E2)," ",TRIM(Header!E2))&IF(ISBLANK(Header!F2)," ",TRIM(Header!F2))&IF(ISBLANK(Header!G2)," ",TRIM(Header!G2))&IF(ISBLANK(Header!H2)," ",TRIM(Header!H2))&IF(ISBLANK(Header!I2)," ",TRIM(Header!I2))&IF(ISBLANK(Header!J2)," ",TRIM(Header!J2))&IF(ISBLANK(Header!K2)," ",TRIM(Header!K2))&IF(ISBLANK(Header!L2)," ",TRIM(Header!L2))&IF(ISBLANK(Header!M2)," ",TRIM(Header!M2)&IF(ISBLANK(Header!N2)," ",TRIM(Header!N2))&IF(ISBLANK(Header!O2)," ",TRIM(Header!O2))&IF(ISBLANK(Header!P2)," ",TRIM(Header!P2))) | Mã số thuế: | xls1
+G16 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls1
+G18 | TRIM(Header!V5) | Mã số thuế: | xls1
+C25 | "Tại ngày "&MID(Header!V33,1,2)&" tháng "&MID(Header!V33,4,2)&" năm "&MID(Header!V33,7,4) |  | xls1
+R48 | R49+R50+R53+R59+R62 | 100 | xls1
+W48 | W49+W50+W53+W59+W62 | 100 | xls1
+R50 | R51+R52 | 120 | xls1
+W50 | W51+W52 | 120 | xls1
+R53 | SUM(R54:V58) | 130 | xls1
+W53 | SUM(W54:AA58) | 130 | xls1
+R59 | R49+R50+R53+R55+R56+R57+R58 | 140 | xls1
+W59 | W49+W50+W53+W55+W56+W57+W58 | 140 | xls1
+R63 | R64+R67+R72+R79+R86+R90 | 160 | xls1
+W63 | W64+W67+W72+W79+W86+W90 | 160 | xls1
+R64 | R65+R66 | 170 | xls1
+W64 | W65+W66 | 170 | xls1
+R67 | SUM(R68:V71) | 180 | xls1
+W67 | SUM(W68:AA71) | 180 | xls1
+R72 | R73+R76 | 190 | xls1
+W72 | W73+W76 | 190 | xls1
+R73 | R74+R75 | 191 | xls1
+W73 | W74+W75 | 191 | xls1
+R76 | R77+R78 | 194 | xls1
+W76 | W77+W78 | 194 | xls1
+R79 | R80+R83 | 200 | xls1
+W79 | W80+W83 | 200 | xls1
+R80 | R81+R82 | 201 | xls1
+W80 | W81+W82 | 201 | xls1
+R83 | R84+R85 | 204 | xls1
+W83 | W84+W85 | 204 | xls1
+R86 | SUM(R87:V89) | 210 | xls1
+W86 | SUM(W87:AA89) | 210 | xls1
+R91 | R48+R63 | 230 | xls1
+W91 | W48+W63 | 230 | xls1
+R93 | R94+R102 | 240 | xls1
+W93 | W94+W102 | 240 | xls1
+R94 | SUM(R95:V101) | 250 | xls1
+W94 | SUM(W95:AA101) | 250 | xls1
+R102 | SUM(R103:V107) | 260 | xls1
+W102 | SUM(W103:AA107) | 260 | xls1
+R108 | SUM(R109:V113) | 280 | xls1
+W108 | SUM(W109:AA113) | 280 | xls1
+R114 | R93+R108 | 300 | xls1
+W114 | W93+W108 | 300 | xls1
+R116 | Header!V41 | Người đại diện theo pháp luật: | xls1
+R118 | Header!V42 | Ngày lập: | xls1
+H120 | TRIM(Header!V16) | Chứng chỉ hành nghề số: | xls1
+H122 | TRIM(Header!V6) | Đơn vị cung cấp dịch vụ kế toán: | xls1
+F124 | Header!V32 | Từ ngày | xls1
+H124 | Header!V33 | đến ngày | xls1
+S125 | "Lập, ngày "&MID(Header!$V$33,1,2)&" tháng "&MID(Header!$V$33,4,2)&" năm "&MID(Header!$V$33,7,4) |  | xls1
+## sheet: 01-1
+D6 | TRIM('01'!G6) | TÊN CƠ QUAN CẤP TRÊN: | xls1
+B7 |  "ĐƠN VỊ BÁO CÁO: "& Header!C3 | Độc lập - Tự do - Hạnh phúc | xls1
+B23 | "Năm "&MID(Header!V33,7,4) |  | xls1
+N27 | SUM(N28:N33,N36) | 400 | xls1
+O27 | SUM(O28:O33,O36) | 400 | xls1
+Q27 | SUM(Q28:Q33,Q36) | 400 | xls1
+N33 | N34+N35 | 416 | xls1
+O33 | O34+O35 | 416 | xls1
+Q33 | Q34+Q35 | 416 | xls1
+N37 | SUM(N38:N45) | 450 | xls1
+O37 | SUM(O38:O45) | 450 | xls1
+Q37 | SUM(Q38:Q45) | 450 | xls1
+N47 | N27-N37-N46 | 500 | xls1
+O47 | O27-O37-O46 | 500 | xls1
+Q47 | Q27-Q37-Q46 | 500 | xls1
+N49 | N47+N48 | 520 | xls1
+O49 | O47+O48 | 520 | xls1
+Q49 | Q47+Q48 | 520 | xls1
+N52 | N49-N50-N51 | 525 | xls1
+O52 | O49-O50-O51 | 525 | xls1
+Q52 | Q49-Q50-Q51 | 525 | xls1
+N54 | "Lập, ngày "&MID(Header!$V$33,1,2)&" tháng "&MID(Header!$V$33,4,2)&" năm "&MID(Header!$V$33,7,4) |  | xls1
+## sheet: 01-2
+D6 | TRIM('01'!G6) | TÊN CƠ QUAN CẤP TRÊN: | xls1
+D7 | Header!C3 | ĐƠN VỊ BÁO CÁO: | xls1
+C20 | "Năm "&Header!V48 |  | xls1
+K28 | SUM(K29:K33,K36:K37) | 610 | xls1
+L28 | SUM(L29:L33,L36:L37) | 610 | xls1
+M28 | SUM(M29:M33,M36:M37) | 610 | xls1
+K33 | K34+K35 | 615 | xls1
+L33 | L34+L35 | 615 | xls1
+M33 | M34+M35 | 615 | xls1
+K38 | SUM(K39:K43) | 620 | xls1
+L38 | SUM(L39:L43) | 620 | xls1
+M38 | SUM(M39:M43) | 620 | xls1
+K44 | K28+K38 | Lưu chuyển tiền thuần từ hoạt động chính 630 = 610 + 620 | xls1
+L44 | L28+L38 | Lưu chuyển tiền thuần từ hoạt động chính 630 = 610 + 620 | xls1
+M44 | M28+M38 | Lưu chuyển tiền thuần từ hoạt động chính 630 = 610 + 620 | xls1
+K52 | SUM(K46:K51) | 650 | xls1
+L52 | SUM(L46:L51) | 650 | xls1
+M52 | SUM(M46:M51) | 650 | xls1
+K59 | SUM(K54:K58) | 670 | xls1
+L59 | SUM(L54:L58) | 670 | xls1
+M59 | SUM(M54:M58) | 670 | xls1
+K60 | K44+K52+K59 | 680 | xls1
+L60 | L44+L52+L59 | 680 | xls1
+M60 | M44+M52+M59 | 680 | xls1
+K63 | K60+K61+K62 | 700 | xls1
+L63 | L60+L61+L62 | 700 | xls1
+M63 | M60+M61+M62 | 700 | xls1
+K66 | "Lập, ngày "&MID(Header!$V$33,1,2)&" tháng "&MID(Header!$V$33,4,2)&" năm "&MID(Header!$V$33,7,4) |  | xls1
+## sheet: Header
+M2 | IF(TRIM(N2&O2&P2)=""," "," - ") | 0 | xls1
+B15 | IF(OR(LEN(C3:C3)=0,LEN(C4:C4)=0,LEN(C5:C5)=0,LEN(C6:C6)=0),"0","1") | Đề nghị nhập tất cả các trường: Tên cơ sở kinh doanh, Địa c… | xls1
+B18 | IF('01'!R114<>'01'!R91,0,1) | Y | xls1
+C18 | '01'!R114 | Y | xls1
+B19 | IF('01'!R114=0,0,1) | Tổng nguồn vốn cuối kỳ phải khác 0 | xls1
+C19 | '01'!R114 | Tổng nguồn vốn cuối kỳ phải khác 0 | xls1
 => 109 cell công thức trong file này
-
-
-TỔNG CỘNG: 227 cell công thức trong 2 file
