@@ -91,11 +91,95 @@ def load_menu(path):
             'id': m.get('ID'), 'mafile': m.get('MaFile'), 'folder': fns[0],
             'ver': (m.get('VersionXML') or '').replace('.', ''), 'group': group_of(m),
             'sheet_ids': [s.get('ID', '') for s in sheets],
+            'cls': m.get('Class', ''), 'caption': m.get('Caption', ''),
+            'sheet_names': [s.get('SheetName', '') for s in sheets],
             'datafiles': [(s.get('DataFile', ''), s.get('XMLnode', '') or '') for s in sheets],
         })
     return out
 
 CAT = load_menu(os.path.join(SRC, 'menu.xml'))
+
+# ---------------------------------------------------------------- R1b: ShowBangKe("<file>") in code
+# Decompiled code (read as text only) names the import/print workbook each form opens:
+#  - business class <Class>Nckt<ver>.cs  -> menu with that Class (+ VersionXML)
+#  - frmHTKKSystems.cs  case "102_x": ShowBangKe(...)  -> menu 102_x Caption code (e.g. 03-7/TNDN)
+#    matched against Sheet/@SheetName and Caption of form menus.
+DECOMP = os.environ.get('HTKK_DECOMPILED', '/Users/tuanle/codes/HTKK/_decompiled')
+MENU_ALL = {m.get('ID'): m for m in ET.parse(os.path.join(SRC, 'menu.xml')).getroot().iter('Menu')}
+
+def _ncode(x):
+    return re.sub(r'\s+', '', x.upper()).replace('Đ', 'D')
+
+def _caption_codes(cap):
+    return [_ncode(c) for c in re.findall(r'[\w.\-]+/[\w\-]+(?:/[\w\-]+)?', cap)]
+
+def _tt(x):
+    return set(re.findall(r'tt\d+|nd\d+', x.lower()))
+
+def sbk_scan():
+    calls = []    # (file_stem_lower, src_rel, line, kind, key)
+    for dp, dn, fn in os.walk(DECOMP):
+        for f in fn:
+            if not f.endswith('.cs'):
+                continue
+            path = os.path.join(dp, f)
+            try:
+                lines = open(path, encoding='utf-8', errors='replace').read().split('\n')
+            except OSError:
+                continue
+            case = None
+            for i, ln in enumerate(lines, 1):
+                mc = re.search(r'case "([^"]+)":', ln)
+                if mc:
+                    case = mc.group(1)
+                m = re.search(r'ShowBangKe\("([^"]+)"\)', ln)
+                if not m or 'void ShowBangKe' in ln:
+                    continue
+                stem = os.path.splitext(m.group(1))[0].lower()
+                rel = os.path.relpath(path, DECOMP)
+                if f == 'frmHTKKSystems.cs':
+                    calls.append((stem, rel, i, 'menu', case))
+                else:
+                    calls.append((stem, rel, i, 'class', f[:-3]))
+    return calls
+
+def sbk_resolve(stem, kind, key):
+    """-> (entries list, evidence text); entries empty = standalone menu or unresolved."""
+    if kind == 'class':
+        mc = re.match(r'^(.*?)Nckt(\d+)$', key)
+        cls, ver = (mc.group(1), mc.group(2)) if mc else (key, '')
+        es = [e for e in CAT if e['cls'] == cls]
+        if len({e['folder'] for e in es}) > 1:
+            ev = [e for e in es if e['ver'] == ver]
+            es = ev or es
+        return es, 'Class=%s' % cls
+    m = MENU_ALL.get(key)
+    if m is None:
+        return [], 'menu %s khong co' % key
+    cap = m.get('Caption', '')
+    codes = _caption_codes(cap)
+    blp = 'BLP' in cap.upper()
+    es = []
+    for e in CAT:
+        names = [_ncode(x) for x in e['sheet_names'] + [e['caption']]]
+        if any(c and any(re.search(r'(^|[^\w])' + re.escape(c) + r'($|[^\w])', n) for n in names) for c in codes):
+            if ('BLP' in e['folder'].upper()) == blp:
+                es.append(e)
+    if len({e['folder'] for e in es}) > 1:
+        t = _tt(stem)
+        es2 = [e for e in es if _tt(e['folder']) == t]
+        es = es2 or es
+    return es, 'menu %s "%s"' % (key, cap)
+
+SBK = {}   # file stem lower -> dict(entries, evidence, standalone)
+for stem, rel, line, kind, key in sbk_scan():
+    es, ev = sbk_resolve(stem, kind, key)
+    d = SBK.setdefault(stem, {'cands': {}, 'ev': [], 'menus': []})
+    d['ev'].append('%s:%d ShowBangKe; %s' % (rel, line, ev))
+    for e in es:
+        d['cands'][e['folder']] = e
+    if kind == 'menu':
+        d['menus'].append(key)
 BACKUP = []
 for bf in ('menu_backup161118.xml', 'menu_backup2009.xml'):
     try:
@@ -273,6 +357,11 @@ BANGKE_OVERRIDES = {
     'xml': ('KHBS', 'PL01_KHBS'),
 }
 SHARED = {'header': 'HEADER', 'in_tmp': 'IN_TMP'}
+# candidate hints for pending rows (not used for placement)
+PENDING_HINTS = {
+    '_5kk_tncn.xml': '05_KK_TNCN (ten 5kk_tncn; root Workbook, khong co khoa trong menu)',
+    '_2_lncl_vsp_tt80_251.xls': 'khong xac dinh; sheet 01/01-1/01-2/KHBS khong khop 02_PTHU_VSP_TT80',
+}
 # per-file notes for _re/pending_mapping.csv (what was checked, why no rule applies)
 PENDING_NOTES = {
     '_3_tain.xls': 'BIFF tho khong co vo OLE; khong co FolderName/MaFile/DataFile nao co dang ?3_TAIN',
@@ -420,6 +509,24 @@ for name in files:
             'tep dung chung, khong gan ma form' + ('; HEADER.xls WinFnProcess.cs:864' if low == 'header' else ''),
             True)
         continue
+    sb = SBK.get(re.sub(r'\.(xls1?|xlsx|xl|doc)$', '', name.lower()))
+    if sb is not None:
+        ev = ' | '.join(sorted(set(sb['ev'])))
+        if len(sb['cands']) > 1:   # same Class shared by variants: drop _VIEW, then match tt/nd tokens
+            nv = {k: v for k, v in sb['cands'].items() if not k.upper().endswith('_VIEW')} or sb['cands']
+            tt = {k: v for k, v in nv.items() if _tt(k) == _tt(name)} or nv
+            if len(tt) == 1:
+                sb = dict(sb, cands=tt)
+                ev += ' (loai bien the _VIEW/khac tt)'
+        if len(sb['cands']) == 1:
+            e = list(sb['cands'].values())[0]
+            add(name, e['group'], e['folder'].upper(), None, 'R1b',
+                ev + ' -> FolderName=%s (menu %s)' % (e['folder'], e['id']), True)
+        elif not sb['cands'] and sb['menus']:
+            to_pending(name, 'ShowBangKe tu menu %s; khong form nao co SheetName/Caption trung ma' % ','.join(sb['menus']), ev)
+        else:
+            to_pending(name, 'ShowBangKe: nhieu/khong ung vien form', ','.join(sorted(sb['cands'])) + ' | ' + ev)
+        continue
     if low in SHARED_XSD:
         add(name, '_shared', 'XSD_CHUNG', None, 'SHARED', 'schema goc import boi XSD tung mau (NOTES.md muc 2)', True)
         continue
@@ -512,7 +619,7 @@ for name, prefix, stem, ver in deferred:
     low_rest = stem.lower()
     if low_rest in BANGKE_OVERRIDES:
         gid, folder = BANGKE_OVERRIDES[low_rest]
-        add(name, gid, folder, ver, 'OVR', 'BANGKE_OVERRIDES[%s] (quyet dinh thu cong 2026-10-08)' % low_rest, True)
+        to_pending(name, 'chi co BANGKE_OVERRIDES (thu cong), khong co bang chung menu/ShowBangKe/DataFile', folder)
         continue
     r6_cands.append((name, prefix, stem, ver))
 
@@ -529,6 +636,9 @@ for name, prefix, stem, ver in r6_cands:
     if not prefix:
         base_r6[cabkey(stem)] = (kw_group(stem, None), cabkey(stem).lstrip('_').upper())
 for name, prefix, stem, ver in r6_cands:
+    to_pending(name, 'khong co trong menu.xml/backup/ShowBangKe/DataFile; khong tao thu muc theo stem',
+               PENDING_HINTS.get(name.lower(), ''))
+for name, prefix, stem, ver in []:
     ck = cabkey(stem)
     if ck in base_r6:
         gid, folder = base_r6[ck]
