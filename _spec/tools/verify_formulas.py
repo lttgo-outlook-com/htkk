@@ -63,6 +63,44 @@ def ixtis(rg):
     return out
 
 
+def lost3d(rg, xtif, sup_ext):
+    """ptgRef3d/ptgArea3d trỏ sheet đã xóa (itab 0xFFFE/0xFFFF, SUPBOOK nội bộ): [(ptg, row, col)] lấy từ byte."""
+    out = []
+    i = 0
+    n = len(rg)
+    while i < n:
+        t = rg[i]
+        i += 1
+        if 0x03 <= t <= 0x16:
+            continue
+        if t == 0x17:
+            cch = rg[i]
+            hi = rg[i + 1] & 1
+            i += 2 + cch * (2 if hi else 1)
+            continue
+        if t == 0x19:
+            g = rg[i]
+            w = struct.unpack_from('<H', rg, i + 1)[0]
+            i += 3
+            if g & 0x04:
+                i += 2 * (w + 1)
+            continue
+        b = t if t < 0x20 else ((t & 0x1F) | 0x20)
+        if b not in SZ:
+            return out
+        if b in (0x3A, 0x3B):
+            ix = struct.unpack_from('<H', rg, i)[0]
+            if ix < len(xtif) and xtif[ix][1] in (0xFFFE, 0xFFFF) and not sup_ext[xtif[ix][0]]:
+                if b == 0x3A:
+                    row, colf = struct.unpack_from('<HH', rg, i + 2)
+                    out.append((0x3A, row, colf & 0xFF))
+                else:
+                    r1, r2, c1, c2 = struct.unpack_from('<HHHH', rg, i + 2)
+                    out.append((0x3B, r1, c1 & 0xFF))
+        i += SZ[b]
+    return out
+
+
 def raw_records(d):
     pos = 0
     out = []
@@ -87,6 +125,8 @@ def scan_biff(data):
     sheets = []
     sup_ext = []
     xti = []
+    xti_full = []
+    shr_lost = {}
     names_user = names_builtin = 0
     cells = []     # (sheetidx, r, c, ixti_list or None, is_exp)
     n_shr = n_arr = 0
@@ -114,6 +154,7 @@ def scan_biff(data):
             elif t == 0x17:
                 cx = struct.unpack_from('<H', b, 0)[0]
                 xti = [struct.unpack_from('<H', b, 2 + 6 * k)[0] for k in range(cx)]
+                xti_full = [struct.unpack_from('<HHH', b, 2 + 6 * k) for k in range(cx)]
             elif t == 0x18:
                 if struct.unpack_from('<H', b, 0)[0] & 0x20:
                     names_builtin += 1
@@ -127,7 +168,7 @@ def scan_biff(data):
                 rg = b[22:22 + cce]
                 exp = len(rg) == 5 and rg[0] == 0x01
                 tgt = struct.unpack_from('<HH', rg, 1) if exp else (r, c)
-                cells.append([si, r, c, None if exp else ixtis(rg), exp, tuple(tgt)])
+                cells.append([si, r, c, None if exp else ixtis(rg), exp, tuple(tgt), None if exp else lost3d(rg, xti_full, sup_ext)])
                 prev_cell[si] = len(cells) - 1
             elif t == 0x4BC:
                 n_shr += 1
@@ -135,6 +176,7 @@ def scan_biff(data):
                 idx = prev_cell.get(si)
                 if idx is not None:
                     shr[(si, cells[idx][1], cells[idx][2])] = ixtis(b[10:10 + cce])
+                    shr_lost[(si, cells[idx][1], cells[idx][2])] = lost3d(b[10:10 + cce], xti_full, sup_ext)
             elif t == 0x221:
                 n_arr += 1
     # gán ixti cho ô shared qua ptgExp
@@ -143,7 +185,7 @@ def scan_biff(data):
             pass
     return {'sheets': sheets, 'sup_ext': sup_ext, 'xti': xti, 'names_user': names_user,
             'names_builtin': names_builtin, 'cells': cells, 'n_shr': n_shr, 'n_arr': n_arr,
-            'shr': shr, 'raw': d}
+            'shr': shr, 'shr_lost': shr_lost, 'raw': d}
 
 
 def cell_ixtis(sc, cell):
@@ -219,7 +261,8 @@ NORM_DESC = {
     'quote': "SheetJS bỏ nháy đơn quanh tên sheet ('01'!A1 thành 01!A1)",
     'ref_sheet': 'tham chiếu 3D lỗi: bản này giữ tên sheet (Sheet!#REF!), SheetJS chỉ in #REF!',
     'xlfn': 'hàm tương lai: bản này giữ _xlfn.IFNA (như lưu trong tệp), SheetJS bỏ tiền tố',
-    'ref_junk': 'ptgRefErr: SheetJS in #REF! kèm địa chỉ ô rác (#REF!AX67), bản này chỉ #REF!',
+    'ref_junk_lost3d': 'ptgRef3d/ptgArea3d trỏ sheet đã xóa (itab 0xFFFE/0xFFFF): SheetJS in #REF!V30, bản này in #REF! và giữ địa chỉ trong lost_refs',
+    'ref_junk_referr': 'ptgRefErr (0x2A): SheetJS in #REF! kèm địa chỉ rác, bản này chỉ #REF!',
 }
 
 
@@ -266,6 +309,7 @@ def main():
     mism = []
     n_exp_cells = 0
     all_stats = collections.Counter()
+    lost_cells_n = [0, set()]
     for e in ok_files:
         j = json.load(open(os.path.join(a.formulas, e['json']), encoding='utf-8'))
         data_cache[e['key']] = j
@@ -322,6 +366,25 @@ def main():
             mism.append((e['source_name'], 'SHRFMLA/ARRAY %d/%d != %d/%d' % (n_shr, n_arr, e['shrfmla_records'], e['array_records'])))
         if nuser != e['defined_names_user']:
             mism.append((e['source_name'], 'defined name user %d != %d' % (nuser, e['defined_names_user'])))
+        if e['format'] == 'biff8':
+            lost_ind = {}
+            for c in sc['cells']:
+                key = (names[c[0]], a1(c[1], c[2]))
+                lst = c[6] if not c[4] else sc['shr_lost'].get((c[0], c[5][0], c[5][1]), [])
+                if lst:
+                    lost_ind[key] = lst
+            lost_j = {(f['sheet'], f['cell']): f['lost_refs'] for f in j['formulas'] if 'lost_refs' in f}
+            if set(lost_ind) != set(lost_j):
+                mism.append((e['source_name'], 'lost_refs: tập ô lệch (độc lập %d, JSON %d)' % (len(lost_ind), len(lost_j))))
+            for key in set(lost_ind) & set(lost_j):
+                if len(lost_ind[key]) != len(lost_j[key]):
+                    mism.append((e['source_name'], 'lost_refs %s: số ptg lệch' % (key,)))
+                elif not any(c[4] for c in sc['cells'] if (names[c[0]], a1(c[1], c[2])) == key):
+                    if [(x[0], x[1], x[2]) for x in lost_ind[key]] != [(int(x['ptg'], 16), x['row'], x['col']) for x in lost_j[key]]:
+                        mism.append((e['source_name'], 'lost_refs %s: địa chỉ lệch so với byte' % (key,)))
+            if lost_j:
+                lost_cells_n[0] += len(lost_j)
+                lost_cells_n[1].add(e['source_name'])
         e['_ind'] = {'n_shr': n_shr, 'n_arr': n_arr, 'names_user': nuser, 'cells': sum(iset.values())}
         for f in j['formulas']:
             if f['formula'] is None:
@@ -411,6 +474,13 @@ def main():
                 unexplained.append((e['source_name'], k, x, b))
                 continue
             used = tuple(nm for nm in ALL_NORMS if make_norm(set(ALL_NORMS) - {nm})(x) != make_norm(set(ALL_NORMS) - {nm})(b))
+            if 'ref_junk' in used:
+                lr = f.get('lost_refs')
+                used = tuple(('ref_junk_lost3d' if lr else 'ref_junk_referr') if u == 'ref_junk' else u for u in used)
+                if lr:
+                    got = [m.replace('$', '') for m in re.findall(r'#REF!(\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?)', b)]
+                    want = [r_['ref_a1'].replace('$', '') for r_ in lr]
+                    cnt['lost3d_addr_match' if got == want else 'lost3d_addr_nomatch'] += 1
             need[used] += 1
     print('  so sánh %d ô: giống y hệt %d; khác nhưng khớp sau chuẩn hóa %d; không giải thích được %d' % (
         n_cmp, n_eq, sum(need.values()), len(unexplained)))
@@ -419,8 +489,11 @@ def main():
     print('  các loại khác biệt (ô cần chuẩn hóa nào, đếm theo tổ hợp tối thiểu):')
     for used, v in need.most_common():
         print('    %6d  %s' % (v, ' + '.join(used) if used else '(chuẩn hóa dư)'))
-    for nm in ALL_NORMS:
+    for nm in ['ws', 'quote', 'ref_sheet', 'xlfn', 'ref_junk_lost3d', 'ref_junk_referr']:
         print('    - %s: %s' % (nm, NORM_DESC[nm]))
+    print('  lost_refs: địa chỉ trong lost_refs khớp địa chỉ SheetJS in sau #REF!: %d ô khớp, %d ô lệch' % (cnt['lost3d_addr_match'], cnt['lost3d_addr_nomatch']))
+    check(cnt['lost3d_addr_nomatch'] == 0, '(3b) lost_refs trùng địa chỉ SheetJS ở mọi ô sheet đã xóa')
+    print('  lost_refs (đếm lại từ byte, tập ô + số ptg + địa chỉ): %d ô trong %d tệp' % (lost_cells_n[0], len(lost_cells_n[1])))
     for u in unexplained[:10]:
         print('  KHÔNG GIẢI THÍCH:', u)
     check(not unexplained and cnt['cells_only_json'] == 0 and cnt['cells_only_sheetjs'] == 0,

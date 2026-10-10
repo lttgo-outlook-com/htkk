@@ -882,6 +882,8 @@ def decode_rgce(rgce, rgcb, base_r, base_c, ctx, shared=False):
     """Giải rgce thành chuỗi A1. Trả (chuỗi, [ext_refs])."""
     st = []
     ext = []
+    lost = []
+    tidx = -1
     i = 0
     n = len(rgce)
     pend_pre = ''
@@ -925,15 +927,23 @@ def decode_rgce(rgce, rgcb, base_r, base_c, ctx, shared=False):
         pre = '[ext:%d]' % isup if sb['kind'] == 'external' else ''
         return pre + txt, isup, sb
 
-    def add3d(ixti, body):
+    def add3d(ixti, body, ptg=None, pos=None):
         sp, isup, sb = sheetref(ixti)
         tok = (sp + '!' + body) if sp is not None else '#REF!'
+        if sp is None and ptg is not None:
+            # sheet đã xóa (itab 0xFFFE/0xFFFF): chuỗi ghi #REF! như Excel, giữ địa chỉ trong byte
+            ent = {'token_index': tidx, 'ptg': '0x%02X' % ptg, 'row': pos[0], 'col': pos[1], 'ref_a1': body}
+            if len(pos) > 2:
+                ent['row_last'] = pos[2]
+                ent['col_last'] = pos[3]
+            lost.append(ent)
         if sb['kind'] == 'external':
             ext.append({'supbook': isup, 'token': tok})
         push(tok)
 
     while i < n:
         t = rgce[i]
+        tidx += 1
         i += 1
         if t in BINOPS:
             b = st.pop()
@@ -972,7 +982,7 @@ def decode_rgce(rgce, rgcb, base_r, base_c, ctx, shared=False):
             elif g & 0x40:
                 typ = w & 0xFF
                 cnt = (w >> 8) & 0xFF
-                sp = (' ' if typ in (0, 2, 4, 6) else '\n') * cnt
+                sp = (' ' if typ in (0, 2, 4, 6) else '\r') * cnt
                 if typ in (0, 1, 2, 3):
                     pend_pre += sp
                 elif typ in (4, 5):
@@ -1109,13 +1119,13 @@ def decode_rgce(rgce, rgcb, base_r, base_c, ctx, shared=False):
                 ixti, row, colf = struct.unpack_from('<HHH', rgce, i)
                 i += 6
                 r, c, rr, cr = loc(row, colf, shared)
-                add3d(ixti, fmt_ref(r, c, rr, cr))
+                add3d(ixti, fmt_ref(r, c, rr, cr), 0x3A, (r, c))
             elif base == 0x3B:   # area3d
                 ixti, r1, r2, c1f, c2f = struct.unpack_from('<HHHHH', rgce, i)
                 i += 10
                 a = loc(r1, c1f, shared)
                 b = loc(r2, c2f, shared)
-                add3d(ixti, fmt_area(a[0], b[0], a[1], b[1], a[2], b[2], a[3], b[3]))
+                add3d(ixti, fmt_area(a[0], b[0], a[1], b[1], a[2], b[2], a[3], b[3]), 0x3B, (a[0], a[1], b[0], b[1]))
             elif base == 0x3C:
                 ixti = struct.unpack_from('<H', rgce, i)[0]
                 i += 6
@@ -1130,7 +1140,7 @@ def decode_rgce(rgce, rgcb, base_r, base_c, ctx, shared=False):
             raise DecodeError('ptg 0x%02X' % t)
     if len(st) != 1:
         raise DecodeError('stack cuối %d' % len(st))
-    return st[0] + pend_pre, ext
+    return st[0] + pend_pre, ext, lost
 
 
 # --------------------------------------------------------------- BIFF records
@@ -1297,34 +1307,36 @@ def process_biff(path, data):
                     if (er, ec) in arr:
                         ref, arg, acb, _rect = arr[(er, ec)]
                         kind = 'array'
-                        f, ex = decode_rgce(arg, acb, _rect[0], _rect[2], ctx, False)
+                        f, ex, lo = decode_rgce(arg, acb, _rect[0], _rect[2], ctx, False)
                     elif (er, ec) in shr:
                         ref, arg, acb = shr[(er, ec)]
                         kind = 'shared'
-                        f, ex = decode_rgce(arg, acb, r, c, ctx, True)
+                        f, ex, lo = decode_rgce(arg, acb, r, c, ctx, True)
                     else:
                         raise DecodeError('ptgExp (%d,%d) không có SHRFMLA/ARRAY' % (er, ec))
                 else:
-                    f, ex = decode_rgce(rg, rcb, r, c, ctx, False)
+                    f, ex, lo = decode_rgce(rg, rcb, r, c, ctx, False)
             except (DecodeError, IndexError, struct.error) as e:
                 errors.append({'sheet': sh['name'], 'cell': cell_a1(r, c), 'error': str(e)})
-                f, ex, kind = None, [], kind
+                f, ex, lo, kind = None, [], [], kind
             stats[kind] += 1
             ent = {'sheet': sh['name'], 'hidden': sh['state'] != 0, 'cell': cell_a1(r, c),
                    'formula': f, 'kind': kind, 'ext_refs': ex}
+            if lo:
+                ent['lost_refs'] = lo
             if ref is not None:
                 ent['shared_ref' if kind == 'shared' else 'array_ref'] = ref
             formulas.append(ent)
     names = []
     for ni, nm in enumerate(ctx.names):
         try:
-            f, ex = decode_rgce(nm['rgce'], nm['rgcb'], 0, 0, ctx, False) if nm['rgce'] else ('', [])
+            f, ex, lo = decode_rgce(nm['rgce'], nm['rgcb'], 0, 0, ctx, False) if nm['rgce'] else ('', [], [])
         except (DecodeError, IndexError, struct.error) as e:
             errors.append({'sheet': None, 'cell': 'name:' + nm['name'], 'error': str(e)})
-            f, ex = None, []
+            f, ex, lo = None, [], []
         scope = 'workbook' if nm['itab'] == 0 else (ctx.sheets[nm['itab'] - 1]['name'] if nm['itab'] - 1 < len(ctx.sheets) else '?')
         names.append({'index': ni + 1, 'name': nm['name'], 'builtin': nm['builtin'], 'hidden': nm['hidden'],
-                      'scope': scope, 'formula': f, 'ext_refs': ex})
+                      'scope': scope, 'formula': f, 'ext_refs': ex, **({'lost_refs': lo} if lo else {})})
     supbooks = [{'index': i, 'kind': s['kind'], 'path': pretty_path(s['path']), 'path_raw': s['path'],
                  'sheets': s['sheets'], 'names': s['names']} for i, s in enumerate(ctx.supbooks)]
     xti = [{'index': i, 'supbook': a, 'sheet_first': f, 'sheet_last': l} for i, (a, f, l) in enumerate(ctx.xti)]
@@ -1485,6 +1497,7 @@ class KeyMapper:
 
     def map(self, name):
         disp = name.rstrip('.')
+        disp = os.path.splitext(disp)[0].rstrip('_') + os.path.splitext(disp)[1]
         stem = os.path.splitext(disp)[0].lower()
         stem = re.sub(r'^(bang_ke|bangke|khbs|pl)_', '', stem)
         m = self.FORM_RE.match(stem)
