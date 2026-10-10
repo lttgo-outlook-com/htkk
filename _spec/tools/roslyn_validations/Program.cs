@@ -792,7 +792,7 @@ class MethodCtx
                 "++" or "--" => a.kind,
                 _ => a.kind + " " + (a.val == null ? "?" : R(a.val)),
             };
-            string gs = g.Count == 0 ? "" : " [khi " + string.Join(" AND ", g) + "]";
+            string gs = g.Count == 0 ? "" : " [khi " + string.Join(" AND ", g.Select(WrapOr)) + "]";
             parts.Add("L" + a.line + gs + ": " + val);
         }
         LastCondLines = saved;
@@ -906,6 +906,21 @@ class MethodCtx
         return fn + "(" + string.Join(", ", parts) + ")";
     }
 
+    // vế có OR ở mức ngoài cùng (ngoài ngoặc và chuỗi) thì bọc ngoặc trước khi nối bằng AND
+    static string WrapOr(string x)
+    {
+        int depth = 0; bool q = false;
+        for (int i = 0; i < x.Length; i++)
+        {
+            char ch = x[i];
+            if (q) { if (ch == '\\') i++; else if (ch == '"') q = false; continue; }
+            if (ch == '"') q = true;
+            else if (ch == '(' || ch == '[' || ch == '{') depth++;
+            else if (ch == ')' || ch == ']' || ch == '}') depth--;
+            else if (depth == 0 && string.CompareOrdinal(x, i, " OR ", 0, 4) == 0) return "(" + x + ")";
+        }
+        return x;
+    }
     // ---------- điều kiện ----------
     string Neg(ExpressionSyntax c)
     {
@@ -1188,7 +1203,7 @@ class MethodCtx
                 ["cells_marked"] = new[] { cell },
                 ["cell_const"] = mk.row != null && Eval(mk.row) != null && Eval(mk.col) != null,
                 ["sheet"] = cellSheet,
-                ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond.Select(x => x.Contains(" OR ") && !x.StartsWith("NOT (") ? "(" + x + ")" : x)),
+                ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond.Select(WrapOr)),
                 ["condition_lines"] = condLines,
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
                 ["binding_info"] = new SortedDictionary<string, object>(bindInfo, StringComparer.Ordinal),
@@ -1249,7 +1264,7 @@ class MethodCtx
             {
                 ["api"] = "HTKKFile.GetMessage", ["level"] = "other", ["cells_marked"] = Array.Empty<string>(), ["cell_const"] = true,
                 ["sheet"] = null,
-                ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond),
+                ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond.Select(WrapOr)),
                 ["condition_lines"] = condLines,
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
                 ["binding_info"] = new SortedDictionary<string, object>(bindInfo, StringComparer.Ordinal),
@@ -1291,7 +1306,7 @@ class MethodCtx
             {
                 ["api"] = "frmMessage", ["level"] = "other", ["cells_marked"] = Array.Empty<string>(), ["cell_const"] = true,
                 ["sheet"] = null,
-                ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond),
+                ["condition"] = cond.Count == 0 ? "always" : string.Join(" AND ", cond.Select(WrapOr)),
                 ["bindings"] = new SortedDictionary<string, string>(bindings, StringComparer.Ordinal),
                 ["binding_info"] = new SortedDictionary<string, object>(bindInfo, StringComparer.Ordinal),
                 ["message"] = new SortedDictionary<string, object>(StringComparer.Ordinal) { ["parts"] = new[] { part } },

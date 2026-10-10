@@ -400,6 +400,38 @@ if "--sample" in sys.argv:
         print(json.dumps({x: c[x] for x in ("condition", "bindings", "cells_marked", "level", "status")}, ensure_ascii=False))
         print("   msg:", c["message"]["kind"], c["message"].get("id"), (c["message"].get("text") or "")[:60], "| ctx:", c.get("context"))
 
+# (6b) mẫu đọc tay binding nhiều phép gán: in binding, điều kiện riêng và mọi dòng nguồn của method có tên biến (thụt lề = cấu trúc khối)
+if "--sample-bindings" in sys.argv:
+    rnd = random.Random(int(os.environ.get("BIND_SEED", "20265151")))
+    pool = []
+    for k, m, c in checks:
+        for var, bi in sorted((c.get("binding_info") or {}).items()):
+            if len(bi.get("def_lines", [])) >= 2:
+                pool.append((k, m, c, var))
+    pool.sort(key=lambda x: (x[0], x[2]["source"]["lines"][0], x[3]))
+    seen = set()
+    picks = []
+    for x in rnd.sample(pool, len(pool)):
+        key = (x[0], x[1]["method"], x[3], x[2]["binding_info"][x[3]]["use_line"])
+        if key in seen:
+            continue
+        seen.add(key)
+        picks.append(x)
+        if len(picks) == 30:
+            break
+    for i, (k, m, c, var) in enumerate(picks, 1):
+        bi = c["binding_info"][var]
+        name = var.split("@")[0]
+        print("#B%d|%s|%s|check L%s|%s|use L%s|defs %s|decl L%s|%s" % (i, k, m["method"], c["source"]["lines"][0], var, bi["use_line"], bi["def_lines"], bi.get("decl_line"), bi["method"]))
+        print("   value:", c["bindings"][var])
+        src = open(os.path.join(data, c["source"]["file"]), encoding="utf-8-sig").read().split("\n")
+        a0, b0 = m["source"]["lines"]
+        for ln in range(a0, b0 + 1):
+            t = src[ln - 1]
+            if re.search(r"\b" + re.escape(name) + r"\b", t) or (ln == bi["use_line"]):
+                mark = "U" if ln == bi["use_line"] else ("D" if ln in bi["def_lines"] else " ")
+                print("   %s%5d %s" % (mark, ln, t.replace("\t", "  ")[:170]))
+
 mc = os.path.join(vdir, "manual_check.csv")
 if os.path.exists(mc):
     import csv
