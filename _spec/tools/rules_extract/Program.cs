@@ -61,10 +61,10 @@ ClassCtx BuildClass(TypeDeclarationSyntax td, string file)
                 if (!c.Methods.TryGetValue(md.Identifier.Text, out var l)) c.Methods[md.Identifier.Text] = l = new();
                 l.Add(md); break;
             case FieldDeclarationSyntax fd:
-                foreach (var v in fd.Declaration.Variables) { c.FieldInit[v.Identifier.Text] = v.Initializer?.Value; c.Members.Add(v.Identifier.Text); }
+                foreach (var v in fd.Declaration.Variables) { c.FieldInit[v.Identifier.Text] = v.Initializer?.Value; c.Members.Add(v.Identifier.Text); c.FieldType[v.Identifier.Text] = fd.Declaration.Type.ToString().Split('.').Last(); }
                 break;
             case PropertyDeclarationSyntax pd:
-                c.Members.Add(pd.Identifier.Text);
+                c.Members.Add(pd.Identifier.Text); c.FieldType[pd.Identifier.Text] = pd.Type.ToString().Split('.').Last();
                 if (pd.ExpressionBody != null) c.PropBody[pd.Identifier.Text] = pd.ExpressionBody.Expression;
                 else
                 {
@@ -107,7 +107,9 @@ string[] Rank = { "resolved", "parametric", "unresolved" };
 var opaqueSites = new HashSet<string>(StringComparer.Ordinal);
 var hookCounts = new SortedDictionary<string, int>(StringComparer.Ordinal);
 foreach (var k in HookKinds.OrderBy(x => x, StringComparer.Ordinal)) hookCounts[k] = 0;
-var recStatus = new SortedDictionary<string, int>(StringComparer.Ordinal) { ["resolved"] = 0, ["parametric"] = 0, ["unresolved"] = 0 };
+var recStatus = new SortedDictionary<string, int>(StringComparer.Ordinal) { ["resolved"] = 0, ["parametric"] = 0, ["unresolved"] = 0, ["opaque_only"] = 0, ["ui_only"] = 0 };
+var UiCalls = new HashSet<string>(StringComparer.Ordinal) { "SuspendLayout", "ResumeLayout", "SetActiveCell", "Focus", "ShowCell", "ShowActiveCell", "Invalidate", "Select", "BringToFront", "SetViewportTopRow", "SetViewportLeftColumn", "SetActiveSheet", "SetNodeBackGroundPink", "SetRowHeight", "SetColumnWidth", "Refresh", "Update", "PerformLayout", "ScrollTo", "SetFocus" };
+int effStmts = 0, effMatched = 0, effDropped = 0;
 var effOps = new SortedDictionary<string, int>(StringComparer.Ordinal);
 var effStatus = new SortedDictionary<string, int>(StringComparer.Ordinal);
 var truncated = new List<string>();
@@ -300,14 +302,15 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
             }
             foreach (var l in ef.Lines) { if (l < lmin) lmin = l; if (l > lmax) lmax = l; }
         }
-        string status = worst < 0 ? "unresolved" : Rank[worst];
-        string reason = worst < 0 ? "chỉ có lời gọi chưa giải" : status == "resolved" ? (anyOpaque ? "có lời gọi chưa giải kèm theo" : "") : "";
-        if (status != "resolved" || anyOpaque)
+        bool uiOnly = worst < 0 && g.effs.All(e => e.Op == "opaque" && UiCalls.Contains(((string)e.Params["call"]).Split('.').Last()));
+        string status = worst < 0 ? (uiOnly ? "ui_only" : "opaque_only") : Rank[worst];
+        string reason = worst < 0 ? (uiOnly ? "chỉ có thao tác giao diện, không tác dụng lên ô" : "chỉ có lời gọi chưa giải") : status == "resolved" ? (anyOpaque ? "có lời gọi chưa giải kèm theo" : "") : "";
+        if ((status != "resolved" || anyOpaque) && !uiOnly)
         {
-            var ns = notes.Where(n => status == "unresolved" ? true : !n.StartsWith("gọi chưa giải")).Take(8).ToList();
+            var ns = notes.Where(n => status is "unresolved" or "opaque_only" ? true : !n.StartsWith("gọi chưa giải")).Take(8).ToList();
             reason = (reason.Length > 0 ? reason + " | " : "") + (status == "parametric" ? "placeholder: " : status == "unresolved" ? "chưa giải: " : "") + string.Join(", ", ns);
         }
-        recStatus[status]++;
+        recStatus[status] = recStatus.GetValueOrDefault(status) + 1;
         recs.Add(new Dictionary<string, object>
         {
             ["key"] = key,
@@ -337,6 +340,7 @@ var reachedMethods = new HashSet<string>(StringComparer.Ordinal); // file:spanSt
 List<Dictionary<string, object>> RunStandalone(string rel, ClassCtx cls, BaseMethodDeclarationSyntax m, Dictionary<string, object> key)
 {
     var it = new Interp(rel, opaqueSites);
+    Interp.CurSheet = -1;
     it.RunMethod(m, cls, BindParams(m, -1, null), null, null, null);
     string name = Interp.MethodName(m);
     if (it.Truncated) truncated.Add(rel + ":" + name);
@@ -381,12 +385,29 @@ foreach (var row in classRows)
              ?? cls.Methods.GetValueOrDefault(name)?.FirstOrDefault();
         if (m == null) continue;
         var it = new Interp(rel, opaqueSites);
+        Interp.CurSheet = sheet;
         it.RunMethod(m, cls, BindParams(m, sheet, kind), null, null, null);
         hookCounts[kind]++;
+        var effLines = new HashSet<int>(it.Effects.Where(e => e.Via == null).Select(e => e.Line));
+        var dropped = new List<object>(); var seenL = new HashSet<int>();
+        foreach (var n in m.DescendantNodes())
+        {
+            ExpressionSyntax recv0 = null; int l0 = 0;
+            if (n is AssignmentExpressionSyntax asx && asx.Left is MemberAccessExpressionSyntax lm && (lm.Name.Identifier.Text is "Formula" or "Value" or "Text" or "Locked" || Interp.FormatProps.Contains(lm.Name.Identifier.Text))) { recv0 = lm.Expression; l0 = LineOf(asx); }
+            else if (n is InvocationExpressionSyntax ivx && ivx.Expression is MemberAccessExpressionSyntax im && im.Name.Identifier.Text is "ResetFormula" or "ResetValue") { recv0 = im.Expression; l0 = LineOf(ivx); }
+            if (recv0 is not ElementAccessExpressionSyntax rea || rea.Expression is not MemberAccessExpressionSyntax rem || rem.Name.Identifier.Text is not ("Cells" or "Rows" or "Columns")) continue;
+            if (!seenL.Add(l0)) continue;
+            effStmts++;
+            if (effLines.Contains(l0)) { effMatched++; continue; }
+            effDropped++;
+            var why = it.Dropped.FirstOrDefault(d => d.Line == l0).Reason
+                ?? (n.Ancestors().Any(a => a is LambdaExpressionSyntax) ? "nằm trong lambda, không phân tích" : n.Ancestors().Any(a => a is CatchClauseSyntax) ? "nằm trong khối catch, không phân tích" : "không tới được: nhánh điều kiện gấp thành hằng sai, hoặc sau return/throw");
+            dropped.Add(new Dictionary<string, object> { ["at"] = l0, ["reason"] = why });
+        }
         var r = BuildRecords(it.Effects, key, name, kind, sheet, rel, "hook");
         if (it.Truncated) truncated.Add(rel + ":" + name);
         var span = m.GetLocation().GetLineSpan();
-        hookList.Add(new Dictionary<string, object> { ["hook"] = name, ["kind"] = kind, ["sheetIndex"] = sheet >= 0 ? sheet : null, ["lines"] = new[] { span.StartLinePosition.Line + 1, span.EndLinePosition.Line + 1 }, ["records"] = r.Count, ["effects"] = it.Effects.Count, ["truncated"] = it.Truncated });
+        hookList.Add(new Dictionary<string, object> { ["hook"] = name, ["kind"] = kind, ["sheetIndex"] = sheet >= 0 ? sheet : null, ["lines"] = new[] { span.StartLinePosition.Line + 1, span.EndLinePosition.Line + 1 }, ["records"] = r.Count, ["effects"] = it.Effects.Count, ["truncated"] = it.Truncated, ["dropped"] = dropped });
         recs.AddRange(r);
     }
     perClassOut[cname] = (key, rel, hookList, recs);
@@ -421,8 +442,8 @@ void Write(string name, object o) => File.WriteAllText(Path.Combine(outDir, name
 foreach (var (cname, pc) in perClassOut)
 {
     totalRecords += pc.recs.Count;
-    var sc = new SortedDictionary<string, int>(StringComparer.Ordinal) { ["resolved"] = 0, ["parametric"] = 0, ["unresolved"] = 0 };
-    foreach (var r in pc.recs) sc[(string)r["status"]]++;
+    var sc = new SortedDictionary<string, int>(StringComparer.Ordinal);
+    foreach (var r in pc.recs) sc[(string)r["status"]] = sc.GetValueOrDefault((string)r["status"]) + 1;
     Write(cname + ".json", new Dictionary<string, object> { ["key"] = pc.key, ["file"] = pc.rel, ["hooks"] = pc.hooks, ["records"] = pc.recs });
     classSummaries.Add(new Dictionary<string, object> { ["Class"] = cname, ["file"] = pc.rel, ["in_menu"] = pc.key["in_menu"], ["hooks"] = pc.hooks.Count, ["records"] = pc.recs.Count, ["status"] = sc });
 }
@@ -465,6 +486,7 @@ Write("index.json", new Dictionary<string, object>
     ["hook_counts_T0_index_394_classes"] = t0Biz,
     ["records"] = totalRecords,
     ["record_status"] = recStatus,
+    ["hook_effect_statements"] = new Dictionary<string, object> { ["total"] = effStmts, ["with_effect"] = effMatched, ["dropped_flagged"] = effDropped },
     ["effect_ops"] = effOps,
     ["effect_status"] = effStatus,
     ["formula_points"] = new Dictionary<string, object> { ["total"] = ptList.Count, ["by_status"] = ptCounts, ["business"] = ptList.Count(p => ((string)p["file"]).StartsWith("tax.")), ["app"] = ptList.Count(p => ((string)p["file"]).StartsWith("htkk/")) },

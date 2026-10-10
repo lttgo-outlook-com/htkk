@@ -24,7 +24,7 @@ pick = [(True, x) for x in rnd.sample(pool[True], 15)] + [(False, x) for x in rn
 for n, (im, (cls, hook, path, s, e, lines)) in enumerate(pick, 1):
     src = open(os.path.join(dec, path), encoding="utf-8-sig").read().split("\n")
     d = json.load(open(os.path.join(rules, cls + ".json")))
-    chosen = sorted({lines[0], lines[len(lines) // 2], lines[-1]})
+    chosen = lines if len(lines) <= 6 else sorted({lines[0], lines[len(lines) // 2], lines[-1]})
     print("=" * 8, n, "in_menu=%s" % im, cls, hook, "%d-%d" % (s, e), "effect-lines=%d" % len(lines))
     for ln in chosen:
         # điều kiện bao quanh: quét ngược các dòng thụt lề nhỏ hơn

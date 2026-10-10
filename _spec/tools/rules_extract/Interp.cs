@@ -17,6 +17,7 @@ public sealed class ClassCtx
     public readonly HashSet<string> Members = new(StringComparer.Ordinal);
     public readonly Dictionary<string, V> Cache = new(StringComparer.Ordinal);
     public readonly HashSet<string> Evaluating = new(StringComparer.Ordinal);
+    public readonly Dictionary<string, string> FieldType = new(StringComparer.Ordinal);
 }
 
 public sealed class Entry { public readonly V Val; public readonly ImmutableSortedSet<int> Lines; public Entry(V v, ImmutableSortedSet<int> l) { Val = v; Lines = l; } }
@@ -28,8 +29,8 @@ public sealed class State
     public Dictionary<string, Entry> Env;
     public ImmutableList<PathItem> Path;
     public ImmutableList<LoopInfo> Loops;
-    public bool Dead;
-    public State Clone() => new() { Env = new Dictionary<string, Entry>(Env, StringComparer.Ordinal), Path = Path, Loops = Loops, Dead = Dead };
+    public bool Dead, Threw;
+    public State Clone() => new() { Env = new Dictionary<string, Entry>(Env, StringComparer.Ordinal), Path = Path, Loops = Loops, Dead = Dead, Threw = Threw };
 }
 
 public sealed class Frame
@@ -58,6 +59,14 @@ public sealed class Interp
     public bool Truncated;
     public const int MaxSteps = 400000, MaxDepth = 4;
     public int HookSheet = -1;
+    public static int CurSheet = -1;
+    public readonly List<(int Line, string Reason)> Dropped = new();
+    bool pendingThrow;
+    void CheckThrow(State st, int line, string what)
+    {
+        if (!pendingThrow) return;
+        pendingThrow = false; Dropped.Add((line, "ngoại lệ chắc chắn: " + what)); st.Dead = true; st.Threw = true;
+    }
 
     public Interp(string file, HashSet<string> opaqueSites) { this.file = file; OpaqueSites = opaqueSites; }
 
@@ -119,11 +128,14 @@ public sealed class Interp
                     used = new();
                     V val = v.Initializer != null ? Eval(v.Initializer.Value, st, f) : new VSym(v.Identifier.Text);
                     Assign(st, v.Identifier.Text, val, Line(v));
+                    CheckThrow(st, Line(v), "chỉ số ngoài mảng");
+                    if (st.Dead) break;
                 }
                 break;
             case ExpressionStatementSyntax es:
                 used = new();
                 ExecExpr(es.Expression, st, f);
+                CheckThrow(st, Line(es), "chỉ số ngoài mảng");
                 break;
             case IfStatementSyntax ifs:
                 {
@@ -141,9 +153,10 @@ public sealed class Interp
             case ReturnStatementSyntax rs:
                 if (rs.Expression != null) { used = new(); var v = Eval(rs.Expression, st, f); f.Returns.Add((st.Path, v)); }
                 st.Dead = true; break;
-            case ThrowStatementSyntax: st.Dead = true; break;
+            case ThrowStatementSyntax: st.Dead = true; st.Threw = true; break;
             case TryStatementSyntax ts2:
                 Exec(ts2.Block, st, f);
+                if (st.Threw) { st.Dead = false; st.Threw = false; }
                 if (ts2.Finally != null) { st.Dead = false; Exec(ts2.Finally.Block, st, f); }
                 break;
             case UsingStatementSyntax us:
@@ -155,6 +168,7 @@ public sealed class Interp
                     if (fs.Declaration != null) foreach (var v in fs.Declaration.Variables) { used = new(); var init = v.Initializer != null ? Eval(v.Initializer.Value, st, f) : new VSym(v.Identifier.Text); vars.Add(v.Identifier.Text + " from " + R.Expr(init, new Flags())); }
                     foreach (var ie in fs.Initializers) { used = new(); ExecExpr(ie, st, f); }
                     var assigned = AssignedIn(fs);
+                    if (TryUnroll(fs, st, f)) break;
                     foreach (var n in assigned) st.Env[n] = new Entry(VLin.Atom(n), ImmutableSortedSet<int>.Empty);
                     if (fs.Declaration != null) foreach (var v in fs.Declaration.Variables) st.Env[v.Identifier.Text] = new Entry(VLin.Atom(v.Identifier.Text), ImmutableSortedSet.Create(Line(v)));
                     used = new();
@@ -226,6 +240,39 @@ public sealed class Interp
             case FixedStatementSyntax fx: Exec(fx.Statement, st, f); break;
             default: break; // break/continue/goto/empty/local function: bỏ qua
         }
+    }
+
+    const int MaxUnroll = 40;
+    bool TryUnroll(ForStatementSyntax fs, State st, Frame f)
+    {
+        if (fs.Declaration == null || fs.Declaration.Variables.Count != 1 || fs.Condition == null) return false;
+        string name = fs.Declaration.Variables[0].Identifier.Text;
+        var initX = fs.Declaration.Variables[0].Initializer?.Value;
+        if (initX == null || AssignedIn(fs.Statement).Contains(name)) return false;
+        var savedUsed = used;
+        var init = Eval(initX, st, f);
+        if (init is not VConst k0 || k0.Val is not long) { used = savedUsed; return false; }
+        var scratch = st.Clone(); var vals = new List<V>();
+        scratch.Env[name] = new Entry(init, ImmutableSortedSet<int>.Empty);
+        for (int it = 0; ; it++)
+        {
+            used = new();
+            var c = C.Of(Eval(fs.Condition, scratch, f));
+            if (c is not CConst ck) { used = savedUsed; return false; }
+            if (!ck.B) break;
+            if (it >= MaxUnroll) { used = savedUsed; return false; }
+            vals.Add(scratch.Env[name].Val);
+            foreach (var inc in fs.Incrementors) ExecExpr(inc, scratch, f);
+            if (scratch.Env[name].Val is not VConst) { used = savedUsed; return false; }
+        }
+        used = savedUsed;
+        foreach (var v in vals)
+        {
+            if (st.Dead) break;
+            st.Env[name] = new Entry(v, ImmutableSortedSet.Create(Line(fs)));
+            Exec(fs.Statement, st, f);
+        }
+        return true;
     }
 
     void Loop(State st, Frame f, StatementSyntax body, string desc, int line, HashSet<string> assigned)
@@ -303,7 +350,7 @@ public sealed class Interp
         else Assign(st, "this." + n, Ar.Add(cur, new VConst(d)), line);
     }
 
-    static readonly HashSet<string> FormatProps = new(StringComparer.Ordinal) { "CellType", "BackColor", "ForeColor", "HorizontalAlignment", "VerticalAlignment", "Formatter", "Font" };
+    public static readonly HashSet<string> FormatProps = new(StringComparer.Ordinal) { "CellType", "BackColor", "ForeColor", "HorizontalAlignment", "VerticalAlignment", "Formatter", "Font" };
 
     V DoAssign(AssignmentExpressionSyntax a, State st, Frame f)
     {
@@ -325,13 +372,18 @@ public sealed class Interp
                 }
             case MemberAccessExpressionSyntax ma when ma.Expression is ThisExpressionSyntax:
                 Assign(st, "this." + ma.Name.Identifier.Text, rhs, ln); return rhs;
+            case MemberAccessExpressionSyntax ma when ma.Expression is IdentifierNameSyntax oid && st.Env.TryGetValue(oid.Identifier.Text, out var oe) && oe.Val is VSym osy && osy.Text.StartsWith("celltype(", StringComparison.Ordinal):
+                Assign(st, oid.Identifier.Text, new VSym(osy.Text.Substring(0, osy.Text.Length - 1) + ", " + ma.Name.Identifier.Text + "=" + R.Expr(rhs, new Flags()) + ")"), ln);
+                return rhs;
             case MemberAccessExpressionSyntax ma:
                 {
                     string prop = ma.Name.Identifier.Text;
                     if (prop == "Formula" || prop == "Value" || prop == "Text" || prop == "Locked" || FormatProps.Contains(prop))
                     {
                         var tgt = Eval(ma.Expression, st, f);
-                        if (tgt is VCell || prop == "Formula")
+                        if (pendingThrow) return rhs;
+                        bool cellSyntax = ma.Expression is ElementAccessExpressionSyntax eas && eas.Expression is MemberAccessExpressionSyntax em && em.Name.Identifier.Text is "Cells" or "Rows" or "Columns";
+                        if (tgt is VCell || prop == "Formula" || cellSyntax)
                         {
                             var ef = NewEffect(st, f, ln);
                             ef.Target = tgt is VCell ? tgt : new VOpaque("target:" + Kind(tgt));
@@ -382,6 +434,7 @@ public sealed class Interp
 
     public V Field(string n, ClassCtx cls)
     {
+        if (cls.FieldType.TryGetValue(n, out var ft)) { if (ft == "FpSpread") return VSpread.I; if (ft == "SheetView") return new VSheet(new VSym("field(" + n + ")")); }
         if (cls.Mutable.Contains(n)) return new VSym("field(" + n + ")");
         if (cls.Cache.TryGetValue(n, out var v)) return v;
         if (!cls.Evaluating.Add(n)) return new VSym("field(" + n + ")");
@@ -468,9 +521,15 @@ public sealed class Interp
                     if (oc.ArgumentList != null) foreach (var a in oc.ArgumentList.Arguments) Eval(a.Expression, st, f);
                     var tn = oc.Type.ToString(); int lt = tn.IndexOf('<'); if (lt > 0) tn = tn.Substring(0, lt);
                     if ((tn == "List" || tn == "HashSet") && oc.Initializer == null && (oc.ArgumentList == null || oc.ArgumentList.Arguments.Count == 0)) return new VArr(new List<V>());
-                    return new VSym("new " + tn.Split('.').Last());
+                    tn = tn.Split('.').Last();
+                    if (tn.EndsWith("CellType", StringComparison.Ordinal))
+                    {
+                        var props = oc.Initializer?.Expressions.OfType<AssignmentExpressionSyntax>().Select(a => a.Left.ToString().Trim() + "=" + R.Expr(Eval(a.Right, st, f), new Flags())) ?? Enumerable.Empty<string>();
+                        return new VSym("celltype(" + string.Join(", ", new[] { tn.Substring(0, tn.Length - 8) }.Concat(props)) + ")");
+                    }
+                    return new VSym("obj(" + tn + ")");
                 }
-            case ImplicitObjectCreationExpressionSyntax: return new VSym("new");
+            case ImplicitObjectCreationExpressionSyntax: return new VSym("obj()");
             case ArrayCreationExpressionSyntax ac:
                 {
                     if (ac.Initializer != null) return new VArr(ac.Initializer.Expressions.Select(x => Eval(x, st, f)).ToList());
@@ -483,7 +542,7 @@ public sealed class Interp
             case InitializerExpressionSyntax ie: return new VArr(ie.Expressions.Select(x => Eval(x, st, f)).ToList());
             case LambdaExpressionSyntax le: return new VLambda(le);
             case DefaultExpressionSyntax: return VConst.Null;
-            case TypeOfExpressionSyntax to: return new VSym("typeof " + to.Type);
+            case TypeOfExpressionSyntax to: return new VSym("type(" + to.Type + ")");
             case AwaitExpressionSyntax aw: return Eval(aw.Expression, st, f);
             case GenericNameSyntax gn: return new VSym(gn.Identifier.Text);
             case QualifiedNameSyntax qn: return new VSym(qn.Right.Identifier.Text);
@@ -572,8 +631,9 @@ public sealed class Interp
             case VCell c:
                 {
                     var fl = new Flags(); string rf = R.CellRef(c, fl);
-                    string sh = R.Sheet(c.S, new Flags());
-                    return new VSym("cell(" + (sh == "activeSheet" ? "" : "") + rf + ")." + n.ToLowerInvariant());
+                    string shn = R.Sheet(c.S, new Flags());
+                    string pre = c.S.Index is VConst sk && sk.Val is long si ? ("S" + si + "!") : shn == "activeSheet" ? "" : "S{" + shn + "}!";
+                    return new VSym("cell(" + pre + rf + ")." + n.ToLowerInvariant());
                 }
             case VCellInfo ci:
                 if (n == "CellTemplate" || n == "Location") return ci;
@@ -586,6 +646,7 @@ public sealed class Interp
             case VCases cs: return Ar.Cases(cs.Alts.Select(x => (x.When, Member(x.Val, n))).ToList());
             case VSym y:
                 if (n == "Location" || n == "CellTemplate" || n == "Value" && y.Text.EndsWith(".value")) return y;
+                if (n == "Cells") return new VSym(y.Text + ".cells");
                 return new VSym(y.Text + "." + n);
             default:
                 {
@@ -602,12 +663,12 @@ public sealed class Interp
         var idx = ea.ArgumentList.Arguments.Select(a => Eval(a.Expression, st, f)).ToList();
         return Element(b, idx);
     }
-    static V Element(V b, List<V> idx)
+    V Element(V b, List<V> idx)
     {
         switch (b)
         {
             case VArr a when idx.Count == 1:
-                if (idx[0] is VConst k && k.Val is long i) return i >= 0 && i < a.Items.Count ? a.Items[(int)i] : new VOpaque("index-out-of-range");
+                if (idx[0] is VConst k && k.Val is long i) { if (i >= 0 && i < a.Items.Count) return a.Items[(int)i]; pendingThrow = true; return new VOpaque("index-out-of-range"); }
                 return new VOpaque("array-index");
             case VSheets when idx.Count == 1: return new VSheet(idx[0]);
             case VCells c:
@@ -653,6 +714,12 @@ public sealed class Interp
             default: name = "?"; break;
         }
         var args = inv.ArgumentList.Arguments;
+        foreach (var oa in args)
+            if (oa.RefKindKeyword.IsKind(SyntaxKind.OutKeyword) || oa.RefKindKeyword.IsKind(SyntaxKind.RefKeyword))
+            {
+                string on = oa.Expression is IdentifierNameSyntax oi ? oi.Identifier.Text : oa.Expression is DeclarationExpressionSyntax de && de.Designation is SingleVariableDesignationSyntax sv ? sv.Identifier.Text : null;
+                if (on != null) Assign(st, on, new VSym(on), Line(inv));
+            }
         string rt = recv?.ToString() ?? "";
         bool staticRecv = recv is IdentifierNameSyntax rid && !st.Env.ContainsKey(rid.Identifier.Text) && (f.Cls == null || !f.Cls.Members.Contains(rid.Identifier.Text)) || recv is PredefinedTypeSyntax;
         int ln = Line(inv);
@@ -817,6 +884,12 @@ public sealed class Interp
                         Effects.Add(e1);
                     }
                     return VConst.Null;
+                }
+            case "ResetValue" when recv != null && args.Count == 0:
+                {
+                    var t = Eval(recv, st, f);
+                    if (t is VCell) { var e1 = NewEffect(st, f, ln); e1.Op = "setValue"; e1.Target = t; e1.Val = VConst.Null; e1.Params["reset"] = true; Effects.Add(e1); return VConst.Null; }
+                    break;
                 }
             case "ResetFormula" when recv != null && args.Count == 0:
                 {

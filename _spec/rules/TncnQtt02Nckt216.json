@@ -18,7 +18,8 @@
       ],
       "records": 4,
       "effects": 5,
-      "truncated": false
+      "truncated": false,
+      "dropped": []
     },
     {
       "hook": "AutoBindData_1",
@@ -30,7 +31,8 @@
       ],
       "records": 3,
       "effects": 18,
-      "truncated": false
+      "truncated": false,
+      "dropped": []
     },
     {
       "hook": "CellChange_1",
@@ -42,7 +44,8 @@
       ],
       "records": 6,
       "effects": 23,
-      "truncated": false
+      "truncated": false,
+      "dropped": []
     }
   ],
   "records": [
@@ -353,37 +356,46 @@
           "status": "parametric"
         },
         {
-          "op": "opaque",
-          "target": null,
+          "op": "setValue",
+          "target": {
+            "sheet": 1,
+            "cell": "K{rowIdx(\"{letters(sheet[activeSheet].ActiveCell.Column.Index+1)}_{sheet[activeSheet].ActiveCell.Row.Index+1}\")+1}"
+          },
+          "value": null,
           "params": {
-            "args": [],
-            "call": "<cell>.ResetValue"
+            "reset": true
           },
           "at": 362,
           "via": "CellChange_1@260",
-          "status": "opaque"
+          "status": "parametric"
         },
         {
-          "op": "opaque",
-          "target": null,
+          "op": "setValue",
+          "target": {
+            "sheet": 1,
+            "cell": "M{rowIdx(\"{letters(sheet[activeSheet].ActiveCell.Column.Index+1)}_{sheet[activeSheet].ActiveCell.Row.Index+1}\")+1}"
+          },
+          "value": null,
           "params": {
-            "args": [],
-            "call": "<cell>.ResetValue"
+            "reset": true
           },
           "at": 363,
           "via": "CellChange_1@260",
-          "status": "opaque"
+          "status": "parametric"
         },
         {
-          "op": "opaque",
-          "target": null,
+          "op": "setValue",
+          "target": {
+            "sheet": 1,
+            "cell": "O{rowIdx(\"{letters(sheet[activeSheet].ActiveCell.Column.Index+1)}_{sheet[activeSheet].ActiveCell.Row.Index+1}\")+1}"
+          },
+          "value": null,
           "params": {
-            "args": [],
-            "call": "<cell>.ResetValue"
+            "reset": true
           },
           "at": 364,
           "via": "CellChange_1@260",
-          "status": "opaque"
+          "status": "parametric"
         }
       ],
       "source": {
@@ -581,11 +593,11 @@
           "target": null,
           "params": {
             "args": [
-              "\"01/{cell(Q{trigger.row}).text}\"",
+              "\"01/{cell(S1!Q{trigger.row}).text}\"",
               "\"dd/MM/yyyy\"",
               "CultureInfo.CurrentCulture",
               "DateTimeStyles.None",
-              "null"
+              "result"
             ],
             "call": "DateTime.TryParseExact"
           },
@@ -597,11 +609,11 @@
           "target": null,
           "params": {
             "args": [
-              "\"01/{cell(S{trigger.row}).text}\"",
+              "\"01/{cell(S1!S{trigger.row}).text}\"",
               "\"dd/MM/yyyy\"",
               "CultureInfo.CurrentCulture",
               "DateTimeStyles.None",
-              "null"
+              "result2"
             ],
             "call": "DateTime.TryParseExact"
           },
@@ -616,8 +628,8 @@
           281
         ]
       },
-      "status": "unresolved",
-      "reason": "chỉ có lời gọi chưa giải | chưa giải: gọi chưa giải: DateTime.TryParseExact"
+      "status": "opaque_only",
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: DateTime.TryParseExact"
     },
     {
       "key": {
@@ -646,7 +658,7 @@
         ]
       },
       "guards": [
-        "DateTime.MinValue != null"
+        "result2 != DateTime.MinValue"
       ],
       "effects": [
         {
@@ -655,7 +667,7 @@
             "sheet": 1,
             "cell": "Y{trigger.row}"
           },
-          "value": 1,
+          "value": "{-result.Month-12*result.Year+result2.Month+12*result2.Year+1}",
           "params": {
             "prop": "value"
           },
@@ -671,28 +683,28 @@
           "value": {
             "cases": [
               {
-                "when": "period.Nam == \"2019\" && null.Year > null.Year && null.Year == 2019",
-                "value": "{800000*null.Month-6000000}"
+                "when": "period.Nam == \"2019\" && result2.Year > result.Year && result.Year == 2019",
+                "value": "{-3600000*result.Month-52800000*result.Year+4400000*result2.Month+52800000*result2.Year-6000000}"
               },
               {
-                "when": "period.Nam == \"2019\" && null.Year > null.Year && null.Year == 2019 && null.Year != 2019",
-                "value": "{-3600000*null.Month+51200000}"
+                "when": "period.Nam == \"2019\" && result2.Year > result.Year && result.Year == 2019 && result.Year != 2019",
+                "value": "{-8000000*result.Month-52800000*result.Year+4400000*result2.Month+52800000*result2.Year+51200000}"
               },
               {
-                "when": "period.Nam == \"2019\" && null.Year > null.Year && null.Year == 2019",
-                "value": "{4400000*null.Month-52800000}"
+                "when": "period.Nam == \"2019\" && result2.Year > result.Year && result.Year == 2019",
+                "value": "{-52800000*result.Year+4400000*result2.Month+52800000*result2.Year-52800000}"
               },
               {
-                "when": "period.Nam == \"2019\" && null.Year > null.Year && null.Year != 2019 && (null.Year != 2019 || null.Year == 2019)",
-                "value": 4400000
+                "when": "period.Nam == \"2019\" && result2.Year > result.Year && result.Year != 2019 && (result.Year != 2019 || result.Year == 2019)",
+                "value": "{-4400000*result.Month-52800000*result.Year+4400000*result2.Month+52800000*result2.Year+4400000}"
               },
               {
-                "when": "null.Year > 2019",
-                "value": 4400000
+                "when": "result.Year > 2019",
+                "value": "{(-result.Month-12*result.Year+result2.Month+12*result2.Year+1*4400000)}"
               },
               {
                 "when": "else",
-                "value": 3600000
+                "value": "{(-result.Month-12*result.Year+result2.Month+12*result2.Year+1*3600000)}"
               }
             ]
           },
@@ -711,7 +723,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: null.Month, trigger.row"
+      "reason": "placeholder: (-result.Month-12*result.Year+result2.Month+12*result2.Year+1*3600000), (-result.Month-12*result.Year+result2.Month+12*result2.Year+1*4400000), result.Month, result.Year, result2.Month, result2.Year, trigger.row"
     },
     {
       "key": {
@@ -746,11 +758,11 @@
           "target": null,
           "params": {
             "args": [
-              "\"01/{cell(T{trigger.row}).text}\"",
+              "\"01/{cell(S1!T{trigger.row}).text}\"",
               "\"dd/MM/yyyy\"",
               "CultureInfo.CurrentCulture",
               "DateTimeStyles.None",
-              "null"
+              "result"
             ],
             "call": "DateTime.TryParseExact"
           },
@@ -762,11 +774,11 @@
           "target": null,
           "params": {
             "args": [
-              "\"01/{cell(U{trigger.row}).text}\"",
+              "\"01/{cell(S1!U{trigger.row}).text}\"",
               "\"dd/MM/yyyy\"",
               "CultureInfo.CurrentCulture",
               "DateTimeStyles.None",
-              "null"
+              "result2"
             ],
             "call": "DateTime.TryParseExact"
           },
@@ -781,8 +793,8 @@
           317
         ]
       },
-      "status": "unresolved",
-      "reason": "chỉ có lời gọi chưa giải | chưa giải: gọi chưa giải: DateTime.TryParseExact"
+      "status": "opaque_only",
+      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: DateTime.TryParseExact"
     },
     {
       "key": {
@@ -811,7 +823,7 @@
         ]
       },
       "guards": [
-        "DateTime.MinValue != null"
+        "result2 != DateTime.MinValue"
       ],
       "effects": [
         {
@@ -820,7 +832,7 @@
             "sheet": 1,
             "cell": "Y{trigger.row}"
           },
-          "value": 1,
+          "value": "{-result.Month-12*result.Year+result2.Month+12*result2.Year+1}",
           "params": {
             "prop": "value"
           },
@@ -836,28 +848,28 @@
           "value": {
             "cases": [
               {
-                "when": "period.Nam == \"2019\" && null.Year > null.Year && null.Year == 2019",
-                "value": "{800000*null.Month-6000000}"
+                "when": "period.Nam == \"2019\" && result2.Year > result.Year && result.Year == 2019",
+                "value": "{-3600000*result.Month-52800000*result.Year+4400000*result2.Month+52800000*result2.Year-6000000}"
               },
               {
-                "when": "period.Nam == \"2019\" && null.Year > null.Year && null.Year == 2019 && null.Year != 2019",
-                "value": "{-3600000*null.Month+51200000}"
+                "when": "period.Nam == \"2019\" && result2.Year > result.Year && result.Year == 2019 && result.Year != 2019",
+                "value": "{-8000000*result.Month-52800000*result.Year+4400000*result2.Month+52800000*result2.Year+51200000}"
               },
               {
-                "when": "period.Nam == \"2019\" && null.Year > null.Year && null.Year == 2019",
-                "value": "{4400000*null.Month-52800000}"
+                "when": "period.Nam == \"2019\" && result2.Year > result.Year && result.Year == 2019",
+                "value": "{-52800000*result.Year+4400000*result2.Month+52800000*result2.Year-52800000}"
               },
               {
-                "when": "period.Nam == \"2019\" && null.Year > null.Year && null.Year != 2019 && (null.Year != 2019 || null.Year == 2019)",
-                "value": 4400000
+                "when": "period.Nam == \"2019\" && result2.Year > result.Year && result.Year != 2019 && (result.Year != 2019 || result.Year == 2019)",
+                "value": "{-4400000*result.Month-52800000*result.Year+4400000*result2.Month+52800000*result2.Year+4400000}"
               },
               {
-                "when": "null.Year > 2019",
-                "value": 4400000
+                "when": "result.Year > 2019",
+                "value": "{(-result.Month-12*result.Year+result2.Month+12*result2.Year+1*4400000)}"
               },
               {
                 "when": "else",
-                "value": 3600000
+                "value": "{(-result.Month-12*result.Year+result2.Month+12*result2.Year+1*3600000)}"
               }
             ]
           },
@@ -876,7 +888,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: null.Month, trigger.row"
+      "reason": "placeholder: (-result.Month-12*result.Year+result2.Month+12*result2.Year+1*3600000), (-result.Month-12*result.Year+result2.Month+12*result2.Year+1*4400000), result.Month, result.Year, result2.Month, result2.Year, trigger.row"
     },
     {
       "key": {
@@ -929,34 +941,43 @@
           "status": "parametric"
         },
         {
-          "op": "opaque",
-          "target": null,
+          "op": "setValue",
+          "target": {
+            "sheet": 1,
+            "cell": "K{rowIdx(\"{letters(sheet[activeSheet].ActiveCell.Column.Index+1)}_{sheet[activeSheet].ActiveCell.Row.Index+1}\")+1}"
+          },
+          "value": null,
           "params": {
-            "args": [],
-            "call": "<cell>.ResetValue"
+            "reset": true
           },
           "at": 362,
-          "status": "opaque"
+          "status": "parametric"
         },
         {
-          "op": "opaque",
-          "target": null,
+          "op": "setValue",
+          "target": {
+            "sheet": 1,
+            "cell": "M{rowIdx(\"{letters(sheet[activeSheet].ActiveCell.Column.Index+1)}_{sheet[activeSheet].ActiveCell.Row.Index+1}\")+1}"
+          },
+          "value": null,
           "params": {
-            "args": [],
-            "call": "<cell>.ResetValue"
+            "reset": true
           },
           "at": 363,
-          "status": "opaque"
+          "status": "parametric"
         },
         {
-          "op": "opaque",
-          "target": null,
+          "op": "setValue",
+          "target": {
+            "sheet": 1,
+            "cell": "O{rowIdx(\"{letters(sheet[activeSheet].ActiveCell.Column.Index+1)}_{sheet[activeSheet].ActiveCell.Row.Index+1}\")+1}"
+          },
+          "value": null,
           "params": {
-            "args": [],
-            "call": "<cell>.ResetValue"
+            "reset": true
           },
           "at": 364,
-          "status": "opaque"
+          "status": "parametric"
         }
       ],
       "source": {

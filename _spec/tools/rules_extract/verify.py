@@ -83,11 +83,11 @@ for r in d["records"]:
             hit.append((r, e))
 good = [h for h in hit if isinstance(h[1]["formula"], dict) and
         [c["value"] for c in h[1]["formula"]["cases"]] == ["BI101", "BH101"] and
-        h[1]["formula"]["cases"][0]["when"] == 'cell(BH92).text == "VND"']
+        h[1]["formula"]["cases"][0]["when"] == 'cell(S0!BH92).text == "VND"']
 for r, e in hit:
     print("   AV101: trigger=%s guards=%s source=%s at=%s formula=%s status=%s" % (r["trigger"]["cells"] or r["trigger"]["rowRange"], r["guards"], r["source"]["lines"], e["at"], json.dumps(e["formula"], ensure_ascii=False), e["status"]))
 say(len(good) == len(hit) == 2 and {tuple(h[0]["trigger"]["cells"]) for h in good} == {("N92",), ("AV99", "AV100")},
-    "DkTndnVsp02TT80Nckt251.CellChange_0: AV101 = BI101 nếu ô tiền tệ BH92 == VND, ngược lại BH101; kích hoạt N92 và AV99/AV100")
+    "DkTndnVsp02TT80Nckt251.CellChange_0: AV101 = BI101 nếu ô tiền tệ S0!BH92 == VND, ngược lại BH101; kích hoạt N92 và AV99/AV100")
 
 # (5) không chép đoạn C# dài
 bad = []
@@ -108,7 +108,7 @@ def walk(o, path):
 for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
     walk(json.load(open(f)), os.path.basename(f))
 # định danh C# thô trong trường nội dung (trừ tên hàm ở params.call/args và reason)
-ident = re.compile(r"hTKKCMC|\.Cells\[|CellTemplate\.|\(int\)|\.Location\.")
+ident = re.compile(r"hTKKCMC|\.Cells\[|CellTemplate\.|\(int\)|\.Location\.|\bnew [A-Z]")
 raw = []
 def walk2(o, path):
     if isinstance(o, dict):
@@ -127,7 +127,30 @@ for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
     walk2(json.load(open(f)), os.path.basename(f))
 for b in raw[:5]:
     print("   định danh C# thô:", b)
-print("   chuỗi chứa định danh C# thô (hTKKCMC, .Cells[, CellTemplate., (int), .Location.): %d" % len(raw))
+say(not raw, "chuỗi chứa định danh C# thô (hTKKCMC, .Cells[, CellTemplate., (int), .Location., new X): %d" % len(raw))
+xs = 0
+for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+    if os.path.basename(f) in ("formula_points.json", "opaque_calls.json", "index.json"):
+        continue
+    xs += len(re.findall(r"cell\(S[0-9{]", open(f).read()))
+print("   tham chiếu ô chéo sheet ghi tường minh cell(Sn!...): %d" % xs)
+rxe = re.compile(r"\.(Cells|Rows|Columns)\[.*\]\.(Value|Text|Formula|Locked|CellType|BackColor|ForeColor|HorizontalAlignment|VerticalAlignment|Formatter|Font) = |\.Cells\[.*\]\.Reset(Formula|Value)\(")
+tot = cov = drp = 0; miss = []
+for c in classes:
+    d = json.load(open(os.path.join(rules, c["class"] + ".json")))
+    src = open(os.path.join(dec, d["file"]), encoding="utf-8-sig").read().split("\n")
+    for h in d["hooks"]:
+        ats = {e["at"] for r in d["records"] if r["hook"] == h["hook"] for e in r["effects"] if "via" not in e}
+        dats = {x["at"] for x in h.get("dropped", [])}
+        for ln in range(h["lines"][0], h["lines"][1] + 1):
+            if rxe.search(src[ln - 1]):
+                tot += 1
+                if ln in ats: cov += 1
+                elif ln in dats: drp += 1
+                else: miss.append(d["file"] + ":" + str(ln))
+for x in miss[:5]:
+    print("   thiếu:", x)
+say(not miss, "câu lệnh tác dụng trong thân hook (grep): %d, có effect %d, gắn dropped %d, thiếu %d" % (tot, cov, drp, len(miss)))
 for b in bad[:10]:
     print("   nghi C#:", b[0], pat.findall(b[1]), b[1][:300])
 say(not bad, "không chuỗi nào chứa dấu hiệu câu lệnh C# (; => return if else foreach try catch throw var xuống dòng): %d chuỗi vi phạm" % len(bad))
