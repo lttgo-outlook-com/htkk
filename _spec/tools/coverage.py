@@ -23,7 +23,7 @@ MENU = '/Users/tuanle/codes/HTKK/_extracted/menu.xml'
 T2 = os.path.join(ROOT, '_spec', 'rules') + '/'
 T3 = os.path.join(ROOT, '_spec', 'validations') + '/'
 # HEAD nhánh nguồn đã gộp vào nhánh tích hợp (chỉ để ghi nhận; sha256 là định danh chính xác của dữ liệu đọc)
-T2_HEAD, T3_HEAD = 'f57052f', 'e9eb658'
+T2_HEAD, T3_HEAD = 'b6da776b', 'e9eb658'
 
 
 def dir_sha16(d):

@@ -28,3 +28,11 @@ Cập nhật vòng sửa 2:
 - Path bắt đầu từ gốc XSD khác HSoThueDTu (ví dụ TKhai/DLTKhai/...) được khớp trực tiếp; đoạn lặp liền kề bị gộp nếu không khớp XSD. 0 path còn đoạn lặp liền kề.
 - XSD KHBS: phép thử `_KHBS_` không phân biệt hoa thường.
 - Mẫu chung KHBS (WinFnProcess.cs:74): KieuKHBS=="3" và LoaiToKhai=="B" thì sheet Count-3 và Count-2 của .xls form được thay bằng sheet 0 và 1 của khbs_tt80_<VersionKHBS> (MenuID thuộc chuỗi "I7,I4,C7,I8,C8" theo string.Contains: KHBS_TT80_DVT; thuộc "D1,N8,G9,H2,H4,T8,E8,L8,L7,N2,G2,R5,Y6,Z8,Z5": KHBS_DIA_BAN; còn lại KHBS_TT80). Ô theo toạ độ ghi ở `mau_chung_khbs_cells` (nguon "mau_chung_khbs"), tách khỏi `khbs_cells_theo_toa_do` (sheet KHBS riêng của form). Header `mau_chung_khbs` ghi mẫu, phiên bản, tệp T1; nếu không tìm thấy phiên bản thì ghi `ung_vien`. LoaiToKhai là giá trị lúc chạy nên mẫu chung chỉ áp dụng khi nộp bổ sung.
+
+Số đo vòng chốt (sau gộp T2 bản cuối b6da776b; lấy từ đầu ra `coverage.py`):
+- Form: 242. Ô dữ liệu (có Path và có trong XSD): 38.895; ô Path ngoài XSD: 5.638 (kiểm chéo: 44.533 ô Cell có Path = 38.895 + 5.638). Form dùng XSD KHBS cho sheet chính trước sửa 140; 7 form không có XSD chính.
+- Nhãn trên 38.895 ô: nhap_tay 29.710; tinh_tu_dong 8.494; ca_hai 691. Ô controltype 16: 25.123 (nhap_tay 17.200; tinh_tu_dong 7.574; ca_hai 349).
+- Xung đột: excel_khac_csharp 8; khoa_co_dieu_kien 17; validate_o_khong_co_trong_xml 24.
+- KHBS: 8.470 ô theo toạ độ; 292 sheet có toạ độ; 36 sheet không phủ; activeSheet giải được 46 effect. Mẫu chung KHBS: 11 DIA_BAN, 90 TT80, 5 TT80_DVT (106 form); 8.062 ô; 212 sheet.
+- Effect C#: 24.218 (ánh xạ 7.886; unreachable bỏ qua 237; không thuộc form 36.681). Chưa ánh xạ 53.013 (trong đó `placeholder_vi_tri_bang_dong` 2.602, `hang_cot_ca_dong` 20). Check T3 trong form 4.292, ô ánh xạ 646.
+- Ô dòng động: dyn_o 6.435; hàng mẫu khớp T1: xls 663, xls1 89, T2 43, rowreplace 21.

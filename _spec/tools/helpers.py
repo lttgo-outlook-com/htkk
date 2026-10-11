@@ -283,7 +283,7 @@ def input_versions():
     for f in t3files:
         h.update(open(f, "rb").read())
     return {
-        "T2": {"path": "_spec/rules/opaque_calls.json", "branch_head_merged": "f57052f",
+        "T2": {"path": "_spec/rules/opaque_calls.json", "branch_head_merged": "b6da776b",
                "sha256_16": sha(T2)},
         "T3": {"path": "_spec/validations", "branch_head_merged": "e9eb658",
                "files": len(t3files), "sha256_16_all_files": h.hexdigest()[:16],
