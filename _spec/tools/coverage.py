@@ -451,7 +451,7 @@ def main():
             t = open(p, 'rb').read()
             t = t.decode('utf-16') if t[:2] in (b'\xff\xfe', b'\xfe\xff') else t.decode('utf-8-sig')
             t = re.sub(r'<!--.*?-->', '', t, flags=re.S)
-            indep_total += len(re.findall(r'<Cell\b[^<]*?\bPath="[^"]', t))
+            indep_total += len(re.findall(r'<Cell\b[^<]*?\bPath\s*=\s*"[^"]', t))
 
         # XSD
         xs = {}
