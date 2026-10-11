@@ -565,8 +565,12 @@ def main():
             for (s, co) in probes:
                 if any(cell_matches_coord(c, sp, s, co) for c in data):
                     lit_hits[sp] += 1
-        space = 1 if lit_hits[1] >= lit_hits[0] else 0
-        space_choice['xls1' if space else 'xls'] += 1
+        # C# sửa bảng tính giao diện (frmWinToKhai.cs:417 WinLoadFromFile(InterfaceTemplateExcel)); CellID = toạ độ
+        # mẫu giao diện (TemplateRowStart), CellID2 = mẫu báo cáo (ReportRowStart). Cố định không gian xls (CellID).
+        space = 0
+        space_choice['xls'] += 1
+        if lit_hits[1] > lit_hits[0]:
+            space_choice['canh_bao_xls1_khop_nhieu_hon'] += 1
         spname = 'xls1' if space else 'xls'
 
         def cell_ref(c):
