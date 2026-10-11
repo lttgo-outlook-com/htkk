@@ -228,7 +228,7 @@
             "call": "File.Copy"
           },
           "at": 121,
-          "via": "ShowBangKe@115",
+          "via": "ShowBangKe@43",
           "status": "opaque"
         },
         {
@@ -241,7 +241,7 @@
             "call": "Process.Start"
           },
           "at": 122,
-          "via": "ShowBangKe@115",
+          "via": "ShowBangKe@43",
           "status": "opaque"
         }
       ],
@@ -648,7 +648,7 @@
             "call": "File.Copy"
           },
           "at": 121,
-          "via": "ShowBangKe@115",
+          "via": "ShowBangKe@89",
           "status": "opaque"
         },
         {
@@ -661,7 +661,7 @@
             "call": "Process.Start"
           },
           "at": 122,
-          "via": "ShowBangKe@115",
+          "via": "ShowBangKe@89",
           "status": "opaque"
         }
       ],
@@ -713,7 +713,7 @@
             "call": "File.Copy"
           },
           "at": 121,
-          "via": "ShowBangKe@115",
+          "via": "ShowBangKe@105",
           "status": "opaque"
         },
         {
@@ -726,7 +726,7 @@
             "call": "Process.Start"
           },
           "at": 122,
-          "via": "ShowBangKe@115",
+          "via": "ShowBangKe@105",
           "status": "opaque"
         }
       ],
@@ -1034,7 +1034,7 @@
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
         "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles) > 0",
+        "opaque(<obj>.GetFiles).Length > 0",
         "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@1306 fileInfo in opaque(<obj>.GetFiles))"
       ],
       "effects": [
@@ -1048,7 +1048,7 @@
             "call": "<obj>.Load"
           },
           "at": 1372,
-          "via": "LayGiaTriTonKyTruoc@1290 > GetRowDataValueInXml@1364",
+          "via": "LayGiaTriTonKyTruoc@162 > GetRowDataValueInXml@1329",
           "status": "opaque"
         },
         {
@@ -1057,27 +1057,38 @@
           "params": {
             "args": [
               "tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-              "0"
+              "cases(dictionary.Count == 0 -> 0 | else -> list.Count)"
             ],
             "call": "<obj>.IncrementStaticCell"
           },
           "at": 1338,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "opaque"
         },
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "B{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}"
+            "cell": "B{cases(dictionary.Count == 0 -> tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart | else -> list.Count+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart)}"
           },
-          "value": "1",
+          "value": {
+            "cases": [
+              {
+                "when": "dictionary.Count == 0",
+                "value": "1"
+              },
+              {
+                "when": "else",
+                "value": "{list.Count+1}"
+              }
+            ]
+          },
           "params": {
             "prop": "text"
           },
           "at": 1355,
-          "via": "LayGiaTriTonKyTruoc@1290",
-          "status": "parametric"
+          "via": "LayGiaTriTonKyTruoc@162",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -1087,10 +1098,22 @@
           1372
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
+      "status": "unresolved",
+      "reason": "chưa giải: dictionary.Count, gọi chưa giải: <obj>.IncrementStaticCell, gọi chưa giải: <obj>.Load, list.Count, tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
+        {
+          "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1376,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1376, nội dung lúc chạy"
+        },
+        {
+          "name": "dictionary",
+          "origin": "local-map",
+          "at": 1401,
+          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
+        },
         {
           "name": "fileInfo",
           "origin": "foreach",
@@ -1102,6 +1125,12 @@
           "origin": "loop",
           "at": 1306,
           "desc": "biến mang qua vòng lặp dòng 1306: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag)"
+        },
+        {
+          "name": "list",
+          "origin": "loop-collection",
+          "at": 1394,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1394, nội dung lúc chạy"
         }
       ]
     },
@@ -1125,10 +1154,10 @@
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
         "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles) > 0",
+        "opaque(<obj>.GetFiles).Length > 0",
         "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@1306 fileInfo in opaque(<obj>.GetFiles))",
-        "contains(lstCellPath, opaque(<obj>.SelectNodes))",
-        "loop: for@1376 i from 0 step +1 while i < opaque(<obj>.SelectNodes)"
+        "contains(lstCellPath, opaque(<obj>.SelectNodes)[i].Attributes[\"Path\"].Value)",
+        "loop: for@1376 i from 0 step +1 while i < opaque(<obj>.SelectNodes).Count"
       ],
       "effects": [
         {
@@ -1137,12 +1166,12 @@
           "params": {
             "args": [
               "i",
-              "opaque(<obj>.SelectNodes)"
+              "opaque(<obj>.SelectNodes)[i].Attributes[\"Path\"].Value"
             ],
             "call": "<obj>.Add"
           },
           "at": 1381,
-          "via": "LayGiaTriTonKyTruoc@1290 > GetRowDataValueInXml@1364",
+          "via": "LayGiaTriTonKyTruoc@162 > GetRowDataValueInXml@1329",
           "status": "opaque"
         }
       ],
@@ -1180,6 +1209,12 @@
           "origin": "loop",
           "at": 1376,
           "desc": "biến mang qua vòng lặp dòng 1376: giá trị trước vòng [\"maHoaDon\", \"kHieuMauHDon\", \"tenHDon\", \"hinhThucHDon\", \"tonCuoiKy\"], cuối mỗi vòng lstCellPath := lstCellPath"
+        },
+        {
+          "name": "lstCellPath",
+          "origin": "loop-collection",
+          "at": 1376,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1376, nội dung lúc chạy"
         }
       ]
     },
@@ -1203,9 +1238,9 @@
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
         "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles) > 0",
+        "opaque(<obj>.GetFiles).Length > 0",
         "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@1306 fileInfo in opaque(<obj>.GetFiles))",
-        "loop: for@1376 i from 0 step +1 while i < opaque(<obj>.SelectNodes)"
+        "loop: for@1376 i from 0 step +1 while i < opaque(<obj>.SelectNodes).Count"
       ],
       "effects": [
         {
@@ -1213,12 +1248,12 @@
           "target": null,
           "params": {
             "args": [
-              "opaque(<obj>.SelectNodes)"
+              "opaque(<obj>.SelectNodes)[i].Attributes[\"Path\"].Value"
             ],
             "call": "<obj>.Remove"
           },
           "at": 1383,
-          "via": "LayGiaTriTonKyTruoc@1290 > GetRowDataValueInXml@1364",
+          "via": "LayGiaTriTonKyTruoc@162 > GetRowDataValueInXml@1329",
           "status": "opaque"
         }
       ],
@@ -1273,11 +1308,11 @@
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
         "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles) > 0",
+        "opaque(<obj>.GetFiles).Length > 0",
         "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@1306 fileInfo in opaque(<obj>.GetFiles))",
-        "obj(Dictionary).Count != 0",
+        "dictionary.Count != 0",
         "hasKey(dictionary, k)",
-        "loop: for@1394 j from 0 step +1 while j < opaque(<obj>.SelectNodes)",
+        "loop: for@1394 j from 0 step +1 while j < opaque(<obj>.SelectNodes).Count",
         "loop: for@1399 k from 0 step +1 while k < split(opaque(ConvertHelpers.ConvertToString), [\"###\"]).Length"
       ],
       "effects": [
@@ -1286,13 +1321,13 @@
           "target": null,
           "params": {
             "args": [
-              "obj(Dictionary)[k]",
-              "opaque(element)"
+              "dictionary[k]",
+              "split(opaque(ConvertHelpers.ConvertToString), [\"###\"])[k]"
             ],
             "call": "<obj>.Add"
           },
           "at": 1403,
-          "via": "LayGiaTriTonKyTruoc@1290 > GetRowDataValueInXml@1364",
+          "via": "LayGiaTriTonKyTruoc@162 > GetRowDataValueInXml@1329",
           "status": "opaque"
         }
       ],
@@ -1307,6 +1342,12 @@
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add",
       "unreachable": false,
       "symbols": [
+        {
+          "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1376,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1376, nội dung lúc chạy"
+        },
         {
           "name": "dictionary",
           "origin": "local-map",
@@ -1365,11 +1406,11 @@
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
         "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles) > 0",
+        "opaque(<obj>.GetFiles).Length > 0",
         "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@1306 fileInfo in opaque(<obj>.GetFiles))",
-        "obj(Dictionary).Count != 0",
-        "obj(Dictionary)[\"tonCuoiKy\"] != \"0\"",
-        "loop: for@1394 j from 0 step +1 while j < opaque(<obj>.SelectNodes)"
+        "dictionary.Count != 0",
+        "dictionary2[\"tonCuoiKy\"] != \"0\"",
+        "loop: for@1394 j from 0 step +1 while j < opaque(<obj>.SelectNodes).Count"
       ],
       "effects": [
         {
@@ -1377,12 +1418,12 @@
           "target": null,
           "params": {
             "args": [
-              "obj(Dictionary)"
+              "dictionary2"
             ],
             "call": "<obj>.Add"
           },
           "at": 1408,
-          "via": "LayGiaTriTonKyTruoc@1290 > GetRowDataValueInXml@1364",
+          "via": "LayGiaTriTonKyTruoc@162 > GetRowDataValueInXml@1329",
           "status": "opaque"
         }
       ],
@@ -1397,6 +1438,36 @@
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add",
       "unreachable": false,
       "symbols": [
+        {
+          "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1376,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1376, nội dung lúc chạy"
+        },
+        {
+          "name": "dictionary",
+          "origin": "local-map",
+          "at": 1401,
+          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "dictionary2",
+          "origin": "loop",
+          "at": 1394,
+          "desc": "biến mang qua vòng lặp dòng 1394: giá trị trước vòng ?, cuối mỗi vòng dictionary2 := dictionary2"
+        },
+        {
+          "name": "dictionary2",
+          "origin": "loop-collection",
+          "at": 1394,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1394, nội dung lúc chạy"
+        },
+        {
+          "name": "dictionary2",
+          "origin": "loop-collection",
+          "at": 1399,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1399, nội dung lúc chạy"
+        },
         {
           "name": "fileInfo",
           "origin": "foreach",
@@ -1437,9 +1508,9 @@
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
         "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles) > 0",
+        "opaque(<obj>.GetFiles).Length > 0",
         "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@1306 fileInfo in opaque(<obj>.GetFiles))",
-        "loop: for@1332 j from 0 step +1 while j < 0"
+        "loop: for@1332 j from 0 step +1 while dictionary.Count == 0 && j < 0 || dictionary.Count != 0 && j < list.Count"
       ],
       "effects": [
         {
@@ -1453,7 +1524,7 @@
             "call": "<cells>.Add"
           },
           "at": 1334,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "opaque"
         },
         {
@@ -1472,7 +1543,7 @@
             "call": "<sheet>.CopyRange"
           },
           "at": 1335,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "opaque"
         },
         {
@@ -1485,7 +1556,7 @@
             "call": "<obj>.addNewDefaultRow"
           },
           "at": 1336,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "opaque"
         }
       ],
@@ -1500,6 +1571,18 @@
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <cells>.Add, gọi chưa giải: <obj>.addNewDefaultRow, gọi chưa giải: <sheet>.CopyRange",
       "unreachable": false,
       "symbols": [
+        {
+          "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1376,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1376, nội dung lúc chạy"
+        },
+        {
+          "name": "dictionary",
+          "origin": "local-map",
+          "at": 1401,
+          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
+        },
         {
           "name": "fileInfo",
           "origin": "foreach",
@@ -1517,6 +1600,12 @@
           "origin": "loop",
           "at": 1332,
           "desc": "biến mang qua vòng lặp dòng 1332: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "list",
+          "origin": "loop-collection",
+          "at": 1394,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1394, nội dung lúc chạy"
         }
       ]
     },
@@ -1540,9 +1629,9 @@
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
         "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles) > 0",
+        "opaque(<obj>.GetFiles).Length > 0",
         "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@1306 fileInfo in opaque(<obj>.GetFiles))",
-        "loop: for@1340 j from 0 step +1 while j < 0"
+        "loop: for@1340 j from 0 step +1 while dictionary.Count == 0 && j < 0 || dictionary.Count != 0 && j < list.Count"
       ],
       "effects": [
         {
@@ -1556,8 +1645,8 @@
             "prop": "text"
           },
           "at": 1342,
-          "via": "LayGiaTriTonKyTruoc@1290",
-          "status": "parametric"
+          "via": "LayGiaTriTonKyTruoc@162",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1565,12 +1654,23 @@
             "sheet": 0,
             "cell": "C{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}"
           },
-          "value": "{opaque(array-index)}",
+          "value": {
+            "cases": [
+              {
+                "when": "dictionary.Count == 0",
+                "value": "{rowValues[j][\"maHoaDon\"]}"
+              },
+              {
+                "when": "else",
+                "value": "{list[j][\"maHoaDon\"]}"
+              }
+            ]
+          },
           "params": {
             "prop": "text"
           },
           "at": 1343,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "unresolved"
         },
         {
@@ -1579,12 +1679,23 @@
             "sheet": 0,
             "cell": "D{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}"
           },
-          "value": "{opaque(array-index)}",
+          "value": {
+            "cases": [
+              {
+                "when": "dictionary.Count == 0",
+                "value": "{rowValues[j][\"tenHDon\"]}"
+              },
+              {
+                "when": "else",
+                "value": "{list[j][\"tenHDon\"]}"
+              }
+            ]
+          },
           "params": {
             "prop": "text"
           },
           "at": 1344,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "unresolved"
         },
         {
@@ -1593,12 +1704,23 @@
             "sheet": 0,
             "cell": "E{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}"
           },
-          "value": "{opaque(array-index)}",
+          "value": {
+            "cases": [
+              {
+                "when": "dictionary.Count == 0",
+                "value": "{rowValues[j][\"kHieuMauHDon\"]}"
+              },
+              {
+                "when": "else",
+                "value": "{list[j][\"kHieuMauHDon\"]}"
+              }
+            ]
+          },
           "params": {
             "prop": "text"
           },
           "at": 1345,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "unresolved"
         },
         {
@@ -1607,12 +1729,23 @@
             "sheet": 0,
             "cell": "F{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}"
           },
-          "value": "{opaque(array-index)}",
+          "value": {
+            "cases": [
+              {
+                "when": "dictionary.Count == 0",
+                "value": "{rowValues[j][\"hinhThucHDon\"]}"
+              },
+              {
+                "when": "else",
+                "value": "{list[j][\"hinhThucHDon\"]}"
+              }
+            ]
+          },
           "params": {
             "prop": "text"
           },
           "at": 1346,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "unresolved"
         },
         {
@@ -1621,12 +1754,12 @@
             "sheet": 0,
             "cell": "G{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}"
           },
-          "value": "{num(opaque(array-index))}",
+          "value": "{num(cases(dictionary.Count == 0 -> rowValues[j][\"tonCuoiKy\"] | else -> list[j][\"tonCuoiKy\"]))}",
           "params": {
             "prop": "value"
           },
           "at": 1347,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "unresolved"
         }
       ],
@@ -1638,9 +1771,21 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: j, num(opaque(array-index)), opaque:array-index, tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
+      "reason": "chưa giải: dictionary.Count, j, list[j][\"hinhThucHDon\"], list[j][\"kHieuMauHDon\"], list[j][\"maHoaDon\"], list[j][\"tenHDon\"], num(cases(dictionary.Count == 0 -> rowValues[j][\"tonCuoiKy\"] | else -> list[j][\"tonCuoiKy\"])), rowValues[j][\"hinhThucHDon\"]",
       "unreachable": false,
       "symbols": [
+        {
+          "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1376,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1376, nội dung lúc chạy"
+        },
+        {
+          "name": "dictionary",
+          "origin": "local-map",
+          "at": 1401,
+          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
+        },
         {
           "name": "fileInfo",
           "origin": "foreach",
@@ -1658,6 +1803,12 @@
           "origin": "loop",
           "at": 1340,
           "desc": "biến mang qua vòng lặp dòng 1340: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "list",
+          "origin": "loop-collection",
+          "at": 1394,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1394, nội dung lúc chạy"
         }
       ]
     },
@@ -1681,10 +1832,10 @@
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
         "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles) > 0",
+        "opaque(<obj>.GetFiles).Length > 0",
         "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@1306 fileInfo in opaque(<obj>.GetFiles))",
-        "cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}).height < opaque(<cell>.GetPreferredHeight) || cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}).height > opaque(<cell>.GetPreferredHeight)",
-        "loop: for@1340 j from 0 step +1 while j < 0"
+        "cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}).height < (opaque(<cell>.GetPreferredHeight)-5) || cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}).height > (opaque(<cell>.GetPreferredHeight)+5)",
+        "loop: for@1340 j from 0 step +1 while dictionary.Count == 0 && j < 0 || dictionary.Count != 0 && j < list.Count"
       ],
       "effects": [
         {
@@ -1697,7 +1848,7 @@
             "height": "opaque(<cell>.GetPreferredHeight)"
           },
           "at": 1352,
-          "via": "LayGiaTriTonKyTruoc@1290",
+          "via": "LayGiaTriTonKyTruoc@162",
           "status": "unresolved"
         }
       ],
@@ -1709,9 +1860,21 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: j, opaque:<cell>.GetPreferredHeight, tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, j, opaque:<cell>.GetPreferredHeight, tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
+        {
+          "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1376,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1376, nội dung lúc chạy"
+        },
+        {
+          "name": "dictionary",
+          "origin": "local-map",
+          "at": 1401,
+          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
+        },
         {
           "name": "fileInfo",
           "origin": "foreach",
@@ -1729,6 +1892,12 @@
           "origin": "loop",
           "at": 1340,
           "desc": "biến mang qua vòng lặp dòng 1340: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "list",
+          "origin": "loop-collection",
+          "at": 1394,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1394, nội dung lúc chạy"
         }
       ]
     },
@@ -2581,7 +2750,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: opaque:GeneralFunctions.FormatSoHD, trigger.col, trigger.row",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatSoHD, trigger.col, trigger.row",
       "unreachable": false,
       "symbols": []
     },
@@ -2747,7 +2916,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: opaque:GeneralFunctions.FormatKyHieu, trigger.row",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatKyHieu, trigger.row",
       "unreachable": false,
       "symbols": []
     },
@@ -2856,7 +3025,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: opaque:GeneralFunctions.FormatSoHD, trigger.col, trigger.row",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatSoHD, trigger.col, trigger.row",
       "unreachable": false,
       "symbols": []
     },
@@ -3022,7 +3191,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: opaque:GeneralFunctions.FormatKyHieu, trigger.row",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatKyHieu, trigger.row",
       "unreachable": false,
       "symbols": []
     },

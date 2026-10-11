@@ -48,7 +48,27 @@ public sealed class VLin : V
 
 /// Ký hiệu lúc chạy; HasOpaque: văn bản có chứa phần opaque(...) nên bản ghi phải ở trạng thái unresolved
 public sealed class VSym : V { public readonly string Text; public readonly bool HasOpaque; public VSym(string t, bool op = false) { Text = t; HasOpaque = op; } protected override string MakeKey() => "sym:" + Text; }
-public sealed class VOpaque : V { public readonly string What; public VOpaque(string w) { What = w; } protected override string MakeKey() => "op:" + What; }
+/// Giá trị chưa giải. What chỉ mô tả loại (tên lời gọi API hoặc loại phân tích); SymName (nếu có) là tên biến/method C# đưa vào symbols.
+/// Mỗi lần đánh giá có Id riêng: hai lần đánh giá khác nhau không bao giờ coi là cùng giá trị.
+public sealed class VOpaque : V
+{
+    public readonly string What, SymName; public readonly long Id;
+    public VOpaque(string w, string sym = null) { What = w; SymName = sym; Id = Mk.Next(); }
+    protected override string MakeKey() => "op:" + What + "#" + Id;
+}
+/// Đánh dấu ẩn trong văn bản ký hiệu: phân biệt danh tính (phiên bản ô sau lệnh ghi, lần đánh giá opaque, biến out) mà không đổi phần hiển thị.
+/// Dạng \u001F<số>[:tên]\u001F; bị xóa khi ghi JSON; tên (nếu có) đi vào symbols.
+public static class Mk
+{
+    public const char M = '\u001F';
+    static long seq;
+    public static long Next() => ++seq;
+    public static string Tag(long id, string name = null) => M + id.ToString(CultureInfo.InvariantCulture) + (name != null ? ":" + name : "") + M;
+    static readonly System.Text.RegularExpressions.Regex Rx = new("\u001F[^\u001F]*\u001F", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+    static readonly System.Text.RegularExpressions.Regex RxName = new("\u001F\\d+:([A-Za-z_]\\w*)\u001F", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+    public static string Strip(string s) => s != null && s.IndexOf(M) >= 0 ? Rx.Replace(s, "") : s;
+    public static IEnumerable<string> Names(string s) => s.IndexOf(M) < 0 ? Enumerable.Empty<string>() : RxName.Matches(s).Select(m => m.Groups[1].Value);
+}
 public sealed class VArr : V { public readonly List<V> Items; public VArr(List<V> i) { Items = i; } protected override string MakeKey() => "arr[" + string.Join(";", Items.Select(i => i.Key)) + "]"; }
 public sealed class VCat : V
 {
@@ -255,7 +275,7 @@ public static class R
                     return sb.ToString();
                 }
             case VSym y: f.Sym = true; if (y.HasOpaque) f.Opaque = true; f.Notes.Add(y.Text); return y.Text;
-            case VOpaque o: f.Opaque = true; f.Notes.Add("opaque:" + o.What); return "opaque(" + o.What + ")";
+            case VOpaque o: f.Opaque = true; f.Notes.Add("opaque:" + o.What); return "opaque(" + o.What + ")" + Mk.Tag(o.Id, o.SymName);
             case VArr a: return "[" + string.Join(", ", a.Items.Select(i => Expr(i, f))) + "]";
             case VCat c: return "\"" + Template(c, f) + "\"";
             case VCases cs: return "cases(" + string.Join(" | ", cs.Alts.Select(a => (a.When == null ? "else" : Cond(a.When, f)) + " -> " + Expr(a.Val, f))) + ")";
@@ -383,7 +403,6 @@ public static class Ar
     public static V Add(V a, V b) => Lift(a, b, (x, y) => Arith("+", x, y));
     public static V Arith(string op, V a, V b)
     {
-        if (a is VOpaque) return a; if (b is VOpaque) return b;
         if (a is VConst x && b is VConst y && x.IsNum && y.IsNum)
         {
             if (x.Val is long p && y.Val is long q)

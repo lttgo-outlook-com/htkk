@@ -95,7 +95,7 @@
         322
       ],
       "records": 24,
-      "effects": 59,
+      "effects": 63,
       "truncated": false,
       "dropped": []
     },
@@ -153,6 +153,11 @@
         {
           "at": 1439,
           "reason": "ngoại lệ chắc chắn: chỉ số ngoài mảng"
+        },
+        {
+          "at": 1440,
+          "reason": "không tới được: nhánh điều kiện gấp thành hằng sai, hoặc sau lệnh trả về/ném ngoại lệ",
+          "kind": "chk"
         }
       ]
     },
@@ -171,6 +176,11 @@
         {
           "at": 1453,
           "reason": "ngoại lệ chắc chắn: chỉ số ngoài mảng"
+        },
+        {
+          "at": 1454,
+          "reason": "không tới được: nhánh điều kiện gấp thành hằng sai, hoặc sau lệnh trả về/ném ngoại lệ",
+          "kind": "chk"
         }
       ]
     },
@@ -269,7 +279,7 @@
             "prop": "value"
           },
           "at": 144,
-          "status": "resolved"
+          "status": "parametric"
         },
         {
           "op": "setValue",
@@ -293,7 +303,7 @@
             "prop": "value"
           },
           "at": 145,
-          "status": "resolved"
+          "status": "parametric"
         },
         {
           "op": "opaque",
@@ -323,7 +333,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: period.NganhNgheKinhDoanh, period.TieuMucHachToanVal",
+      "reason": "placeholder: period.NganhNgheKinhDoanh, period.TieuMucHachToanVal, tk.SheetInfos[1], tk.SheetInfos[2]",
       "unreachable": false,
       "symbols": []
     },
@@ -359,7 +369,7 @@
             "call": "<obj>.Load"
           },
           "at": 1345,
-          "via": "NeuChonXoSoDienToan@1473 > GetDMSoXoDienToan@1331",
+          "via": "NeuChonXoSoDienToan@148 > GetDMSoXoDienToan@1482",
           "status": "opaque"
         }
       ],
@@ -395,7 +405,7 @@
       "guards": [
         "period.TieuMucHachToanVal == \"03\"",
         "obj(Dictionary).Count <= 0",
-        "opaque(Regex.Split) > 2",
+        "split(item.Attributes[\"Value\"].Value, \"###\").Length > 2",
         "loop: foreach@1347 item in opaque(<obj>.GetElementsByTagName)",
         "loop: for@1357 i from 0 step +1 while i < opaque(<obj>.Count)"
       ],
@@ -405,12 +415,12 @@
           "target": null,
           "params": {
             "args": [
-              "opaque(Regex.Split)"
+              "split(item.Attributes[\"Value\"].Value, \"###\")[i]"
             ],
             "call": "<obj>.Add"
           },
           "at": 1359,
-          "via": "NeuChonXoSoDienToan@1473 > GetDMSoXoDienToan@1331",
+          "via": "NeuChonXoSoDienToan@148 > GetDMSoXoDienToan@1482",
           "status": "opaque"
         }
       ],
@@ -465,7 +475,7 @@
       "guards": [
         "period.TieuMucHachToanVal == \"03\"",
         "obj(Dictionary).Count <= 0",
-        "opaque(Regex.Split) > 2",
+        "split(item.Attributes[\"Value\"].Value, \"###\").Length > 2",
         "loop: foreach@1347 item in opaque(<obj>.GetElementsByTagName)"
       ],
       "effects": [
@@ -474,13 +484,13 @@
           "target": null,
           "params": {
             "args": [
-              "opaque(Regex.Split)",
+              "split(item.Attributes[\"Value\"].Value, \"###\")[0]",
               "opaque(<obj>.ToArray)"
             ],
             "call": "<obj>.Add"
           },
           "at": 1361,
-          "via": "NeuChonXoSoDienToan@1473 > GetDMSoXoDienToan@1331",
+          "via": "NeuChonXoSoDienToan@148 > GetDMSoXoDienToan@1482",
           "status": "opaque"
         }
       ],
@@ -523,8 +533,8 @@
       "guards": [
         "period.TieuMucHachToanVal == \"03\"",
         "obj(Dictionary).Count <= 0",
-        "opaque(Regex.Split) > 2",
-        "!(hasKey(dicDanhMucSoXoDienToanTmp, opaque(Regex.Split)))",
+        "split(item.Attributes[\"Value\"].Value, \"###\").Length > 2",
+        "!(hasKey(dicDanhMucSoXoDienToanTmp, split(item.Attributes[\"Value\"].Value, \"###\")[0]))",
         "loop: foreach@1347 item in opaque(<obj>.GetElementsByTagName)"
       ],
       "effects": [
@@ -533,13 +543,13 @@
           "target": null,
           "params": {
             "args": [
-              "opaque(Regex.Split)",
-              "\"{trim(opaque(Regex.Split))}\""
+              "split(item.Attributes[\"Value\"].Value, \"###\")[0]",
+              "\"{trim(\"{split(item.Attributes[\"Value\"].Value, \"###\")[1]}\")}\""
             ],
             "call": "<obj>.Add"
           },
           "at": 1364,
-          "via": "NeuChonXoSoDienToan@1473 > GetDMSoXoDienToan@1331",
+          "via": "NeuChonXoSoDienToan@148 > GetDMSoXoDienToan@1482",
           "status": "opaque"
         }
       ],
@@ -559,6 +569,12 @@
           "origin": "loop",
           "at": 1347,
           "desc": "biến mang qua vòng lặp dòng 1347: giá trị trước vòng ?, cuối mỗi vòng dicDanhMucSoXoDienToanTmp := dicDanhMucSoXoDienToanTmp"
+        },
+        {
+          "name": "dicDanhMucSoXoDienToanTmp",
+          "origin": "loop-collection",
+          "at": 1347,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1347, nội dung lúc chạy"
         },
         {
           "name": "item",
@@ -587,7 +603,7 @@
       },
       "guards": [
         "period.TieuMucHachToanVal == \"03\"",
-        "loop: for@1485 num from 0 step +1 while num < opaque(FirstOrDefault)"
+        "loop: for@1485 num from 0 step +1 while num < opaque(FirstOrDefault).RowsValues.Count"
       ],
       "effects": [
         {
@@ -596,7 +612,7 @@
           "params": {
             "args": [
               "sheet(0)",
-              "opaque(FirstOrDefault)",
+              "num+opaque(FirstOrDefault).DataLocationTemplateRowStart",
               "7",
               "obj(Dictionary)",
               "false"
@@ -604,7 +620,7 @@
             "call": "GeneralFunctions.InsertCombobox"
           },
           "at": 1487,
-          "via": "NeuChonXoSoDienToan@1473",
+          "via": "NeuChonXoSoDienToan@148",
           "status": "opaque"
         }
       ],
@@ -662,7 +678,7 @@
             "via": "LockUnLockCol"
           },
           "at": 1500,
-          "via": "NeuChonXoSoDienToan@1473",
+          "via": "NeuChonXoSoDienToan@148",
           "status": "parametric"
         }
       ],
@@ -773,7 +789,7 @@
       "guards": [
         "item.Key == \"10501\" || item.Key == \"10502\" || item.Key == \"10503\" || item.Key == \"10504\" || item.Key == \"10505\" || item.Key == \"10506\" || item.Key == \"1050101\" || item.Key == \"1050201\" || item.Key == \"1050301\" || item.Key == \"1050401\" || item.Key == \"1050501\" || item.Key == \"1050601\"",
         "!(hasKey(dictionary, item.Key))",
-        "loop: for@1789 num from 0 step +1 while num < opaque(Find)",
+        "loop: for@1789 num from 0 step +1 while num < opaque(Find).RowsValues.Count",
         "loop: foreach@1796 item in opaque(GeneralFunctions.GetDMFromCombobox)"
       ],
       "effects": [
@@ -788,7 +804,7 @@
             "call": "<obj>.Add"
           },
           "at": 1800,
-          "via": "UpdateDanhMucXang@1770 > GetDanhMucXang@1784",
+          "via": "UpdateDanhMucXang@155 > GetDanhMucXang@1773",
           "status": "opaque"
         }
       ],
@@ -811,9 +827,21 @@
         },
         {
           "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1789,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1789, nội dung lúc chạy"
+        },
+        {
+          "name": "dictionary",
           "origin": "loop",
           "at": 1796,
           "desc": "biến mang qua vòng lặp dòng 1796: giá trị trước vòng dictionary, cuối mỗi vòng dictionary := dictionary"
+        },
+        {
+          "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1796,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1796, nội dung lúc chạy"
         },
         {
           "name": "dictionary",
@@ -853,8 +881,8 @@
         "when": []
       },
       "guards": [
-        "obj(Dictionary).Count > 0",
-        "loop: for@1777 num from 0 step +1 while num < opaque(Find)"
+        "dictionary.Count > 0",
+        "loop: for@1777 num from 0 step +1 while num < opaque(Find).RowsValues.Count"
       ],
       "effects": [
         {
@@ -863,15 +891,15 @@
           "params": {
             "args": [
               "sheet(0)",
-              "opaque(Find)",
+              "num+opaque(Find).DataLocationTemplateRowStart",
               "7",
-              "obj(Dictionary)",
+              "dictionary",
               "false"
             ],
             "call": "GeneralFunctions.InsertCombobox"
           },
           "at": 1779,
-          "via": "UpdateDanhMucXang@1770",
+          "via": "UpdateDanhMucXang@155",
           "status": "opaque"
         }
       ],
@@ -886,6 +914,24 @@
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.InsertCombobox",
       "unreachable": false,
       "symbols": [
+        {
+          "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1789,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1789, nội dung lúc chạy"
+        },
+        {
+          "name": "dictionary",
+          "origin": "loop-collection",
+          "at": 1796,
+          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 1796, nội dung lúc chạy"
+        },
+        {
+          "name": "dictionary",
+          "origin": "local-map",
+          "at": 1798,
+          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
+        },
         {
           "name": "num",
           "origin": "loop",
@@ -930,7 +976,7 @@
             "call": "GeneralFunctions.InsertNumberCell"
           },
           "at": 1744,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@180",
           "status": "opaque"
         }
       ],
@@ -986,7 +1032,7 @@
             "prop": "value"
           },
           "at": 1747,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@180",
           "status": "parametric"
         }
       ],
@@ -1043,7 +1089,7 @@
             "call": "GeneralFunctions.InsertNumberCell"
           },
           "at": 1754,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@180",
           "status": "opaque"
         },
         {
@@ -1061,7 +1107,7 @@
             "call": "GeneralFunctions.InsertNumberCell"
           },
           "at": 1763,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@180",
           "status": "opaque"
         },
         {
@@ -1123,7 +1169,7 @@
             "prop": "value"
           },
           "at": 1757,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@180",
           "status": "parametric"
         },
         {
@@ -1137,7 +1183,7 @@
             "prop": "value"
           },
           "at": 1766,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@180",
           "status": "parametric"
         }
       ],
@@ -1187,7 +1233,7 @@
             "call": "File.Copy"
           },
           "at": 1534,
-          "via": "ShowBangKe@1528",
+          "via": "ShowBangKe@200",
           "status": "opaque"
         },
         {
@@ -1200,7 +1246,7 @@
             "call": "Process.Start"
           },
           "at": 1535,
-          "via": "ShowBangKe@1528",
+          "via": "ShowBangKe@200",
           "status": "opaque"
         }
       ],
@@ -1250,7 +1296,7 @@
             "call": "File.Copy"
           },
           "at": 1534,
-          "via": "ShowBangKe@1528",
+          "via": "ShowBangKe@221",
           "status": "opaque"
         },
         {
@@ -1263,7 +1309,7 @@
             "call": "Process.Start"
           },
           "at": 1535,
-          "via": "ShowBangKe@1528",
+          "via": "ShowBangKe@221",
           "status": "opaque"
         }
       ],
@@ -1305,8 +1351,8 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)"
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1"
       ],
       "effects": [
         {
@@ -1320,8 +1366,8 @@
             "prop": "text"
           },
           "at": 1586,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -1331,8 +1377,8 @@
           1586
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -1362,8 +1408,8 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
       "effects": [
@@ -1378,8 +1424,8 @@
             "reset": true
           },
           "at": 1589,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1392,8 +1438,8 @@
             "reset": true
           },
           "at": 1590,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "lock",
@@ -1402,8 +1448,8 @@
             "cell": "P{trigger.row}"
           },
           "at": 1591,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1416,8 +1462,8 @@
             "prop": "value"
           },
           "at": 1592,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -1427,8 +1473,8 @@
           1592
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -1458,8 +1504,8 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "!(hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))"
       ],
@@ -1475,8 +1521,8 @@
             "prop": "text"
           },
           "at": 1596,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1489,8 +1535,8 @@
             "prop": "text"
           },
           "at": 1597,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1503,8 +1549,8 @@
             "prop": "value"
           },
           "at": 1598,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1517,8 +1563,8 @@
             "prop": "value"
           },
           "at": 1599,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -1528,8 +1574,8 @@
           1599
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -1559,8 +1605,8 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
@@ -1576,8 +1622,8 @@
             "prop": "text"
           },
           "at": 1604,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "unlock",
@@ -1586,8 +1632,8 @@
             "cell": "P{trigger.row}"
           },
           "at": 1605,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1600,8 +1646,8 @@
             "prop": "value"
           },
           "at": 1606,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1614,8 +1660,8 @@
             "prop": "value"
           },
           "at": 1607,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1628,7 +1674,7 @@
             "prop": "value"
           },
           "at": 1609,
-          "via": "ChangeCombobox_0@1545",
+          "via": "ChangeCombobox_0@237",
           "status": "unresolved"
         }
       ],
@@ -1640,7 +1686,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][1], field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][3], num(field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][4]), opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row",
+      "reason": "chưa giải: field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][1], field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][3], giá trị hoặc tham số có phần chưa giải, num(field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][4]), opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -1670,9 +1716,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)"
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1"
       ],
       "effects": [
         {
@@ -1686,8 +1732,8 @@
             "prop": "value"
           },
           "at": 1615,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1700,8 +1746,8 @@
             "prop": "text"
           },
           "at": 1661,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -1711,8 +1757,8 @@
           1661
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -1742,9 +1788,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "isEmpty(cell(S0!G{trigger.row}).text)"
       ],
       "effects": [
@@ -1759,8 +1805,8 @@
             "reset": true
           },
           "at": 1618,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1773,8 +1819,8 @@
             "prop": "value"
           },
           "at": 1619,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -1784,8 +1830,8 @@
           1619
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -1815,9 +1861,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(cell(S0!G{trigger.row}).text))",
         "period.TieuMucHachToanVal != \"03\"",
         "!(hasKey(dicDichVuThueDB, cell(S0!G{trigger.row}).text))"
@@ -1834,8 +1880,8 @@
             "prop": "text"
           },
           "at": 1629,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1848,8 +1894,8 @@
             "prop": "value"
           },
           "at": 1630,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1862,8 +1908,8 @@
             "prop": "value"
           },
           "at": 1631,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -1873,8 +1919,8 @@
           1631
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -1904,9 +1950,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(cell(S0!G{trigger.row}).text))",
         "period.TieuMucHachToanVal != \"03\"",
         "hasKey(dicDichVuThueDB, cell(S0!G{trigger.row}).text)"
@@ -1923,8 +1969,8 @@
             "prop": "value"
           },
           "at": 1636,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1937,8 +1983,8 @@
             "prop": "value"
           },
           "at": 1637,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -1951,7 +1997,7 @@
             "prop": "value"
           },
           "at": 1639,
-          "via": "ChangeCombobox_0@1545",
+          "via": "ChangeCombobox_0@237",
           "status": "unresolved"
         }
       ],
@@ -1963,7 +2009,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: field(dicDichVuThueDB)[cell(S0!G{trigger.row}).text][1], num(field(dicDichVuThueDB)[cell(S0!G{trigger.row}).text][4]), opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row",
+      "reason": "chưa giải: field(dicDichVuThueDB)[cell(S0!G{trigger.row}).text][1], giá trị hoặc tham số có phần chưa giải, num(field(dicDichVuThueDB)[cell(S0!G{trigger.row}).text][4]), opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -1993,12 +2039,12 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(cell(S0!G{trigger.row}).text))",
         "period.TieuMucHachToanVal == \"03\"",
-        "opaque(FirstOrDefault) != null",
+        "opaque(FirstOrDefault).Value != null",
         "opaque(<obj>.Count) == 0"
       ],
       "effects": [
@@ -2013,8 +2059,8 @@
             "prop": "value"
           },
           "at": 1646,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2027,8 +2073,8 @@
             "prop": "value"
           },
           "at": 1647,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2041,8 +2087,8 @@
             "prop": "value"
           },
           "at": 1648,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -2052,8 +2098,8 @@
           1648
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2083,12 +2129,12 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(cell(S0!G{trigger.row}).text))",
         "period.TieuMucHachToanVal == \"03\"",
-        "opaque(FirstOrDefault) == null || opaque(<obj>.Count) != 0"
+        "opaque(FirstOrDefault).Value == null || opaque(<obj>.Count) != 0"
       ],
       "effects": [
         {
@@ -2097,12 +2143,12 @@
             "sheet": 0,
             "cell": "BG{trigger.row}"
           },
-          "value": "{opaque(FirstOrDefault)}",
+          "value": "{opaque(FirstOrDefault).Value[0]}",
           "params": {
             "prop": "value"
           },
           "at": 1652,
-          "via": "ChangeCombobox_0@1545",
+          "via": "ChangeCombobox_0@237",
           "status": "unresolved"
         },
         {
@@ -2111,12 +2157,12 @@
             "sheet": 0,
             "cell": "P{trigger.row}"
           },
-          "value": "{opaque(FirstOrDefault)}",
+          "value": "{opaque(FirstOrDefault).Value[3]}",
           "params": {
             "prop": "value"
           },
           "at": 1653,
-          "via": "ChangeCombobox_0@1545",
+          "via": "ChangeCombobox_0@237",
           "status": "unresolved"
         },
         {
@@ -2125,12 +2171,12 @@
             "sheet": 0,
             "cell": "AD{trigger.row}"
           },
-          "value": "{num(opaque(FirstOrDefault))}",
+          "value": "{num(opaque(FirstOrDefault).Value[2])}",
           "params": {
             "prop": "value"
           },
           "at": 1654,
-          "via": "ChangeCombobox_0@1545",
+          "via": "ChangeCombobox_0@237",
           "status": "unresolved"
         },
         {
@@ -2144,7 +2190,7 @@
             "prop": "value"
           },
           "at": 1656,
-          "via": "ChangeCombobox_0@1545",
+          "via": "ChangeCombobox_0@237",
           "status": "unresolved"
         }
       ],
@@ -2156,7 +2202,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: num(opaque(FirstOrDefault)), opaque:FirstOrDefault, opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, num(opaque(FirstOrDefault).Value[2]), opaque(FirstOrDefault).Value[0], opaque(FirstOrDefault).Value[3], opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2186,9 +2232,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
       "effects": [
@@ -2203,8 +2249,8 @@
             "reset": true
           },
           "at": 1664,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -2214,8 +2260,8 @@
           1664
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2245,9 +2291,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "!(hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))"
       ],
@@ -2263,8 +2309,8 @@
             "prop": "text"
           },
           "at": 1668,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2277,8 +2323,8 @@
             "prop": "value"
           },
           "at": 1669,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -2288,8 +2334,8 @@
           1669
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2319,9 +2365,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
@@ -2337,8 +2383,8 @@
             "prop": "text"
           },
           "at": 1674,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2351,8 +2397,8 @@
             "prop": "value"
           },
           "at": 1675,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -2362,8 +2408,8 @@
           1675
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][1], field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][3], trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][1], field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][3], trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2393,9 +2439,9 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
       "effects": [
@@ -2410,8 +2456,8 @@
             "reset": true
           },
           "at": 1701,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2424,8 +2470,8 @@
             "reset": true
           },
           "at": 1702,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "lock",
@@ -2434,8 +2480,8 @@
             "cell": "P{trigger.row}"
           },
           "at": 1703,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2448,8 +2494,8 @@
             "prop": "value"
           },
           "at": 1704,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -2459,8 +2505,8 @@
           1704
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2490,9 +2536,9 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "!(hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))"
       ],
@@ -2508,8 +2554,8 @@
             "prop": "text"
           },
           "at": 1708,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2522,8 +2568,8 @@
             "prop": "text"
           },
           "at": 1709,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2536,8 +2582,8 @@
             "prop": "value"
           },
           "at": 1710,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2550,8 +2596,8 @@
             "prop": "value"
           },
           "at": 1711,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2564,8 +2610,8 @@
             "prop": "value"
           },
           "at": 1712,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -2575,8 +2621,8 @@
           1712
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2606,9 +2652,9 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find) || trigger.row > opaque(Find)",
-        "trigger.row >= opaque(Find)",
-        "trigger.row <= opaque(Find)",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
@@ -2624,8 +2670,8 @@
             "prop": "text"
           },
           "at": 1717,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "unlock",
@@ -2634,8 +2680,8 @@
             "cell": "P{trigger.row}"
           },
           "at": 1718,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2648,8 +2694,8 @@
             "prop": "value"
           },
           "at": 1719,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2662,8 +2708,8 @@
             "prop": "value"
           },
           "at": 1720,
-          "via": "ChangeCombobox_0@1545",
-          "status": "parametric"
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -2676,7 +2722,7 @@
             "prop": "value"
           },
           "at": 1722,
-          "via": "ChangeCombobox_0@1545",
+          "via": "ChangeCombobox_0@237",
           "status": "unresolved"
         }
       ],
@@ -2688,7 +2734,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][1], field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][3], num(field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][4]), opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row",
+      "reason": "chưa giải: field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][1], field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][3], giá trị hoặc tham số có phần chưa giải, num(field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][4]), opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2721,8 +2767,8 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find)",
-        "trigger.row <= opaque(Find)"
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row <= opaque(Find).DataLocationTemplateRowStart+opaque(Find).RowsValues.Count-1"
       ],
       "effects": [
         {
@@ -2736,7 +2782,7 @@
             "prop": "value"
           },
           "at": 255,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -2746,8 +2792,8 @@
           255
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: cell(S0!BJ{trigger.row}).value, trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: cell(S0!BJ{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2769,7 +2815,7 @@
         "when": []
       },
       "guards": [
-        "trigger.row < opaque(Find)",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
         "tk.SheetInfos[2] != null"
       ],
       "effects": [
@@ -2784,7 +2830,7 @@
             "call": "<obj>.Add"
           },
           "at": 1520,
-          "via": "TinhTongTheoTungTinh@1506",
+          "via": "TinhTongTheoTungTinh@257",
           "status": "opaque"
         },
         {
@@ -2807,7 +2853,7 @@
             "call": "GeneralFunctions.TongCongTheoTungTinh"
           },
           "at": 1521,
-          "via": "TinhTongTheoTungTinh@1506",
+          "via": "TinhTongTheoTungTinh@257",
           "status": "opaque"
         }
       ],
@@ -2841,7 +2887,7 @@
         "when": []
       },
       "guards": [
-        "trigger.row < opaque(Find)",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
         "tk.SheetInfos[2] != null",
         "loop: foreach@1522 table in tk.SheetInfos[2].Tables"
       ],
@@ -2857,7 +2903,7 @@
             "call": "GeneralFunctions.fpSpReindexingTableTemplate"
           },
           "at": 1524,
-          "via": "TinhTongTheoTungTinh@1506",
+          "via": "TinhTongTheoTungTinh@257",
           "status": "opaque"
         }
       ],
@@ -2906,7 +2952,7 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find)",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
         "startswith(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\", \"-----\") || startswith(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\", \"---\")"
       ],
       "effects": [
@@ -2924,17 +2970,28 @@
           },
           "at": 265,
           "status": "opaque"
+        },
+        {
+          "op": "setTabColor",
+          "target": null,
+          "params": {
+            "color": "Color.Pink",
+            "note": "màu/thuộc tính thẻ sheet (tab) theo chỉ số sheet",
+            "tab": 0
+          },
+          "at": 274,
+          "status": "unresolved"
         }
       ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
           239,
-          265
+          274
         ]
       },
-      "status": "ui_only",
-      "reason": "chỉ có thao tác giao diện, không tác dụng lên ô",
+      "status": "unresolved",
+      "reason": "chưa giải: Color.Pink, gọi chưa giải: HTKKFile.SetNodeBackGroundPink, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -2964,7 +3021,7 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find)",
+        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
         "!(startswith(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\", \"-----\"))",
         "!(startswith(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\", \"---\"))"
       ],
@@ -2982,17 +3039,28 @@
           },
           "at": 270,
           "status": "opaque"
+        },
+        {
+          "op": "setTabColor",
+          "target": null,
+          "params": {
+            "color": "Color.White",
+            "note": "màu/thuộc tính thẻ sheet (tab) theo chỉ số sheet",
+            "tab": 0
+          },
+          "at": 278,
+          "status": "unresolved"
         }
       ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
           239,
-          270
+          278
         ]
       },
-      "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: HTKKFile.RemoveValidate",
+      "status": "unresolved",
+      "reason": "chưa giải: Color.White, gọi chưa giải: HTKKFile.RemoveValidate, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -3023,7 +3091,7 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)"
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart"
       ],
       "effects": [
         {
@@ -3037,7 +3105,7 @@
             "prop": "value"
           },
           "at": 297,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -3047,8 +3115,8 @@
           297
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: cell(S0!BK{trigger.row}).value, trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: cell(S0!BK{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -3078,7 +3146,7 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
         "startswith(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\", \"-----\") || startswith(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\", \"---\")"
       ],
       "effects": [
@@ -3096,17 +3164,28 @@
           },
           "at": 306,
           "status": "opaque"
+        },
+        {
+          "op": "setTabColor",
+          "target": null,
+          "params": {
+            "color": "Color.Pink",
+            "note": "màu/thuộc tính thẻ sheet (tab) theo chỉ số sheet",
+            "tab": 0
+          },
+          "at": 315,
+          "status": "unresolved"
         }
       ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
           239,
-          306
+          315
         ]
       },
-      "status": "ui_only",
-      "reason": "chỉ có thao tác giao diện, không tác dụng lên ô",
+      "status": "unresolved",
+      "reason": "chưa giải: Color.Pink, gọi chưa giải: HTKKFile.SetNodeBackGroundPink, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -3136,7 +3215,7 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find)",
+        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
         "!(startswith(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\", \"-----\"))",
         "!(startswith(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\", \"---\"))"
       ],
@@ -3154,17 +3233,28 @@
           },
           "at": 311,
           "status": "opaque"
+        },
+        {
+          "op": "setTabColor",
+          "target": null,
+          "params": {
+            "color": "Color.White",
+            "note": "màu/thuộc tính thẻ sheet (tab) theo chỉ số sheet",
+            "tab": 0
+          },
+          "at": 319,
+          "status": "unresolved"
         }
       ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
           239,
-          311
+          319
         ]
       },
-      "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: HTKKFile.RemoveValidate",
+      "status": "unresolved",
+      "reason": "chưa giải: Color.White, gọi chưa giải: HTKKFile.RemoveValidate, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -3278,7 +3368,7 @@
             "prop": "value"
           },
           "at": 357,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -3288,8 +3378,8 @@
           357
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: cell(S1!R{trigger.row}).value, trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: cell(S1!R{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -3339,7 +3429,7 @@
             "prop": "value"
           },
           "at": 361,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -3349,8 +3439,8 @@
           361
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: cell(S1!S{trigger.row}).value, trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: cell(S1!S{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -3395,7 +3485,7 @@
             "prop": "value"
           },
           "at": 365,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -3405,8 +3495,8 @@
           365
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: cell(S1!Q{trigger.row}).value, trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: cell(S1!Q{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -3453,7 +3543,7 @@
             "prop": "value"
           },
           "at": 369,
-          "status": "parametric"
+          "status": "unresolved"
         },
         {
           "op": "setValue",
@@ -3466,7 +3556,7 @@
             "prop": "value"
           },
           "at": 373,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -3476,8 +3566,8 @@
           373
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: cell(S1!R{trigger.row}).value, trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: cell(S1!R{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -3526,7 +3616,7 @@
             "prop": "value"
           },
           "at": 377,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -3536,8 +3626,8 @@
           377
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: cell(S1!S{trigger.row}).value, trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: cell(S1!S{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -3569,17 +3659,18 @@
       "guards": [],
       "effects": [
         {
-          "op": "opaque",
+          "op": "lock",
           "target": null,
           "params": {
-            "args": [
-              "tk",
-              "spread()"
-            ],
-            "call": "GeneralFunctions.checkLockUnLockCells"
+            "clearData": "ô cột AN của dòng cấu hình == \"1\"",
+            "enabled": "ô BA1 của sheet cuối == \"1\"",
+            "locked": "khóa khi (bảng động) kết quả công thức cột AL áp cho từng dòng dữ liệu == \"0\", hoặc (ô tĩnh) giá trị cột AL == 0, ngược lại mở khóa",
+            "note": "ô đích theo cấu hình lúc chạy",
+            "targets": "ô đích theo bảng cấu hình ở sheet cuối, mỗi dòng cấu hình: cột AK xác định sheet và bảng đích, cột AM liệt kê ô đích (nối bằng &)",
+            "via": "checkLockUnLockCells"
           },
           "at": 413,
-          "status": "opaque"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -3589,8 +3680,8 @@
           413
         ]
       },
-      "status": "opaque_only",
-      "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.checkLockUnLockCells",
+      "status": "unresolved",
+      "reason": "chưa giải: ô đích chưa xác định trong phạm vi phân tích",
       "unreachable": false,
       "symbols": []
     },
@@ -3628,7 +3719,7 @@
             "call": "<obj>.Add"
           },
           "at": 1520,
-          "via": "TinhTongTheoTungTinh@1506",
+          "via": "TinhTongTheoTungTinh@417",
           "status": "opaque"
         },
         {
@@ -3651,7 +3742,7 @@
             "call": "GeneralFunctions.TongCongTheoTungTinh"
           },
           "at": 1521,
-          "via": "TinhTongTheoTungTinh@1506",
+          "via": "TinhTongTheoTungTinh@417",
           "status": "opaque"
         }
       ],
@@ -3702,7 +3793,7 @@
             "call": "GeneralFunctions.fpSpReindexingTableTemplate"
           },
           "at": 1524,
-          "via": "TinhTongTheoTungTinh@1506",
+          "via": "TinhTongTheoTungTinh@417",
           "status": "opaque"
         }
       ],
@@ -3812,7 +3903,7 @@
             "call": "GeneralFunctions.InsertNumberCell"
           },
           "at": 1744,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@434",
           "status": "opaque"
         }
       ],
@@ -3874,7 +3965,7 @@
             "prop": "value"
           },
           "at": 1747,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@434",
           "status": "parametric"
         }
       ],
@@ -3937,7 +4028,7 @@
             "call": "GeneralFunctions.InsertNumberCell"
           },
           "at": 1754,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@434",
           "status": "opaque"
         },
         {
@@ -3955,7 +4046,7 @@
             "call": "GeneralFunctions.InsertNumberCell"
           },
           "at": 1763,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@434",
           "status": "opaque"
         }
       ],
@@ -4009,7 +4100,7 @@
             "prop": "value"
           },
           "at": 1757,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@434",
           "status": "parametric"
         },
         {
@@ -4023,7 +4114,7 @@
             "prop": "value"
           },
           "at": 1766,
-          "via": "ThayDoiCellType_PL01_4@1733",
+          "via": "ThayDoiCellType_PL01_4@434",
           "status": "parametric"
         }
       ],
@@ -4126,7 +4217,7 @@
             "prop": "value"
           },
           "at": 1438,
-          "status": "resolved"
+          "status": "parametric"
         }
       ],
       "source": {
@@ -4136,8 +4227,8 @@
           1438
         ]
       },
-      "status": "resolved",
-      "reason": "",
+      "status": "parametric",
+      "reason": "placeholder: field(_ToKhaiInfo).SheetInfos[1]",
       "unreachable": false,
       "symbols": []
     },
@@ -4182,7 +4273,7 @@
             "prop": "value"
           },
           "at": 1452,
-          "status": "resolved"
+          "status": "parametric"
         }
       ],
       "source": {
@@ -4192,8 +4283,8 @@
           1452
         ]
       },
-      "status": "resolved",
-      "reason": "",
+      "status": "parametric",
+      "reason": "placeholder: field(_ToKhaiInfo).SheetInfos[1]",
       "unreachable": false,
       "symbols": []
     },
@@ -4229,7 +4320,7 @@
             "call": "<obj>.Add"
           },
           "at": 1520,
-          "via": "TinhTongTheoTungTinh@1506",
+          "via": "TinhTongTheoTungTinh@1464",
           "status": "opaque"
         },
         {
@@ -4252,7 +4343,7 @@
             "call": "GeneralFunctions.TongCongTheoTungTinh"
           },
           "at": 1521,
-          "via": "TinhTongTheoTungTinh@1506",
+          "via": "TinhTongTheoTungTinh@1464",
           "status": "opaque"
         }
       ],
@@ -4301,7 +4392,7 @@
             "call": "GeneralFunctions.fpSpReindexingTableTemplate"
           },
           "at": 1524,
-          "via": "TinhTongTheoTungTinh@1506",
+          "via": "TinhTongTheoTungTinh@1464",
           "status": "opaque"
         }
       ],

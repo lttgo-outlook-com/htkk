@@ -173,7 +173,7 @@
             "call": "<obj>.Load"
           },
           "at": 339,
-          "via": "GetDinhSuatThue@329",
+          "via": "GetDinhSuatThue@85",
           "status": "opaque"
         }
       ],
@@ -220,10 +220,11 @@
         "!(isEmpty(\"{trim(\"{cell(S0!AS{trigger.row}).text}\")}\"))",
         "opaque(File.Exists)",
         "opaque(<obj>.SelectNodes) != null",
-        "opaque(<obj>.SelectNodes) > 0",
+        "opaque(<obj>.SelectNodes).Count > 0",
         "opaque(FirstOrDefault) != null",
-        "opaque(FirstOrDefault) > 0",
-        "num(opaque(FirstOrDefault)) > 0"
+        "opaque(FirstOrDefault).ChildNodes.Count > 0",
+        "opaque(FirstOrDefault).Attributes[\"ThueSuat\"] != null",
+        "num(opaque(FirstOrDefault).Attributes[\"ThueSuat\"].Value) > 0"
       ],
       "effects": [
         {
@@ -232,18 +233,7 @@
             "sheet": 0,
             "cell": "AB{trigger.row}"
           },
-          "value": {
-            "cases": [
-              {
-                "when": "true",
-                "value": "{num(opaque(FirstOrDefault))}"
-              },
-              {
-                "when": "else",
-                "value": -1
-              }
-            ]
-          },
+          "value": "{num(opaque(FirstOrDefault).Attributes[\"ThueSuat\"].Value)}",
           "params": {
             "prop": "value"
           },
@@ -259,7 +249,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: num(opaque(FirstOrDefault)), trigger.row",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, num(opaque(FirstOrDefault).Attributes[\"ThueSuat\"].Value), trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },
@@ -292,7 +282,7 @@
       "guards": [
         "!(isEmpty(\"{trim(\"{cell(S0!AR{trigger.row}).text}\")}\"))",
         "!(isEmpty(\"{trim(\"{cell(S0!AS{trigger.row}).text}\")}\"))",
-        "!(opaque(File.Exists)) || opaque(<obj>.SelectNodes) == null || opaque(<obj>.SelectNodes) <= 0 || opaque(FirstOrDefault) == null || opaque(FirstOrDefault) <= 0 || num(opaque(FirstOrDefault)) <= 0"
+        "!(opaque(File.Exists)) || opaque(<obj>.SelectNodes) == null || opaque(<obj>.SelectNodes).Count <= 0 || opaque(FirstOrDefault) == null || opaque(FirstOrDefault).ChildNodes.Count <= 0 || opaque(FirstOrDefault) == null || opaque(FirstOrDefault).Attributes[\"ThueSuat\"] == null || num(opaque(FirstOrDefault).Attributes[\"ThueSuat\"].Value) <= 0"
       ],
       "effects": [
         {
@@ -306,7 +296,7 @@
             "prop": "value"
           },
           "at": 92,
-          "status": "parametric"
+          "status": "unresolved"
         }
       ],
       "source": {
@@ -316,8 +306,8 @@
           92
         ]
       },
-      "status": "parametric",
-      "reason": "placeholder: trigger.row",
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": []
     },

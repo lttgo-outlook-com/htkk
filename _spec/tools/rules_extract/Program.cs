@@ -110,6 +110,51 @@ foreach (var k in HookKinds.OrderBy(x => x, StringComparer.Ordinal)) hookCounts[
 var recStatus = new SortedDictionary<string, int>(StringComparer.Ordinal) { ["resolved"] = 0, ["parametric"] = 0, ["unresolved"] = 0, ["opaque_only"] = 0, ["ui_only"] = 0 };
 var UiCalls = new HashSet<string>(StringComparer.Ordinal) { "SuspendLayout", "ResumeLayout", "SetActiveCell", "Focus", "ShowCell", "ShowActiveCell", "Invalidate", "Select", "BringToFront", "SetViewportTopRow", "SetViewportLeftColumn", "SetActiveSheet", "SetNodeBackGroundPink", "SetRowHeight", "SetColumnWidth", "Refresh", "Update", "PerformLayout", "ScrollTo", "SetFocus" };
 int effStmts = 0, effMatched = 0, effDropped = 0, effRaw = 0, effKept = 0;
+var stmtCounts = new SortedDictionary<string, int>(StringComparer.Ordinal); var stmtOk = new SortedDictionary<string, int>(StringComparer.Ordinal); var stmtDropped = new SortedDictionary<string, int>(StringComparer.Ordinal);
+// method cùng class có ghi ô (trực tiếp hoặc qua method cùng class khác, không giới hạn độ sâu, chống vòng)
+var writersByClass = new Dictionary<ClassCtx, HashSet<BaseMethodDeclarationSyntax>>(ReferenceEqualityComparer.Instance);
+// chọn overload theo số đối số, cùng quy tắc với Interp
+BaseMethodDeclarationSyntax Resolve(ClassCtx c, string name, int argc)
+{
+    var cands = c.Methods.GetValueOrDefault(name);
+    if (cands == null) return null;
+    return cands.FirstOrDefault(x => x.ParameterList.Parameters.Count == argc) ?? cands.FirstOrDefault(x => x.ParameterList.Parameters.Count >= argc && x.ParameterList.Parameters.Skip(argc).All(p => p.Default != null));
+}
+HashSet<BaseMethodDeclarationSyntax> Writers(ClassCtx c)
+{
+    if (writersByClass.TryGetValue(c, out var w)) return w;
+    // điểm bất động trên đồ thị gọi trong class (theo từng overload): ghi trực tiếp, rồi thêm method gọi tới method đã ghi
+    w = new HashSet<BaseMethodDeclarationSyntax>(ReferenceEqualityComparer.Instance);
+    var callees = new List<(BaseMethodDeclarationSyntax md, List<BaseMethodDeclarationSyntax> cs)>();
+    foreach (var (nm0, mds) in c.Methods.OrderBy(k => k.Key, StringComparer.Ordinal))
+        foreach (var md in mds)
+        {
+            var cs = new List<BaseMethodDeclarationSyntax>();
+            foreach (var n in md.DescendantNodes())
+            {
+                if (n is AssignmentExpressionSyntax a && a.Left is MemberAccessExpressionSyntax lm && lm.Expression is ElementAccessExpressionSyntax ea && ea.Expression is MemberAccessExpressionSyntax em && em.Name.Identifier.Text is "Cells" or "Rows" or "Columns") w.Add(md);
+                if (n is InvocationExpressionSyntax iv)
+                {
+                    string nm = iv.Expression switch { IdentifierNameSyntax i => i.Identifier.Text, MemberAccessExpressionSyntax m => m.Name.Identifier.Text, _ => "" };
+                    if (nm is "ChangeValueCell" or "LockUnLockCol" or "LockUnLockCols" or "changFormatCell" or "checkLockUnLockCells") w.Add(md);
+                    if (iv.Expression is MemberAccessExpressionSyntax rm && nm.StartsWith("Reset", StringComparison.Ordinal) && rm.Expression is ElementAccessExpressionSyntax rea && rea.Expression is MemberAccessExpressionSyntax rem && rem.Name.Identifier.Text is "Cells" or "Rows" or "Columns") w.Add(md);
+                    string cn = iv.Expression is IdentifierNameSyntax ci ? ci.Identifier.Text : iv.Expression is MemberAccessExpressionSyntax cm && cm.Expression is ThisExpressionSyntax ? cm.Name.Identifier.Text : null;
+                    var t = cn == null ? null : Resolve(c, cn, iv.ArgumentList.Arguments.Count);
+                    if (t != null) cs.Add(t);
+                }
+            }
+            callees.Add((md, cs));
+        }
+    for (bool changed = true; changed;)
+    {
+        changed = false;
+        foreach (var (md, cs) in callees) if (!w.Contains(md) && cs.Any(w.Contains)) { w.Add(md); changed = true; }
+    }
+    writersByClass[c] = w;
+    return w;
+}
+// theo tên: có overload nào ghi ô (cách đếm của verify.py)
+bool WritesCells(ClassCtx c, string name, HashSet<string> unused) => (c.Methods.GetValueOrDefault(name) ?? new()).Any(Writers(c).Contains);
 var effOps = new SortedDictionary<string, int>(StringComparer.Ordinal);
 var effStatus = new SortedDictionary<string, int>(StringComparer.Ordinal);
 var truncated = new List<string>();
@@ -150,18 +195,19 @@ V Prune(V v, List<Cond> facts)
     foreach (var (w, val) in cs.Alts)
     {
         if (w != null && Infeasible(w, facts, keys)) continue;
-        var w2 = w == null ? null : C.And(Conj(w).Where(x => !keys.Contains(x.Key)));
-        alts.Add((w2, Prune(val, facts)));
+        var rest = w == null ? null : Conj(w).Where(x => !keys.Contains(x.Key)).ToList();
+        if (rest != null && rest.Count == 0) { alts.Add((null, Prune(val, facts))); break; } // điều kiện nhánh đã là dữ kiện: các nhánh sau không tới
+        alts.Add((rest == null ? null : C.And(rest), Prune(val, facts)));
     }
     // gộp nhánh liền kề cùng giá trị
     var res = new List<(Cond, V)>();
     foreach (var a in alts)
     {
-        if (res.Count > 0 && res[^1].Item2.Key == a.Item2.Key) { res[^1] = (res[^1].Item1 == null || a.Item1 == null ? null : C.Or(res[^1].Item1, a.Item1), a.Item2); continue; }
+        if (res.Count > 0 && (res[^1].Item2.Key == a.Item2.Key || Mk.Strip(R.Expr(res[^1].Item2, new Flags())) == Mk.Strip(R.Expr(a.Item2, new Flags())))) { res[^1] = (res[^1].Item1 == null || a.Item1 == null ? null : C.Or(res[^1].Item1, a.Item1), a.Item2); continue; }
         res.Add(a);
     }
     if (res.Count == 0) return v;
-    if (res.Count == 1) return res[0].Item2;
+    if (res.Count == 1 || res[0].Item1 == null) return res[0].Item2;
     res[^1] = (null, res[^1].Item2);
     return new VCases(res);
 }
@@ -169,7 +215,7 @@ V Prune(V v, List<Cond> facts)
 object ValueJson(V v, Flags fl, bool typed)
 {
     if (v is VCases cs)
-        return new Dictionary<string, object> { ["cases"] = cs.Alts.Select(a => new Dictionary<string, object> { ["when"] = a.When == null ? "else" : R.Cond(a.When, new Flags()), ["value"] = ValueJson(a.Val, fl, typed) }).ToList() };
+        return new Dictionary<string, object> { ["cases"] = cs.Alts.Select(a => new Dictionary<string, object> { ["when"] = a.When == null ? "else" : R.Cond(a.When, fl), ["value"] = ValueJson(a.Val, fl, typed) }).ToList() };
     if (typed && v is VConst k && (k.Val is bool || k.Val is long || k.Val is double || k.Val == null)) return k.Val;
     return R.Template(v, fl);
 }
@@ -259,6 +305,8 @@ void Tokens(object o, string k, HashSet<string> acc)
         case string t:
             if (k is "formula" or "value") t = Placeholders(t);
             if (k is "file" or "call" or "via" or "note" or "base" or "reason" or "prop") return;
+            foreach (var nm in Mk.Names(t)) acc.Add(nm);
+            t = Mk.Strip(t);
             t = litRx.Replace(t, "\"\"");
             t = System.Text.RegularExpressions.Regex.Replace(t, @"field\(\w+\)|obj\(\w*\)|opaque\([^()]*\)", "");
             foreach (System.Text.RegularExpressions.Match m in tokRx.Matches(t)) acc.Add(m.Value);
@@ -281,7 +329,7 @@ int recUnreachable = 0, recWithSyms = 0, symEntries = 0;
 
 List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<string, object> key, string hook, string kind, int sheet, string file, string ctxLabel, SortedDictionary<string, List<SymInfo>> syms)
 {
-    var groupConj = new Dictionary<string, List<Cond>>(StringComparer.Ordinal);
+    var groupConj = new Dictionary<string, List<List<Cond>>>(StringComparer.Ordinal);
     var groups = new List<(string gk, List<Effect> effs, List<Cond> trig, List<string> guards)>();
     var effSeen = new HashSet<string>(StringComparer.Ordinal);
     var gidx = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -297,10 +345,13 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
             else { var g = R.Cond(c, fl); if (seenG.Add(g)) guards.Add(g); }
         }
         foreach (var lp in ef.Loops) guards.Add("loop: " + lp.Desc);
+        // nhóm theo văn bản hiển thị (bỏ dấu ẩn); cờ unreachable chỉ khi mọi effect của nhóm có đường đi mâu thuẫn
+        guards = guards.Select(Mk.Strip).Distinct(StringComparer.Ordinal).ToList();
         string gk = string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards);
-        if (!gidx.TryGetValue(gk, out var gi)) { gi = groups.Count; gidx[gk] = gi; groups.Add((gk, new List<Effect>(), trig, guards)); groupConj[gk] = conj; }
+        if (!gidx.TryGetValue(gk, out var gi)) { gi = groups.Count; gidx[gk] = gi; groups.Add((gk, new List<Effect>(), trig, guards)); groupConj[gk] = new List<List<Cond>>(); }
         effRaw++;
-        string ek = gk + "\u0003" + ef.Op + "|" + ef.Target?.Key + "|" + ef.Val?.Key + "|" + ef.Line + "|" + ef.Via + "|" + JsonSerializer.Serialize(ef.Params);
+        string ek = gk + "\u0003" + ef.Op + "|" + Mk.Strip(ef.Target == null ? "" : R.Expr(ef.Target, new Flags())) + "|" + Mk.Strip(ef.Val == null ? "" : R.Expr(ef.Val, new Flags())) + "|" + ef.Line + "|" + ef.Via + "|" + Mk.Strip(JsonSerializer.Serialize(ef.Params, jsonOpt));
+        groupConj[gk].Add(conj);
         if (!effSeen.Add(ek)) continue;
         effKept++;
         groups[gi].effs.Add(ef);
@@ -309,6 +360,7 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
     foreach (var g in groups)
     {
         int worst = -1; bool anyOpaque = false;
+        bool guardOpq = g.guards.Any(x => x.Contains("opaque(", StringComparison.Ordinal));
         var notes = new SortedSet<string>(StringComparer.Ordinal);
         var effJson = new List<object>();
         int lmin = int.MaxValue, lmax = 0;
@@ -328,8 +380,14 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
             ej["at"] = ef.Line;
             if (ef.Via != null) ej["via"] = ef.Via;
             string stt;
+            // trạng thái: phần chưa giải ở giá trị, tham số, đích hoặc điều kiện đường đi thì không được là resolved/parametric
+            bool txtOpq = Mk.Strip(JsonSerializer.Serialize(ej, jsonOpt)).Contains("opaque(", StringComparison.Ordinal);
+            bool cfgTarget = ef.Target == null && (ef.Op == "setButtonText" || (ef.Op == "lock" && ef.Params.ContainsKey("targets")));
+            if (txtOpq) fl.Notes.Add("giá trị hoặc tham số có phần chưa giải");
+            if (guardOpq) fl.Notes.Add("điều kiện đường đi có phần chưa giải");
+            if (cfgTarget) fl.Notes.Add("ô đích chưa xác định trong phạm vi phân tích");
             if (ef.Op == "opaque") { stt = "opaque"; anyOpaque = true; notes.Add("gọi chưa giải: " + ef.Params["call"]); }
-            else { stt = fl.Opaque ? "unresolved" : fl.Sym ? "parametric" : "resolved"; worst = Math.Max(worst, Array.IndexOf(Rank, stt)); foreach (var n in fl.Notes) notes.Add(n); }
+            else { stt = fl.Opaque || txtOpq || guardOpq || cfgTarget ? "unresolved" : fl.Sym ? "parametric" : "resolved"; worst = Math.Max(worst, Array.IndexOf(Rank, stt)); foreach (var n in fl.Notes) notes.Add(Mk.Strip(n)); }
             ej["status"] = stt;
             effJson.Add(ej);
             effOps[ef.Op] = effOps.GetValueOrDefault(ef.Op) + 1;
@@ -353,7 +411,7 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
             reason = (reason.Length > 0 ? reason + " | " : "") + (status == "parametric" ? "placeholder: " : status == "unresolved" ? "chưa giải: " : "") + string.Join(", ", ns);
         }
         recStatus[status] = recStatus.GetValueOrDefault(status) + 1;
-        bool unreach = Contradictory(groupConj[g.gk]);
+        bool unreach = groupConj[g.gk].All(Contradictory);
         if (unreach) { recUnreachable++; reason = "không tới được: điều kiện trên đường đi mâu thuẫn" + (reason.Length > 0 ? " | " + reason : ""); }
         var trigJ = BuildTrigger(g.trig, kind);
         var toks = new HashSet<string>(StringComparer.Ordinal);
@@ -449,21 +507,72 @@ foreach (var row in classRows)
         it.RunMethod(m, cls, BindParams(m, sheet, kind), null, null, null);
         hookCounts[kind]++;
         var effLines = new HashSet<int>(it.Effects.Where(e => e.Via == null).Select(e => e.Line));
-        var dropped = new List<object>(); var seenL = new HashSet<int>();
+        var effOpsAt = it.Effects.Where(e => e.Via == null).GroupBy(e => e.Line).ToDictionary(g => g.Key, g => new HashSet<string>(g.Select(e => e.Op + (e.Params.TryGetValue("via", out var vv) ? "/" + vv : "")), StringComparer.Ordinal));
+        var dropped = new List<object>(); var seenL = new HashSet<string>(StringComparer.Ordinal);
+        string Generic(SyntaxNode n) => n.Ancestors().Any(a => a is LambdaExpressionSyntax) ? "nằm trong lambda, không phân tích" : n.Ancestors().Any(a => a is CatchClauseSyntax) ? "nằm trong khối catch, không phân tích" : "không tới được: nhánh điều kiện gấp thành hằng sai, hoặc sau lệnh trả về/ném ngoại lệ";
         foreach (var n in m.DescendantNodes())
         {
-            ExpressionSyntax recv0 = null; int l0 = 0;
-            // mọi phép gán thuộc tính và mọi lời gọi Reset* trên phần tử Cells/Rows/Columns
-            if (n is AssignmentExpressionSyntax asx && asx.IsKind(SyntaxKind.SimpleAssignmentExpression) && asx.Left is MemberAccessExpressionSyntax lm) { recv0 = lm.Expression; l0 = LineOf(asx); }
-            else if (n is InvocationExpressionSyntax ivx && ivx.Expression is MemberAccessExpressionSyntax im && im.Name.Identifier.Text.StartsWith("Reset", StringComparison.Ordinal) && ivx.ArgumentList.Arguments.Count == 0) { recv0 = im.Expression; l0 = LineOf(ivx); }
-            if (recv0 is not ElementAccessExpressionSyntax rea || rea.Expression is not MemberAccessExpressionSyntax rem || rem.Name.Identifier.Text is not ("Cells" or "Rows" or "Columns")) continue;
-            if (!seenL.Add(l0)) continue;
-            effStmts++;
-            if (effLines.Contains(l0)) { effMatched++; continue; }
-            effDropped++;
-            var why = it.Dropped.FirstOrDefault(d => d.Line == l0).Reason
-                ?? (n.Ancestors().Any(a => a is LambdaExpressionSyntax) ? "nằm trong lambda, không phân tích" : n.Ancestors().Any(a => a is CatchClauseSyntax) ? "nằm trong khối catch, không phân tích" : "không tới được: nhánh điều kiện gấp thành hằng sai, hoặc sau lệnh trả về/ném ngoại lệ");
-            dropped.Add(new Dictionary<string, object> { ["at"] = l0, ["reason"] = why });
+            int l0 = 0; string cat = null;
+            // (a) gán thuộc tính / Reset* trên Cells/Rows/Columns; (b) màu thẻ sheet; (c) chữ nút; (d) checkLockUnLockCells; (e) gọi method cùng class có ghi ô
+            if (n is AssignmentExpressionSyntax asx && asx.IsKind(SyntaxKind.SimpleAssignmentExpression) && asx.Left is MemberAccessExpressionSyntax lm)
+            {
+                l0 = LineOf(asx);
+                if (lm.Expression is ElementAccessExpressionSyntax rea && rea.Expression is MemberAccessExpressionSyntax rem && rem.Name.Identifier.Text is "Cells" or "Rows" or "Columns") cat = "cell";
+                else if (lm.Expression is ElementAccessExpressionSyntax tea && tea.Expression is MemberAccessExpressionSyntax tm && tm.Name.Identifier.Text == "TabStrip") cat = "tab";
+                else if (lm.Name.Identifier.Text == "Text" && lm.Expression is IdentifierNameSyntax bid && bid.Identifier.Text.Contains("ButtonCellType", StringComparison.OrdinalIgnoreCase)) cat = "button";
+            }
+            else if (n is InvocationExpressionSyntax ivx)
+            {
+                l0 = LineOf(ivx);
+                if (ivx.Expression is MemberAccessExpressionSyntax im && im.Name.Identifier.Text.StartsWith("Reset", StringComparison.Ordinal) && ivx.ArgumentList.Arguments.Count == 0 && im.Expression is ElementAccessExpressionSyntax rea2 && rea2.Expression is MemberAccessExpressionSyntax rem2 && rem2.Name.Identifier.Text is "Cells" or "Rows" or "Columns") cat = "cell";
+                else if (ivx.Expression is MemberAccessExpressionSyntax im2 && im2.Name.Identifier.Text == "checkLockUnLockCells") cat = "chk";
+                else
+                {
+                    string cn = ivx.Expression is IdentifierNameSyntax cid ? cid.Identifier.Text : ivx.Expression is MemberAccessExpressionSyntax cma && cma.Expression is ThisExpressionSyntax ? cma.Name.Identifier.Text : null;
+                    if (cn != null && cls.Methods.ContainsKey(cn) && WritesCells(cls, cn, new HashSet<string>(StringComparer.Ordinal))) cat = "call:" + cn;
+                }
+            }
+            if (cat == null || !seenL.Add(cat + "@" + l0)) continue;
+            if (cat == "cell") effStmts++; else stmtCounts[cat.StartsWith("call:") ? "call" : cat] = stmtCounts.GetValueOrDefault(cat.StartsWith("call:") ? "call" : cat) + 1;
+            var ops = effOpsAt.GetValueOrDefault(l0) ?? new HashSet<string>();
+            bool ok2 = cat switch
+            {
+                "cell" => effLines.Contains(l0),
+                "tab" => ops.Contains("setTabColor") || ops.Contains("setTabProp"),
+                "button" => ops.Contains("setButtonText"),
+                "chk" => ops.Contains("lock/checkLockUnLockCells"),
+                _ => it.Effects.Any(e => e.Op != "opaque" && e.Via != null && (e.Via == cat.Substring(5) + "@" + l0 || e.Via.StartsWith(cat.Substring(5) + "@" + l0 + " > ", StringComparison.Ordinal))),
+            };
+            if (ok2) { if (cat == "cell") effMatched++; else stmtOk[cat.StartsWith("call:") ? "call" : cat] = stmtOk.GetValueOrDefault(cat.StartsWith("call:") ? "call" : cat) + 1; continue; }
+            if (cat == "cell") effDropped++;
+            string why = it.Dropped.FirstOrDefault(d => d.Line == l0).Reason;
+            if (why == null && cat.StartsWith("call:", StringComparison.Ordinal))
+            {
+                string cn = cat.Substring(5);
+                var crs = it.Calls.Where(c => c.Depth == 1 && c.Line == l0 && c.Name == cn).ToList();
+                var nf = crs.FirstOrDefault(c => !c.Followed);
+                var ivc = (InvocationExpressionSyntax)n;
+                var md2 = Resolve(cls, cn, ivc.ArgumentList.Arguments.Count);
+                if (md2 != null && !Writers(cls).Contains(md2)) why = "overload " + cn + " được gọi (" + ivc.ArgumentList.Arguments.Count + " đối số, khai báo dòng " + LineOf(md2) + ") không ghi ô, chỉ overload khác cùng tên có ghi ô";
+                else if (nf != null) why = "không nội tuyến " + cn + "@" + l0 + ": " + nf.Reason;
+                else if (crs.Count > 0)
+                {
+                    var inner = new List<string>();
+                    foreach (var c in crs)
+                    {
+                        for (int k = c.DropBefore; k < c.DropAfter; k++) inner.Add("dòng " + it.Dropped[k].Line + " " + it.Dropped[k].Reason);
+                        foreach (var c2 in it.Calls.Where(x => !x.Followed && x.Via != null && x.Via.StartsWith(c.Via + " > ", StringComparison.Ordinal))) inner.Add("lời gọi " + c2.Name + " dòng " + c2.Line + " không nội tuyến: " + c2.Reason);
+                    }
+                    why = "đã nội tuyến " + cn + "@" + l0 + " nhưng không lệnh ghi ô nào tới được: " + (inner.Count > 0 ? string.Join("; ", inner.Distinct().Take(3)) : "nhánh ghi ô bị loại theo đối số truyền vào hoặc trả về sớm");
+                }
+            }
+            why ??= Generic(n);
+            var dj = new Dictionary<string, object> { ["at"] = l0, ["reason"] = why };
+            if (cat != "cell") dj["kind"] = cat.StartsWith("call:", StringComparison.Ordinal) ? "call" : cat;
+            if (cat.StartsWith("call:", StringComparison.Ordinal)) dj["call"] = cat.Substring(5);
+            dropped.Add(dj);
+            if (!cat.StartsWith("call:", StringComparison.Ordinal) && cat != "cell") stmtDropped[cat] = stmtDropped.GetValueOrDefault(cat) + 1;
+            else if (cat != "cell") stmtDropped["call"] = stmtDropped.GetValueOrDefault("call") + 1;
         }
         var r = BuildRecords(it.Effects, key, name, kind, sheet, rel, "hook", it.Syms);
         if (it.Truncated) truncated.Add(rel + ":" + name);
@@ -499,7 +608,13 @@ foreach (var (pid, pt) in points)
     if (!pointStatus.ContainsKey(pid)) pointStatus[pid] = (2, "none", new SortedSet<string>(StringComparer.Ordinal));
 
 // ---------- ghi tệp ----------
-void Write(string name, object o) => File.WriteAllText(Path.Combine(outDir, name), JsonSerializer.Serialize(o, jsonOpt) + "\n");
+var markRx = new System.Text.RegularExpressions.Regex(@"\\u001[Ff][^""\\]*?\\u001[Ff]", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+void Write(string name, object o)
+{
+    var txt = markRx.Replace(JsonSerializer.Serialize(o, jsonOpt), "");
+    if (txt.Contains("\\u001F", StringComparison.OrdinalIgnoreCase) || txt.Contains(Mk.M)) throw new Exception("còn dấu ẩn trong " + name);
+    File.WriteAllText(Path.Combine(outDir, name), txt + "\n");
+}
 foreach (var (cname, pc) in perClassOut)
 {
     totalRecords += pc.recs.Count;
@@ -549,6 +664,7 @@ Write("index.json", new Dictionary<string, object>
     ["record_status"] = recStatus,
     ["effects_dedup"] = new Dictionary<string, object> { ["before"] = effRaw, ["after"] = effKept },
     ["hook_effect_statements"] = new Dictionary<string, object> { ["total"] = effStmts, ["with_effect"] = effMatched, ["dropped_flagged"] = effDropped },
+    ["hook_other_statements"] = stmtCounts.ToDictionary(k => k.Key, k => (object)new Dictionary<string, object> { ["total"] = k.Value, ["with_effect"] = stmtOk.GetValueOrDefault(k.Key), ["dropped_flagged"] = stmtDropped.GetValueOrDefault(k.Key) }),
     ["effect_ops"] = effOps,
     ["records_unreachable"] = recUnreachable,
     ["records_with_symbols"] = new Dictionary<string, object> { ["records"] = recWithSyms, ["entries"] = symEntries },
