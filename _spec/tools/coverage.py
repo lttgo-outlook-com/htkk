@@ -445,6 +445,14 @@ def main():
         cells, log = build_cells(info['sheets'], sec_files, ver)
         for l in log:
             l.update({'form': '%s_%s' % key})
+            if l.get('loi') == 'khong_tim_thay_tep_Sections' and 'KHBS' in (l.get('ID') or '').upper():
+                allrows = [r for (mf, _v), rs in mby.items() if mf == mafile for r in rs]
+                kx = sorted({os.path.basename(r['dst']) for r in allrows if 'khbs' in r['dst'].lower() and r['root'] == 'Sections'})
+                ks = sorted({os.path.basename(r['dst']) for r in allrows if 'khbs' in r['dst'].lower() and r['root'] == 'schema'})
+                l['nhom_khbs'] = ('khbs_chi_co_Sections_phien_ban_khac' if kx else
+                                  ('khbs_chi_co_xsd_khong_co_Sections' if ks else 'khbs_khong_co_tep_nao'))
+                l['khbs_sections_ton_tai'] = kx
+                l['khbs_xsd_ton_tai'] = ks
             sheet_log.append(l)
         # độc lập: đếm Cell có Path bằng regex
         for p in sorted(set(sec_files.values())):  # đếm theo form (tệp dùng chung tính lại mỗi form)
@@ -504,7 +512,16 @@ def main():
                 continue
             for si, sh in enumerate(info['sheets']):
                 if si >= len(nm) or nm[si].replace('-', '_').replace('/', '_').lower() != (sh['ID'] or '').replace('-', '_').lower():
-                    sheet_log.append({'form': '%s_%s' % key, 'sheet': si, 'ID': sh['ID'],
+                    nz = lambda x: (x or '').replace('-', '_').replace('/', '_').lower()
+                    ids = [nz(q['ID']) for q in info['sheets']]
+                    nms = [nz(q) for q in nm]
+                    if si >= len(nm):
+                        loai = 'thieu_sheet_trong_xls'
+                    elif nz(sh['ID']) in nms:
+                        loai = 'lech_chi_so'
+                    else:
+                        loai = 'chi_khac_ten'
+                    sheet_log.append({'form': '%s_%s' % key, 'sheet': si, 'ID': sh['ID'], 'phan_loai': loai,
                                       'loi': 'ten_sheet_%s_lech: %s' % (kind, nm[si] if si < len(nm) else None)})
 
         def xl(kind, c):
