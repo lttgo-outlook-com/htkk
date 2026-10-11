@@ -88,7 +88,7 @@ def load_menu():
             for s in val.findall('Sheet'):
                 sheets.append({'ID': s.get('ID'), 'SheetName': s.get('SheetName'),
                                'DataFile': s.get('DataFile'), 'XMLnode': s.get('XMLnode')})
-        forms[key] = {'kieu_khbs': m.get('KieuKHBS'), 'menu_id': m.get('ID'), 'folder': val.get('FolderName') if val is not None else None,
+        forms[key] = {'kieu_khbs': m.get('KieuKHBS'), 'version_khbs': m.get('VersionKHBS'), 'menu_id': m.get('ID'), 'folder': val.get('FolderName') if val is not None else None,
                       'sheets': sheets}
     return forms
 
@@ -440,6 +440,10 @@ def main():
     for r in mrows:
         src2dst.setdefault(r['src'], r['dst'])
     fby = load_formulas(os.path.join(ROOT, '_spec', 'formulas'))
+    f_src = {}
+    for f in jload(os.path.join(ROOT, '_spec', 'formulas', 'index.json'))['files']:
+        if f.get('status') == 'ok':
+            f_src.setdefault(f['source_name'].lower(), f)
     rr = load_rowreplace(os.path.join(ROOT, '_spec', 'config', 'mapcongthucchosua.xml.json'))
     t2, t2_un = load_t2(a.t2)
     t3, t3_un = load_t3(a.t3)
@@ -829,6 +833,49 @@ def main():
         G['khbs_sheet_co_toa_do'] += len([1 for l in log if l.get('phu_toa_do')])
         G['khbs_sheet_khong_phu'] += len([1 for l in log if l.get('nhom_khbs') and not l.get('phu_toa_do')])
 
+        # ---- mẫu chung KHBS (WinFnProcess.cs:69-80, 74): KieuKHBS=="3" và LoaiToKhai=="B"
+        mc_out = []
+        mc_info = None
+        if info.get('kieu_khbs') == '3':
+            mid = info['menu_id']
+            if mid in 'I7,I4,C7,I8,C8':   # C# dùng string.Contains (so khớp chuỗi con)
+                tpl = 'KHBS_TT80_DVT'
+            elif mid in 'D1,N8,G9,H2,H4,T8,E8,L8,L7,N2,G2,R5,Y6,Z8,Z5':
+                tpl = 'KHBS_DIA_BAN'
+            else:
+                tpl = 'KHBS_TT80'
+            vk = nodots(info.get('version_khbs') or ver)
+            base = '%s_%s' % (tpl.lower(), vk)
+            nmx = sheetnames.get('xls') or sheetnames.get('xls1')
+            cnt = len(nmx) if nmx else len(info['sheets']) + 1
+            mc_info = {'mau': tpl, 'version_khbs': info.get('version_khbs'), 'MenuID': mid,
+                       'sheet_thay': [cnt - 3, cnt - 2], 'tep_t1': {}}
+            for kind in ('xls', 'xls1'):
+                fe = f_src.get(base + '.' + kind) or (f_src.get(base + '.xls1') if kind == 'xls1' else None)
+                if fe is None:
+                    continue
+                mc_info['tep_t1'][kind] = fe['json']
+                j = jload(os.path.join(ROOT, '_spec', 'formulas', fe['json']))
+                names = [q['name'] for q in j['sheets']]
+                for k2, tgt in ((0, cnt - 3), (1, cnt - 2)):
+                    if k2 >= len(names):
+                        continue
+                    for x in j['formulas']:
+                        if x['sheet'] == names[k2]:
+                            mc_out.append({'sheet': tgt, 'sheet_mau_chung': k2, 'khong_gian': kind, 'cell': x['cell'],
+                                           'nguon': 'mau_chung_khbs', 'mau': tpl, 'nguon_tinh': [kind]})
+            if not mc_info['tep_t1']:
+                cands = sorted(k for k in f_src if k.startswith(tpl.lower() + '_') and k.endswith(('.xls', '.xls1')))
+                mc_info['khong_xac_dinh_phien_ban'] = True
+                mc_info['ung_vien'] = cands
+                G['mau_chung_khbs_khong_tim_thay_phien_ban'] += 1
+            else:
+                G['mau_chung_khbs_form'] += 1
+            G['mau_chung_khbs_sheet'] += 2
+            G['mau_chung_khbs_o'] += len(mc_out)
+            G['mau_chung_' + tpl] += 1
+        mc_out.sort(key=lambda q: (q['sheet'], q['khong_gian'], q['cell']))
+
         # ---- XSD + nhãn + xung đột
         out_cells = []
         counts = Counter()
@@ -955,7 +1002,7 @@ def main():
         out = {'header': {'form': {'MaFile': mafile, 'VersionXML': ver, 'MenuID': info['menu_id']},
                           'toa_do_csharp': spname, 'xsd_json': xj, 'xsd_thay_the_form_goc': bool(xj_fb), 'tep_Sections': {str(k): os.path.relpath(v, ROOT) for k, v in sorted(sec_files.items())},
                           'dinh_nghia': 'xem coverage.py'},
-               'cells': out_cells, 'path_ngoai_xsd': off_recs, 'khbs_cells_theo_toa_do': khbs_out}
+               'cells': out_cells, 'path_ngoai_xsd': off_recs, 'khbs_cells_theo_toa_do': khbs_out, 'mau_chung_khbs': mc_info, 'mau_chung_khbs_cells': mc_out}
         with open(os.path.join(a.out, '%s_%s.json' % (mafile, ver)), 'w', encoding='utf-8') as f:
             json.dump(out, f, ensure_ascii=False, sort_keys=True, indent=1)
             f.write('\n')
@@ -1017,6 +1064,7 @@ def main():
     print('kiem_cheo_regex_Cell_co_Path (tong ca ngoai XSD)', indep_total,
           '== o_du_lieu + ngoai_xsd?', indep_total == G['o_du_lieu'] + G['cell_path_ngoai_xsd'])
     print('xung_dot', {k: len(v) for k, v in sorted(conflicts.items())})
+    print('mau_chung_khbs', {k: v for k, v in sorted(G.items()) if k.startswith('mau_chung_')})
     print('dong_dong', {k: v for k, v in sorted(G.items()) if k.startswith('dyn_')})
     print('khbs: o_theo_toa_do', G['khbs_o_theo_toa_do'], 'sheet_co_toa_do', G['khbs_sheet_co_toa_do'], 'sheet_khong_phu', G['khbs_sheet_khong_phu'], '| effect_khbs', G['csharp_effect_khbs_theo_toa_do'], 't3_khbs', G['t3_cell_khbs_theo_toa_do'], '| activeSheet_giai_duoc', G['csharp_effect_activeSheet_giai_duoc'])
     print('csharp_effect', G['csharp_effect'], 'anh_xa', G['csharp_effect_anh_xa'],
