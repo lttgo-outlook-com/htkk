@@ -4,13 +4,174 @@
   "T3": "agent-ae09dfc0b7c50411a/_spec/validations",
   "index": "agent-a9857e03398898f03/_spec/csharp/index.json"
  },
- "count": 91,
+ "count": 86,
  "helpers": [
+  {
+   "name": "GeneralFunctions.HaveToValidateRow",
+   "overloads": [
+    {
+     "params": "rowsInfo: HTKKCMCRowInfo, lstRowValue: string[]",
+     "return_type": "bool",
+     "lines": [
+      1374,
+      1410
+     ]
+    }
+   ],
+   "purpose": "Quyết định một dòng bảng có phải kiểm tra hay không: trả true nếu có ô khác giá trị mặc định.",
+   "semantics": {
+    "precondition": "rowsInfo mô tả cột (DefaultValue, Controltype), lstRowValue là giá trị dòng theo thứ tự cột.",
+    "effects": "Với cột kiểu số (Controltype 16) đổi cả mặc định lẫn giá trị sang số rồi ghi ngược số đã chuẩn hóa vào lstRowValue (sửa mảng đầu vào). Cột checkbox (Controltype 2) so với mặc định False. Bỏ qua cột có mặc định NA và cột vượt độ dài mảng.",
+    "returns": "true nếu tồn tại ô không rỗng và khác mặc định, ngược lại false (dòng trống/mặc định thì bỏ qua kiểm tra).",
+    "exceptions": "Bắt, ghi log rồi ném lại."
+   },
+   "side_effects": [
+    "ghi vào mảng đầu vào lstRowValue",
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "ConvertHelpers.ConvertToDouble",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      1374,
+      1410
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 1,
+    "t3": 1372,
+    "total": 1373
+   }
+  },
+  {
+   "name": "ConvertHelpers.ConvertToDouble",
+   "overloads": [
+    {
+     "params": "obj: object",
+     "return_type": "double",
+     "lines": [
+      51,
+      62
+     ]
+    }
+   ],
+   "purpose": "Chuyển giá trị bất kỳ sang double, mặc định 0.",
+   "semantics": {
+    "precondition": "obj tùy ý. Chuỗi phân tích theo culture hiện hành (giữ nguyên dấu phân cách).",
+    "effects": "Không có.",
+    "returns": "double. Null, DBNull hoặc không phân tích được thì 0.",
+    "exceptions": "Không ném (TryParse)."
+   },
+   "side_effects": [],
+   "calls": [],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      51,
+      62
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 1111,
+    "total": 1111
+   }
+  },
+  {
+   "name": "ConvertHelpers.ToBoolOrDefault",
+   "overloads": [
+    {
+     "params": "obj: object, defaultValue: bool",
+     "return_type": "bool",
+     "lines": [
+      371,
+      385
+     ]
+    }
+   ],
+   "purpose": "Chuyển giá trị bất kỳ sang bool, dùng mặc định cho giá trị null hoặc DBNull.",
+   "semantics": {
+    "precondition": "obj tùy ý, defaultValue mặc định false (ConvertHelpers.cs:371).",
+    "effects": "Không có.",
+    "returns": "defaultValue nếu obj null hoặc DBNull. Ngược lại ConvertToBool của chuỗi hóa obj (ConvertHelpers.cs:375-378): true chỉ khi chuỗi phân tích được thành true theo bool.TryParse. Chuỗi không phân tích được (rỗng, '1', 'abc') trả false, KHÔNG trả defaultValue.",
+    "exceptions": "Bắt mọi ngoại lệ và trả defaultValue (ConvertHelpers.cs:380-383)."
+   },
+   "side_effects": [],
+   "calls": [
+    "ConvertHelpers.ConvertToBool"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      371,
+      385
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 775,
+    "total": 775
+   }
+  },
+  {
+   "name": "GeneralFunctions.GetValueCustom",
+   "overloads": [
+    {
+     "params": "sView: SheetView, iRow: int, iCol: int, controlType: string",
+     "return_type": "string",
+     "lines": [
+      258,
+      372
+     ]
+    }
+   ],
+   "purpose": "Đọc giá trị ô và chuẩn hóa thành chuỗi theo mã loại điều khiển (checkbox, ngày, giờ, ngày giờ, số, nút, mặc định).",
+   "semantics": {
+    "precondition": "iRow, iCol 1-based, nếu một trong hai âm thì trả chuỗi rỗng (GeneralFunctions.cs:361-363). controlType là mã loại điều khiển dạng chuỗi.",
+    "effects": "Chỉ đọc ô. Lỗi thì ghi log (GeneralFunctions.cs:368).",
+    "returns": "Chuỗi rỗng nếu Value của ô null (GeneralFunctions.cs:356-358). Mã 2: 'True' nếu giá trị (không phân biệt hoa thường) là true, ngược lại 'False' (GeneralFunctions.cs:270-273). Mã 14 (ngày): 8 ký tự ddMMyyyy thành dd/MM/yyyy, 10 ký tự (sau Trim) giữ nguyên, độ dài khác thì rỗng (GeneralFunctions.cs:274-284). Mã 96 (giờ): 6 ký tự hhmmss thành hh:mm:ss, 8 ký tự giữ nguyên, khác thì rỗng (GeneralFunctions.cs:285-295). Mã 94 (ngày giờ): 14 ký tự ddMMyyyyhhmmss thành dd/MM/yyyy hh:mm:ss, 18 ký tự giữ nguyên, khác thì rỗng (GeneralFunctions.cs:296-306). Mã 0: Text hiển thị của ô (GeneralFunctions.cs:307-309). Mã 16: Value.ToString() (GeneralFunctions.cs:310-315). Mã khác (GeneralFunctions.cs:316-352): ô kiểu Number: Value.ToString() hoặc rỗng, ô kiểu General có NumberFormat: Value.ToString() hoặc rỗng, ô kiểu General không có NumberFormat và kiểu khác: Text đã thoát XML bốn ký tự & \" > <, ô kiểu Button: tiền tố 'TaiBangKe' nối Text của nút, rỗng nếu Text null.",
+    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả chuỗi rỗng. Mã 16 và nhánh mặc định có thể trả sớm bằng return trực tiếp."
+   },
+   "side_effects": [
+    "ghi log khi lỗi"
+   ],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      258,
+      372
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 688,
+    "total": 688
+   }
+  },
   {
    "name": "HTKKFile.SetNodeBackGroundPink",
    "overloads": [
     {
-     "params": "SheetView sView, int rowIndex, int colIndex, string msg, int rowSTT",
+     "params": "sView: SheetView, rowIndex: int, colIndex: int, msg: string, rowSTT: int",
      "return_type": "void",
      "lines": [
       424,
@@ -51,10 +212,47 @@
    }
   },
   {
+   "name": "ConvertHelpers.ConvertToBool",
+   "overloads": [
+    {
+     "params": "obj: object",
+     "return_type": "bool",
+     "lines": [
+      64,
+      75
+     ]
+    }
+   ],
+   "purpose": "Chuyển giá trị bất kỳ sang bool, mặc định false.",
+   "semantics": {
+    "precondition": "obj tùy ý (ConvertHelpers.cs:64).",
+    "effects": "Không có.",
+    "returns": "false nếu obj null hoặc DBNull. Ngược lại kết quả bool.TryParse của chuỗi hóa obj (ConvertHelpers.cs:69-71): true với 'true' không phân biệt hoa thường (bỏ khoảng trắng hai đầu), false với mọi chuỗi khác kể cả '1'.",
+    "exceptions": "Không ném (dùng TryParse)."
+   },
+   "side_effects": [],
+   "calls": [],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      64,
+      75
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 529,
+    "total": 529
+   }
+  },
+  {
    "name": "HTKKFile.GetMessage",
    "overloads": [
     {
-     "params": "string IDmsg",
+     "params": "IDmsg: string",
      "return_type": "string",
      "lines": [
       381,
@@ -62,7 +260,7 @@
      ]
     },
     {
-     "params": "SheetView sView, int[] cell",
+     "params": "sView: SheetView, cell: int[]",
      "return_type": "string",
      "lines": [
       395,
@@ -70,7 +268,7 @@
      ]
     },
     {
-     "params": "FpSpread winFpSpread, int idxRow, int idxCol",
+     "params": "winFpSpread: FpSpread, idxRow: int, idxCol: int",
      "return_type": "string",
      "lines": [
       409,
@@ -117,10 +315,288 @@
    }
   },
   {
+   "name": "ValidateBase.CheckMaSoThue",
+   "overloads": [
+    {
+     "params": "strMST: string",
+     "return_type": "bool",
+     "lines": [
+      312,
+      359
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra mã số thuế 10, 13 hoặc 14 ký tự về mẫu số và chữ số kiểm tra.",
+   "semantics": {
+    "precondition": "strMST chuỗi.",
+    "effects": "Không có.",
+    "returns": "false nếu độ dài không là 10, 13, 14 hoặc không khớp mẫu số. Ngược lại so chữ số thứ 10 với 10 trừ phần dư mod 11 của tổng trọng số chín chữ số đầu (31, 29, 23, 19, 17, 13, 7, 5, 3), giống CheckMaSoThueCCCD nhưng không nhận độ dài 12.",
+    "exceptions": "Bắt, trả false (cấu trúc giống CheckMaSoThueCCCD)."
+   },
+   "side_effects": [],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/ValidateBase.cs",
+    "lines": [
+     [
+      312,
+      359
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 2,
+    "t3": 417,
+    "total": 419
+   }
+  },
+  {
+   "name": "ConvertHelpers.ConvertToInt",
+   "overloads": [
+    {
+     "params": "obj: object, def: int",
+     "return_type": "int",
+     "lines": [
+      77,
+      88
+     ]
+    }
+   ],
+   "purpose": "Chuyển giá trị sang int sau khi bỏ dấu chấm và phẩy, có giá trị mặc định.",
+   "semantics": {
+    "precondition": "def mặc định 0.",
+    "effects": "Không có.",
+    "returns": "int. Null, DBNull hoặc không phân tích được thì trả def (với TryParse thất bại thì trả 0, không phải def).",
+    "exceptions": "Không ném."
+   },
+   "side_effects": [],
+   "calls": [],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      77,
+      88
+     ]
+    ]
+   },
+   "confidence": "vừa",
+   "call_count": {
+    "t2": 0,
+    "t3": 376,
+    "total": 376
+   }
+  },
+  {
+   "name": "ConvertHelpers.ConvertToString",
+   "overloads": [
+    {
+     "params": "obj: object",
+     "return_type": "string",
+     "lines": [
+      90,
+      98
+     ]
+    }
+   ],
+   "purpose": "Chuyển giá trị bất kỳ sang chuỗi, null hoặc DBNull thành chuỗi rỗng.",
+   "semantics": {
+    "precondition": "obj tùy ý.",
+    "effects": "Không có.",
+    "returns": "ToString của obj hoặc chuỗi rỗng.",
+    "exceptions": "Không ném với null (có thể ném nếu ToString của obj ném)."
+   },
+   "side_effects": [],
+   "calls": [],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      90,
+      98
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 61,
+    "t3": 273,
+    "total": 334
+   }
+  },
+  {
+   "name": "GeneralFunctions.checkSoTonSoPH",
+   "overloads": [
+    {
+     "params": "Tuso1: string, denso1: string, Tuso2: string, denso2: string",
+     "return_type": "string[]",
+     "lines": [
+      3370,
+      3466
+     ]
+    }
+   ],
+   "purpose": "Phân loại trạng thái nhập của hai khoảng số (tồn đầu kỳ và phát hành trong kỳ) thành mảng 5 mã.",
+   "semantics": {
+    "precondition": "Tuso1, denso1 là khoảng thứ nhất, Tuso2, denso2 là khoảng thứ hai (số dạng chuỗi, rỗng khi isNullString) (GeneralFunctions.cs:3370-3466).",
+    "effects": "Không có.",
+    "returns": "Mảng 5 chuỗi, mặc định rỗng. Phần tử 0: '1' chỉ khoảng 1 có dữ liệu, '2' chỉ khoảng 2, '3' cả hai, '0' không có khoảng nào. Phần tử 1 (khi khoảng 1 có dữ liệu) và phần tử 2 (khi khoảng 2 có dữ liệu): '2' có từ số nhưng thiếu đến số, '1' có đến số nhưng thiếu từ số, '3' đến số nhỏ hơn từ số, '4' hợp lệ. Phần tử 3: '1' khi cả hai khoảng hợp lệ ('4'), đủ bốn ô, và Tuso2 trừ denso1 khác 1 (khoảng 2 không liền ngay sau khoảng 1). Phần tử 4 không bao giờ được gán.",
+    "exceptions": "Bắt, ghi log, ném lại."
+   },
+   "side_effects": [
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "HTKKFormater.isNullString",
+    "ConvertHelpers.ConvertToDouble",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      3370,
+      3466
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 288,
+    "total": 288
+   }
+  },
+  {
+   "name": "ConvertHelpers.ConvertCellValueToText",
+   "overloads": [
+    {
+     "params": "sView: SheetView, row: int, col: int",
+     "return_type": "string",
+     "lines": [
+      100,
+      126
+     ]
+    }
+   ],
+   "purpose": "Lấy nội dung ô dạng chuỗi, dùng Value với ô số hoặc tiền tệ và Text với các ô còn lại.",
+   "semantics": {
+    "precondition": "Chỉ số row, col 0-based.",
+    "effects": "Chỉ đọc.",
+    "returns": "chuỗi. Ô null hoặc lỗi thì rỗng. Ô không có CellType dùng Text.",
+    "exceptions": "Nuốt mọi ngoại lệ, trả chuỗi rỗng."
+   },
+   "side_effects": [],
+   "calls": [
+    "ConvertHelpers.ConvertToString"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      100,
+      126
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 51,
+    "t3": 212,
+    "total": 263
+   }
+  },
+  {
+   "name": "ConvertHelpers.ConvertToDateTime",
+   "overloads": [
+    {
+     "params": "obj: object, format: string",
+     "return_type": "DateTime",
+     "lines": [
+      14,
+      25
+     ]
+    }
+   ],
+   "purpose": "Chuyển giá trị bất kỳ sang DateTime theo định dạng cho trước bằng culture hiện hành.",
+   "semantics": {
+    "precondition": "obj có thể null hoặc DBNull. format là chuỗi định dạng DateTime (ví dụ dd/MM/yyyy).",
+    "effects": "Không ảnh hưởng ô hay dữ liệu.",
+    "returns": "DateTime đã phân tích. Khi obj null, DBNull hoặc không khớp định dạng thì trả giá trị mặc định 01/01/0001 (không báo lỗi).",
+    "exceptions": "Không ném ngoại lệ (dùng TryParseExact, culture hiện hành CurrentCulture)."
+   },
+   "side_effects": [],
+   "calls": [],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      14,
+      25
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 260,
+    "total": 260
+   }
+  },
+  {
+   "name": "GeneralFunctions.isDuLieuHL",
+   "overloads": [
+    {
+     "params": "str: string",
+     "return_type": "bool",
+     "lines": [
+      2788,
+      2944
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra cú pháp danh sách số hóa đơn dạng một số, hai số ngăn bằng dấu chấm phẩy, dải a-b hoặc kết hợp.",
+   "semantics": {
+    "precondition": "str là chuỗi, phần tử ngăn bằng dấu chấm phẩy, đầu cuối dải ngăn bằng dấu gạch nối (GeneralFunctions.cs:2788-2944).",
+    "effects": "Không có.",
+    "returns": "true nếu str rỗng (isNullString). Có dấu gạch nối: các đoạn giữa (không phải đầu cuối) phải chứa dấu chấm phẩy, nếu không false. Nhánh chỉ có dấu chấm phẩy: mỗi phần tử phải không rỗng (sau khi bỏ dấu chấm và khoảng trắng), không chứa khoảng trắng, là số nguyên (IsNumber) và không chứa dấu phẩy hoặc dấu chấm. Nhánh chỉ có dấu gạch nối: tương tự cho từng đoạn. Nhánh có cả hai: mỗi phần tử không rỗng, phần tử có dấu gạch nối thì kiểm tra từng đoạn như trên, phần tử không có dấu gạch nối không bị kiểm tra số. Nhánh không có ký tự ngăn: chuỗi phải là số nguyên, không có dấu phẩy, dấu chấm, khoảng trắng.",
+    "exceptions": "Bắt, ghi log, ném lại. Lưu ý: ở nhánh có cả hai ký tự ngăn, lệnh break chỉ thoát vòng trong nên kết quả false vẫn giữ nhưng vòng ngoài tiếp tục."
+   },
+   "side_effects": [
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "HTKKFormater.isNullString",
+    "HTKKFormater.IsNullValueAc",
+    "HTKKFormater.IsNumber",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      2788,
+      2944
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 198,
+    "total": 198
+   }
+  },
+  {
    "name": "HTKKFile.RemoveValidate",
    "overloads": [
     {
-     "params": "SheetView sView, int rowIndex, int colIndex, bool testColor",
+     "params": "sView: SheetView, rowIndex: int, colIndex: int, testColor: bool",
      "return_type": "void",
      "lines": [
       506,
@@ -159,10 +635,94 @@
    }
   },
   {
+   "name": "ConvertHelpers.ToNumber",
+   "overloads": [
+    {
+     "params": "obj: object, decimalT: string",
+     "return_type": "decimal",
+     "lines": [
+      174,
+      203
+     ]
+    }
+   ],
+   "purpose": "Chuyển giá trị bất kỳ sang decimal, hỗ trợ dấu thập phân chấm hoặc phẩy.",
+   "semantics": {
+    "precondition": "decimalT là dấu thập phân của chuỗi đầu vào, mặc định chấm (extension method).",
+    "effects": "Không có.",
+    "returns": "0 nếu null, DBNull hoặc chuỗi rỗng. Kiểu số gốc thì đổi thẳng. Chuỗi có chữ E thì phân tích kiểu khoa học theo InvariantCulture. Với dấu chấm thì bỏ dấu phẩy rồi phân tích. Với dấu phẩy thì bỏ dấu chấm rồi đổi phẩy thành chấm. decimal.Parse ném FormatException nếu chuỗi sai.",
+    "exceptions": "Không bắt."
+   },
+   "side_effects": [],
+   "calls": [
+    "HTKKFormater.isNullString"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      174,
+      203
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 161,
+    "total": 161
+   }
+  },
+  {
+   "name": "GeneralFunctions.checkHDXoa",
+   "overloads": [
+    {
+     "params": "Tuso1: string, denso1: string, strCheck: string",
+     "return_type": "string",
+     "lines": [
+      3190,
+      3244
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra dải số hóa đơn xóa nằm trong khoảng từ số đến số và không trùng số.",
+   "semantics": {
+    "precondition": "Tuso1, denso1 là biên khoảng (số dạng chuỗi), strCheck là danh sách dải ngăn bởi dấu chấm phẩy, mỗi dải là một số hoặc 'a-b' (GeneralFunctions.cs:3190-3244).",
+    "effects": "Không có.",
+    "returns": "'0' hợp lệ, '-1' vi phạm. strCheck rỗng thì '0'. Nếu isDuLieuHL cho là hợp lệ về cú pháp: mỗi số phải nằm trong [Tuso1, denso1] (với dải a-b thì a không nhỏ hơn Tuso1 và b không lớn hơn denso1), vi phạm thì '-1' ngay. Sau đó, nếu isTrungSoHD cho là có trùng số thì '-1'. Cú pháp không hợp lệ thì bỏ qua bước khoảng nhưng vẫn kiểm trùng.",
+    "exceptions": "Bắt, ghi log, ném lại."
+   },
+   "side_effects": [
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "GeneralFunctions.isDuLieuHL",
+    "GeneralFunctions.isTrungSoHD",
+    "ConvertHelpers.ConvertToDouble",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      3190,
+      3244
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 156,
+    "total": 156
+   }
+  },
+  {
    "name": "GeneralFunctions.SaveAllCellTypeOfSheet",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCSheetInfo sInfo, int sheetIndex",
+     "params": "sView: SheetView, sInfo: HTKKCMCSheetInfo, sheetIndex: int",
      "return_type": "void",
      "lines": [
       7385,
@@ -202,10 +762,228 @@
    }
   },
   {
+   "name": "HTKKFormater.IsDateTime",
+   "overloads": [
+    {
+     "params": "strDate: string, strFormat: string, dtDate: DateTime",
+     "return_type": "bool",
+     "lines": [
+      609,
+      627
+     ]
+    },
+    {
+     "params": "result: string, p: string, dDate: DateTime",
+     "return_type": "bool",
+     "lines": [
+      692,
+      695
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra chuỗi có đúng định dạng ngày giờ và trả ngày qua tham số out.",
+   "semantics": {
+    "precondition": "strFormat là định dạng DateTime. Phân tích theo InvariantCulture. Có thêm overload private không triển khai (ném NotImplementedException).",
+    "effects": "Gán dtDate là ngày đã phân tích, hoặc DateTime.MinValue nếu không hợp lệ.",
+    "returns": "true nếu phân tích được, ngược lại false.",
+    "exceptions": "Bắt, trả false với MinValue."
+   },
+   "side_effects": [],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFormater.cs",
+    "lines": [
+     [
+      609,
+      627
+     ],
+     [
+      692,
+      695
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 150,
+    "total": 150
+   }
+  },
+  {
+   "name": "GeneralFunctions.GetRowIndexInSViewByCompare",
+   "overloads": [
+    {
+     "params": "sView: SheetView, table: HTKKCMCTableInfo, colCheck: int, valueCompare: string",
+     "return_type": "List<int>",
+     "lines": [
+      5135,
+      5158
+     ]
+    }
+   ],
+   "purpose": "Liệt kê dòng của bảng có giá trị ô ở một cột bằng giá trị so sánh.",
+   "semantics": {
+    "precondition": "table có thể null (trả danh sách rỗng). colCheck 1-based. Dòng dữ liệu bắt đầu ở Location.DataLocationTemplateRowStart (GeneralFunctions.cs:5144).",
+    "effects": "Chỉ đọc. Duyệt i từ 0 tới số RowsValues của bảng, dừng khi dòng dữ liệu (đầu dữ liệu cộng i) vượt RowCount của sheet. Một dòng được chọn khi ô cột colCheck có Value khác null và chuỗi hóa của Value bằng đúng valueCompare, so sánh có phân biệt hoa thường (GeneralFunctions.cs:5145-5149).",
+    "returns": "Danh sách chỉ số dòng 1-based (đầu dữ liệu cộng i) theo thứ tự tăng dần, rỗng nếu table null hoặc không dòng nào khớp.",
+    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả danh sách đã gom được tới lúc lỗi."
+   },
+   "side_effects": [
+    "ghi log khi lỗi"
+   ],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      5135,
+      5158
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 26,
+    "t3": 100,
+    "total": 126
+   }
+  },
+  {
+   "name": "GeneralFunctions.GetObjectValue",
+   "overloads": [
+    {
+     "params": "sView: SheetView, index: string",
+     "return_type": "object",
+     "lines": [
+      736,
+      764
+     ]
+    }
+   ],
+   "purpose": "Đọc giá trị (Value) của ô theo mã ô dạng 'chữ cột_số dòng'.",
+   "semantics": {
+    "precondition": "index có dạng chữ cột, gạch dưới, số dòng 1-based (ví dụ E_29). sView không null (GeneralFunctions.cs:736-745).",
+    "effects": "Chỉ đọc.",
+    "returns": "Value của ô tại (dòng trừ 1, cột trừ 1). null nếu index rỗng, không có đúng hai phần sau khi tách theo gạch dưới, hoặc chỉ số tính ra âm (GeneralFunctions.cs:741-756). Ô không có giá trị cũng trả null.",
+    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả null (GeneralFunctions.cs:759-762). Số dòng không phải số hoặc index null cũng thành null."
+   },
+   "side_effects": [
+    "ghi log khi lỗi"
+   ],
+   "calls": [
+    "HTKKFile.ColumnLettersToIndex",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      736,
+      764
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 125,
+    "total": 125
+   }
+  },
+  {
+   "name": "GeneralFunctions.checkTrungXoa",
+   "overloads": [
+    {
+     "params": "strXoa: string, strMat: string, strHuy: string",
+     "return_type": "string",
+     "lines": [
+      3312,
+      3368
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra các dải số hóa đơn xóa, mất, hủy có trùng nhau không, trả mã nhóm trùng.",
+   "semantics": {
+    "precondition": "strXoa, strMat, strHuy là chuỗi dải số hóa đơn, rỗng nghĩa là không có (isNullString) (GeneralFunctions.cs:3312-3368).",
+    "effects": "Không có.",
+    "returns": "'0' không trùng. Khi chỉ có hai chuỗi không rỗng: gọi isTrungSoHD trên chuỗi nối hai chuỗi bằng dấu chấm phẩy, trùng thì '1' (xóa với mất), '2' (xóa với hủy), '3' (mất với hủy). Khi cả ba không rỗng: xét ba cặp. Đúng một cặp trùng thì mã của cặp đó, hai cặp trở lên trùng thì '4', không cặp nào thì '0'. Khi có ít hơn hai chuỗi không rỗng: '0'.",
+    "exceptions": "Bắt, ghi log, ném lại."
+   },
+   "side_effects": [
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "GeneralFunctions.isTrungSoHD",
+    "HTKKFormater.isNullString",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      3312,
+      3368
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 114,
+    "total": 114
+   }
+  },
+  {
+   "name": "ConvertHelpers.ToIntOrDefault",
+   "overloads": [
+    {
+     "params": "obj: object, defaultValue: int",
+     "return_type": "int",
+     "lines": [
+      355,
+      369
+     ]
+    }
+   ],
+   "purpose": "Chuyển giá trị bất kỳ sang số nguyên, bỏ dấu chấm và dấu phẩy, dùng mặc định cho giá trị rỗng.",
+   "semantics": {
+    "precondition": "obj tùy ý, defaultValue mặc định 0 (ConvertHelpers.cs:355).",
+    "effects": "Không có.",
+    "returns": "defaultValue nếu obj null, DBNull hoặc chuỗi hóa của obj rỗng (IsNullOrEmpty, ConvertHelpers.cs:339-349, 359). Ngược lại ConvertToInt của chuỗi đã bỏ mọi dấu chấm và dấu phẩy (ConvertHelpers.cs:363). ConvertToInt gán 0 khi int.TryParse thất bại (ConvertHelpers.cs:84-85), nên chuỗi không phải số cho 0 chứ KHÔNG phải defaultValue, và số có phần thập phân bị đọc như số nguyên liền mạch (1.234,5 thành 12345).",
+    "exceptions": "Bắt mọi ngoại lệ và trả defaultValue (ConvertHelpers.cs:365-368)."
+   },
+   "side_effects": [],
+   "calls": [
+    "ConvertHelpers.ConvertToInt",
+    "ConvertHelpers.IsNullOrEmpty"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      355,
+      369
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 112,
+    "total": 112
+   }
+  },
+  {
    "name": "GeneralFunctions.SetLaiDongCon",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCSheetInfo sInfo, int tableIndex, int iRow, int colHeader, int colChilden, int indexRowHeader",
+     "params": "sView: SheetView, sInfo: HTKKCMCSheetInfo, tableIndex: int, iRow: int, colHeader: int, colChilden: int, indexRowHeader: int",
      "return_type": "void",
      "lines": [
       8184,
@@ -243,10 +1021,169 @@
    }
   },
   {
+   "name": "ValidateBase.CheckMaSoThueCCCD",
+   "overloads": [
+    {
+     "params": "strMST: string",
+     "return_type": "bool",
+     "lines": [
+      375,
+      428
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra mã số thuế hoặc số định danh 12 chữ số: độ dài, ký tự số và chữ số kiểm tra.",
+   "semantics": {
+    "precondition": "strMST độ dài 10, 12, 13 hoặc 14.",
+    "effects": "Không có.",
+    "returns": "Độ dài khác 10, 12, 13, 14: false. Độ dài 12: true khi toàn chữ số (không kiểm tra chữ số kiểm tra). Độ dài 10, 13, 14: kiểm tra mẫu số (10 chữ số, hoặc 10 chữ số kèm 3 chữ số, dạng 14 ký tự cho phép dấu gạch ở giữa), rồi so chữ số thứ 10 với 10 trừ phần dư mod 11 của tổng trọng số chín chữ số đầu (trọng số 31, 29, 23, 19, 17, 13, 7, 5, 3).",
+    "exceptions": "Bắt, trả false."
+   },
+   "side_effects": [],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/ValidateBase.cs",
+    "lines": [
+     [
+      375,
+      428
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 2,
+    "t3": 108,
+    "total": 110
+   }
+  },
+  {
+   "name": "GeneralFunctions.ArrayCellId",
+   "overloads": [
+    {
+     "params": "cellId: string",
+     "return_type": "int[]",
+     "lines": [
+      1357,
+      1372
+     ]
+    }
+   ],
+   "purpose": "Đổi mã ô dạng 'chữ cột_số dòng' thành cặp chỉ số 0-based [cột, dòng].",
+   "semantics": {
+    "precondition": "cellId có hai phần ngăn bởi dấu gạch dưới, phần đầu là chữ cái cột, phần sau là số dòng 1-based (GeneralFunctions.cs:1362-1364).",
+    "effects": "Không ghi trạng thái, khi lỗi chỉ ghi log (GeneralFunctions.cs:1369).",
+    "returns": "Mảng 2 số nguyên: chỉ số cột (ColumnLettersToIndex trừ 1) và chỉ số dòng (số dòng trừ 1) (GeneralFunctions.cs:1363-1364). Khi không phân tích được, trả [-1,-1] chứ không ném ngoại lệ (GeneralFunctions.cs:1370). Các trường hợp rơi vào nhánh này: cellId null, không có dấu gạch dưới (phần tử thứ hai không tồn tại), số dòng không phải số nguyên.",
+    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả [-1,-1]. Hệ quả cho nơi gọi: mảng luôn dài 2 nên kiểm tra độ dài không phát hiện lỗi. Nơi gọi truy cập ô theo chỉ số trả về sẽ truy cập ô chỉ số -1. Trong tập phủ có changFormatCell (GeneralFunctions.cs:5987-5990, xem mục riêng). Ngoài tập phủ: checkLockUnLockCells (GeneralFunctions.cs:5349, hằng 'BA_1' hợp lệ nên không kích hoạt) và GetValAttributeStaticCell (GeneralFunctions.cs:1332, so sánh với -1 không bao giờ khớp nên trả chuỗi rỗng)."
+   },
+   "side_effects": [
+    "ghi log khi lỗi"
+   ],
+   "calls": [
+    "HTKKFile.ColumnLettersToIndex",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      1357,
+      1372
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 105,
+    "total": 105
+   }
+  },
+  {
+   "name": "GeneralFunctions.DetectIndexOfTable",
+   "overloads": [
+    {
+     "params": "sInfo: HTKKCMCSheetInfo, row: int",
+     "return_type": "int",
+     "lines": [
+      4921,
+      4963
+     ]
+    }
+   ],
+   "purpose": "Tìm chỉ số bảng trong sheet chứa một dòng cho trước.",
+   "semantics": {
+    "precondition": "row theo số dòng mẫu 1-based của sheet. sInfo có thể null.",
+    "effects": "Chỉ đọc. Bảng có tiêu đề: khoảng từ dòng bắt đầu mẫu bảng đến đó cộng độ dài bảng và số dòng dữ liệu. Bảng không tiêu đề: từ dòng dữ liệu đến cộng số dòng dữ liệu. Biên gồm cả hai đầu.",
+    "returns": "chỉ số bảng đầu tiên chứa row, hoặc -1 nếu sInfo null, không có bảng, không khớp hoặc lỗi.",
+    "exceptions": "Bắt và ghi log, trả -1."
+   },
+   "side_effects": [],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      4921,
+      4963
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 78,
+    "t3": 27,
+    "total": 105
+   }
+  },
+  {
+   "name": "GeneralFunctions.GetRowIndexInSViewByCompares",
+   "overloads": [
+    {
+     "params": "sView: SheetView, table: HTKKCMCTableInfo, colChecks: List<int>, valueCompares: List<string>",
+     "return_type": "List<int>",
+     "lines": [
+      5184,
+      5245
+     ]
+    }
+   ],
+   "purpose": "Liệt kê dòng của bảng mà mọi cột kiểm tra đều khớp giá trị so sánh tương ứng.",
+   "semantics": {
+    "precondition": "colChecks và valueCompares cùng độ dài, cột 1-based.",
+    "effects": "Chỉ đọc. Ô mặt nạ: so Value với giá trị bỏ dấu gạch chéo (ô null khớp chuỗi rỗng). Ô số hoặc tiền tệ: so số sau khi đổi phẩy thành chấm (ô null khớp chuỗi rỗng). Ô khác: so chuỗi.",
+    "returns": "danh sách chỉ số dòng 1-based của các dòng khớp tất cả cột.",
+    "exceptions": "Bắt (danh sách hiện có)."
+   },
+   "side_effects": [],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      5184,
+      5245
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 11,
+    "t3": 91,
+    "total": 102
+   }
+  },
+  {
    "name": "GeneralFunctions.FormatSoHD",
    "overloads": [
     {
-     "params": "string str",
+     "params": "str: string",
      "return_type": "string",
      "lines": [
       2389,
@@ -289,7 +1226,7 @@
    "name": "GeneralFunctions.InsertNumberCell",
    "overloads": [
     {
-     "params": "SheetView sView, int iRow, int iCol, string value, HTKKCMCValidate validate, string defaultValue",
+     "params": "sView: SheetView, iRow: int, iCol: int, value: string, validate: HTKKCMCValidate, defaultValue: string",
      "return_type": "void",
      "lines": [
       5791,
@@ -334,49 +1271,51 @@
    }
   },
   {
-   "name": "GeneralFunctions.DetectIndexOfTable",
+   "name": "HTKKFormater.GetColunmIndexByColumName",
    "overloads": [
     {
-     "params": "HTKKCMCSheetInfo sInfo, int row",
+     "params": "columnName: string",
      "return_type": "int",
      "lines": [
-      4921,
-      4963
+      752,
+      775
      ]
     }
    ],
-   "purpose": "Tìm chỉ số bảng trong sheet chứa một dòng cho trước.",
+   "purpose": "Đổi chữ cột (A, B, ..., DZ) thành chỉ số cột 0-based theo bảng cấu hình.",
    "semantics": {
-    "precondition": "row theo số dòng mẫu 1-based của sheet. sInfo có thể null.",
-    "effects": "Chỉ đọc. Bảng có tiêu đề: khoảng từ dòng bắt đầu mẫu bảng đến đó cộng độ dài bảng và số dòng dữ liệu. Bảng không tiêu đề: từ dòng dữ liệu đến cộng số dòng dữ liệu. Biên gồm cả hai đầu.",
-    "returns": "chỉ số bảng đầu tiên chứa row, hoặc -1 nếu sInfo null, không có bảng, không khớp hoặc lỗi.",
-    "exceptions": "Bắt và ghi log, trả -1."
+    "precondition": "columnName là một khóa trong HTKKConfig.CELL_DATA (bảng 130 chữ cột từ A đến DZ, HTKKConfig.cs:307-330).",
+    "effects": "Chỉ đọc cấu hình.",
+    "returns": "Giá trị của khóa (số thứ tự cột 1-based dạng chuỗi) trừ 1. -1 nếu khóa không có (HTKKFormater.cs:752-775).",
+    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả -1. Giá trị không phải số cũng cho -1."
    },
-   "side_effects": [],
+   "side_effects": [
+    "ghi log khi lỗi"
+   ],
    "calls": [
     "HTKKFile.Log"
    ],
    "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFormater.cs",
     "lines": [
      [
-      4921,
-      4963
+      752,
+      775
      ]
     ]
    },
    "confidence": "cao",
    "call_count": {
-    "t2": 78,
-    "t3": 12,
-    "total": 90
+    "t2": 0,
+    "t3": 77,
+    "total": 77
    }
   },
   {
    "name": "GeneralFunctions.LockUnLockCol2",
    "overloads": [
     {
-     "params": "SheetView sView, int row, int colHide, bool locked, bool deleteData, object deleteToData",
+     "params": "sView: SheetView, row: int, colHide: int, locked: bool, deleteData: bool, deleteToData: object",
      "return_type": "void",
      "lines": [
       4680,
@@ -416,10 +1355,147 @@
    }
   },
   {
+   "name": "GeneralFunctions.HaveToValidateHeaderRow",
+   "overloads": [
+    {
+     "params": "header: HTKKCMCStaticOfTable, lstRowValue: string[]",
+     "return_type": "bool",
+     "lines": [
+      1412,
+      1439
+     ]
+    },
+    {
+     "params": "sView: SheetView, header: HTKKCMCStaticOfTable, odrStt: int, lstRowValue: string[]",
+     "return_type": "bool",
+     "lines": [
+      1441,
+      1465
+     ]
+    }
+   ],
+   "purpose": "Quyết định hàng tiêu đề tĩnh của bảng có phải kiểm tra hay không: true nếu có ô khác giá trị mặc định.",
+   "semantics": {
+    "precondition": "Hai overload. (1) header và lstRowValue theo thứ tự ô tĩnh (GeneralFunctions.cs:1412-1439). (2) có thêm sView và odrStt, cột có số thứ tự bằng odrStt được bỏ qua (GeneralFunctions.cs:1441-1465).",
+    "effects": "Overload (1): với ô kiểu điều khiển 16, đổi cả mặc định và giá trị sang số rồi so chuỗi (không ghi ngược vào mảng). Overload (2): với ô có kiểu NumberCellType hoặc điều khiển 16, ghi ngược vào lstRowValue chuỗi số đã chuẩn hóa (rỗng giữ rỗng), nên sửa mảng đầu vào.",
+    "returns": "true nếu tồn tại ô có giá trị không rỗng, mặc định không null và hai chuỗi khác nhau, ngược lại false.",
+    "exceptions": "Ném lại mọi ngoại lệ, không ghi log."
+   },
+   "side_effects": [
+    "ghi vào mảng đầu vào (overload 2)",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "ConvertHelpers.ConvertToDouble"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      1412,
+      1439
+     ],
+     [
+      1441,
+      1465
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 74,
+    "total": 74
+   }
+  },
+  {
+   "name": "GeneralFunctions.GetHeaderInfo",
+   "overloads": [
+    {
+     "params": "mst: string, removeMaCQT: bool",
+     "return_type": "HTKKCMCTTinChungInfo",
+     "lines": [
+      6553,
+      6589
+     ]
+    }
+   ],
+   "purpose": "Đọc thông tin chung của người nộp thuế (cơ quan thuế, tỉnh, huyện, xã) từ tệp HEADER.xml của mã số thuế.",
+   "semantics": {
+    "precondition": "Tệp ../DataFiles/<mst>/HEADER.xml tồn tại, các ô định danh theo thuộc tính Path (p17, p18, p28, p29 ...).",
+    "effects": "Chỉ đọc XML. Nếu removeMaCQT (mặc định true) thì cắt phần mã trước dấu ' - ' khỏi tên cơ quan thuế cấp cục.",
+    "returns": "đối tượng HTKKCMCTTinChungInfo gồm tên và mã cơ quan thuế cấp cục, nơi nộp, tỉnh, huyện, xã của người nộp thuế và đại lý thuế. Lỗi thì trả đối tượng điền dở dang.",
+    "exceptions": "Bắt và ghi log."
+   },
+   "side_effects": [
+    "IO đọc XML (HEADER.xml)",
+    "ghi log khi lỗi"
+   ],
+   "calls": [
+    "GeneralFunctions.GetSubstringFromArray",
+    "GeneralFunctions.SplitString",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      6553,
+      6589
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 56,
+    "t3": 15,
+    "total": 71
+   }
+  },
+  {
+   "name": "ValidateBase.CheckMaSoThue5So",
+   "overloads": [
+    {
+     "params": "strMST: string",
+     "return_type": "bool",
+     "lines": [
+      361,
+      368
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra chuỗi có đúng 5 ký tự và toàn là chữ số.",
+   "semantics": {
+    "precondition": "strMST là chuỗi (ValidateBase.cs:361-368).",
+    "effects": "Không có.",
+    "returns": "true nếu CheckStringIsNumber là true và độ dài đúng 5, ngược lại false.",
+    "exceptions": "Không bắt. strMST null có thể ném tùy CheckStringIsNumber (chưa đọc)."
+   },
+   "side_effects": [],
+   "calls": [
+    "ValidateBase.CheckStringIsNumber"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/ValidateBase.cs",
+    "lines": [
+     [
+      361,
+      368
+     ]
+    ]
+   },
+   "confidence": "vừa",
+   "call_count": {
+    "t2": 0,
+    "t3": 70,
+    "total": 70
+   }
+  },
+  {
    "name": "GeneralFunctions.fpSpReindexingTableTemplate",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCTableInfo tableInfo",
+     "params": "sView: SheetView, tableInfo: HTKKCMCTableInfo",
      "return_type": "void",
      "lines": [
       4392,
@@ -459,47 +1535,102 @@
    }
   },
   {
-   "name": "ConvertHelpers.ConvertToString",
+   "name": "HTKKFormater.IsNumber",
    "overloads": [
     {
-     "params": "object obj",
-     "return_type": "string",
+     "params": "strNumber: string, intNumber: long",
+     "return_type": "bool",
      "lines": [
-      90,
-      98
+      14,
+      21
+     ]
+    },
+    {
+     "params": "strNumber: string",
+     "return_type": "bool",
+     "lines": [
+      23,
+      34
      ]
     }
    ],
-   "purpose": "Chuyển giá trị bất kỳ sang chuỗi, null hoặc DBNull thành chuỗi rỗng.",
+   "purpose": "Kiểm tra chuỗi có phải số nguyên long. Overload hai tham số có lỗi logic: luôn trả false.",
    "semantics": {
-    "precondition": "obj tùy ý.",
+    "precondition": "Hai overload. (1) strNumber, out intNumber. (2) strNumber.",
     "effects": "Không có.",
-    "returns": "ToString của obj hoặc chuỗi rỗng.",
-    "exceptions": "Không ném với null (có thể ném nếu ToString của obj ném)."
+    "returns": "Overload (2): true nếu long.TryParse thành công, false nếu không hoặc có ngoại lệ. Overload (1): gán intNumber bằng kết quả TryParse (0 nếu thất bại) nhưng giá trị trả về là biến khởi tạo false và không bao giờ đổi, nên luôn trả false.",
+    "exceptions": "Overload (2) bắt và trả false."
    },
    "side_effects": [],
    "calls": [],
    "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFormater.cs",
     "lines": [
      [
-      90,
-      98
+      14,
+      21
+     ],
+     [
+      23,
+      34
      ]
     ]
    },
    "confidence": "cao",
    "call_count": {
-    "t2": 61,
-    "t3": 6,
-    "total": 67
+    "t2": 7,
+    "t3": 59,
+    "total": 66
+   }
+  },
+  {
+   "name": "GeneralFunctions.CheckMauSoHD",
+   "overloads": [
+    {
+     "params": "str: string, strLoai: string, strTemp: string",
+     "return_type": "string",
+     "lines": [
+      2479,
+      2566
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra mẫu số hóa đơn so với mẫu chuẩn strTemp, trả mã lỗi dạng chuỗi.",
+   "semantics": {
+    "precondition": "str là mẫu số (bị Trim), strLoai là loại, strTemp là mẫu chuẩn (GeneralFunctions.cs:2479-2566).",
+    "effects": "Không có.",
+    "returns": "'0' hợp lệ. Loại '0': độ dài phải 11 hoặc 13 và 6 ký tự đầu bằng strTemp, ngược lại '1'. Ký tự thứ 7 phải là số, từ 0 đến 9 khi strTemp là 01BHDT, từ 2 đến 9 với strTemp khác, không đạt thì '2'. Ký tự thứ 8 phải là dấu chéo, ba ký tự tiếp là số không âm, hai ký tự cuối (nếu độ dài 13) chỉ có thể là BD hoặc IV, vi phạm thì '1' (mã '1' ghi đè '2'). Loại '3': '0'. Loại '4': '1' nếu 6 ký tự đầu khác strTemp. Loại khác: '1' nếu 3 ký tự đầu khác strTemp hoặc độ dài ngoài 3 đến 20.",
+    "exceptions": "Bắt, ghi log, ném lại. Chuỗi ngắn hơn chỉ số cắt gây lỗi và ném (GeneralFunctions.cs:2559-2563)."
+   },
+   "side_effects": [
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "HTKKFormater.IsNumber",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      2479,
+      2566
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 64,
+    "total": 64
    }
   },
   {
    "name": "GeneralFunctions.changFormatCell",
    "overloads": [
     {
-     "params": "SheetView sView, string cellFormat, string maLoaiTien",
+     "params": "sView: SheetView, cellFormat: string, maLoaiTien: string",
      "return_type": "void",
      "lines": [
       5973,
@@ -539,10 +1670,55 @@
    }
   },
   {
+   "name": "GeneralFunctions.checkTrung",
+   "overloads": [
+    {
+     "params": "winFpSpread: FpSpread, startRow: int, charTuSo: string, charDenSo: string, charSTT: string, charTenHD: string, charMso: string, charKH: string, charMST: string, isMST: bool, tSheet: int",
+     "return_type": "string[]",
+     "lines": [
+      3468,
+      3548
+     ]
+    }
+   ],
+   "purpose": "Tìm các dòng bảng kê có khoảng số (từ số, đến số) chồng lấn nhau cùng ký hiệu, mẫu số, tên hóa đơn và (tùy chọn) mã số thuế.",
+   "semantics": {
+    "precondition": "Sheet thứ tSheet trừ 1 của FpSpread. Các tham số char là chữ cột. Duyệt từ dòng startRow tới khi cột STT có giá trị 'AA' (không phân biệt hoa thường, dòng kết thúc) (GeneralFunctions.cs:3468-3548).",
+    "effects": "Chỉ đọc. So từng dòng với mọi dòng sau nó. Hai dòng chồng lấn khi cả hai thỏa: tên hóa đơn, mẫu số, ký hiệu (và mã số thuế khi isMST) trùng nhau, bốn ô từ số và đến số đều không rỗng, và khoảng [từ,đến] của dòng trước chứa đầu hoặc cuối của dòng sau, hoặc dòng trước nằm hoàn toàn trong dòng sau theo điều kiện đã viết.",
+    "returns": "Mảng chuỗi các chỉ số dòng 0-based (dạng chuỗi) có chồng lấn, không trùng. Không có chồng lấn thì mảng một phần tử rỗng. Lưu ý: một chỉ số chỉ được thêm khi chuỗi gom được chưa chứa chữ số đó như chuỗi con (kiểm tra bằng IndexOf, GeneralFunctions.cs:3522-3530), nên chỉ số 1 có thể bị bỏ sót nếu 12 đã được thêm trước đó.",
+    "exceptions": "Bắt, ghi log, ném lại. Giá trị STT null gây NullReferenceException."
+   },
+   "side_effects": [
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "HTKKFile.ColumnLettersToIndex",
+    "ConvertHelpers.ConvertToDouble",
+    "HTKKFormater.isNullString",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      3468,
+      3548
+     ]
+    ]
+   },
+   "confidence": "vừa",
+   "call_count": {
+    "t2": 0,
+    "t3": 60,
+    "total": 60
+   }
+  },
+  {
    "name": "GeneralFunctions.GetNgayDauQuy",
    "overloads": [
     {
-     "params": "int iQuy, int iNam, int iNgayBdNamTc, int iThangBdNamTc",
+     "params": "iQuy: int, iNam: int, iNgayBdNamTc: int, iThangBdNamTc: int",
      "return_type": "DateTime",
      "lines": [
       2309,
@@ -580,93 +1756,10 @@
    }
   },
   {
-   "name": "GeneralFunctions.GetHeaderInfo",
-   "overloads": [
-    {
-     "params": "string mst, bool removeMaCQT",
-     "return_type": "HTKKCMCTTinChungInfo",
-     "lines": [
-      6553,
-      6589
-     ]
-    }
-   ],
-   "purpose": "Đọc thông tin chung của người nộp thuế (cơ quan thuế, tỉnh, huyện, xã) từ tệp HEADER.xml của mã số thuế.",
-   "semantics": {
-    "precondition": "Tệp ../DataFiles/<mst>/HEADER.xml tồn tại, các ô định danh theo thuộc tính Path (p17, p18, p28, p29 ...).",
-    "effects": "Chỉ đọc XML. Nếu removeMaCQT (mặc định true) thì cắt phần mã trước dấu ' - ' khỏi tên cơ quan thuế cấp cục.",
-    "returns": "đối tượng HTKKCMCTTinChungInfo gồm tên và mã cơ quan thuế cấp cục, nơi nộp, tỉnh, huyện, xã của người nộp thuế và đại lý thuế. Lỗi thì trả đối tượng điền dở dang.",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "IO đọc XML (HEADER.xml)",
-    "ghi log khi lỗi"
-   ],
-   "calls": [
-    "GeneralFunctions.GetSubstringFromArray",
-    "GeneralFunctions.SplitString",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      6553,
-      6589
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 56,
-    "t3": 2,
-    "total": 58
-   }
-  },
-  {
-   "name": "ConvertHelpers.ConvertCellValueToText",
-   "overloads": [
-    {
-     "params": "SheetView sView, int row, int col",
-     "return_type": "string",
-     "lines": [
-      100,
-      126
-     ]
-    }
-   ],
-   "purpose": "Lấy nội dung ô dạng chuỗi, dùng Value với ô số hoặc tiền tệ và Text với các ô còn lại.",
-   "semantics": {
-    "precondition": "Chỉ số row, col 0-based.",
-    "effects": "Chỉ đọc.",
-    "returns": "chuỗi. Ô null hoặc lỗi thì rỗng. Ô không có CellType dùng Text.",
-    "exceptions": "Nuốt mọi ngoại lệ, trả chuỗi rỗng."
-   },
-   "side_effects": [],
-   "calls": [
-    "ConvertHelpers.ConvertToString"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
-    "lines": [
-     [
-      100,
-      126
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 51,
-    "t3": 6,
-    "total": 57
-   }
-  },
-  {
    "name": "GeneralFunctions.LockUnLockColsInTable",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCTableInfo table, List<int> cacCotAn, bool locked, bool deleteData, bool lockAllHeader",
+     "params": "sView: SheetView, table: HTKKCMCTableInfo, cacCotAn: List<int>, locked: bool, deleteData: bool, lockAllHeader: bool",
      "return_type": "void",
      "lines": [
       4611,
@@ -710,7 +1803,7 @@
    "name": "GeneralFunctions.GetMaTieuMucByMaHH",
    "overloads": [
     {
-     "params": "string maHH, string loaiDM",
+     "params": "maHH: string, loaiDM: string",
      "return_type": "string",
      "lines": [
       6257,
@@ -751,7 +1844,7 @@
    "name": "GeneralFunctions.ShowBangKe",
    "overloads": [
     {
-     "params": "string sFileName",
+     "params": "sFileName: string",
      "return_type": "void",
      "lines": [
       9169,
@@ -791,10 +1884,47 @@
    }
   },
   {
+   "name": "ConvertHelpers.ConvertToDateTime2",
+   "overloads": [
+    {
+     "params": "obj: object, format: string",
+     "return_type": "DateTime",
+     "lines": [
+      27,
+      38
+     ]
+    }
+   ],
+   "purpose": "Như ConvertToDateTime nhưng dùng culture bất biến (InvariantCulture).",
+   "semantics": {
+    "precondition": "obj có thể null. format là chuỗi định dạng.",
+    "effects": "Không có.",
+    "returns": "DateTime, hoặc 01/01/0001 nếu null hoặc không khớp.",
+    "exceptions": "Không ném."
+   },
+   "side_effects": [],
+   "calls": [],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      27,
+      38
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 44,
+    "t3": 5,
+    "total": 49
+   }
+  },
+  {
    "name": "GeneralFunctions.lockUnlockMultiCellsStatic",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCSheetInfo sInfo, int startRow, int endRow, bool isLock, bool isDeleteData",
+     "params": "sView: SheetView, sInfo: HTKKCMCSheetInfo, startRow: int, endRow: int, isLock: bool, isDeleteData: bool",
      "return_type": "void",
      "lines": [
       11502,
@@ -832,117 +1962,39 @@
    }
   },
   {
-   "name": "ConvertHelpers.ConvertToDateTime2",
+   "name": "GeneralFunctions.IsNumeric",
    "overloads": [
     {
-     "params": "object obj, string format",
-     "return_type": "DateTime",
+     "params": "input: string",
+     "return_type": "bool",
      "lines": [
-      27,
-      38
+      5910,
+      5917
      ]
     }
    ],
-   "purpose": "Như ConvertToDateTime nhưng dùng culture bất biến (InvariantCulture).",
+   "purpose": "Kiểm tra chuỗi có phân tích được thành số thập phân (decimal) hay không.",
    "semantics": {
-    "precondition": "obj có thể null. format là chuỗi định dạng.",
+    "precondition": "input chuỗi bất kỳ, phân tích theo culture hiện hành.",
     "effects": "Không có.",
-    "returns": "DateTime, hoặc 01/01/0001 nếu null hoặc không khớp.",
+    "returns": "true nếu decimal.TryParse thành công, ngược lại false. Chuỗi null hoặc rỗng cho false.",
     "exceptions": "Không ném."
    },
    "side_effects": [],
    "calls": [],
    "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
-    "lines": [
-     [
-      27,
-      38
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 44,
-    "t3": 0,
-    "total": 44
-   }
-  },
-  {
-   "name": "ConvertHelpers.ConvertToDouble",
-   "overloads": [
-    {
-     "params": "object obj",
-     "return_type": "double",
-     "lines": [
-      51,
-      62
-     ]
-    }
-   ],
-   "purpose": "Chuyển giá trị bất kỳ sang double, mặc định 0.",
-   "semantics": {
-    "precondition": "obj tùy ý. Chuỗi phân tích theo culture hiện hành (giữ nguyên dấu phân cách).",
-    "effects": "Không có.",
-    "returns": "double. Null, DBNull hoặc không phân tích được thì 0.",
-    "exceptions": "Không ném (TryParse)."
-   },
-   "side_effects": [],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
-    "lines": [
-     [
-      51,
-      62
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 0,
-    "t3": 41,
-    "total": 41
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetValueCustom",
-   "overloads": [
-    {
-     "params": "SheetView sView, int iRow, int iCol, string controlType",
-     "return_type": "string",
-     "lines": [
-      258,
-      372
-     ]
-    }
-   ],
-   "purpose": "Đọc giá trị ô và chuẩn hóa thành chuỗi theo mã loại điều khiển (checkbox, ngày, giờ, ngày giờ, số, nút, mặc định).",
-   "semantics": {
-    "precondition": "iRow, iCol 1-based, nếu một trong hai âm thì trả chuỗi rỗng (GeneralFunctions.cs:361-363). controlType là mã loại điều khiển dạng chuỗi.",
-    "effects": "Chỉ đọc ô. Lỗi thì ghi log (GeneralFunctions.cs:368).",
-    "returns": "Chuỗi rỗng nếu Value của ô null (GeneralFunctions.cs:356-358). Mã 2: 'True' nếu giá trị (không phân biệt hoa thường) là true, ngược lại 'False' (GeneralFunctions.cs:270-273). Mã 14 (ngày): 8 ký tự ddMMyyyy thành dd/MM/yyyy, 10 ký tự (sau Trim) giữ nguyên, độ dài khác thì rỗng (GeneralFunctions.cs:274-284). Mã 96 (giờ): 6 ký tự hhmmss thành hh:mm:ss, 8 ký tự giữ nguyên, khác thì rỗng (GeneralFunctions.cs:285-295). Mã 94 (ngày giờ): 14 ký tự ddMMyyyyhhmmss thành dd/MM/yyyy hh:mm:ss, 18 ký tự giữ nguyên, khác thì rỗng (GeneralFunctions.cs:296-306). Mã 0: Text hiển thị của ô (GeneralFunctions.cs:307-309). Mã 16: Value.ToString() (GeneralFunctions.cs:310-315). Mã khác (GeneralFunctions.cs:316-352): ô kiểu Number: Value.ToString() hoặc rỗng, ô kiểu General có NumberFormat: Value.ToString() hoặc rỗng, ô kiểu General không có NumberFormat và kiểu khác: Text đã thoát XML bốn ký tự & \" > <, ô kiểu Button: tiền tố 'TaiBangKe' nối Text của nút, rỗng nếu Text null.",
-    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả chuỗi rỗng. Mã 16 và nhánh mặc định có thể trả sớm bằng return trực tiếp."
-   },
-   "side_effects": [
-    "ghi log khi lỗi"
-   ],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
     "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
     "lines": [
      [
-      258,
-      372
+      5910,
+      5917
      ]
     ]
    },
    "confidence": "cao",
    "call_count": {
-    "t2": 0,
-    "t3": 41,
+    "t2": 24,
+    "t3": 17,
     "total": 41
    }
   },
@@ -950,7 +2002,7 @@
    "name": "GeneralFunctions.SetRowHeight",
    "overloads": [
     {
-     "params": "SheetView sView, int row1",
+     "params": "sView: SheetView, row1: int",
      "return_type": "void",
      "lines": [
       5919,
@@ -958,7 +2010,7 @@
      ]
     },
     {
-     "params": "SheetView sView, int row1, float height",
+     "params": "sView: SheetView, row1: int, height: float",
      "return_type": "void",
      "lines": [
       5929,
@@ -1001,7 +2053,7 @@
    "name": "GeneralFunctions.ThayDoiCQTTheoTinhDynamic2",
    "overloads": [
     {
-     "params": "SheetView sView, string tenCQTCapCuc, string maCQTCapCuc, string tenCQTChiCuc, string maCQTChiCuc, int iRow, int colTenCQTCuc, int colMaCQTCuc, int colTenCQTChiCuc, int colMaCQTChiCuc",
+     "params": "sView: SheetView, tenCQTCapCuc: string, maCQTCapCuc: string, tenCQTChiCuc: string, maCQTChiCuc: string, iRow: int, colTenCQTCuc: int, colMaCQTCuc: int, colTenCQTChiCuc: int, colMaCQTChiCuc: int",
      "return_type": "void",
      "lines": [
       8250,
@@ -1046,7 +2098,7 @@
    "name": "HTKKFile.SetNodeBackGroundYellow",
    "overloads": [
     {
-     "params": "SheetView sView, int rowIndex, int colIndex, string msg",
+     "params": "sView: SheetView, rowIndex: int, colIndex: int, msg: string",
      "return_type": "void",
      "lines": [
       488,
@@ -1088,7 +2140,7 @@
    "name": "GeneralFunctions.CopyTableToTable2",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCSheetInfo sInfo, HTKKCMCTableInfo fromTable, int toTableIndex, Dictionary<int, int> dicInfo, bool deleteDataOld, Dictionary<string, int> checkExists, bool usingCellType",
+     "params": "sView: SheetView, sInfo: HTKKCMCSheetInfo, fromTable: HTKKCMCTableInfo, toTableIndex: int, dicInfo: Dictionary<int, int>, deleteDataOld: bool, checkExists: Dictionary<string, int>, usingCellType: bool",
      "return_type": "void",
      "lines": [
       7969,
@@ -1135,7 +2187,7 @@
    "name": "GeneralFunctions.RemoveDataRows",
    "overloads": [
     {
-     "params": "SheetView sView, int tableIndex, int frRow, int rowCount, HTKKCMCSheetInfo sInfo",
+     "params": "sView: SheetView, tableIndex: int, frRow: int, rowCount: int, sInfo: HTKKCMCSheetInfo",
      "return_type": "void",
      "lines": [
       4541,
@@ -1174,10 +2226,88 @@
    }
   },
   {
+   "name": "ConvertHelpers.ConvertToDouble1",
+   "overloads": [
+    {
+     "params": "obj: object",
+     "return_type": "double",
+     "lines": [
+      161,
+      172
+     ]
+    }
+   ],
+   "purpose": "Chuyển giá trị sang double sau khi bỏ hết dấu chấm và dấu phẩy (coi như số nguyên nhân 10^số chữ số thập phân).",
+   "semantics": {
+    "precondition": "obj có thể null hoặc DBNull.",
+    "effects": "Không ảnh hưởng ô hay dữ liệu.",
+    "returns": "double. Null, DBNull hoặc không phân tích được thì 0. Lưu ý: bỏ cả dấu thập phân nên 1.5 thành 15.",
+    "exceptions": "Không ném (TryParse)."
+   },
+   "side_effects": [],
+   "calls": [],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
+    "lines": [
+     [
+      161,
+      172
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 34,
+    "total": 34
+   }
+  },
+  {
+   "name": "GeneralFunctions.ValidateDiaBan2Cap",
+   "overloads": [
+    {
+     "params": "maTinh: string, maHuyen: string, maXa: string",
+     "return_type": "bool",
+     "lines": [
+      9586,
+      9602
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra mã tỉnh và xã khớp nhau theo tiền tố (bỏ qua huyện).",
+   "semantics": {
+    "precondition": "maTinh, maHuyen, maXa là chuỗi, maHuyen không dùng (GeneralFunctions.cs:9586-9602).",
+    "effects": "Không có.",
+    "returns": "false chỉ khi maTinh và maXa không rỗng, maTinh dài 3, maXa dài 7 và 3 ký tự đầu của maXa khác maTinh. Mọi trường hợp khác true (kể cả độ dài sai).",
+    "exceptions": "Bắt, ghi log, trả false (kể cả tham số null)."
+   },
+   "side_effects": [
+    "ghi log khi lỗi"
+   ],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      9586,
+      9602
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 32,
+    "total": 32
+   }
+  },
+  {
    "name": "GeneralFunctions.getMaxNumber",
    "overloads": [
     {
-     "params": "string strNumber",
+     "params": "strNumber: string",
      "return_type": "long",
      "lines": [
       2051,
@@ -1217,7 +2347,7 @@
    "name": "GeneralFunctions.getMinNumber",
    "overloads": [
     {
-     "params": "string strNumber",
+     "params": "strNumber: string",
      "return_type": "long",
      "lines": [
       2069,
@@ -1257,7 +2387,7 @@
    "name": "GeneralFunctions.GetValue",
    "overloads": [
     {
-     "params": "SheetView sView, string index",
+     "params": "sView: SheetView, index: string",
      "return_type": "string",
      "lines": [
       207,
@@ -1265,7 +2395,7 @@
      ]
     },
     {
-     "params": "SheetView sView, int iRow, int iCol",
+     "params": "sView: SheetView, iRow: int, iCol: int",
      "return_type": "string",
      "lines": [
       237,
@@ -1309,7 +2439,7 @@
    "name": "GeneralFunctions.InsertCombobox",
    "overloads": [
     {
-     "params": "SheetView sView, int row, int col, Dictionary<string, string> dic, bool deleteText",
+     "params": "sView: SheetView, row: int, col: int, dic: Dictionary<string, string>, deleteText: bool",
      "return_type": "void",
      "lines": [
       4697,
@@ -1317,7 +2447,7 @@
      ]
     },
     {
-     "params": "SheetView sView, int iRow, int iCol, string[] Values, bool deletText",
+     "params": "sView: SheetView, iRow: int, iCol: int, Values: string[], deletText: bool",
      "return_type": "void",
      "lines": [
       4720,
@@ -1360,51 +2490,10 @@
    }
   },
   {
-   "name": "GeneralFunctions.GetRowIndexInSViewByCompare",
-   "overloads": [
-    {
-     "params": "SheetView sView, HTKKCMCTableInfo table, int colCheck, string valueCompare",
-     "return_type": "List<int>",
-     "lines": [
-      5135,
-      5158
-     ]
-    }
-   ],
-   "purpose": "Liệt kê dòng của bảng có giá trị ô ở một cột bằng giá trị so sánh.",
-   "semantics": {
-    "precondition": "table có thể null (trả danh sách rỗng). colCheck 1-based. Dòng dữ liệu bắt đầu ở Location.DataLocationTemplateRowStart (GeneralFunctions.cs:5144).",
-    "effects": "Chỉ đọc. Duyệt i từ 0 tới số RowsValues của bảng, dừng khi dòng dữ liệu (đầu dữ liệu cộng i) vượt RowCount của sheet. Một dòng được chọn khi ô cột colCheck có Value khác null và chuỗi hóa của Value bằng đúng valueCompare, so sánh có phân biệt hoa thường (GeneralFunctions.cs:5145-5149).",
-    "returns": "Danh sách chỉ số dòng 1-based (đầu dữ liệu cộng i) theo thứ tự tăng dần, rỗng nếu table null hoặc không dòng nào khớp.",
-    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả danh sách đã gom được tới lúc lỗi."
-   },
-   "side_effects": [
-    "ghi log khi lỗi"
-   ],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      5135,
-      5158
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 26,
-    "t3": 3,
-    "total": 29
-   }
-  },
-  {
    "name": "HTKKFile.RemoveValidateBackGround",
    "overloads": [
     {
-     "params": "SheetView sView, int rowIndex, int colIndex",
+     "params": "sView: SheetView, rowIndex: int, colIndex: int",
      "return_type": "void",
      "lines": [
       458,
@@ -1443,10 +2532,96 @@
    }
   },
   {
+   "name": "GeneralFunctions.CheckSoLienHDDT",
+   "overloads": [
+    {
+     "params": "str: string, strLoai: string, strTemp: string, strKyHieuHD: string",
+     "return_type": "string",
+     "lines": [
+      2568,
+      2597
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra số liên của hóa đơn điện tử theo mẫu số và ký hiệu hóa đơn, trả mã lỗi dạng chuỗi.",
+   "semantics": {
+    "precondition": "str là mẫu số (bị Trim), strLoai là loại, strTemp là mẫu chuẩn, strKyHieuHD là ký hiệu hóa đơn (GeneralFunctions.cs:2568-2597).",
+    "effects": "Không có.",
+    "returns": "'0' mặc định. Chỉ khi strLoai là '0', độ dài 11 hoặc 13 và 6 ký tự đầu bằng strTemp thì xét tiếp ký tự thứ 7 (số liên): không phải số thì '3'. Nếu ký tự cuối của ký hiệu hóa đơn (đã Trim) không phải 'E' thì '0'. Nếu là 'E' thì số liên phải bằng 0, khác 0 thì '3'.",
+    "exceptions": "Bắt, ghi log, ném lại. strKyHieuHD rỗng làm Substring lỗi và ném lại."
+   },
+   "side_effects": [
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "HTKKFormater.IsNumber",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      2568,
+      2597
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 28,
+    "total": 28
+   }
+  },
+  {
+   "name": "GeneralFunctions.GetSoLuongHD",
+   "overloads": [
+    {
+     "params": "str: string",
+     "return_type": "string",
+     "lines": [
+      2946,
+      3007
+     ]
+    }
+   ],
+   "purpose": "Đếm số hóa đơn từ chuỗi dải số dạng danh sách chấm phẩy và khoảng gạch ngang.",
+   "semantics": {
+    "precondition": "str hợp lệ theo isDuLieuHL.",
+    "effects": "Không có.",
+    "returns": "Chuỗi rỗng hoặc không hợp lệ: 0. Chỉ có dấu chấm phẩy: số phần tử. Chỉ có gạch ngang: (đầu sau trừ đầu trước cộng 1). Có cả hai: cộng từng phần tử, phần tử dạng khoảng tính như trên, phần tử đơn tính 1. Không có dấu nào: 1. Kết quả là chuỗi số.",
+    "exceptions": "Bắt, ghi log rồi ném lại."
+   },
+   "side_effects": [
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "ConvertHelpers.ConvertToDouble",
+    "GeneralFunctions.isDuLieuHL",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      2946,
+      3007
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 14,
+    "t3": 14,
+    "total": 28
+   }
+  },
+  {
    "name": "GeneralFunctions.UpdateFromSViewToSInfo",
    "overloads": [
     {
-     "params": "SheetView sView, int row, int col, HTKKCMCRowInfo rowInfo, HTKKCMCTableInfo table",
+     "params": "sView: SheetView, row: int, col: int, rowInfo: HTKKCMCRowInfo, table: HTKKCMCTableInfo",
      "return_type": "void",
      "lines": [
       8701,
@@ -1487,7 +2662,7 @@
    "name": "GeneralFunctions.GetCatalogueFileName",
    "overloads": [
     {
-     "params": "DateTime dtPeriod",
+     "params": "dtPeriod: DateTime",
      "return_type": "string[]",
      "lines": [
       461,
@@ -1525,10 +2700,51 @@
    }
   },
   {
+   "name": "GeneralFunctions.ValidateDiaBan",
+   "overloads": [
+    {
+     "params": "maTinh: string, maHuyen: string, maXa: string",
+     "return_type": "bool",
+     "lines": [
+      9561,
+      9584
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra mã tỉnh, huyện, xã khớp nhau theo tiền tố (3, 5, 7 ký tự).",
+   "semantics": {
+    "precondition": "maTinh, maHuyen, maXa là chuỗi (GeneralFunctions.cs:9561-9584).",
+    "effects": "Không có.",
+    "returns": "true nếu một trong ba mã rỗng. Khi cả ba không rỗng: false nếu độ dài khác 3, 5, 7, hoặc 3 ký tự đầu của maHuyen khác maTinh, hoặc 5 ký tự đầu của maXa khác maHuyen, ngược lại true.",
+    "exceptions": "Bắt, ghi log, trả false (kể cả tham số null)."
+   },
+   "side_effects": [
+    "ghi log khi lỗi"
+   ],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      9561,
+      9584
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 27,
+    "total": 27
+   }
+  },
+  {
    "name": "HTKKFile.AddOrUpdateDicStr",
    "overloads": [
     {
-     "params": "Dictionary<string, string> dic, string key, string newValue",
+     "params": "dic: Dictionary<string, string>, key: string, newValue: string",
      "return_type": "void",
      "lines": [
       707,
@@ -1566,10 +2782,97 @@
    }
   },
   {
+   "name": "GeneralFunctions.CheckMauSoBLP",
+   "overloads": [
+    {
+     "params": "str: string, strLoai: string, strTemp: string",
+     "return_type": "string",
+     "lines": [
+      2698,
+      2744
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra mẫu số biên lai theo mẫu chuẩn strTemp, trả mã lỗi dạng chuỗi.",
+   "semantics": {
+    "precondition": "str là mẫu số (bị Trim), strLoai là loại, strTemp là mẫu chuẩn (GeneralFunctions.cs:2698-2744).",
+    "effects": "Không có.",
+    "returns": "'0' mặc định. Chỉ khi strLoai là '0': độ dài khác 10 thì '1', 5 ký tự đầu khác strTemp thì '1'. Ký tự thứ 6 là số từ 1 đến 9, nếu không thì mã tạm '2'. Ký tự thứ 7 khác dấu gạch nối thì '1' (trả ngay), ba ký tự cuối không là số không âm thì '1' (trả ngay).",
+    "exceptions": "Bắt, ghi log, ném lại."
+   },
+   "side_effects": [
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "HTKKFormater.IsNumber",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      2698,
+      2744
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 26,
+    "total": 26
+   }
+  },
+  {
+   "name": "GeneralFunctions.CheckSoHD",
+   "overloads": [
+    {
+     "params": "str: string, strLoai: string",
+     "return_type": "string",
+     "lines": [
+      2443,
+      2477
+     ]
+    }
+   ],
+   "purpose": "Kiểm tra định dạng ký hiệu số hóa đơn, trả mã lỗi dạng chuỗi.",
+   "semantics": {
+    "precondition": "str là ký hiệu hóa đơn, strLoai là loại ('3' bỏ qua kiểm tra). Dùng biến tĩnh strMauSoHD_01GTKT (GeneralFunctions.cs:2443-2477).",
+    "effects": "Không có.",
+    "returns": "'0' hợp lệ, '1' sai định dạng, '2' sai độ dài. strLoai là '3': '0'. Ngược lại độ dài sau Trim phải là 6 hoặc 8, nếu không '2'. Độ dài 8: hai ký tự đầu là mã nhóm, sáu ký tự cuối là ký hiệu. Độ dài 6: mã nhóm là '01'. Nhánh thường: hai ký tự đầu của ký hiệu thuộc bảng chữ ABCDEGHKLMNPQRSTUVXY, mã nhóm là số lớn hơn 0 và nhỏ hơn 65, ký hiệu chứa dấu chéo với hai ký tự ở vị trí 4 và 5 (đếm từ 1) là số, và ký tự cuối thuộc E, T, P thì '0', còn lại '1'. Nhánh còn lại (không đạt điều kiện thường): '0' chỉ khi strMauSoHD_01GTKT bắt đầu bằng 01GTKT, mã nhóm là NN, hai ký tự thứ 2 và 3 là XC, có dấu chéo, ký tự cuối (hoa) là T hoặc P, ngược lại '1'.",
+    "exceptions": "Bắt, ghi log, ném lại (GeneralFunctions.cs:2470-2474)."
+   },
+   "side_effects": [
+    "ghi log khi lỗi",
+    "ném ngoại lệ"
+   ],
+   "calls": [
+    "HTKKFormater.IsNumber",
+    "ConvertHelpers.ConvertToInt",
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "lines": [
+     [
+      2443,
+      2477
+     ]
+    ]
+   },
+   "confidence": "vừa",
+   "call_count": {
+    "t2": 0,
+    "t3": 26,
+    "total": 26
+   }
+  },
+  {
    "name": "GeneralFunctions.ThayDoiCQTTheoTinhDynamic",
    "overloads": [
     {
-     "params": "SheetView sView, string maTinh, int iRow, int colTenCQTCuc, int colMaCQTCuc, int colTenCQTChiCuc, int colMaCQTChiCuc, bool isLock",
+     "params": "sView: SheetView, maTinh: string, iRow: int, colTenCQTCuc: int, colMaCQTCuc: int, colTenCQTChiCuc: int, colMaCQTChiCuc: int, isLock: bool",
      "return_type": "void",
      "lines": [
       8215,
@@ -1611,76 +2914,44 @@
    }
   },
   {
-   "name": "ConvertHelpers.ConvertToInt",
+   "name": "GeneralFunctions.CalculateSumByGroup",
    "overloads": [
     {
-     "params": "object obj, int def",
-     "return_type": "int",
+     "params": "sView: SheetView, tables: List<HTKKCMCTableInfo>, colSum: int, isView: bool",
+     "return_type": "double",
      "lines": [
-      77,
-      88
+      4872,
+      4900
      ]
     }
    ],
-   "purpose": "Chuyển giá trị sang int sau khi bỏ dấu chấm và phẩy, có giá trị mặc định.",
+   "purpose": "Tính tổng một cột trên nhiều bảng có tiêu đề và hiển thị tổng từng bảng ở dòng tiêu đề.",
    "semantics": {
-    "precondition": "def mặc định 0.",
-    "effects": "Không có.",
-    "returns": "int. Null, DBNull hoặc không phân tích được thì trả def (với TryParse thất bại thì trả 0, không phải def).",
-    "exceptions": "Không ném."
+    "precondition": "Bảng phải có Header.StaticCells để tính. isView mặc định true.",
+    "effects": "Với mỗi bảng có tiêu đề: tính CalculateColSumTable, cộng vào tổng chung, và nếu isView thì ghi tổng bảng vào ô (dòng ô tĩnh đầu tiên của tiêu đề, cột colSum).",
+    "returns": "tổng chung double.",
+    "exceptions": "Bắt (không ném)."
    },
-   "side_effects": [],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
-    "lines": [
-     [
-      77,
-      88
-     ]
-    ]
-   },
-   "confidence": "vừa",
-   "call_count": {
-    "t2": 0,
-    "t3": 24,
-    "total": 24
-   }
-  },
-  {
-   "name": "GeneralFunctions.IsNumeric",
-   "overloads": [
-    {
-     "params": "string input",
-     "return_type": "bool",
-     "lines": [
-      5910,
-      5917
-     ]
-    }
+   "side_effects": [
+    "ghi giá trị ô (tổng bảng)"
    ],
-   "purpose": "Kiểm tra chuỗi có phân tích được thành số thập phân (decimal) hay không.",
-   "semantics": {
-    "precondition": "input chuỗi bất kỳ, phân tích theo culture hiện hành.",
-    "effects": "Không có.",
-    "returns": "true nếu decimal.TryParse thành công, ngược lại false. Chuỗi null hoặc rỗng cho false.",
-    "exceptions": "Không ném."
-   },
-   "side_effects": [],
-   "calls": [],
+   "calls": [
+    "GeneralFunctions.CalculateColSumTable",
+    "HTKKFile.Log"
+   ],
    "source": {
     "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
     "lines": [
      [
-      5910,
-      5917
+      4872,
+      4900
      ]
     ]
    },
    "confidence": "cao",
    "call_count": {
-    "t2": 24,
-    "t3": 0,
+    "t2": 20,
+    "t3": 4,
     "total": 24
    }
   },
@@ -1688,7 +2959,7 @@
    "name": "GeneralFunctions.fpSpReindexingSheetTemplate",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCSheetInfo sInfo",
+     "params": "sView: SheetView, sInfo: HTKKCMCSheetInfo",
      "return_type": "void",
      "lines": [
       5598,
@@ -1731,7 +3002,7 @@
    "name": "GeneralFunctions.SetLaiDongConBangF5",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCTableInfo table, object value, int colChilden",
+     "params": "sView: SheetView, table: HTKKCMCTableInfo, value: object, colChilden: int",
      "return_type": "void",
      "lines": [
       10321,
@@ -1769,54 +3040,10 @@
    }
   },
   {
-   "name": "GeneralFunctions.HaveToValidateRow",
-   "overloads": [
-    {
-     "params": "HTKKCMCRowInfo rowsInfo, string[] lstRowValue",
-     "return_type": "bool",
-     "lines": [
-      1374,
-      1410
-     ]
-    }
-   ],
-   "purpose": "Quyết định một dòng bảng có phải kiểm tra hay không: trả true nếu có ô khác giá trị mặc định.",
-   "semantics": {
-    "precondition": "rowsInfo mô tả cột (DefaultValue, Controltype), lstRowValue là giá trị dòng theo thứ tự cột.",
-    "effects": "Với cột kiểu số (Controltype 16) đổi cả mặc định lẫn giá trị sang số rồi ghi ngược số đã chuẩn hóa vào lstRowValue (sửa mảng đầu vào). Cột checkbox (Controltype 2) so với mặc định False. Bỏ qua cột có mặc định NA và cột vượt độ dài mảng.",
-    "returns": "true nếu tồn tại ô không rỗng và khác mặc định, ngược lại false (dòng trống/mặc định thì bỏ qua kiểm tra).",
-    "exceptions": "Bắt, ghi log rồi ném lại."
-   },
-   "side_effects": [
-    "ghi vào mảng đầu vào lstRowValue",
-    "ghi log khi lỗi",
-    "ném ngoại lệ"
-   ],
-   "calls": [
-    "ConvertHelpers.ConvertToDouble",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      1374,
-      1410
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 1,
-    "t3": 21,
-    "total": 22
-   }
-  },
-  {
    "name": "GeneralFunctions.TinhLaiCacGiaTriKhiThayDoiTuBangSangBang",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCSheetInfo sInfo, string fromTableName, string toTableName, int fromColKey, int toColKey, List<int> colsCalculator",
+     "params": "sView: SheetView, sInfo: HTKKCMCSheetInfo, fromTableName: string, toTableName: string, fromColKey: int, toColKey: int, colsCalculator: List<int>",
      "return_type": "void",
      "lines": [
       9294,
@@ -1857,7 +3084,7 @@
    "name": "GeneralFunctions.resetOtherCheckboxStatic",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCSheetInfo sInfo, int startRow, int endRow, int rowClick, int colClick",
+     "params": "sView: SheetView, sInfo: HTKKCMCSheetInfo, startRow: int, endRow: int, rowClick: int, colClick: int",
      "return_type": "void",
      "lines": [
       11518,
@@ -1893,10 +3120,51 @@
    }
   },
   {
+   "name": "HTKKFormater.ConvertToDateTime",
+   "overloads": [
+    {
+     "params": "input: string, success: bool",
+     "return_type": "DateTime",
+     "lines": [
+      174,
+      196
+     ]
+    }
+   ],
+   "purpose": "Phân tích chuỗi ngày dd/MM/yyyy (bỏ khoảng trắng và gạch dưới) và báo thành công qua tham số out.",
+   "semantics": {
+    "precondition": "input là chuỗi (HTKKFormater.cs:174-196).",
+    "effects": "Gán success. Ban đầu true, thành false nếu chuỗi sau khi bỏ khoảng trắng và gạch dưới không dài đúng 10 ký tự, nhưng vẫn thử phân tích.",
+    "returns": "Ngày phân tích theo mẫu dd/MM/yyyy (Convert.ToDateTime với provider tự dựng). Khi có ngoại lệ (ví dụ chuỗi sai ngày) trả 01/01/1900 và success false.",
+    "exceptions": "Bắt mọi ngoại lệ, ghi log. Chuỗi 10 ký tự nhưng sai ngày thì thành 01/01/1900, không phải MinValue. Chuỗi dài khác 10 nhưng phân tích được thì success false mà vẫn trả ngày phân tích."
+   },
+   "side_effects": [
+    "ghi log khi lỗi"
+   ],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFormater.cs",
+    "lines": [
+     [
+      174,
+      196
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 22,
+    "total": 22
+   }
+  },
+  {
    "name": "GeneralFunctions.GetCellValild",
    "overloads": [
     {
-     "params": "string cellFomular",
+     "params": "cellFomular: string",
      "return_type": "string",
      "lines": [
       3745,
@@ -1937,7 +3205,7 @@
    "name": "GeneralFunctions.CalculateColSumTable",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCTableInfo table, int colSum",
+     "params": "sView: SheetView, table: HTKKCMCTableInfo, colSum: int",
      "return_type": "double",
      "lines": [
       4902,
@@ -1973,44 +3241,51 @@
    }
   },
   {
-   "name": "GeneralFunctions.CalculateSumByGroup",
+   "name": "GeneralFunctions.FormatKey",
    "overloads": [
     {
-     "params": "SheetView sView, List<HTKKCMCTableInfo> tables, int colSum, bool isView",
-     "return_type": "double",
+     "params": "str1: string, str2: string",
+     "return_type": "string",
      "lines": [
-      4872,
-      4900
+      6230,
+      6233
+     ]
+    },
+    {
+     "params": "listStr: List<string>, fomartKey: string",
+     "return_type": "string",
+     "lines": [
+      7459,
+      7467
      ]
     }
    ],
-   "purpose": "Tính tổng một cột trên nhiều bảng có tiêu đề và hiển thị tổng từng bảng ở dòng tiêu đề.",
+   "purpose": "Ghép khóa chuỗi: hai chuỗi nối bằng ba gạch dưới, hoặc danh sách chuỗi nối với ký tự phân cách (có đuôi).",
    "semantics": {
-    "precondition": "Bảng phải có Header.StaticCells để tính. isView mặc định true.",
-    "effects": "Với mỗi bảng có tiêu đề: tính CalculateColSumTable, cộng vào tổng chung, và nếu isView thì ghi tổng bảng vào ô (dòng ô tĩnh đầu tiên của tiêu đề, cột colSum).",
-    "returns": "tổng chung double.",
-    "exceptions": "Bắt (không ném)."
+    "precondition": "Hai overload. (str1, str2) tại GeneralFunctions.cs:6230-6233. (listStr, fomartKey) tại GeneralFunctions.cs:7459-7467.",
+    "effects": "Không có.",
+    "returns": "(str1, str2): str1 + '___' + str2 (ba gạch dưới). (listStr, fomartKey): với mỗi phần tử theo thứ tự, nối phần tử rồi fomartKey, nên luôn có fomartKey ở cuối, danh sách rỗng trả chuỗi rỗng. str1 hoặc str2 null được coi như rỗng. fomartKey null cũng nối như rỗng.",
+    "exceptions": "Không có khối bắt lỗi. Overload danh sách ném NullReferenceException nếu listStr null, overload hai chuỗi không ném."
    },
-   "side_effects": [
-    "ghi giá trị ô (tổng bảng)"
-   ],
-   "calls": [
-    "GeneralFunctions.CalculateColSumTable",
-    "HTKKFile.Log"
-   ],
+   "side_effects": [],
+   "calls": [],
    "source": {
     "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
     "lines": [
      [
-      4872,
-      4900
+      6230,
+      6233
+     ],
+     [
+      7459,
+      7467
      ]
     ]
    },
    "confidence": "cao",
    "call_count": {
-    "t2": 20,
-    "t3": 0,
+    "t2": 10,
+    "t3": 10,
     "total": 20
    }
   },
@@ -2018,7 +3293,7 @@
    "name": "GeneralFunctions.GetValueInXml",
    "overloads": [
     {
-     "params": "string filename, string cellID",
+     "params": "filename: string, cellID: string",
      "return_type": "string",
      "lines": [
       1233,
@@ -2026,7 +3301,7 @@
      ]
     },
     {
-     "params": "string filename, List<string> lstCellId",
+     "params": "filename: string, lstCellId: List<string>",
      "return_type": "Dictionary<string, string>",
      "lines": [
       1261,
@@ -2072,7 +3347,7 @@
    "name": "GeneralFunctions.GetPreperiodFileName_ThangQuy",
    "overloads": [
     {
-     "params": "HTKKPeriodInfo periodInfo, HTKKCMCToKhaiInfo toKhaiInfo",
+     "params": "periodInfo: HTKKPeriodInfo, toKhaiInfo: HTKKCMCToKhaiInfo",
      "return_type": "List<string>",
      "lines": [
       969,
@@ -2114,7 +3389,7 @@
    "name": "GeneralFunctions.InsertTableRow",
    "overloads": [
     {
-     "params": "SheetView sView, int frRow, int frCol, int toRow, int toCol, int colCount, HTKKCMCSheetInfo sInfo, int iCurTable",
+     "params": "sView: SheetView, frRow: int, frCol: int, toRow: int, toCol: int, colCount: int, sInfo: HTKKCMCSheetInfo, iCurTable: int",
      "return_type": "void",
      "lines": [
       4222,
@@ -2160,7 +3435,7 @@
    "name": "ConvertHelpers.ConvertDateTimeToStr",
    "overloads": [
     {
-     "params": "DateTime obj, string format",
+     "params": "obj: DateTime, format: string",
      "return_type": "string",
      "lines": [
       40,
@@ -2199,7 +3474,7 @@
    "name": "GeneralFunctions.GetRowOnSViewCreateDictionary",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCTableInfo table, List<int> cols",
+     "params": "sView: SheetView, table: HTKKCMCTableInfo, cols: List<int>",
      "return_type": "List<string>",
      "lines": [
       9523,
@@ -2240,7 +3515,7 @@
    "name": "GeneralFunctions.ThayDoiTinhTheoCQTDangBang2",
    "overloads": [
     {
-     "params": "string maCQTCapCuc_TSC, string maCQTNoiNop_TSC, SheetView sView, int colTenTinh, int colMaTinh, int colTenHuyen, int colMaHuyen, int iRow, bool awaySet",
+     "params": "maCQTCapCuc_TSC: string, maCQTNoiNop_TSC: string, sView: SheetView, colTenTinh: int, colMaTinh: int, colTenHuyen: int, colMaHuyen: int, iRow: int, awaySet: bool",
      "return_type": "void",
      "lines": [
       7758,
@@ -2279,467 +3554,55 @@
    }
   },
   {
-   "name": "ValidateBase.CheckMaSoThue",
+   "name": "HTKKFormater.toDateDDMMYYYY",
    "overloads": [
     {
-     "params": "string strMST",
-     "return_type": "bool",
-     "lines": [
-      312,
-      359
-     ]
-    }
-   ],
-   "purpose": "Kiểm tra mã số thuế 10, 13 hoặc 14 ký tự về mẫu số và chữ số kiểm tra.",
-   "semantics": {
-    "precondition": "strMST chuỗi.",
-    "effects": "Không có.",
-    "returns": "false nếu độ dài không là 10, 13, 14 hoặc không khớp mẫu số. Ngược lại so chữ số thứ 10 với 10 trừ phần dư mod 11 của tổng trọng số chín chữ số đầu (31, 29, 23, 19, 17, 13, 7, 5, 3), giống CheckMaSoThueCCCD nhưng không nhận độ dài 12.",
-    "exceptions": "Bắt, trả false (cấu trúc giống CheckMaSoThueCCCD)."
-   },
-   "side_effects": [],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/ValidateBase.cs",
-    "lines": [
-     [
-      312,
-      359
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 0,
-    "t3": 18,
-    "total": 18
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetNgayCuoiQuy",
-   "overloads": [
-    {
-     "params": "int iQuy, int iNam, int iNgayBdNamTc, int iThangBdNamTc",
-     "return_type": "DateTime",
-     "lines": [
-      2331,
-      2367
-     ]
-    }
-   ],
-   "purpose": "Tính ngày cuối của một quý trong năm tài chính có ngày và tháng bắt đầu tùy ý.",
-   "semantics": {
-    "precondition": "iQuy 1 đến 4. Chỉ xử lý đúng khi năm tài chính bắt đầu ngày 1 của tháng.",
-    "effects": "Tháng cuối quý bằng (quý trừ 1) nhân 3 cộng tháng bắt đầu cộng 2, vượt 12 thì trừ 12 và tăng năm.",
-    "returns": "Nếu iNgayBdNamTc bằng 1: ngày cuối của tháng cuối quý (ngày 1 của tháng kế trừ ngày 1 của tháng đó rồi cộng số ngày, năm kẹp tối đa 9999). Nếu khác 1: trả ngày 1 của tháng cuối quý (không phải ngày cuối).",
-    "exceptions": "Bắt, ghi log rồi ném lại."
-   },
-   "side_effects": [
-    "ném ngoại lệ"
-   ],
-   "calls": [
-    "GeneralFunctions.GetSoNgay",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      2331,
-      2367
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 17,
-    "t3": 0,
-    "total": 17
-   }
-  },
-  {
-   "name": "GeneralFunctions.FormatKyHieu",
-   "overloads": [
-    {
-     "params": "string str",
+     "params": "value: string, isMess: bool",
      "return_type": "string",
      "lines": [
-      2415,
-      2441
+      379,
+      440
      ]
     }
    ],
-   "purpose": "Chuẩn hóa ký hiệu hóa đơn: chữ hoa và chèn dấu gạch chéo.",
+   "purpose": "Chuẩn hóa chuỗi ngày nhập (4, 6 hoặc 8 chữ số) thành dd/MM/yyyy.",
    "semantics": {
-    "precondition": "str không null.",
+    "precondition": "value có thể chứa các ký tự phân cách chéo, gạch nối, khoảng trắng, các ký tự này bị bỏ trước khi xét độ dài (HTKKFormater.cs:379-440). isMess không có tác dụng (nhánh rỗng).",
     "effects": "Không có.",
-    "returns": "Độ dài 5: chèn gạch chéo sau 2 ký tự. Độ dài 7: nếu 2 ký tự đầu là số thì chèn sau 4 ký tự, ngược lại chèn sau 2 ký tự. Độ dài khác: chỉ chuyển chữ hoa.",
-    "exceptions": "Bắt, ghi log rồi ném lại."
-   },
-   "side_effects": [
-    "ném ngoại lệ"
-   ],
-   "calls": [
-    "HTKKFile.Log",
-    "HTKKFormater.IsNumber"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      2415,
-      2441
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 16,
-    "t3": 0,
-    "total": 16
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetQuyNamByThangNam",
-   "overloads": [
-    {
-     "params": "int thang, int nam, string ngayBatDauTC",
-     "return_type": "Dictionary<string, string>",
-     "lines": [
-      3872,
-      3920
-     ]
-    }
-   ],
-   "purpose": "Ánh xạ từng quý (1 đến 4) của năm tài chính sang năm dương lịch tương ứng, dựa trên tháng bắt đầu năm tài chính.",
-   "semantics": {
-    "precondition": "ngayBatDauTC dạng ngày/tháng chứa dấu gạch chéo, tháng bắt đầu lấy ở phần tử thứ hai. thang, nam là tháng và năm tham chiếu.",
-    "effects": "Không đổi ô. Nếu thang nhỏ hơn tháng bắt đầu thì lùi nam một năm. Sau đó điền từ điển khóa quý, giá trị năm: tháng bắt đầu 10 đến 12 thì quý 4 thuộc nam, quý 1 đến 3 thuộc nam+1. Tháng bắt đầu 7 đến 9 thì quý 3 và 4 thuộc nam, quý 1 và 2 thuộc nam+1. Tháng bắt đầu 4 đến 6 thì quý 2 đến 4 thuộc nam, quý 1 thuộc nam+1. Tháng bắt đầu 1 đến 3 thì cả bốn quý thuộc nam.",
-    "returns": "Dictionary quý sang năm (chuỗi). Trả null nếu ngày bắt đầu rỗng hoặc không có dấu gạch chéo.",
-    "exceptions": "Bắt và ghi log, trả từ điển điền dở dang."
+    "returns": "Chuỗi rỗng nếu value rỗng hoặc độ dài sau làm sạch không là 4, 6, 8. 4 ký tự là năm hợp lệ: '01/01/' cộng năm. 6 ký tự: luôn rỗng (xem lưu ý). 8 ký tự ddMMyyyy hợp lệ: dd/MM/yyyy. Không hợp lệ: rỗng.",
+    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả rỗng. Lưu ý: nhánh 6 ký tự đọc 4 ký tự từ vị trí 4 để kiểm tra năm, vượt độ dài chuỗi nên ném lỗi nếu tháng hợp lệ, còn tháng không hợp lệ thì kết quả rỗng. Cả hai cho rỗng (suy từ độ dài, chưa chạy)."
    },
    "side_effects": [
     "ghi log khi lỗi"
    ],
    "calls": [
-    "ConvertHelpers.ConvertToInt",
-    "HTKKFile.AddOrUpdateDicStr",
-    "HTKKFile.Log",
-    "HTKKFormater.isNullString"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      3872,
-      3920
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 16,
-    "t3": 0,
-    "total": 16
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetTenTieuMucTuMa",
-   "overloads": [
-    {
-     "params": "string maTieuMuc, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo",
-     "return_type": "string",
-     "lines": [
-      6302,
-      6318
-     ]
-    }
-   ],
-   "purpose": "Lấy tên tiểu mục từ mã tiểu mục theo ngày đầu kỳ kê khai.",
-   "semantics": {
-    "precondition": "maTieuMuc có thể rỗng.",
-    "effects": "Gọi GetNgayDauKyKeKhai rồi GetTenTmByMaTm.",
-    "returns": "tên tiểu mục, chuỗi rỗng nếu mã rỗng hoặc lỗi.",
-    "exceptions": "Bắt, trả chuỗi rỗng."
-   },
-   "side_effects": [
-    "IO đọc XML (qua GetTenTmByMaTm)"
-   ],
-   "calls": [
-    "GeneralFunctions.GetNgayDauKyKeKhai",
-    "GeneralFunctions.GetTenTmByMaTm",
+    "HTKKFormater.IsYear",
+    "HTKKFormater.IsMonth",
+    "HTKKFormater.IsDay",
+    "HTKKFormater.isNullString",
     "HTKKFile.Log"
    ],
    "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFormater.cs",
     "lines": [
      [
-      6302,
-      6318
+      379,
+      440
      ]
     ]
    },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 16,
-    "t3": 0,
-    "total": 16
-   }
-  },
-  {
-   "name": "GeneralFunctions.SetCellTypeTheoKieuKy",
-   "overloads": [
-    {
-     "params": "SheetView sView, string typeKeKhai, int iRow, int iCol",
-     "return_type": "void",
-     "lines": [
-      8955,
-      8985
-     ]
-    }
-   ],
-   "purpose": "Đặt kiểu ô mặt nạ (MaskCellType) cho ô kỳ kê khai theo kiểu kỳ.",
-   "semantics": {
-    "precondition": "typeKeKhai là Y, Q, M, D hoặc khác. iRow, iCol 1-based.",
-    "effects": "Ký tự giữ chỗ là dấu chấm. Mặt nạ: Y là 4 số (năm), Q là 1 số, gạch chéo, 4 số, M là 2 số, gạch chéo, 4 số, D là ngày 2/2/4. Giá trị khác dùng mặt nạ như Q.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "đặt kiểu ô (mặt nạ)"
-   ],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      8955,
-      8985
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 15,
-    "t3": 0,
-    "total": 15
-   }
-  },
-  {
-   "name": "HTKKFile.AddOrUpdate",
-   "overloads": [
-    {
-     "params": "Dictionary<object, object> dic, object key, object newValue",
-     "return_type": "void",
-     "lines": [
-      688,
-      705
-     ]
-    }
-   ],
-   "purpose": "Thêm hoặc ghi đè một phần tử trong từ điển object.",
-   "semantics": {
-    "precondition": "dic không null.",
-    "effects": "Khóa đã có thì thay giá trị, chưa có thì thêm.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "ghi vào từ điển đầu vào"
-   ],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFile.cs",
-    "lines": [
-     [
-      688,
-      705
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 15,
-    "t3": 0,
-    "total": 15
-   }
-  },
-  {
-   "name": "GeneralFunctions.DetectIndexOfSheet",
-   "overloads": [
-    {
-     "params": "List<HTKKCMCSheetInfo> sInfos, string formula",
-     "return_type": "int",
-     "lines": [
-      4965,
-      4992
-     ]
-    }
-   ],
-   "purpose": "Tìm chỉ số sheet trong danh sách mà tên sheet xuất hiện trong chuỗi công thức.",
-   "semantics": {
-    "precondition": "sInfos là danh sách thông tin sheet (phần tử null được bỏ qua), formula là chuỗi công thức.",
-    "effects": "Chỉ đọc, khi lỗi ghi log.",
-    "returns": "Chỉ số 0-based của sheet đầu tiên theo thứ tự danh sách có SheetName không rỗng và là chuỗi con của formula, -1 nếu không có hoặc lỗi (GeneralFunctions.cs:4975-4985). Nhánh riêng cho công thức chứa PL_GiamThue_GTGT_23_24 (GeneralFunctions.cs:4979) dùng cùng điều kiện khớp tên nên không đổi kết quả, trừ khi SheetName rỗng (khi đó Contains rỗng luôn đúng và trả chỉ số đó).",
-    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả -1 (GeneralFunctions.cs:4990). So khớp theo chuỗi con nên tên sheet là phần của tên khác có thể khớp sai, kết quả phụ thuộc thứ tự danh sách."
-   },
-   "side_effects": [
-    "ghi log khi lỗi"
-   ],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      4965,
-      4992
-     ]
-    ]
-   },
-   "confidence": "cao",
+   "confidence": "vừa",
    "call_count": {
     "t2": 2,
-    "t3": 12,
-    "total": 14
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetNgayDauKyKeKhai",
-   "overloads": [
-    {
-     "params": "HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo TTPeriodInfo",
-     "return_type": "DateTime",
-     "lines": [
-      6449,
-      6469
-     ]
-    }
-   ],
-   "purpose": "Xác định ngày đầu kỳ kê khai từ thông tin chung của tờ khai.",
-   "semantics": {
-    "precondition": "kieuKy là Y, M, Q, D, D_D hoặc K. Ngày chuỗi dạng dd/MM/yyyy.",
-    "effects": "Không có.",
-    "returns": "Y: 01/ cộng kyKKhaiTuThang nếu có, nếu không thì kyKKhaiTuNgay hoặc 01/01 của năm. M hoặc Q: NgayDauKyTinhThue(TTPeriodInfo). D: ngày, tháng, năm nếu đủ. D_D hoặc K: kyKKhaiTuNgay nếu có. Cuối cùng phân tích chuỗi theo dd/MM/yyyy (ném FormatException nếu chuỗi rỗng hoặc sai).",
-    "exceptions": "Không bắt."
-   },
-   "side_effects": [],
-   "calls": [
-    "GeneralFunctions.NgayDauKyTinhThue"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      6449,
-      6469
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 14,
-    "t3": 0,
-    "total": 14
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetSoLuongHD",
-   "overloads": [
-    {
-     "params": "string str",
-     "return_type": "string",
-     "lines": [
-      2946,
-      3007
-     ]
-    }
-   ],
-   "purpose": "Đếm số hóa đơn từ chuỗi dải số dạng danh sách chấm phẩy và khoảng gạch ngang.",
-   "semantics": {
-    "precondition": "str hợp lệ theo isDuLieuHL.",
-    "effects": "Không có.",
-    "returns": "Chuỗi rỗng hoặc không hợp lệ: 0. Chỉ có dấu chấm phẩy: số phần tử. Chỉ có gạch ngang: (đầu sau trừ đầu trước cộng 1). Có cả hai: cộng từng phần tử, phần tử dạng khoảng tính như trên, phần tử đơn tính 1. Không có dấu nào: 1. Kết quả là chuỗi số.",
-    "exceptions": "Bắt, ghi log rồi ném lại."
-   },
-   "side_effects": [
-    "ném ngoại lệ"
-   ],
-   "calls": [
-    "ConvertHelpers.ConvertToDouble",
-    "GeneralFunctions.isDuLieuHL",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      2946,
-      3007
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 14,
-    "t3": 0,
-    "total": 14
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetTenTmByMaTm",
-   "overloads": [
-    {
-     "params": "string maTieuMuc, DateTime dateKyKK",
-     "return_type": "string",
-     "lines": [
-      6320,
-      6359
-     ]
-    }
-   ],
-   "purpose": "Tra tên tiểu mục theo mã và kỳ hiệu lực trong DM_MaTM.xml.",
-   "semantics": {
-    "precondition": "Tệp DM_MaTM.xml dưới thư mục giao diện, các Item có MaTM, TenTM, HLTu, HLDen dạng dd/MM/yyyy.",
-    "effects": "Chỉ đọc XML. Lọc Item có MaTM bằng maTieuMuc và HLTu nhỏ hơn hoặc bằng dateKyKK nhỏ hơn hoặc bằng HLDen (biên gồm cả hai đầu).",
-    "returns": "TenTM của Item khớp đầu tiên. Không có Item khớp thì danh sách rỗng và truy cập phần tử đầu gây ngoại lệ, bị bắt và trả chuỗi rỗng.",
-    "exceptions": "Bắt, trả chuỗi rỗng."
-   },
-   "side_effects": [
-    "IO đọc XML"
-   ],
-   "calls": [
-    "ConvertHelpers.ConvertToDateTime",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      6320,
-      6359
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 14,
-    "t3": 0,
-    "total": 14
+    "t3": 16,
+    "total": 18
    }
   },
   {
    "name": "GeneralFunctions.GetDMFromCombobox",
    "overloads": [
     {
-     "params": "SheetView sView, int row, int col",
+     "params": "sView: SheetView, row: int, col: int",
      "return_type": "Dictionary<string, string>",
      "lines": [
       5935,
@@ -2772,1101 +3635,50 @@
    "confidence": "cao",
    "call_count": {
     "t2": 11,
-    "t3": 2,
-    "total": 13
+    "t3": 6,
+    "total": 17
    }
   },
   {
-   "name": "GeneralFunctions.SetAllValueInRowSame_Table",
+   "name": "GeneralFunctions.GetNgayCuoiQuy",
    "overloads": [
     {
-     "params": "SheetView sView, HTKKCMCTableInfo table, List<int> cols, bool isLock, bool isDelete",
-     "return_type": "void",
-     "lines": [
-      7836,
-      7861
-     ]
-    }
-   ],
-   "purpose": "Sao chép giá trị và kiểu ô của dòng đầu bảng xuống mọi dòng sau ở các cột chỉ định, rồi khóa hoặc mở khóa.",
-   "semantics": {
-    "precondition": "cols là danh sách cột 1-based.",
-    "effects": "Mở khóa ô dòng đầu nếu đang khóa. Với mỗi dòng từ thứ hai: ghi Value và CellType của dòng đầu, rồi gọi LockUnLockCol với isLock và isDelete.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "ghi giá trị ô",
-    "đặt kiểu ô",
-    "khóa/mở khóa ô"
-   ],
-   "calls": [
-    "GeneralFunctions.LockUnLockCol",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      7836,
-      7861
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 13,
-    "t3": 0,
-    "total": 13
-   }
-  },
-  {
-   "name": "GeneralFunctions.FormatKey",
-   "overloads": [
-    {
-     "params": "string str1, string str2",
-     "return_type": "string",
-     "lines": [
-      6230,
-      6233
-     ]
-    },
-    {
-     "params": "List<string> listStr, string fomartKey",
-     "return_type": "string",
-     "lines": [
-      7459,
-      7467
-     ]
-    }
-   ],
-   "purpose": "Ghép khóa chuỗi: hai chuỗi nối bằng ba gạch dưới, hoặc danh sách chuỗi nối với ký tự phân cách (có đuôi).",
-   "semantics": {
-    "precondition": "Hai overload. (str1, str2) tại GeneralFunctions.cs:6230-6233. (listStr, fomartKey) tại GeneralFunctions.cs:7459-7467.",
-    "effects": "Không có.",
-    "returns": "(str1, str2): str1 + '___' + str2 (ba gạch dưới). (listStr, fomartKey): với mỗi phần tử theo thứ tự, nối phần tử rồi fomartKey, nên luôn có fomartKey ở cuối, danh sách rỗng trả chuỗi rỗng. str1 hoặc str2 null được coi như rỗng. fomartKey null cũng nối như rỗng.",
-    "exceptions": "Không có khối bắt lỗi. Overload danh sách ném NullReferenceException nếu listStr null, overload hai chuỗi không ném."
-   },
-   "side_effects": [],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      6230,
-      6233
-     ],
-     [
-      7459,
-      7467
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 10,
-    "t3": 2,
-    "total": 12
-   }
-  },
-  {
-   "name": "GeneralFunctions.ThayDoiTinhTheoCQT",
-   "overloads": [
-    {
-     "params": "string maCQTCapCuc_TSC, string maCQTNoiNop_TSC, SheetView sView, HTKKPeriodInfo PeriodInfo, int[] cellTenTinh, int[] cellMaTinh, int[] cellTenHuyen, int[] cellMaHuyen, int[] cellTenXa, int[] cellMaXa, int[] cellDiaChi, int[] cellTenDonVi, int[] cellMaSoDonVi, bool PhuThuocTruSoChinh",
-     "return_type": "void",
-     "lines": [
-      6626,
-      6774
-     ]
-    }
-   ],
-   "purpose": "Điền và khóa các ô địa bàn (tỉnh, huyện, xã, địa chỉ, đơn vị) theo cơ quan thuế quản lý, tạo combobox huyện và xã.",
-   "semantics": {
-    "precondition": "Các tham số cell là mảng [cột, dòng] 0-based. Danh mục địa danh đã nạp. maCQTCapCuc của PeriodInfo 82500 thì chỉ mở khóa ô tên huyện và tỉnh rồi kết thúc nhánh.",
-    "effects": "Nếu tên tỉnh, huyện (và xã) đã có giá trị thì thoát để không ghi đè. Nếu PeriodInfo.MaTinh có: ghi tên và mã tỉnh, khóa tỉnh, tạo combobox huyện từ các huyện có mã bắt đầu bằng mã tỉnh, xóa huyện, xã, địa chỉ nếu đang trống. Ngược lại: đơn vị phụ thuộc trụ sở chính (PhuThuocTruSoChinh và cùng mã cục) thì khóa xã, huyện, tỉnh, địa chỉ, tên đơn vị, mã số đơn vị. Nếu không có mã quản lý thì ghi tên tỉnh từ mã cục và tạo combobox huyện. Nếu có mã quản lý hợp lệ thì ghi tỉnh, huyện, khóa, và tạo combobox xã theo huyện. Có mã tỉnh mà không có huyện thì ghi tỉnh, mở khóa huyện, xóa huyện, xã, địa chỉ nếu đang trống.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "ghi giá trị ô",
-    "khóa/mở khóa ô",
-    "đặt kiểu ô (combobox)"
-   ],
-   "calls": [
-    "GeneralFunctions.InsertCombobox",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      6626,
-      6774
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 12,
-    "t3": 0,
-    "total": 12
-   }
-  },
-  {
-   "name": "GeneralFunctions.UpdateCacHangSauGiongHangTruocDo",
-   "overloads": [
-    {
-     "params": "SheetView sView, HTKKCMCTableInfo table, List<int> cols, bool chiGiongHangLock",
-     "return_type": "void",
-     "lines": [
-      8462,
-      8489
-     ]
-    }
-   ],
-   "purpose": "Chép Text của dòng trước xuống dòng sau ở các cột chỉ định (từ dòng thứ hai của bảng).",
-   "semantics": {
-    "precondition": "cols 1-based. chiGiongHangLock bật thì chỉ chép vào ô đang bị khóa.",
-    "effects": "Gán Text ô dòng trước vào ô dòng hiện tại, tùy chọn chỉ với ô khóa.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "ghi giá trị ô"
-   ],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      8462,
-      8489
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 12,
-    "t3": 0,
-    "total": 12
-   }
-  },
-  {
-   "name": "GeneralFunctions.UpdateFileMapMctKhbs",
-   "overloads": [
-    {
-     "params": "string Id, string findAttribute, string findAttributeValue, string updateAttribute, string updateAttributeValue",
-     "return_type": "void",
-     "lines": [
-      12327,
-      12341
-     ]
-    }
-   ],
-   "purpose": "Cập nhật một thuộc tính của mục Item trong tệp MapMCT.xml.",
-   "semantics": {
-    "precondition": "MapMCT.xml ở thư mục chạy, có nút Map với thuộc tính ID bằng Id và nút Item con có thuộc tính findAttribute bằng findAttributeValue.",
-    "effects": "Tìm Map theo ID, tìm Item đầu tiên khớp, đặt thuộc tính updateAttribute bằng updateAttributeValue và lưu lại tệp.",
-    "returns": "không trả giá trị",
-    "exceptions": "Không bắt (lỗi đọc ghi tệp lan ra ngoài)."
-   },
-   "side_effects": [
-    "IO đọc và ghi tệp XML"
-   ],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      12327,
-      12341
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 12,
-    "t3": 0,
-    "total": 12
-   }
-  },
-  {
-   "name": "GeneralFunctions.CopyPaseTableToTable",
-   "overloads": [
-    {
-     "params": "HTKKCMCTableInfo tableFrom, HTKKCMCTableInfo tableTo, SheetView sViewFrom, SheetView sViewTo, Dictionary<int, int> colsCanTinhFromAndTo, int colMaFrom, int colMaTo, int colTenFrom, int colTenTo, string keyDefault, HTKKCMCSheetInfo sInfo, int colCompare, string valueCompare, bool usingCellType",
-     "return_type": "void",
-     "lines": [
-      4994,
-      5108
-     ]
-    }
-   ],
-   "purpose": "Tổng hợp dữ liệu từ bảng nguồn theo mã (cộng dồn các cột số), rồi ghi sang bảng đích theo từng mã.",
-   "semantics": {
-    "precondition": "colsCanTinhFromAndTo ánh xạ cột số nguồn sang đích. colCompare không âm thì chỉ lấy dòng có giá trị ô cột đó bằng valueCompare. Dòng có mã bằng keyDefault bị bỏ qua. Dùng sInfo để tìm bảng đích.",
-    "effects": "Duyệt dòng nguồn: lập từ điển mã sang tên, và từ điển mã sang cột đích sang (tổng giá trị, kiểu ô). Sau đó tìm bảng đích bằng DetectIndexOfTable (không thấy thì thoát), xóa các dòng dữ liệu thừa của bảng đích và đặt dòng đầu về mặc định. Với mỗi mã: tìm dòng đích có mã đó (DetectRowByValue), nếu chưa có thì dùng dòng đầu cho mã đầu tiên và chèn dòng mới cho các mã sau, ghi mã, tên và tổng các cột (và kiểu ô nếu usingCellType).",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "ghi giá trị ô",
-    "xóa dòng",
-    "chèn dòng",
-    "đặt kiểu ô"
-   ],
-   "calls": [
-    "GeneralFunctions.DetectIndexOfTable",
-    "GeneralFunctions.DetectRowByValue",
-    "GeneralFunctions.InsertTableRow",
-    "GeneralFunctions.RemoveDataRows",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      4994,
-      5108
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 11,
-    "t3": 0,
-    "total": 11
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetNgayTaiChinhDen",
-   "overloads": [
-    {
-     "params": "string ngayTCTu",
-     "return_type": "string",
-     "lines": [
-      8441,
-      8460
-     ]
-    }
-   ],
-   "purpose": "Từ ngày bắt đầu năm tài chính (dd/MM) suy ra ngày kết thúc năm tài chính.",
-   "semantics": {
-    "precondition": "ngayTCTu thuộc 01/01, 01/04, 01/07, 01/10.",
-    "effects": "Không có.",
-    "returns": "31/12, 31/03, 30/06, 30/09 tương ứng. Giá trị khác trả chuỗi rỗng.",
-    "exceptions": "Không ném."
-   },
-   "side_effects": [],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      8441,
-      8460
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 11,
-    "t3": 0,
-    "total": 11
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetRowIndexInSViewByCompares",
-   "overloads": [
-    {
-     "params": "SheetView sView, HTKKCMCTableInfo table, List<int> colChecks, List<string> valueCompares",
-     "return_type": "List<int>",
-     "lines": [
-      5184,
-      5245
-     ]
-    }
-   ],
-   "purpose": "Liệt kê dòng của bảng mà mọi cột kiểm tra đều khớp giá trị so sánh tương ứng.",
-   "semantics": {
-    "precondition": "colChecks và valueCompares cùng độ dài, cột 1-based.",
-    "effects": "Chỉ đọc. Ô mặt nạ: so Value với giá trị bỏ dấu gạch chéo (ô null khớp chuỗi rỗng). Ô số hoặc tiền tệ: so số sau khi đổi phẩy thành chấm (ô null khớp chuỗi rỗng). Ô khác: so chuỗi.",
-    "returns": "danh sách chỉ số dòng 1-based của các dòng khớp tất cả cột.",
-    "exceptions": "Bắt (danh sách hiện có)."
-   },
-   "side_effects": [],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      5184,
-      5245
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 11,
-    "t3": 0,
-    "total": 11
-   }
-  },
-  {
-   "name": "GeneralFunctions.ThayDoiTinhTheoCQT2Cap",
-   "overloads": [
-    {
-     "params": "HTKKCMCTTinChungInfo header, SheetView sView, HTKKPeriodInfo PeriodInfo, HTKKCMCSheetInfo sInfo, int startRow, int endRow, int[] cellBoQua1, int[] cellBoQua2",
-     "return_type": "void",
-     "lines": [
-      6845,
-      6883
-     ]
-    },
-    {
-     "params": "string maCQTCapCuc_TSC, string maCQTNoiNop_TSC, SheetView sView, HTKKPeriodInfo PeriodInfo, int[] cellTenTinh, int[] cellMaTinh, int[] cellTenHuyen, int[] cellMaHuyen, int[] cellTenXa, int[] cellMaXa, int[] cellDiaChi, int[] cellTenDonVi, int[] cellMaSoDonVi, bool PhuThuocTruSoChinh",
-     "return_type": "void",
-     "lines": [
-      6885,
-      6940
-     ]
-    }
-   ],
-   "purpose": "Khóa hoặc mở khóa ô địa bàn và điền tên, mã tỉnh (danh mục tỉnh mới) theo cơ quan thuế hai cấp.",
-   "semantics": {
-    "precondition": "Overload (1) dùng header của người nộp thuế, PeriodInfo, sInfo, khoảng dòng startRow và endRow (gồm biên) và hai ô bỏ qua [cột, dòng] 0-based. Overload (2) dùng mã cục và nơi nộp của trụ sở chính cùng các ô địa bàn [cột, dòng] 0-based.",
-    "effects": "Overload (1): mọi ô tĩnh trong khoảng dòng được khóa nếu là ô bỏ qua, ngược lại khóa khi tỉnh của người nộp thuế trùng tỉnh kỳ kê khai, mở khóa nếu khác. Nếu tỉnh khác nhau thì ghi tên tỉnh, mã tỉnh vào ô loại điều khiển 100 và tên xã, mã xã vào ô loại 101 rồi khóa chúng. Overload (2): mã cục 82500 thì mở khóa ô tên tỉnh. Ngược lại nếu tên tỉnh và tên xã đã có giá trị thì thoát. Mã tỉnh cũ lấy từ ba ký tự đầu mã cục, đổi sang mã mới (GetMaTinhMoiByMaTinhCu). Đơn vị phụ thuộc trụ sở chính và cùng mã cục: khóa xã, tỉnh, địa chỉ, tên đơn vị, mã số đơn vị. Không có mã quản lý: ghi tên tỉnh mới và khóa. Có mã quản lý: ghi tên, mã tỉnh mới và khóa ô tỉnh.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "khóa/mở khóa ô",
-    "ghi giá trị ô"
-   ],
-   "calls": [
-    "GeneralFunctions.GetMaTinhMoiByMaTinhCu",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      6845,
-      6883
-     ],
-     [
-      6885,
-      6940
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 11,
-    "t3": 0,
-    "total": 11
-   }
-  },
-  {
-   "name": "GeneralFunctions.getAllColumnsInTable",
-   "overloads": [
-    {
-     "params": "HTKKCMCTableInfo table",
-     "return_type": "List<int>",
-     "lines": [
-      12160,
-      12168
-     ]
-    }
-   ],
-   "purpose": "Lấy danh sách chỉ số cột (1-based) của mọi cột dữ liệu trong bảng.",
-   "semantics": {
-    "precondition": "table.RowsInfo có danh sách ô.",
-    "effects": "Không có.",
-    "returns": "danh sách ColIndex theo thứ tự cột trong RowsInfo.",
-    "exceptions": "Không bắt."
-   },
-   "side_effects": [],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      12160,
-      12168
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 11,
-    "t3": 0,
-    "total": 11
-   }
-  },
-  {
-   "name": "HTKKFile.LogRun",
-   "overloads": [
-    {
-     "params": "string fnName, string ex",
-     "return_type": "void",
-     "lines": [
-      123,
-      152
-     ]
-    }
-   ],
-   "purpose": "Ghi một dòng nhật ký chạy (thời điểm, tên hàm, nội dung) vào tệp log theo ngày.",
-   "semantics": {
-    "precondition": "Thư mục HTKKConfig.LOGPATH được tạo nếu chưa có.",
-    "effects": "Thêm vào cuối tệp log_run_yyyy-MM-dd.log một dòng gồm giờ dd/MM/yyyy HH:mm:ss, tên hàm và nội dung. Nuốt mọi lỗi ghi tệp, luôn đóng luồng.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và bỏ qua."
-   },
-   "side_effects": [
-    "IO ghi tệp log",
-    "tạo thư mục"
-   ],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFile.cs",
-    "lines": [
-     [
-      123,
-      152
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 11,
-    "t3": 0,
-    "total": 11
-   }
-  },
-  {
-   "name": "ConvertHelpers.ConvertToDateTime",
-   "overloads": [
-    {
-     "params": "object obj, string format",
+     "params": "iQuy: int, iNam: int, iNgayBdNamTc: int, iThangBdNamTc: int",
      "return_type": "DateTime",
      "lines": [
-      14,
-      25
+      2331,
+      2367
      ]
     }
    ],
-   "purpose": "Chuyển giá trị bất kỳ sang DateTime theo định dạng cho trước bằng culture hiện hành.",
+   "purpose": "Tính ngày cuối của một quý trong năm tài chính có ngày và tháng bắt đầu tùy ý.",
    "semantics": {
-    "precondition": "obj có thể null hoặc DBNull. format là chuỗi định dạng DateTime (ví dụ dd/MM/yyyy).",
-    "effects": "Không ảnh hưởng ô hay dữ liệu.",
-    "returns": "DateTime đã phân tích. Khi obj null, DBNull hoặc không khớp định dạng thì trả giá trị mặc định 01/01/0001 (không báo lỗi).",
-    "exceptions": "Không ném ngoại lệ (dùng TryParseExact, culture hiện hành CurrentCulture)."
-   },
-   "side_effects": [],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
-    "lines": [
-     [
-      14,
-      25
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 0,
-    "t3": 10,
-    "total": 10
-   }
-  },
-  {
-   "name": "GeneralFunctions.ArrayCellId",
-   "overloads": [
-    {
-     "params": "string cellId",
-     "return_type": "int[]",
-     "lines": [
-      1357,
-      1372
-     ]
-    }
-   ],
-   "purpose": "Đổi mã ô dạng 'chữ cột_số dòng' thành cặp chỉ số 0-based [cột, dòng].",
-   "semantics": {
-    "precondition": "cellId có hai phần ngăn bởi dấu gạch dưới, phần đầu là chữ cái cột, phần sau là số dòng 1-based (GeneralFunctions.cs:1362-1364).",
-    "effects": "Không ghi trạng thái, khi lỗi chỉ ghi log (GeneralFunctions.cs:1369).",
-    "returns": "Mảng 2 số nguyên: chỉ số cột (ColumnLettersToIndex trừ 1) và chỉ số dòng (số dòng trừ 1) (GeneralFunctions.cs:1363-1364). Khi không phân tích được, trả [-1,-1] chứ không ném ngoại lệ (GeneralFunctions.cs:1370). Các trường hợp rơi vào nhánh này: cellId null, không có dấu gạch dưới (phần tử thứ hai không tồn tại), số dòng không phải số nguyên.",
-    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả [-1,-1]. Hệ quả cho nơi gọi: mảng luôn dài 2 nên kiểm tra độ dài không phát hiện lỗi. Nơi gọi truy cập ô theo chỉ số trả về sẽ truy cập ô chỉ số -1. Trong tập phủ có changFormatCell (GeneralFunctions.cs:5987-5990, xem mục riêng). Ngoài tập phủ: checkLockUnLockCells (GeneralFunctions.cs:5349, hằng 'BA_1' hợp lệ nên không kích hoạt) và GetValAttributeStaticCell (GeneralFunctions.cs:1332, so sánh với -1 không bao giờ khớp nên trả chuỗi rỗng)."
+    "precondition": "iQuy 1 đến 4. Chỉ xử lý đúng khi năm tài chính bắt đầu ngày 1 của tháng.",
+    "effects": "Tháng cuối quý bằng (quý trừ 1) nhân 3 cộng tháng bắt đầu cộng 2 (GeneralFunctions.cs:2336-2340). Chỉ khi iNgayBdNamTc bằng 1 mới có bước trừ 12 tháng và tăng năm khi tháng vượt 12 (GeneralFunctions.cs:2342-2356). Khi iNgayBdNamTc khác 1 không có bước này nên tháng có thể lớn hơn 12 (ví dụ tháng bắt đầu năm tài chính từ 11 trở lên ở quý 4), khi đó dựng ngày với tháng ngoài 1 đến 12 gây ArgumentOutOfRangeException.",
+    "returns": "Nếu iNgayBdNamTc bằng 1: ngày cuối của tháng cuối quý (ngày 1 của tháng kế trừ ngày 1 của tháng đó rồi cộng số ngày, năm kẹp tối đa 9999). Nếu khác 1: trả ngày 1 của tháng cuối quý trong năm iNam (không phải ngày cuối), hoặc ném ngoại lệ khi tháng tính ra lớn hơn 12.",
+    "exceptions": "Bắt, ghi log rồi ném lại. Ném khi tháng ngoài 1 đến 12 ở nhánh iNgayBdNamTc khác 1."
    },
    "side_effects": [
-    "ghi log khi lỗi"
-   ],
-   "calls": [
-    "HTKKFile.ColumnLettersToIndex",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      1357,
-      1372
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 0,
-    "t3": 10,
-    "total": 10
-   }
-  },
-  {
-   "name": "GeneralFunctions.CapNhatCongThucLoaiChoSuaCell",
-   "overloads": [
-    {
-     "params": "SheetView sView, HTKKCMCSheetInfo sInfo, int iRow, int iCol, List<MapCongThuc> listCongThuc",
-     "return_type": "void",
-     "lines": [
-      12108,
-      12158
-     ]
-    }
-   ],
-   "purpose": "Nạp lại công thức cho các ô bị ảnh hưởng khi sửa một ô, theo bảng ánh xạ công thức MapCongThuc.",
-   "semantics": {
-    "precondition": "iRow, iCol 1-based. Mã _ROWREPLACE trong công thức được thay bằng số dòng.",
-    "effects": "Nếu dòng iRow không thuộc bảng nào: với ô tĩnh cùng dòng có công thức tĩnh (Dynamic bằng 0) và nằm bên phải cột sửa thì ghi công thức (thay số dòng). Với các công thức có tham chiếu chứa số dòng thì ghi công thức vào ô tĩnh tương ứng. Nếu dòng thuộc bảng: với mỗi ô của dòng bảng có công thức động (Dynamic bằng 1) của bảng và nằm bên phải cột sửa thì ghi công thức vào ô (dòng iRow) sau khi thay số dòng.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt (cấu trúc try ngoài)."
-   },
-   "side_effects": [
-    "ghi công thức ô"
-   ],
-   "calls": [
-    "GeneralFunctions.DetectIndexOfTable",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      12108,
-      12158
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 10,
-    "t3": 0,
-    "total": 10
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetHanNopToKhai",
-   "overloads": [
-    {
-     "params": "HTKKPeriodInfo periodInfo, HTKKHeaderInfo headerInfo",
-     "return_type": "DateTime",
-     "lines": [
-      1539,
-      1996
-     ]
-    }
-   ],
-   "purpose": "Tính hạn nộp tờ khai theo kiểu kỳ, mã menu và các tham số kỳ, rồi điều chỉnh theo ngày lễ và cuối tuần.",
-   "semantics": {
-    "precondition": "periodInfo.Nam là số. KieuKy là M, Q, Y, D, D_D hoặc khác. menuID là mã tờ khai. headerInfo có thể null (khi đó năm tài chính bắt đầu 01/01). Các số ngày dưới đây trích đúng từ mã HTKK, không đối chiếu văn bản pháp luật.",
-    "effects": "Đọc tệp DMNgayLe.xml và với kiểu D còn đọc tệp dữ liệu tờ khai O1 hoặc O3 (GetValueInXml). Không đổi ô. Mặc định: num=90, num2=45, num3=10. KIỂU M: menuID 01 hoặc I5: ngày 20 tháng kế (tháng 12 thì 20/01 năm sau). Nhánh riêng cho tháng 4 đến 6 năm 2012 không bao giờ chạy vì cờ luôn false. Menuid khác: ngày 20 tháng kế, ngoại lệ với menuID Q9, R4, X8, Q8, U5 năm 2026 tháng 1 đến 3 thì hạn 20/04/2026. KIỂU Q: quý 4 thì 30/01 năm sau, quý 3 thì 30/10, quý 2 thì 30/07, quý 1 thì 01/05, ngoài ra menuID 30 thì TuNgay cộng 10 ngày. KIỂU Y: ngày cuối kỳ là cuối tháng DenThang (khi kỳ ngắn hơn 12 tháng và không kết thúc tháng 12) hoặc DenNgay, đồng thời num=45 nếu kỳ ngắn hơn 12 tháng hoặc DenNgay không là 31/12, còn kỳ đủ năm có num=90. menuID 03 hoặc 77: num=90 thì lấy ngày cuối năm tài chính (ngày bắt đầu từ header hoặc dicVar NGAY_BAT_DAU_NAM_TAI_CHINH) và nếu ngày cuối kỳ từ 01/06/2020 trở lên thì hạn là ngày cuối của tháng thứ ba sau ngày cuối năm tài chính, ngược lại cộng 90 ngày. num bằng 45 thì ngày cuối kỳ cộng 45. menuID T5, Y4, C6, C7, N8, H4: nếu MaQuyetToan khác 01 và 04 thì DenNgay cộng 44 ngày, ngược lại là ngày cuối quý kế tiếp của năm tài chính. menuID 83: num=90 thì ngày cuối năm tài chính cộng 90 ngày, ngược lại ngày cuối kỳ cộng num. menuID A3: 31/12 năm trước. 63: 01/01 năm. L1: 30/01 năm (nếu dicVar CoSoMoiThanhLap true thì năm sau). Khác: num khác 90 thì ngày cuối kỳ cộng num, ngược lại 31/12 cộng 90 ngày. KIỂU D: ngày kê khai cộng num3. num3 là 9 với menuID O4, O5, O6 và 4 với O2. O3: đọc ô L_5, L_9, X_9, X_5, num3 bằng 9 nếu X_9 hoặc L_9, nếu L_5 thì 14 khi X_5 ngược lại 9. O1: đọc U_48, U_49, U_50, U_51, U_52, U_53, U_55, U_56, U_57 trong tệp (hoặc tệp bổ sung), num3 bằng 4 nếu U_48, U_49, U_51 hoặc U_52 dương, bằng 9 nếu U_50, U_56 hoặc U_57 dương, bằng 89 nếu U_53, bằng 29 nếu U_55. Với D cộng thêm số thứ bảy và chủ nhật trong khoảng cho O2, O4, O5, cho O1 khi có U_48, 49, 51, 52, 56 hoặc 57, cho O3 khi X_9 hoặc L_9 hoặc (L_5 và không X_5). KIỂU D_D: DenNgay cộng 45 ngày. SAU CÁC KIỂU: menuID 47 hoặc K7 và NgayChiaCTLN trước 05/12/2020 thì hạn là NgayChiaCTLN cộng 45 ngày. menuID 21: ngày kê khai cộng SoNgayNopChamKHBS. Tra DMNgayLe.xml: kiểu D hoặc Q có mục cùng kiểu và HanNop bằng hạn đang tính thì đổi sang GiaTri. Cuối cùng thứ bảy cộng 2 ngày, chủ nhật cộng 1 ngày, và ngày 20/02/2018 cộng thêm 1 ngày.",
-    "returns": "DateTime hạn nộp. Hạn kiểu M, Q, Y tính theo năm tài chính cần header. Các kiểu không khớp để mặc định 01/01/0001 rồi qua bước ngày lễ và cuối tuần.",
-    "exceptions": "Bắt, ghi log rồi ném lại."
-   },
-   "side_effects": [
-    "IO đọc XML (DMNgayLe.xml, tệp dữ liệu tờ khai)",
     "ném ngoại lệ"
    ],
    "calls": [
-    "ConvertHelpers.ConvertToBool",
-    "ConvertHelpers.ConvertToDouble",
-    "ConvertHelpers.ConvertToInt",
-    "GeneralFunctions.CountWeekendDays",
-    "GeneralFunctions.GetNgayCuoiQuy",
-    "GeneralFunctions.GetQuyByNamTC",
-    "GeneralFunctions.GetSoThang",
-    "GeneralFunctions.GetValueInXml",
-    "GeneralFunctions.NgayCuoiNamTaiChinh",
-    "HTKKFile.Log",
-    "HTKKFormater.isNullString"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      1539,
-      1996
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 8,
-    "t3": 2,
-    "total": 10
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetStrByLengh",
-   "overloads": [
-    {
-     "params": "string strInput, int strLengh",
-     "return_type": "string",
-     "lines": [
-      3723,
-      3743
-     ]
-    }
-   ],
-   "purpose": "Đệm số 0 bên trái chuỗi đến độ dài cho trước, giữ nguyên nếu dài hơn.",
-   "semantics": {
-    "precondition": "strInput có thể null.",
-    "effects": "Không có.",
-    "returns": "null nếu chuỗi (sau khi cắt khoảng trắng) rỗng. Dài hơn strLengh thì trả chuỗi đã cắt. Ngược lại đệm 0 bên trái đến strLengh.",
-    "exceptions": "Bắt, trả null."
-   },
-   "side_effects": [],
-   "calls": [
-    "HTKKFile.Log",
-    "HTKKFormater.isNullString"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      3723,
-      3743
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 10,
-    "t3": 0,
-    "total": 10
-   }
-  },
-  {
-   "name": "ConvertHelpers.ToNumber",
-   "overloads": [
-    {
-     "params": "object obj, string decimalT",
-     "return_type": "decimal",
-     "lines": [
-      174,
-      203
-     ]
-    }
-   ],
-   "purpose": "Chuyển giá trị bất kỳ sang decimal, hỗ trợ dấu thập phân chấm hoặc phẩy.",
-   "semantics": {
-    "precondition": "decimalT là dấu thập phân của chuỗi đầu vào, mặc định chấm (extension method).",
-    "effects": "Không có.",
-    "returns": "0 nếu null, DBNull hoặc chuỗi rỗng. Kiểu số gốc thì đổi thẳng. Chuỗi có chữ E thì phân tích kiểu khoa học theo InvariantCulture. Với dấu chấm thì bỏ dấu phẩy rồi phân tích. Với dấu phẩy thì bỏ dấu chấm rồi đổi phẩy thành chấm. decimal.Parse ném FormatException nếu chuỗi sai.",
-    "exceptions": "Không bắt."
-   },
-   "side_effects": [],
-   "calls": [
-    "HTKKFormater.isNullString"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/ConvertHelpers.cs",
-    "lines": [
-     [
-      174,
-      203
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 0,
-    "t3": 8,
-    "total": 8
-   }
-  },
-  {
-   "name": "GeneralFunctions.ChangeLockedCell",
-   "overloads": [
-    {
-     "params": "SheetView sView, int rowIndex, int columnIndex, bool valueChange",
-     "return_type": "void",
-     "lines": [
-      908,
-      918
-     ]
-    }
-   ],
-   "purpose": "Đặt trạng thái khóa của một ô.",
-   "semantics": {
-    "precondition": "rowIndex, columnIndex 0-based.",
-    "effects": "Gán Locked bằng valueChange.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "khóa/mở khóa ô"
-   ],
-   "calls": [
+    "GeneralFunctions.GetSoNgay",
     "HTKKFile.Log"
    ],
    "source": {
     "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
     "lines": [
      [
-      908,
-      918
+      2331,
+      2367
      ]
     ]
    },
    "confidence": "cao",
    "call_count": {
-    "t2": 8,
+    "t2": 17,
     "t3": 0,
-    "total": 8
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetValueInDm",
-   "overloads": [
-    {
-     "params": "string path, string attr, string valueAttr, string retureAttr",
-     "return_type": "string",
-     "lines": [
-      12709,
-      12718
-     ]
-    }
-   ],
-   "purpose": "Tra giá trị một thuộc tính của mục Item trong tệp danh mục XML theo thuộc tính khóa.",
-   "semantics": {
-    "precondition": "path là tệp XML có nút Item. attr là tên thuộc tính khóa, valueAttr là giá trị cần khớp, retureAttr là tên thuộc tính cần lấy (phải có trên Item khớp).",
-    "effects": "Chỉ đọc XML.",
-    "returns": "Giá trị thuộc tính retureAttr của Item đầu tiên có attr bằng valueAttr (phần điều kiện so sánh đọc ở dòng 12712, bị cắt), chuỗi rỗng nếu không có Item khớp.",
-    "exceptions": "Không bắt. Item khớp nhưng thiếu thuộc tính retureAttr gây NullReferenceException."
-   },
-   "side_effects": [
-    "IO đọc XML"
-   ],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      12709,
-      12718
-     ]
-    ]
-   },
-   "confidence": "vừa",
-   "call_count": {
-    "t2": 8,
-    "t3": 0,
-    "total": 8
-   }
-  },
-  {
-   "name": "GeneralFunctions.SetFormulaNextRow",
-   "overloads": [
-    {
-     "params": "string formula, int newRow",
-     "return_type": "string",
-     "lines": [
-      9130,
-      9145
-     ]
-    }
-   ],
-   "purpose": "Thay ký hiệu giữ chỗ dòng '###' trong công thức mẫu bằng số dòng mới.",
-   "semantics": {
-    "precondition": "formula là chuỗi công thức mẫu chứa '###' tại vị trí số dòng.",
-    "effects": "Chỉ tính, khi lỗi ghi log.",
-    "returns": "Chuỗi rỗng nếu formula null hoặc rỗng (GeneralFunctions.cs:9134-9136), ngược lại formula với mọi '###' thay bằng newRow (GeneralFunctions.cs:9138). Nếu lỗi trả formula nguyên bản (GeneralFunctions.cs:9143).",
-    "exceptions": "Bắt mọi ngoại lệ, ghi log, trả formula."
-   },
-   "side_effects": [
-    "ghi log khi lỗi"
-   ],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      9130,
-      9145
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 2,
-    "t3": 6,
-    "total": 8
-   }
-  },
-  {
-   "name": "GeneralFunctions.SplitString2",
-   "overloads": [
-    {
-     "params": "string text, string splitBy",
-     "return_type": "List<string>",
-     "lines": [
-      6013,
-      6018
-     ]
-    }
-   ],
-   "purpose": "Tách chuỗi theo một chuỗi phân cách thành danh sách, giữ phần tử rỗng.",
-   "semantics": {
-    "precondition": "text không null.",
-    "effects": "Không có.",
-    "returns": "List các phần tử (StringSplitOptions.None).",
-    "exceptions": "Không bắt (text null gây ngoại lệ)."
-   },
-   "side_effects": [],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      6013,
-      6018
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 8,
-    "t3": 0,
-    "total": 8
-   }
-  },
-  {
-   "name": "GeneralFunctions.setButton",
-   "overloads": [
-    {
-     "params": "SheetView sView, int row, int col, string text",
-     "return_type": "void",
-     "lines": [
-      10425,
-      10433
-     ]
-    }
-   ],
-   "purpose": "Đặt ô thành nút bấm (ButtonCellType) với nhãn chữ xanh.",
-   "semantics": {
-    "precondition": "row, col 1-based.",
-    "effects": "Tạo ButtonCellType không hai trạng thái, bóng đổ 0, màu chữ xanh dương, nhãn là text, gán làm CellType của ô.",
-    "returns": "không trả giá trị",
-    "exceptions": "Không bắt."
-   },
-   "side_effects": [
-    "đặt kiểu ô (nút bấm)"
-   ],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      10425,
-      10433
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 8,
-    "t3": 0,
-    "total": 8
-   }
-  },
-  {
-   "name": "HTKKFormater.IsNumber",
-   "overloads": [
-    {
-     "params": "string strNumber, long intNumber",
-     "return_type": "bool",
-     "lines": [
-      14,
-      21
-     ]
-    },
-    {
-     "params": "string strNumber",
-     "return_type": "bool",
-     "lines": [
-      23,
-      34
-     ]
-    }
-   ],
-   "purpose": "Kiểm tra chuỗi có phải số nguyên long. Overload hai tham số có lỗi logic: luôn trả false.",
-   "semantics": {
-    "precondition": "Hai overload. (1) strNumber, out intNumber. (2) strNumber.",
-    "effects": "Không có.",
-    "returns": "Overload (2): true nếu long.TryParse thành công, false nếu không hoặc có ngoại lệ. Overload (1): gán intNumber bằng kết quả TryParse (0 nếu thất bại) nhưng giá trị trả về là biến khởi tạo false và không bao giờ đổi, nên luôn trả false.",
-    "exceptions": "Overload (2) bắt và trả false."
-   },
-   "side_effects": [],
-   "calls": [],
-   "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFormater.cs",
-    "lines": [
-     [
-      14,
-      21
-     ],
-     [
-      23,
-      34
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 7,
-    "t3": 1,
-    "total": 8
-   }
-  },
-  {
-   "name": "ValidateBase.CheckMaSoThueCCCD",
-   "overloads": [
-    {
-     "params": "string strMST",
-     "return_type": "bool",
-     "lines": [
-      375,
-      428
-     ]
-    }
-   ],
-   "purpose": "Kiểm tra mã số thuế hoặc số định danh 12 chữ số: độ dài, ký tự số và chữ số kiểm tra.",
-   "semantics": {
-    "precondition": "strMST độ dài 10, 12, 13 hoặc 14.",
-    "effects": "Không có.",
-    "returns": "Độ dài khác 10, 12, 13, 14: false. Độ dài 12: true khi toàn chữ số (không kiểm tra chữ số kiểm tra). Độ dài 10, 13, 14: kiểm tra mẫu số (10 chữ số, hoặc 10 chữ số kèm 3 chữ số, dạng 14 ký tự cho phép dấu gạch ở giữa), rồi so chữ số thứ 10 với 10 trừ phần dư mod 11 của tổng trọng số chín chữ số đầu (trọng số 31, 29, 23, 19, 17, 13, 7, 5, 3).",
-    "exceptions": "Bắt, trả false."
-   },
-   "side_effects": [],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/ValidateBase.cs",
-    "lines": [
-     [
-      375,
-      428
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 0,
-    "t3": 8,
-    "total": 8
-   }
-  },
-  {
-   "name": "GeneralFunctions.GetCQTChiCucTuCQTCuc",
-   "overloads": [
-    {
-     "params": "string maCQTCapCuc, SheetView sView, int colTenCQTChiCuc, int colMaCQTChiCuc, int iRow",
-     "return_type": "void",
-     "lines": [
-      9978,
-      9997
-     ]
-    }
-   ],
-   "purpose": "Điền tên và mã cơ quan thuế chi cục vào một dòng từ mã cục.",
-   "semantics": {
-    "precondition": "maCQTCapCuc không rỗng, tối thiểu 3 ký tự. Cột và dòng 1-based. Danh mục CoQuanThueQuanLy đã nạp.",
-    "effects": "Tính khóa bằng ba ký tự đầu của mã cục nối 00. Nếu danh mục CoQuanThueQuanLy có khóa đó thì ghi Text ô tên chi cục là giá trị tra được và Text ô mã chi cục là chính khóa.",
-    "returns": "không trả giá trị",
-    "exceptions": "Bắt và ghi log."
-   },
-   "side_effects": [
-    "ghi giá trị ô"
-   ],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      9978,
-      9997
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 7,
-    "t3": 0,
-    "total": 7
-   }
-  },
-  {
-   "name": "GeneralFunctions.SoNgayNopCham",
-   "overloads": [
-    {
-     "params": "HTKKPeriodInfo periodInfo, HTKKHeaderInfo HeaderInfo",
-     "return_type": "int",
-     "lines": [
-      1514,
-      1537
-     ]
-    }
-   ],
-   "purpose": "Tính số ngày nộp chậm của tờ khai bổ sung: chênh lệch giữa ngày lập KHBS và hạn nộp tờ khai.",
-   "semantics": {
-    "precondition": "periodInfo.NgayLapKHBS rỗng hoặc có dạng d/M/yyyy, hạn nộp lấy từ GetHanNopToKhai với periodInfo và HeaderInfo (GeneralFunctions.cs:1517, 1524).",
-    "effects": "Chỉ tính, khi lỗi ghi log rồi ném lại ngoại lệ.",
-    "returns": "Số nguyên >= 0: số ngày (ngày lập KHBS trừ hạn nộp), 0 nếu NgayLapKHBS rỗng hoặc ngày lập không sau hạn nộp (GeneralFunctions.cs:1520, 1525-1526).",
-    "exceptions": "Chuỗi ngày sai định dạng gây FormatException, hàm ghi log và ném lại (GeneralFunctions.cs:1534). Lệnh gọi GetHanNopToKhai nằm ngoài khối bắt lỗi (GeneralFunctions.cs:1517)."
-   },
-   "side_effects": [
-    "ghi log khi lỗi"
-   ],
-   "calls": [
-    "GeneralFunctions.GetHanNopToKhai",
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.business/TAX.HTKK.Business/GeneralFunctions.cs",
-    "lines": [
-     [
-      1514,
-      1537
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 7,
-    "t3": 0,
-    "total": 7
+    "total": 17
    }
   }
  ]

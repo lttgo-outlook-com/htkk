@@ -1,0 +1,241 @@
+{
+ "ConvertHelpers.ToBoolOrDefault": {
+  "purpose": "Chuyển giá trị bất kỳ sang bool, dùng mặc định cho giá trị null hoặc DBNull.",
+  "semantics": {
+   "precondition": "obj tùy ý, defaultValue mặc định false (ConvertHelpers.cs:371).",
+   "effects": "Không có.",
+   "returns": "defaultValue nếu obj null hoặc DBNull. Ngược lại ConvertToBool của chuỗi hóa obj (ConvertHelpers.cs:375-378): true chỉ khi chuỗi phân tích được thành true theo bool.TryParse. Chuỗi không phân tích được (rỗng, '1', 'abc') trả false, KHÔNG trả defaultValue.",
+   "exceptions": "Bắt mọi ngoại lệ và trả defaultValue (ConvertHelpers.cs:380-383)."
+  },
+  "side_effects": [],
+  "calls": ["ConvertHelpers.ConvertToBool"],
+  "confidence": "cao"
+ },
+ "ConvertHelpers.ConvertToBool": {
+  "purpose": "Chuyển giá trị bất kỳ sang bool, mặc định false.",
+  "semantics": {
+   "precondition": "obj tùy ý (ConvertHelpers.cs:64).",
+   "effects": "Không có.",
+   "returns": "false nếu obj null hoặc DBNull. Ngược lại kết quả bool.TryParse của chuỗi hóa obj (ConvertHelpers.cs:69-71): true với 'true' không phân biệt hoa thường (bỏ khoảng trắng hai đầu), false với mọi chuỗi khác kể cả '1'.",
+   "exceptions": "Không ném (dùng TryParse)."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "ConvertHelpers.ToIntOrDefault": {
+  "purpose": "Chuyển giá trị bất kỳ sang số nguyên, bỏ dấu chấm và dấu phẩy, dùng mặc định cho giá trị rỗng.",
+  "semantics": {
+   "precondition": "obj tùy ý, defaultValue mặc định 0 (ConvertHelpers.cs:355).",
+   "effects": "Không có.",
+   "returns": "defaultValue nếu obj null, DBNull hoặc chuỗi hóa của obj rỗng (IsNullOrEmpty, ConvertHelpers.cs:339-349, 359). Ngược lại ConvertToInt của chuỗi đã bỏ mọi dấu chấm và dấu phẩy (ConvertHelpers.cs:363). ConvertToInt gán 0 khi int.TryParse thất bại (ConvertHelpers.cs:84-85), nên chuỗi không phải số cho 0 chứ KHÔNG phải defaultValue, và số có phần thập phân bị đọc như số nguyên liền mạch (1.234,5 thành 12345).",
+   "exceptions": "Bắt mọi ngoại lệ và trả defaultValue (ConvertHelpers.cs:365-368)."
+  },
+  "side_effects": [],
+  "calls": ["ConvertHelpers.ConvertToInt", "ConvertHelpers.IsNullOrEmpty"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetObjectValue": {
+  "purpose": "Đọc giá trị (Value) của ô theo mã ô dạng 'chữ cột_số dòng'.",
+  "semantics": {
+   "precondition": "index có dạng chữ cột, gạch dưới, số dòng 1-based (ví dụ E_29). sView không null (GeneralFunctions.cs:736-745).",
+   "effects": "Chỉ đọc.",
+   "returns": "Value của ô tại (dòng trừ 1, cột trừ 1). null nếu index rỗng, không có đúng hai phần sau khi tách theo gạch dưới, hoặc chỉ số tính ra âm (GeneralFunctions.cs:741-756). Ô không có giá trị cũng trả null.",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả null (GeneralFunctions.cs:759-762). Số dòng không phải số hoặc index null cũng thành null."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.ColumnLettersToIndex", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "HTKKFormater.GetColunmIndexByColumName": {
+  "purpose": "Đổi chữ cột (A, B, ..., DZ) thành chỉ số cột 0-based theo bảng cấu hình.",
+  "semantics": {
+   "precondition": "columnName là một khóa trong HTKKConfig.CELL_DATA (bảng 130 chữ cột từ A đến DZ, HTKKConfig.cs:307-330).",
+   "effects": "Chỉ đọc cấu hình.",
+   "returns": "Giá trị của khóa (số thứ tự cột 1-based dạng chuỗi) trừ 1. -1 nếu khóa không có (HTKKFormater.cs:752-775).",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả -1. Giá trị không phải số cũng cho -1."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.HaveToValidateHeaderRow": {
+  "purpose": "Quyết định hàng tiêu đề tĩnh của bảng có phải kiểm tra hay không: true nếu có ô khác giá trị mặc định.",
+  "semantics": {
+   "precondition": "Hai overload. (1) header và lstRowValue theo thứ tự ô tĩnh (GeneralFunctions.cs:1412-1439). (2) có thêm sView và odrStt, cột có số thứ tự bằng odrStt được bỏ qua (GeneralFunctions.cs:1441-1465).",
+   "effects": "Overload (1): với ô kiểu điều khiển 16, đổi cả mặc định và giá trị sang số rồi so chuỗi (không ghi ngược vào mảng). Overload (2): với ô có kiểu NumberCellType hoặc điều khiển 16, ghi ngược vào lstRowValue chuỗi số đã chuẩn hóa (rỗng giữ rỗng), nên sửa mảng đầu vào.",
+   "returns": "true nếu tồn tại ô có giá trị không rỗng, mặc định không null và hai chuỗi khác nhau, ngược lại false.",
+   "exceptions": "Ném lại mọi ngoại lệ, không ghi log."
+  },
+  "side_effects": ["ghi vào mảng đầu vào (overload 2)", "ném ngoại lệ"],
+  "calls": ["ConvertHelpers.ConvertToDouble"],
+  "confidence": "cao"
+ },
+ "ValidateBase.CheckMaSoThue5So": {
+  "purpose": "Kiểm tra chuỗi có đúng 5 ký tự và toàn là chữ số.",
+  "semantics": {
+   "precondition": "strMST là chuỗi (ValidateBase.cs:361-368).",
+   "effects": "Không có.",
+   "returns": "true nếu CheckStringIsNumber là true và độ dài đúng 5, ngược lại false.",
+   "exceptions": "Không bắt. strMST null có thể ném tùy CheckStringIsNumber (chưa đọc)."
+  },
+  "side_effects": [],
+  "calls": ["ValidateBase.CheckStringIsNumber"],
+  "confidence": "vừa"
+ },
+ "HTKKFormater.ConvertToDateTime": {
+  "purpose": "Phân tích chuỗi ngày dd/MM/yyyy (bỏ khoảng trắng và gạch dưới) và báo thành công qua tham số out.",
+  "semantics": {
+   "precondition": "input là chuỗi (HTKKFormater.cs:174-196).",
+   "effects": "Gán success. Ban đầu true, thành false nếu chuỗi sau khi bỏ khoảng trắng và gạch dưới không dài đúng 10 ký tự, nhưng vẫn thử phân tích.",
+   "returns": "Ngày phân tích theo mẫu dd/MM/yyyy (Convert.ToDateTime với provider tự dựng). Khi có ngoại lệ (ví dụ chuỗi sai ngày) trả 01/01/1900 và success false.",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log. Chuỗi 10 ký tự nhưng sai ngày thì thành 01/01/1900, không phải MinValue. Chuỗi dài khác 10 nhưng phân tích được thì success false mà vẫn trả ngày phân tích."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "HTKKFormater.toDateDDMMYYYY": {
+  "purpose": "Chuẩn hóa chuỗi ngày nhập (4, 6 hoặc 8 chữ số) thành dd/MM/yyyy.",
+  "semantics": {
+   "precondition": "value có thể chứa các ký tự phân cách chéo, gạch nối, khoảng trắng, các ký tự này bị bỏ trước khi xét độ dài (HTKKFormater.cs:379-440). isMess không có tác dụng (nhánh rỗng).",
+   "effects": "Không có.",
+   "returns": "Chuỗi rỗng nếu value rỗng hoặc độ dài sau làm sạch không là 4, 6, 8. 4 ký tự là năm hợp lệ: '01/01/' cộng năm. 6 ký tự: luôn rỗng (xem lưu ý). 8 ký tự ddMMyyyy hợp lệ: dd/MM/yyyy. Không hợp lệ: rỗng.",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả rỗng. Lưu ý: nhánh 6 ký tự đọc 4 ký tự từ vị trí 4 để kiểm tra năm, vượt độ dài chuỗi nên ném lỗi nếu tháng hợp lệ, còn tháng không hợp lệ thì kết quả rỗng. Cả hai cho rỗng (suy từ độ dài, chưa chạy)."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFormater.IsYear", "HTKKFormater.IsMonth", "HTKKFormater.IsDay", "HTKKFormater.isNullString", "HTKKFile.Log"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.CheckSoHD": {
+  "purpose": "Kiểm tra định dạng ký hiệu số hóa đơn, trả mã lỗi dạng chuỗi.",
+  "semantics": {
+   "precondition": "str là ký hiệu hóa đơn, strLoai là loại ('3' bỏ qua kiểm tra). Dùng biến tĩnh strMauSoHD_01GTKT (GeneralFunctions.cs:2443-2477).",
+   "effects": "Không có.",
+   "returns": "'0' hợp lệ, '1' sai định dạng, '2' sai độ dài. strLoai là '3': '0'. Ngược lại độ dài sau Trim phải là 6 hoặc 8, nếu không '2'. Độ dài 8: hai ký tự đầu là mã nhóm, sáu ký tự cuối là ký hiệu. Độ dài 6: mã nhóm là '01'. Nhánh thường: hai ký tự đầu của ký hiệu thuộc bảng chữ ABCDEGHKLMNPQRSTUVXY, mã nhóm là số lớn hơn 0 và nhỏ hơn 65, ký hiệu chứa dấu chéo với hai ký tự ở vị trí 4 và 5 (đếm từ 1) là số, và ký tự cuối thuộc E, T, P thì '0', còn lại '1'. Nhánh còn lại (không đạt điều kiện thường): '0' chỉ khi strMauSoHD_01GTKT bắt đầu bằng 01GTKT, mã nhóm là NN, hai ký tự thứ 2 và 3 là XC, có dấu chéo, ký tự cuối (hoa) là T hoặc P, ngược lại '1'.",
+   "exceptions": "Bắt, ghi log, ném lại (GeneralFunctions.cs:2470-2474)."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "calls": ["HTKKFormater.IsNumber", "ConvertHelpers.ConvertToInt", "HTKKFile.Log"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.CheckMauSoHD": {
+  "purpose": "Kiểm tra mẫu số hóa đơn so với mẫu chuẩn strTemp, trả mã lỗi dạng chuỗi.",
+  "semantics": {
+   "precondition": "str là mẫu số (bị Trim), strLoai là loại, strTemp là mẫu chuẩn (GeneralFunctions.cs:2479-2566).",
+   "effects": "Không có.",
+   "returns": "'0' hợp lệ. Loại '0': độ dài phải 11 hoặc 13 và 6 ký tự đầu bằng strTemp, ngược lại '1'. Ký tự thứ 7 phải là số, từ 0 đến 9 khi strTemp là 01BHDT, từ 2 đến 9 với strTemp khác, không đạt thì '2'. Ký tự thứ 8 phải là dấu chéo, ba ký tự tiếp là số không âm, hai ký tự cuối (nếu độ dài 13) chỉ có thể là BD hoặc IV, vi phạm thì '1' (mã '1' ghi đè '2'). Loại '3': '0'. Loại '4': '1' nếu 6 ký tự đầu khác strTemp. Loại khác: '1' nếu 3 ký tự đầu khác strTemp hoặc độ dài ngoài 3 đến 20.",
+   "exceptions": "Bắt, ghi log, ném lại. Chuỗi ngắn hơn chỉ số cắt gây lỗi và ném (GeneralFunctions.cs:2559-2563)."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "calls": ["HTKKFormater.IsNumber", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.CheckSoLienHDDT": {
+  "purpose": "Kiểm tra số liên của hóa đơn điện tử theo mẫu số và ký hiệu hóa đơn, trả mã lỗi dạng chuỗi.",
+  "semantics": {
+   "precondition": "str là mẫu số (bị Trim), strLoai là loại, strTemp là mẫu chuẩn, strKyHieuHD là ký hiệu hóa đơn (GeneralFunctions.cs:2568-2597).",
+   "effects": "Không có.",
+   "returns": "'0' mặc định. Chỉ khi strLoai là '0', độ dài 11 hoặc 13 và 6 ký tự đầu bằng strTemp thì xét tiếp ký tự thứ 7 (số liên): không phải số thì '3'. Nếu ký tự cuối của ký hiệu hóa đơn (đã Trim) không phải 'E' thì '0'. Nếu là 'E' thì số liên phải bằng 0, khác 0 thì '3'.",
+   "exceptions": "Bắt, ghi log, ném lại. strKyHieuHD rỗng làm Substring lỗi và ném lại."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "calls": ["HTKKFormater.IsNumber", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.CheckMauSoBLP": {
+  "purpose": "Kiểm tra mẫu số biên lai theo mẫu chuẩn strTemp, trả mã lỗi dạng chuỗi.",
+  "semantics": {
+   "precondition": "str là mẫu số (bị Trim), strLoai là loại, strTemp là mẫu chuẩn (GeneralFunctions.cs:2698-2744).",
+   "effects": "Không có.",
+   "returns": "'0' mặc định. Chỉ khi strLoai là '0': độ dài khác 10 thì '1', 5 ký tự đầu khác strTemp thì '1'. Ký tự thứ 6 là số từ 1 đến 9, nếu không thì mã tạm '2'. Ký tự thứ 7 khác dấu gạch nối thì '1' (trả ngay), ba ký tự cuối không là số không âm thì '1' (trả ngay).",
+   "exceptions": "Bắt, ghi log, ném lại."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "calls": ["HTKKFormater.IsNumber", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.checkTrung": {
+  "purpose": "Tìm các dòng bảng kê có khoảng số (từ số, đến số) chồng lấn nhau cùng ký hiệu, mẫu số, tên hóa đơn và (tùy chọn) mã số thuế.",
+  "semantics": {
+   "precondition": "Sheet thứ tSheet trừ 1 của FpSpread. Các tham số char là chữ cột. Duyệt từ dòng startRow tới khi cột STT có giá trị 'AA' (không phân biệt hoa thường, dòng kết thúc) (GeneralFunctions.cs:3468-3548).",
+   "effects": "Chỉ đọc. So từng dòng với mọi dòng sau nó. Hai dòng chồng lấn khi cả hai thỏa: tên hóa đơn, mẫu số, ký hiệu (và mã số thuế khi isMST) trùng nhau, bốn ô từ số và đến số đều không rỗng, và khoảng [từ,đến] của dòng trước chứa đầu hoặc cuối của dòng sau, hoặc dòng trước nằm hoàn toàn trong dòng sau theo điều kiện đã viết.",
+   "returns": "Mảng chuỗi các chỉ số dòng 0-based (dạng chuỗi) có chồng lấn, không trùng. Không có chồng lấn thì mảng một phần tử rỗng. Lưu ý: một chỉ số chỉ được thêm khi chuỗi gom được chưa chứa chữ số đó như chuỗi con (kiểm tra bằng IndexOf, GeneralFunctions.cs:3522-3530), nên chỉ số 1 có thể bị bỏ sót nếu 12 đã được thêm trước đó.",
+   "exceptions": "Bắt, ghi log, ném lại. Giá trị STT null gây NullReferenceException."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "calls": ["HTKKFile.ColumnLettersToIndex", "ConvertHelpers.ConvertToDouble", "HTKKFormater.isNullString", "HTKKFile.Log"],
+  "confidence": "vừa"
+ },
+ "GeneralFunctions.checkTrungXoa": {
+  "purpose": "Kiểm tra các dải số hóa đơn xóa, mất, hủy có trùng nhau không, trả mã nhóm trùng.",
+  "semantics": {
+   "precondition": "strXoa, strMat, strHuy là chuỗi dải số hóa đơn, rỗng nghĩa là không có (isNullString) (GeneralFunctions.cs:3312-3368).",
+   "effects": "Không có.",
+   "returns": "'0' không trùng. Khi chỉ có hai chuỗi không rỗng: gọi isTrungSoHD trên chuỗi nối hai chuỗi bằng dấu chấm phẩy, trùng thì '1' (xóa với mất), '2' (xóa với hủy), '3' (mất với hủy). Khi cả ba không rỗng: xét ba cặp. Đúng một cặp trùng thì mã của cặp đó, hai cặp trở lên trùng thì '4', không cặp nào thì '0'. Khi có ít hơn hai chuỗi không rỗng: '0'.",
+   "exceptions": "Bắt, ghi log, ném lại."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "calls": ["GeneralFunctions.isTrungSoHD", "HTKKFormater.isNullString", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.checkHDXoa": {
+  "purpose": "Kiểm tra dải số hóa đơn xóa nằm trong khoảng từ số đến số và không trùng số.",
+  "semantics": {
+   "precondition": "Tuso1, denso1 là biên khoảng (số dạng chuỗi), strCheck là danh sách dải ngăn bởi dấu chấm phẩy, mỗi dải là một số hoặc 'a-b' (GeneralFunctions.cs:3190-3244).",
+   "effects": "Không có.",
+   "returns": "'0' hợp lệ, '-1' vi phạm. strCheck rỗng thì '0'. Nếu isDuLieuHL cho là hợp lệ về cú pháp: mỗi số phải nằm trong [Tuso1, denso1] (với dải a-b thì a không nhỏ hơn Tuso1 và b không lớn hơn denso1), vi phạm thì '-1' ngay. Sau đó, nếu isTrungSoHD cho là có trùng số thì '-1'. Cú pháp không hợp lệ thì bỏ qua bước khoảng nhưng vẫn kiểm trùng.",
+   "exceptions": "Bắt, ghi log, ném lại."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "calls": ["GeneralFunctions.isDuLieuHL", "GeneralFunctions.isTrungSoHD", "ConvertHelpers.ConvertToDouble", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.isDuLieuHL": {
+  "purpose": "Kiểm tra cú pháp danh sách số hóa đơn dạng một số, hai số ngăn bằng dấu chấm phẩy, dải a-b hoặc kết hợp.",
+  "semantics": {
+   "precondition": "str là chuỗi, phần tử ngăn bằng dấu chấm phẩy, đầu cuối dải ngăn bằng dấu gạch nối (GeneralFunctions.cs:2788-2944).",
+   "effects": "Không có.",
+   "returns": "true nếu str rỗng (isNullString). Có dấu gạch nối: các đoạn giữa (không phải đầu cuối) phải chứa dấu chấm phẩy, nếu không false. Nhánh chỉ có dấu chấm phẩy: mỗi phần tử phải không rỗng (sau khi bỏ dấu chấm và khoảng trắng), không chứa khoảng trắng, là số nguyên (IsNumber) và không chứa dấu phẩy hoặc dấu chấm. Nhánh chỉ có dấu gạch nối: tương tự cho từng đoạn. Nhánh có cả hai: mỗi phần tử không rỗng, phần tử có dấu gạch nối thì kiểm tra từng đoạn như trên, phần tử không có dấu gạch nối không bị kiểm tra số. Nhánh không có ký tự ngăn: chuỗi phải là số nguyên, không có dấu phẩy, dấu chấm, khoảng trắng.",
+   "exceptions": "Bắt, ghi log, ném lại. Lưu ý: ở nhánh có cả hai ký tự ngăn, lệnh break chỉ thoát vòng trong nên kết quả false vẫn giữ nhưng vòng ngoài tiếp tục."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "calls": ["HTKKFormater.isNullString", "HTKKFormater.IsNullValueAc", "HTKKFormater.IsNumber", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.checkSoTonSoPH": {
+  "purpose": "Phân loại trạng thái nhập của hai khoảng số (tồn đầu kỳ và phát hành trong kỳ) thành mảng 5 mã.",
+  "semantics": {
+   "precondition": "Tuso1, denso1 là khoảng thứ nhất, Tuso2, denso2 là khoảng thứ hai (số dạng chuỗi, rỗng khi isNullString) (GeneralFunctions.cs:3370-3466).",
+   "effects": "Không có.",
+   "returns": "Mảng 5 chuỗi, mặc định rỗng. Phần tử 0: '1' chỉ khoảng 1 có dữ liệu, '2' chỉ khoảng 2, '3' cả hai, '0' không có khoảng nào. Phần tử 1 (khi khoảng 1 có dữ liệu) và phần tử 2 (khi khoảng 2 có dữ liệu): '2' có từ số nhưng thiếu đến số, '1' có đến số nhưng thiếu từ số, '3' đến số nhỏ hơn từ số, '4' hợp lệ. Phần tử 3: '1' khi cả hai khoảng hợp lệ ('4'), đủ bốn ô, và Tuso2 trừ denso1 khác 1 (khoảng 2 không liền ngay sau khoảng 1). Phần tử 4 không bao giờ được gán.",
+   "exceptions": "Bắt, ghi log, ném lại."
+  },
+  "side_effects": ["ghi log khi lỗi", "ném ngoại lệ"],
+  "calls": ["HTKKFormater.isNullString", "ConvertHelpers.ConvertToDouble", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.ValidateDiaBan": {
+  "purpose": "Kiểm tra mã tỉnh, huyện, xã khớp nhau theo tiền tố (3, 5, 7 ký tự).",
+  "semantics": {
+   "precondition": "maTinh, maHuyen, maXa là chuỗi (GeneralFunctions.cs:9561-9584).",
+   "effects": "Không có.",
+   "returns": "true nếu một trong ba mã rỗng. Khi cả ba không rỗng: false nếu độ dài khác 3, 5, 7, hoặc 3 ký tự đầu của maHuyen khác maTinh, hoặc 5 ký tự đầu của maXa khác maHuyen, ngược lại true.",
+   "exceptions": "Bắt, ghi log, trả false (kể cả tham số null)."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.ValidateDiaBan2Cap": {
+  "purpose": "Kiểm tra mã tỉnh và xã khớp nhau theo tiền tố (bỏ qua huyện).",
+  "semantics": {
+   "precondition": "maTinh, maHuyen, maXa là chuỗi, maHuyen không dùng (GeneralFunctions.cs:9586-9602).",
+   "effects": "Không có.",
+   "returns": "false chỉ khi maTinh và maXa không rỗng, maTinh dài 3, maXa dài 7 và 3 ký tự đầu của maXa khác maTinh. Mọi trường hợp khác true (kể cả độ dài sai).",
+   "exceptions": "Bắt, ghi log, trả false (kể cả tham số null)."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ }
+}

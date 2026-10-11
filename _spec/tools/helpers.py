@@ -45,7 +45,7 @@ def t2_counts():
     c = collections.Counter()
     excluded = collections.Counter()
     for x in json.load(open(T2)):
-        if x["category"] == "htkk-helper":
+        if x["category"] == "htkk-helper" or (x["category"] == "bcl" and x["call"].split(".")[0] in CLASSES):
             c[norm(x["call"])] += x["sites"]
         else:
             excluded[x["category"]] += x["sites"]
@@ -81,7 +81,7 @@ def resolve_convert_to_datetime(chk):
     return None
 
 
-def t3_counts(byname):
+def t3_counts(byname, expanded=False):
     sites = set()
     excl = collections.Counter()
     ambiguous = {}
@@ -92,16 +92,19 @@ def t3_counts(byname):
             continue
         for me in json.load(open(f))["methods"]:
             for k in me.get("checks", []):
-                if k["status"] != "unresolved":
+                unres = k["status"] == "unresolved"
+                if not unres and not expanded:
                     continue
                 src = k["source"]["file"]
                 ln = k["source"]["lines"][0]
                 api = norm(k["mark_api"] or "")
+                if not unres:
+                    api = ""
                 if api in ("frmMessage",):
                     excl[api] += 1
                 elif api:
                     sites.add((src, ln, api))
-                for p in (k["message"] or {}).get("parts", []):
+                for p in ((k["message"] or {}).get("parts", []) if unres else []):
                     a = p.get("api")
                     if a == "HTKKFile.GetMessage":
                         sites.add((src, p.get("gm_line"), a))
@@ -109,7 +112,8 @@ def t3_counts(byname):
                         excl[a] += 1
                     elif a == "frmMessage":
                         excl[a] += 1
-                for nm in set(re.findall(r"\b([A-Za-z_]\w*)\(", k["condition"])):
+                texts = k["condition"] + (" " + " ".join(str(v) for v in k.get("bindings", {}).values()) if expanded else "")
+                for nm in set(re.findall(r"\b([A-Za-z_]\w*)\(", texts)):
                     cand = byname.get(nm)
                     if cand:
                         if len(cand) > 1:
@@ -178,6 +182,42 @@ def features(body, selfkey, methods):
     return tags, sorted(set(calls))
 
 
+def neutral_params(raw):
+    """Đổi chuỗi tham số C# (kiểu tên, ...) sang dạng trung tính 'tên: kiểu', bỏ từ khóa this/out/ref/params, giá trị mặc định thành '(tùy chọn)'."""
+    if not raw or not raw.strip():
+        return ""
+    parts, depth, cur = [], 0, ""
+    for ch in raw:
+        if ch in "<([":
+            depth += 1
+        elif ch in ">)]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append(cur)
+            cur = ""
+        else:
+            cur += ch
+    parts.append(cur)
+    out = []
+    for pt in parts:
+        pt = pt.strip()
+        opt = ""
+        if "=" in pt:
+            pt = pt.split("=")[0].strip()
+            opt = " (tùy chọn)"
+        mode = ""
+        for kw, lab in (("this ", ""), ("out ", " (tham số ra)"), ("ref ", " (tham chiếu)"), ("params ", " (mảng biến)")):
+            if pt.startswith(kw):
+                pt = pt[len(kw):]
+                mode = lab
+        i = pt.rfind(" ")
+        if i < 0:
+            out.append(pt + mode + opt)
+        else:
+            out.append("%s: %s%s%s" % (pt[i + 1:], pt[:i].strip(), mode, opt))
+    return ", ".join(out)
+
+
 def ws(s):
     return re.sub(r"\s+", " ", s).strip()
 
@@ -196,8 +236,7 @@ def verbatim_guard(spec, bodies):
             elif isinstance(o, list):
                 for v in o:
                     yield from strs(v)
-        skip = {"file"}
-        for s in strs({k: v for k, v in sp.items() if k not in ("source", "overloads")}):
+        for s in strs({k: v for k, v in sp.items() if k != "source"}):
             t = ws(s).replace(key.split(".", 1)[1], "NAME")
             if ";" in t or "{" in t:
                 bad.append((key, "ký tự ; hoặc {", t[:60]))
@@ -245,6 +284,7 @@ def input_versions():
                "messages_unresolved_sha256_16": sha(T3DIR + "/messages_unresolved.json")},
         "T0_index": {"worktree": "agent-a9857e03398898f03", "head_commit": worktree_head("agent-a9857e03398898f03"),
                      "sha256_16": sha(IDX)},
+        "pinned": {"T2": "4b70bc8", "T3": "0ac3566", "ghi_chu": "Brief yêu cầu T2 4b70bc8 và T3 0ac3566. HEAD T3 hiện tại có thể đã tiến lên, nhưng sha256_16_all_files f007a37602e7d708 và messages_unresolved e5fa6cc5279ec323 trùng lần chạy trên 0ac3566, nên dữ liệu đọc không đổi."},
         "note": "Commit là HEAD của nhánh worktree lúc chạy. Thay đổi chưa commit trong worktree đó (T2, T3 đang được sửa) không hiện ở commit nên sha256 của tệp là định danh chính xác của dữ liệu đọc.",
     }
 
@@ -253,7 +293,12 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     methods, byname = load_index()
     t2, ex2 = t2_counts()
-    t3, ex3, amb = t3_counts(byname)
+    t3_old, _, _ = t3_counts(byname, False)
+    old_total = collections.Counter(t2)
+    for k, v in t3_old.items():
+        old_total[k] += v
+    _, old_chosen, old_grand, old_cum = cover(old_total)
+    t3, ex3, amb = t3_counts(byname, True)
     total = collections.Counter()
     for k, v in t2.items():
         total[k] += v
@@ -270,6 +315,9 @@ def main():
     print("T2 loại trừ (không phải htkk-helper):", dict(ex2))
     print("T3 loại trừ:", dict(ex3))
     print("T3 tên không qualified khớp nhiều class, kết quả gán theo mã nguồn:", {k: dict(v) for k, v in amb.items()})
+    print("ĐỊNH NGHĨA CŨ (T3 chỉ check unresolved): phủ %.4f%% (%d/%d), %d hàm trong tập phủ, %d hàm khác nhau"
+          % (100 * old_cum / old_grand, old_cum, old_grand, len(old_chosen), len(old_total)))
+    print("ĐỊNH NGHĨA MỚI (T3 thêm tên trong condition và bindings ở mọi status):")
     print("Tổng lượt gọi helper T2 =", sum(t2.values()), "| T3 =", sum(t3.values()), "| gộp =", grand)
     print("Số hàm khác nhau: T2 =", len(t2), "| T3 =", len(t3), "| gộp =", len(total))
     print("Số hàm trong tập phủ =", len(chosen))
@@ -279,7 +327,7 @@ def main():
     print("Tên chưa khớp index:", unmatched)
 
     overlay = {}
-    for opn in ("manual_overlay.json", "manual_overlay2.json", "manual_overlay3.json", "manual_overlay4.json", "manual_overlay5.json"):
+    for opn in ("manual_overlay.json", "manual_overlay2.json", "manual_overlay3.json", "manual_overlay4.json", "manual_overlay5.json", "manual_overlay6.json"):
         op = OUT + opn
         if os.path.exists(op):
             overlay.update(json.load(open(op)))
@@ -308,7 +356,7 @@ def main():
             conf = "thấp"
         spec[key] = {
             "name": key,
-            "overloads": [{"params": o["params"], "return_type": o["return_type"],
+            "overloads": [{"params": neutral_params(o["params"]), "return_type": o["return_type"],
                            "lines": [o["start"], o["end"]]} for o in ovs],
             "purpose": purpose, "semantics": sem, "side_effects": tags, "calls": calls,
             "source": {"file": "_decompiled/" + ovs[0]["file"], "lines": [[o["start"], o["end"]] for o in ovs]},
@@ -316,6 +364,13 @@ def main():
             "call_count": {"t2": t2.get(key, 0), "t3": t3.get(key, 0), "total": total[key]},
         }
     bad = verbatim_guard(spec, bodies)
+    raw_params = {o["params"] for k in spec for o in methods[k] if o["params"] and ("," in o["params"] or " " in o["params"])}
+    dump = json.dumps(list(spec.values()), ensure_ascii=False)
+    for rp in raw_params:
+        if rp in dump:
+            bad.append(("overloads.params", "còn chuỗi chữ ký C# nguyên văn", rp[:60]))
+    n_params = sum(len(v["overloads"]) for v in spec.values())
+    print("Số overload có params viết lại trung tính:", n_params, "| chuỗi chữ ký thô còn sót:", sum(1 for rp in raw_params if rp in dump))
     print("Kiểm tra không chép nguyên văn:", "ĐẠT" if not bad else "KHÔNG ĐẠT %s" % bad[:5])
     print("Số đặc tả có overlay tay:", sum(1 for k in spec if k in overlay),
           "| confidence:", dict(collections.Counter(v["confidence"] for v in spec.values())))
@@ -335,7 +390,7 @@ def main():
     print("Phiên bản đầu vào:", json.dumps(iv, ensure_ascii=False))
     print("ConvertToDateTime không qualified:", {k: dict(v) for k, v in amb.items()})
     json.dump({"threshold_pct": 100 * THRESH, "input_versions": iv,
-               "t3_denominator_definition": "Mỗi lượt T3 là một vị trí mã (file nguồn, dòng đầu của check hoặc dòng GetMessage, hàm helper) duy nhất, lấy từ: (a) mark_api của check status unresolved, (b) message.parts.api là HTKKFile.GetMessage của check unresolved, (c) tên hàm trong condition của check unresolved nếu khớp đúng một method của 5 class GeneralFunctions, ConvertHelpers, HTKKFile, ValidateBase, HTKKFormater (tên trùng nhiều class được gán theo tiền tố class ở dòng mã nguồn của check, không gán được thì loại), (d) mỗi mục của messages_unresolved.json là một vị trí HTKKFile.GetMessage. Quét _spec/validations/*.json và _spec/validations/_app/*.json, bỏ index.json. Loại direct_cell_read và frmMessage. Không tính method.calls[]. Hai nguồn trùng vị trí chỉ tính một lần. T3 có thể chồng lên T2 ở cùng dòng mã, tổng gộp là tổng lượt không khử chồng giữa T2 và T3.",
+               "t3_denominator_definition_v2": "Định nghĩa mới: giữ các thành phần (a) mark_api, (b) message.parts, (d) messages_unresolved chỉ cho check unresolved như trước, và (c) mở rộng: tên hàm (khớp đúng method của 5 class) trong condition VÀ trong mọi giá trị của bindings của check ở MỌI status (resolved, parametric, unresolved). Dedupe theo (tệp nguồn, dòng đầu check, hàm). T2: các tên helper nằm trong giá trị, guard, trigger của record mà không qua opaque được quét (regex tên hoặc Class.tên theo sau dấu mở ngoặc), kết quả 0 vị trí nên mẫu số T2 không đổi. Nhãn: ValidateBase.CheckMaSoThue và CheckMaSoThueCCCD (T2 gán bcl) được tính là helper vì thuộc class helper (quy tắc: category bcl mà tiền tố là một trong 5 class). Định nghĩa cũ (chỉ check unresolved) vẫn được tính song song và in ra.", "t3_denominator_definition": "Mỗi lượt T3 là một vị trí mã (file nguồn, dòng đầu của check hoặc dòng GetMessage, hàm helper) duy nhất, lấy từ: (a) mark_api của check status unresolved, (b) message.parts.api là HTKKFile.GetMessage của check unresolved, (c) tên hàm trong condition của check unresolved nếu khớp đúng một method của 5 class GeneralFunctions, ConvertHelpers, HTKKFile, ValidateBase, HTKKFormater (tên trùng nhiều class được gán theo tiền tố class ở dòng mã nguồn của check, không gán được thì loại), (d) mỗi mục của messages_unresolved.json là một vị trí HTKKFile.GetMessage. Quét _spec/validations/*.json và _spec/validations/_app/*.json, bỏ index.json. Loại direct_cell_read và frmMessage. Không tính method.calls[]. Hai nguồn trùng vị trí chỉ tính một lần. T3 có thể chồng lên T2 ở cùng dòng mã, tổng gộp là tổng lượt không khử chồng giữa T2 và T3.",
                "ambiguous_name_resolution": {k: dict(v) for k, v in amb.items()},
                "denominator": {"t2_helper_sites": sum(t2.values()), "t3_helper_sites_dedup": sum(t3.values()),
                                "combined": grand, "distinct_functions": len(total)},
