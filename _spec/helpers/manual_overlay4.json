@@ -1,0 +1,74 @@
+{
+ "GeneralFunctions.ArrayCellId": {
+  "purpose": "Đổi mã ô dạng 'chữ cột_số dòng' thành cặp chỉ số 0-based [cột, dòng].",
+  "semantics": {
+   "precondition": "cellId có hai phần ngăn bởi dấu gạch dưới, phần đầu là chữ cái cột, phần sau là số dòng 1-based (GeneralFunctions.cs:1362-1364).",
+   "effects": "Không ghi trạng thái, khi lỗi chỉ ghi log (GeneralFunctions.cs:1369).",
+   "returns": "Mảng 2 số nguyên: chỉ số cột (ColumnLettersToIndex trừ 1) và chỉ số dòng (số dòng trừ 1), trả [-1,-1] nếu cellId sai định dạng (GeneralFunctions.cs:1363-1364, 1370).",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả [-1,-1]."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.ColumnLettersToIndex", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.SoNgayNopCham": {
+  "purpose": "Tính số ngày nộp chậm của tờ khai bổ sung: chênh lệch giữa ngày lập KHBS và hạn nộp tờ khai.",
+  "semantics": {
+   "precondition": "periodInfo.NgayLapKHBS rỗng hoặc có dạng d/M/yyyy, hạn nộp lấy từ GetHanNopToKhai với periodInfo và HeaderInfo (GeneralFunctions.cs:1517, 1524).",
+   "effects": "Chỉ tính, khi lỗi ghi log rồi ném lại ngoại lệ.",
+   "returns": "Số nguyên >= 0: số ngày (ngày lập KHBS trừ hạn nộp), 0 nếu NgayLapKHBS rỗng hoặc ngày lập không sau hạn nộp (GeneralFunctions.cs:1520, 1525-1526).",
+   "exceptions": "Chuỗi ngày sai định dạng gây FormatException, hàm ghi log và ném lại (GeneralFunctions.cs:1534). Lệnh gọi GetHanNopToKhai nằm ngoài khối bắt lỗi (GeneralFunctions.cs:1517)."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["GeneralFunctions.GetHanNopToKhai", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetCellValild": {
+  "purpose": "Tách tham chiếu ô dạng 'Sheet'!Ô thành chuỗi ba phần 'tên sheet#số dòng#chữ cột'.",
+  "semantics": {
+   "precondition": "cellFomular có dấu '!' ngăn tên sheet và địa chỉ ô, dấu nháy đơn bị bỏ trước khi tách (GeneralFunctions.cs:3750).",
+   "effects": "Chỉ tính, khi lỗi ghi log.",
+   "returns": "Tên sheet + '#' + dãy chữ số ở cuối địa chỉ + '#' + phần còn lại của địa chỉ (GeneralFunctions.cs:3775). Duyệt từ cuối địa chỉ về đầu, gom ký tự số liên tiếp cho tới ký tự không phải số (GeneralFunctions.cs:3753-3772). null nếu thiếu dấu '!' hoặc lỗi (GeneralFunctions.cs:3780).",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả null. Phần còn lại tính bằng cách xóa mọi lần xuất hiện của dãy chữ số khỏi địa chỉ (GeneralFunctions.cs:3772), nên địa chỉ có dãy số lặp ở vị trí khác có thể cho kết quả khác dự kiến. Địa chỉ toàn chữ số (không có ký tự không phải số) cho phần còn lại rỗng."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.DetectIndexOfSheet": {
+  "purpose": "Tìm chỉ số sheet trong danh sách mà tên sheet xuất hiện trong chuỗi công thức.",
+  "semantics": {
+   "precondition": "sInfos là danh sách thông tin sheet (phần tử null được bỏ qua), formula là chuỗi công thức.",
+   "effects": "Chỉ đọc, khi lỗi ghi log.",
+   "returns": "Chỉ số 0-based của sheet đầu tiên theo thứ tự danh sách có SheetName không rỗng và là chuỗi con của formula, -1 nếu không có hoặc lỗi (GeneralFunctions.cs:4975-4985). Nhánh riêng cho công thức chứa PL_GiamThue_GTGT_23_24 (GeneralFunctions.cs:4979) dùng cùng điều kiện khớp tên nên không đổi kết quả, trừ khi SheetName rỗng (khi đó Contains rỗng luôn đúng và trả chỉ số đó).",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả -1 (GeneralFunctions.cs:4990). So khớp theo chuỗi con nên tên sheet là phần của tên khác có thể khớp sai, kết quả phụ thuộc thứ tự danh sách."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.SetFormulaNextRow": {
+  "purpose": "Thay ký hiệu giữ chỗ dòng '###' trong công thức mẫu bằng số dòng mới.",
+  "semantics": {
+   "precondition": "formula là chuỗi công thức mẫu chứa '###' tại vị trí số dòng.",
+   "effects": "Chỉ tính, khi lỗi ghi log.",
+   "returns": "Chuỗi rỗng nếu formula null hoặc rỗng (GeneralFunctions.cs:9134-9136), ngược lại formula với mọi '###' thay bằng newRow (GeneralFunctions.cs:9138). Nếu lỗi trả formula nguyên bản (GeneralFunctions.cs:9143).",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả formula."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetValueCustom": {
+  "purpose": "Đọc giá trị ô và chuẩn hóa thành chuỗi theo mã loại điều khiển (checkbox, ngày, giờ, ngày giờ, số, nút, mặc định).",
+  "semantics": {
+   "precondition": "iRow, iCol 1-based, nếu một trong hai âm thì trả chuỗi rỗng (GeneralFunctions.cs:361-363). controlType là mã loại điều khiển dạng chuỗi.",
+   "effects": "Chỉ đọc ô. Lỗi thì ghi log (GeneralFunctions.cs:368).",
+   "returns": "Chuỗi rỗng nếu Value của ô null (GeneralFunctions.cs:356-358). Mã 2: 'True' nếu giá trị (không phân biệt hoa thường) là true, ngược lại 'False' (GeneralFunctions.cs:270-273). Mã 14 (ngày): 8 ký tự ddMMyyyy thành dd/MM/yyyy, 10 ký tự (sau Trim) giữ nguyên, độ dài khác thì rỗng (GeneralFunctions.cs:274-284). Mã 96 (giờ): 6 ký tự hhmmss thành hh:mm:ss, 8 ký tự giữ nguyên, khác thì rỗng (GeneralFunctions.cs:285-295). Mã 94 (ngày giờ): 14 ký tự ddMMyyyyhhmmss thành dd/MM/yyyy hh:mm:ss, 18 ký tự giữ nguyên, khác thì rỗng (GeneralFunctions.cs:296-306). Mã 0: Text hiển thị của ô (GeneralFunctions.cs:307-309). Mã 16: Value.ToString() (GeneralFunctions.cs:310-315). Mã khác (GeneralFunctions.cs:316-352): ô kiểu Number: Value.ToString() hoặc rỗng, ô kiểu General có NumberFormat: Value.ToString() hoặc rỗng, ô kiểu General không có NumberFormat và kiểu khác: Text đã thoát XML bốn ký tự & \" > <, ô kiểu Button: tiền tố 'TaiBangKe' nối Text của nút, rỗng nếu Text null.",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả chuỗi rỗng. Mã 16 và nhánh mặc định có thể trả sớm bằng return trực tiếp."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ }
+}
