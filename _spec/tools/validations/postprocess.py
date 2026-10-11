@@ -13,6 +13,7 @@ MAPPING = {
     "x.TotalDays": "days(x)",
     "workbook.ActiveSheetIndex": "active_sheet()",
     "sheet(...).ActiveRowIndex; sheet(...).ActiveCell.Row.Index": "active_row()",
+    "sheet(...).ActiveColumnIndex; sheet(...).ActiveCell.Column.Index": "active_col()",
     "GetType(x)": "type_of(x)",
     "x.Text": "text(x)",
     "IsNulOrEmpty(x)": "is_empty(x)",
@@ -144,6 +145,10 @@ def norm(s, info):
     s = sub(s, r"\w+(?:\.\w+)*\.ActiveSheetIndex\b", lambda mo, t: "active_sheet()")
     s = sub(s, r"\w+(?:\.\w+)*\.ActiveRowIndex\b", lambda mo, t: "active_row()")
     s = sub(s, r"\w+(?:\.\w+)*\.ActiveCell\.Row\.Index\b", lambda mo, t: "active_row()")
+    s = sub(s, r"sheet\([^()]*\)\.ActiveColumnIndex\b", lambda mo, t: "active_col()")
+    s = sub(s, r"sheet\([^()]*\)\.ActiveCell\.Column\.Index\b", lambda mo, t: "active_col()")
+    s = sub(s, r"\w+(?:\.\w+)*\.ActiveColumnIndex\b", lambda mo, t: "active_col()")
+    s = sub(s, r"\w+(?:\.\w+)*\.ActiveCell\.Column\.Index\b", lambda mo, t: "active_col()")
     # culture / styles
     def cul(mo, t):
         info.setdefault("culture", set()).add(mo.group(1))

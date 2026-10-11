@@ -16,6 +16,8 @@ PATS = {
     "IsNulOrEmpty": r"IsNulOrEmpty",
     "ToStringOrDefault": r"ToStringOrDefault",
     "ActiveCell.Row.Index": r"ActiveCell\.Row\.Index",
+    "ActiveCell.Column.Index": r"ActiveCell\.Column\.Index",
+    "ActiveColumnIndex": r"ActiveColumnIndex",
     ".Text": r"\.Text\b",
     "lambda =>": r"=>",
 }
