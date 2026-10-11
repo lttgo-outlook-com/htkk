@@ -13,9 +13,9 @@ import sys
 
 WT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ROOT = "/Users/tuanle/codes/HTKK"
-T2 = ROOT + "/.claude/worktrees/agent-a69710347074048d8/_spec/rules/opaque_calls.json"
-T3DIR = ROOT + "/.claude/worktrees/agent-ae09dfc0b7c50411a/_spec/validations"
-IDX = ROOT + "/.claude/worktrees/agent-a9857e03398898f03/_spec/csharp/index.json"
+T2 = WT + "/_spec/rules/opaque_calls.json"
+T3DIR = WT + "/_spec/validations"
+IDX = WT + "/_spec/csharp/index.json"
 DEC = ROOT + "/_decompiled/"
 OUT = WT + "/_spec/helpers/"
 CLASSES = {"GeneralFunctions", "ConvertHelpers", "HTKKFile", "ValidateBase", "HTKKFormater"}
@@ -283,15 +283,13 @@ def input_versions():
     for f in t3files:
         h.update(open(f, "rb").read())
     return {
-        "T2": {"worktree": "agent-a69710347074048d8", "head_commit": worktree_head("agent-a69710347074048d8"),
-               "file": "_spec/rules/opaque_calls.json", "sha256_16": sha(T2)},
-        "T3": {"worktree": "agent-ae09dfc0b7c50411a", "head_commit": worktree_head("agent-ae09dfc0b7c50411a"),
+        "T2": {"path": "_spec/rules/opaque_calls.json", "branch_head_merged": "f57052f",
+               "sha256_16": sha(T2)},
+        "T3": {"path": "_spec/validations", "branch_head_merged": "e9eb658",
                "files": len(t3files), "sha256_16_all_files": h.hexdigest()[:16],
                "messages_unresolved_sha256_16": sha(T3DIR + "/messages_unresolved.json")},
-        "T0_index": {"worktree": "agent-a9857e03398898f03", "head_commit": worktree_head("agent-a9857e03398898f03"),
-                     "sha256_16": sha(IDX)},
-        "pinned": {"T2": "4b70bc8", "T3": "0ac3566", "ghi_chu": "Brief yêu cầu T2 4b70bc8 và T3 0ac3566. HEAD T3 hiện tại có thể đã tiến lên, nhưng sha256_16_all_files f007a37602e7d708 và messages_unresolved e5fa6cc5279ec323 trùng lần chạy trên 0ac3566, nên dữ liệu đọc không đổi."},
-        "note": "Commit là HEAD của nhánh worktree lúc chạy. Thay đổi chưa commit trong worktree đó (T2, T3 đang được sửa) không hiện ở commit nên sha256 của tệp là định danh chính xác của dữ liệu đọc.",
+        "T0_index": {"path": "_spec/csharp/index.json", "sha256_16": sha(IDX)},
+        "note": "Đọc từ chính repo (nhánh tích hợp). branch_head_merged là HEAD nhánh nguồn đã gộp; T3 có thể đã qua postprocess sau khi gộp, nên sha256 là định danh chính xác của dữ liệu đọc.",
     }
 
 
@@ -385,8 +383,8 @@ def main():
     print("Số đặc tả có overlay tay:", sum(1 for k in spec if k in overlay),
           "| confidence:", dict(collections.Counter(v["confidence"] for v in spec.values())))
 
-    json.dump({"generated_from": {"T2": T2.split("/.claude/")[1], "T3": "agent-ae09dfc0b7c50411a/_spec/validations",
-                                  "index": "agent-a9857e03398898f03/_spec/csharp/index.json"},
+    json.dump({"generated_from": {"T2": "_spec/rules/opaque_calls.json", "T3": "_spec/validations",
+                                  "index": "_spec/csharp/index.json"},
                "count": len(spec), "helpers": list(spec.values())},
               open(OUT + "helpers.json", "w"), ensure_ascii=False, indent=1)
     cov_rows = []
