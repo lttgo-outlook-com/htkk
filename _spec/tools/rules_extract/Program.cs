@@ -316,6 +316,17 @@ void Tokens(object o, string k, HashSet<string> acc)
         case System.Collections.IEnumerable l: foreach (var x in l) Tokens(x, k, acc); break;
     }
 }
+var kindRx = new System.Text.RegularExpressions.Regex("opaque\\((call|result|branches)\\)\u001F\\d+:([A-Za-z_]\\w*)\u001F", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+void KindNames(string t, object o, SortedDictionary<string, string> acc)
+{
+    if (t != null) { foreach (System.Text.RegularExpressions.Match m in kindRx.Matches(t)) acc.TryAdd(m.Groups[2].Value, m.Groups[1].Value); return; }
+    switch (o)
+    {
+        case string st: KindNames(st, null, acc); break;
+        case System.Collections.IDictionary d: foreach (System.Collections.DictionaryEntry e in d) KindNames(null, e.Value, acc); break;
+        case System.Collections.IEnumerable l: foreach (var x in l) KindNames(null, x, acc); break;
+    }
+}
 bool Contradictory(List<Cond> conj)
 {
     for (int i = 0; i < conj.Count; i++)
@@ -330,7 +341,8 @@ int recUnreachable = 0, recWithSyms = 0, symEntries = 0;
 List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<string, object> key, string hook, string kind, int sheet, string file, string ctxLabel, SortedDictionary<string, List<SymInfo>> syms)
 {
     var groupConj = new Dictionary<string, List<List<Cond>>>(StringComparer.Ordinal);
-    var groupNames = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal); // tên trong dấu ẩn của điều kiện (trước khi bỏ dấu)
+    var groupNames = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+    var groupKinds = new Dictionary<string, SortedDictionary<string, string>>(StringComparer.Ordinal); // tên -> loại nhãn opaque (call/result/branches) // tên trong dấu ẩn của điều kiện (trước khi bỏ dấu)
     var groups = new List<(string gk, List<Effect> effs, List<Cond> trig, List<string> guards)>();
     var effSeen = new HashSet<string>(StringComparer.Ordinal);
     var gidx = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -348,6 +360,7 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
         foreach (var lp in ef.Loops) guards.Add("loop: " + lp.Desc);
         // nhóm theo văn bản hiển thị (bỏ dấu ẩn); cờ unreachable chỉ khi mọi effect của nhóm có đường đi mâu thuẫn
         var rawNames = guards.SelectMany(Mk.Names).ToList();
+        foreach (var gtxt in guards) KindNames(gtxt, null, groupKinds.TryGetValue(string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards.Select(Mk.Strip).Distinct(StringComparer.Ordinal)), out var gkk) ? gkk : (groupKinds[string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards.Select(Mk.Strip).Distinct(StringComparer.Ordinal))] = new SortedDictionary<string, string>(StringComparer.Ordinal)));
         guards = guards.Select(Mk.Strip).Distinct(StringComparer.Ordinal).ToList();
         string gk = string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards);
         if (!gidx.TryGetValue(gk, out var gi)) { gi = groups.Count; gidx[gk] = gi; groups.Add((gk, new List<Effect>(), trig, guards)); groupConj[gk] = new List<List<Cond>>(); groupNames[gk] = new HashSet<string>(StringComparer.Ordinal); }
@@ -430,6 +443,16 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
                 foreach (var si in sl.OrderBy(x => x.Line).ThenBy(x => x.Origin, StringComparer.Ordinal))
                     symJ.Add(new Dictionary<string, object> { ["name"] = si.Name, ["origin"] = si.Origin, ["at"] = si.Line, ["desc"] = si.Desc });
             }
+        // tên bị ẩn khỏi nhãn opaque(call/result/branches) luôn có mục symbols tương ứng
+        var kinds = new SortedDictionary<string, string>(StringComparer.Ordinal);
+        if (groupKinds.TryGetValue(g.gk, out var gk0)) foreach (var kv in gk0) kinds[kv.Key] = kv.Value;
+        KindNames(null, trigJ, kinds); KindNames(null, effJson, kinds);
+        foreach (var (nm, kd) in kinds)
+        {
+            string org = kd == "call" ? "method" : kd == "result" ? "method-result" : "merge";
+            if (!symJ.Any(x => x is Dictionary<string, object> sd && (string)sd["name"] == nm && (string)sd["origin"] == org))
+                symJ.Add(new Dictionary<string, object> { ["name"] = nm, ["origin"] = org, ["at"] = lmin == int.MaxValue ? 0 : lmin, ["desc"] = "tên bị ẩn khỏi nhãn opaque(" + kd + ")" });
+        }
         if (symJ.Count > 0) { recWithSyms++; symEntries += symJ.Count; }
         recs.Add(new Dictionary<string, object>
         {
