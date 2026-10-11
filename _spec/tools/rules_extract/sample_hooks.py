@@ -66,7 +66,7 @@ print("THAY SLOT:", "; ".join(replaced) if replaced else "không")
 for n, (im, (cls, hook, path, s, e, lines)) in enumerate(pick, 1):
     src = open(os.path.join(dec, path), encoding="utf-8-sig").read().split("\n")
     d = json.load(open(os.path.join(rules, cls + ".json")))
-    k = 15 if im == "long" else 6
+    k = 15  # QC4: mỗi hook ít nhất 15 dòng (hook ít dòng tác dụng hơn thì đọc hết)
     chosen = lines if len(lines) <= k else sorted({lines[(len(lines) - 1) * i // (k - 1)] for i in range(k)})
     print("=" * 8, n, "in_menu=%s" % im, cls, hook, "%d-%d" % (s, e), "effect-lines=%d" % len(lines))
     for ln in chosen:

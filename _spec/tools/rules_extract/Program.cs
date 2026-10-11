@@ -686,6 +686,13 @@ foreach (var row in classRows)
                     why = "đã nội tuyến " + cn + "@" + l0 + " nhưng không lệnh ghi ô nào tới được: " + (inner.Count > 0 ? string.Join("; ", inner.Distinct().Take(3)) : "nhánh ghi ô bị loại theo đối số truyền vào hoặc trả về sớm");
                 }
             }
+            if (cat.StartsWith("call:", StringComparison.Ordinal) && why != null)
+            {
+                // effect opaque qua cùng lời gọi: nêu rõ trong lý do (không có lệnh ghi ô xác định, còn lời gọi chưa giải có thể ghi ô)
+                string cn2 = cat.Substring(5);
+                var opqCalls = it.Effects.Where(e => e.Op == "opaque" && e.Via != null && (e.Via == cn2 + "@" + l0 || e.Via.StartsWith(cn2 + "@" + l0 + " > ", StringComparison.Ordinal))).Select(e => (string)e.Params["call"]).Distinct().OrderBy(x => x, StringComparer.Ordinal).ToList();
+                if (opqCalls.Count > 0) why = why.Replace(") không ghi ô, chỉ overload khác", ") không có lệnh ghi ô xác định, chỉ overload khác") + ". Tác dụng còn lại qua lời gọi này là lời gọi chưa giải có thể ghi ô (effect opaque): " + string.Join(", ", opqCalls);
+            }
             why ??= Generic(n);
             var dj = new Dictionary<string, object> { ["at"] = l0, ["reason"] = why };
             if (cat != "cell") dj["kind"] = cat.StartsWith("call:", StringComparison.Ordinal) ? "call" : cat;
