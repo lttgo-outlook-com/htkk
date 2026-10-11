@@ -66,6 +66,21 @@ def resolve_by_source(nm, cand, chk):
     return None
 
 
+def resolve_convert_to_datetime(chk):
+    """ConvertToDateTime không qualified trong condition: overload HTKKFormater nhận (string, out bool) nên đối số thứ hai là biến
+    success; overload ConvertHelpers nhận (object, string format). Chỉ gán khi tệp nguồn có gọi qualified tương ứng."""
+    try:
+        with open(ROOT + "/" + chk["source"]["file"], encoding="utf-8", errors="replace") as fh:
+            text = fh.read()
+    except OSError:
+        return None
+    if re.search(r"ConvertToDateTime\([^\n]*,\s*success\)", chk["condition"]):
+        return "HTKKFormater.ConvertToDateTime" if "HTKKFormater.ConvertToDateTime(" in text else None
+    if "ConvertHelpers.ConvertToDateTime(" in text:
+        return "ConvertHelpers.ConvertToDateTime"
+    return None
+
+
 def t3_counts(byname):
     sites = set()
     excl = collections.Counter()
@@ -99,6 +114,8 @@ def t3_counts(byname):
                     if cand:
                         if len(cand) > 1:
                             cls = resolve_by_source(nm, cand, k)
+                            if cls is None and nm == "ConvertToDateTime":
+                                cls = resolve_convert_to_datetime(k)
                             ambiguous.setdefault(nm, collections.Counter())[cls or "chưa gán được"] += 1
                             if cls:
                                 sites.add((src, ln, cls))
@@ -262,7 +279,7 @@ def main():
     print("Tên chưa khớp index:", unmatched)
 
     overlay = {}
-    for opn in ("manual_overlay.json", "manual_overlay2.json", "manual_overlay3.json", "manual_overlay4.json"):
+    for opn in ("manual_overlay.json", "manual_overlay2.json", "manual_overlay3.json", "manual_overlay4.json", "manual_overlay5.json"):
         op = OUT + opn
         if os.path.exists(op):
             overlay.update(json.load(open(op)))
@@ -326,6 +343,10 @@ def main():
                "cover_set_size": len(chosen), "covered_sites": cum, "coverage_pct": round(100 * cum / grand, 4),
                "crosscheck_set_sum_equal": cum == cum2, "unmatched_in_index": unmatched,
                
+               "notes": {
+                   "t2_convert_to_datetime": "T2 4b70bc8 không còn ghi 231 lượt ConvertHelpers.ConvertToDateTime (T2 trước d5157c1) trong opaque_calls.json. Tra _spec/rules của T2: tên này xuất hiện 0 lần, toDate(...) xuất hiện 1657 lần. Dnht01Nckt241, 222, 244, 283, 286 (cùng nguồn Dnht01Nckt241.cs:366-385) mỗi tệp có 7 chuỗi toDate với dd/MM/yyyy thay cho lời gọi, nghĩa là T2 đã mô hình hóa ConvertToDateTime thành toDate. Các tệp BlpTbac01Nckt200, CnkdBcSdhd01Nckt250, Tncn05DkThTctNckt100/101, Tndn04TT80Nckt269, Ntnn01TT80Nckt251 có lời gọi trong mã nguồn nhưng 0 toDate và 0 tên helper trong rules, tức nằm ở phần T3 (kiểm tra) hoặc chưa trích; chưa xác minh từng vị trí một. Kết luận: giảm 231 lượt là do mô hình hóa, không phải mất dữ liệu, nhưng độ phủ vị trí còn lại chưa kiểm hết.",
+                   "t3_convert_to_datetime_unassigned": "11 điều kiện T3 gọi ConvertToDateTime không qualified, đều có tên chuẩn trong tệp nguồn. Đã gán: BkntKtnt01Tt89Nckt309.cs dòng 233 là HTKKFormater.ConvertToDateTime (đối số thứ hai là biến success, overload out bool, gọi ở dòng 219). 10 vị trí còn lại là ConvertHelpers.ConvertToDateTime (đối số thứ hai là định dạng dd/MM/yyyy): BkntKtnt01Tt89Nckt309.cs dòng 271, 278, 285, 299, 311 (gọi ở dòng 269, 276, 283, 297, 309) và Ntnn04TT80Nckt251.cs dòng 275, 280, 293, 298, 303 (gọi ở dòng 267, 290). Quy tắc gán nằm ở resolve_convert_to_datetime trong helpers.py. Không còn vị trí chưa gán.",
+               },
                "assumptions": ["T2: chỉ category htkk-helper; bỏ bcl, object-member, class-local",
                                "T3: mark_api + message.parts.api + tên hàm trong condition của check unresolved + messages_unresolved; dedupe theo (file, dòng, hàm)",
                                "Chuẩn hóa: bỏ hậu tố /N, giữ tiền tố class; overload gộp"],

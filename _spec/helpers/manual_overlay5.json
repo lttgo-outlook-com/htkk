@@ -1,0 +1,72 @@
+{
+ "GeneralFunctions.ArrayCellId": {
+  "purpose": "Đổi mã ô dạng 'chữ cột_số dòng' thành cặp chỉ số 0-based [cột, dòng].",
+  "semantics": {
+   "precondition": "cellId có hai phần ngăn bởi dấu gạch dưới, phần đầu là chữ cái cột, phần sau là số dòng 1-based (GeneralFunctions.cs:1362-1364).",
+   "effects": "Không ghi trạng thái, khi lỗi chỉ ghi log (GeneralFunctions.cs:1369).",
+   "returns": "Mảng 2 số nguyên: chỉ số cột (ColumnLettersToIndex trừ 1) và chỉ số dòng (số dòng trừ 1) (GeneralFunctions.cs:1363-1364). Khi không phân tích được, trả [-1,-1] chứ không ném ngoại lệ (GeneralFunctions.cs:1370). Các trường hợp rơi vào nhánh này: cellId null, không có dấu gạch dưới (phần tử thứ hai không tồn tại), số dòng không phải số nguyên.",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả [-1,-1]. Hệ quả cho nơi gọi: mảng luôn dài 2 nên kiểm tra độ dài không phát hiện lỗi. Nơi gọi truy cập ô theo chỉ số trả về sẽ truy cập ô chỉ số -1. Trong tập phủ có changFormatCell (GeneralFunctions.cs:5987-5990, xem mục riêng). Ngoài tập phủ: checkLockUnLockCells (GeneralFunctions.cs:5349, hằng 'BA_1' hợp lệ nên không kích hoạt) và GetValAttributeStaticCell (GeneralFunctions.cs:1332, so sánh với -1 không bao giờ khớp nên trả chuỗi rỗng)."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.ColumnLettersToIndex", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.changFormatCell": {
+  "purpose": "Đổi số chữ số thập phân của các ô số theo loại tiền (USD 2 chữ số, còn lại 0).",
+  "semantics": {
+   "precondition": "cellFormat là danh sách mã ô dạng chữ cột_số dòng (ví dụ D_12) ngăn cách bằng ba dấu thăng (GeneralFunctions.cs:5977-5979). maLoaiTien là mã tiền tệ.",
+   "effects": "Với mỗi mã ô theo thứ tự, nếu kiểu ô là NumberCellType thì đặt DecimalPlaces bằng 2 khi maLoaiTien là USD, bằng 0 khi khác, rồi gán lại kiểu ô (GeneralFunctions.cs:5980-5995). Ô kiểu khác không đổi.",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt mọi ngoại lệ ghi log (GeneralFunctions.cs:5999). Mã ô sai định dạng (kể cả chuỗi rỗng) làm ArrayCellId trả [-1,-1], kiểm tra độ dài bằng 2 luôn đúng nên hàm truy cập ô chỉ số -1 (GeneralFunctions.cs:5987-5990). Dự kiến FarPoint ném ngoại lệ chỉ số ngoài phạm vi, nhưng hành vi thư viện này chưa xác minh từ mã. Nếu ném, vòng lặp dừng ngay và các mã ô phía sau không được đổi."
+  },
+  "side_effects": ["đặt kiểu ô (số chữ số thập phân)", "ghi log khi lỗi"],
+  "calls": ["GeneralFunctions.ArrayCellId", "HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetRowIndexInSViewByCompare": {
+  "purpose": "Liệt kê dòng của bảng có giá trị ô ở một cột bằng giá trị so sánh.",
+  "semantics": {
+   "precondition": "table có thể null (trả danh sách rỗng). colCheck 1-based. Dòng dữ liệu bắt đầu ở Location.DataLocationTemplateRowStart (GeneralFunctions.cs:5144).",
+   "effects": "Chỉ đọc. Duyệt i từ 0 tới số RowsValues của bảng, dừng khi dòng dữ liệu (đầu dữ liệu cộng i) vượt RowCount của sheet. Một dòng được chọn khi ô cột colCheck có Value khác null và chuỗi hóa của Value bằng đúng valueCompare, so sánh có phân biệt hoa thường (GeneralFunctions.cs:5145-5149).",
+   "returns": "Danh sách chỉ số dòng 1-based (đầu dữ liệu cộng i) theo thứ tự tăng dần, rỗng nếu table null hoặc không dòng nào khớp.",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả danh sách đã gom được tới lúc lỗi."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.FormatKey": {
+  "purpose": "Ghép khóa chuỗi: hai chuỗi nối bằng ba gạch dưới, hoặc danh sách chuỗi nối với ký tự phân cách (có đuôi).",
+  "semantics": {
+   "precondition": "Hai overload. (str1, str2) tại GeneralFunctions.cs:6230-6233. (listStr, fomartKey) tại GeneralFunctions.cs:7459-7467.",
+   "effects": "Không có.",
+   "returns": "(str1, str2): str1 + '___' + str2 (ba gạch dưới). (listStr, fomartKey): với mỗi phần tử theo thứ tự, nối phần tử rồi fomartKey, nên luôn có fomartKey ở cuối, danh sách rỗng trả chuỗi rỗng. str1 hoặc str2 null được coi như rỗng. fomartKey null cũng nối như rỗng.",
+   "exceptions": "Không có khối bắt lỗi. Overload danh sách ném NullReferenceException nếu listStr null, overload hai chuỗi không ném."
+  },
+  "side_effects": [],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.GetDMFromCombobox": {
+  "purpose": "Đọc danh mục (khóa và tên hiển thị) từ ô combobox thành từ điển.",
+  "semantics": {
+   "precondition": "row, col 1-based (trừ 1 khi truy cập ô, GeneralFunctions.cs:5940).",
+   "effects": "Chỉ đọc kiểu ô. Ô được coi là combobox khi tên kiểu ô chứa 'combobox' không phân biệt hoa thường, rồi ép sang ComboBoxCellType (GeneralFunctions.cs:5947-5949).",
+   "returns": "Từ điển khóa sang tên hiển thị. Với mục thứ i: khóa là ItemData[i] nếu ItemData có phần tử, ngược lại khóa là chính tên mục (GeneralFunctions.cs:5958). Bỏ mục có khóa rỗng hoặc khóa đã có (giữ mục đầu). Ô không có kiểu, không phải combobox hoặc không có mục: từ điển rỗng.",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, trả từ điển đã gom được. Nếu ItemData ngắn hơn Items nhưng khác rỗng thì mục vượt độ dài gây lỗi chỉ số, từ điển dừng ở mục trước đó."
+  },
+  "side_effects": ["ghi log khi lỗi"],
+  "calls": ["HTKKFile.Log"],
+  "confidence": "cao"
+ },
+ "GeneralFunctions.InsertTableRow": {
+  "purpose": "Chèn một dòng dữ liệu vào bảng, sao chép định dạng và đồng bộ lại vị trí các bảng và ô tĩnh.",
+  "semantics": {
+   "precondition": "frRow là chỉ số dòng 0-based nơi chèn (Rows.Add tại frRow, CopyRange từ frRow-1). iCurTable là chỉ số bảng trong sInfo.Tables. toRow, toCol, colCount là vùng sao chép (GeneralFunctions.cs:4227-4229).",
+   "effects": "Thêm một dòng vào sheet, sao chép vùng định dạng. Gọi sInfo.IncrementStaticCell(frRow, 1). Với mỗi bảng: nếu dòng bắt đầu dữ liệu lớn hơn frRow thì dịch bảng thêm 1, và luôn gọi IncrementFooter(frRow, 1) (GeneralFunctions.cs:4230-4237). Với mỗi ô của dòng mẫu bảng hiện tại: xóa nền nếu là hồng hoặc vàng, xóa ghi chú, gọi fpSpBindDataCell để đặt lại kiểu ô và giá trị mặc định (GeneralFunctions.cs:4238-4246). Cuối cùng gọi addNewDefaultRow với vị trí frRow trừ dòng bắt đầu dữ liệu cộng 1 để thêm dòng mặc định vào mô hình (GeneralFunctions.cs:4247).",
+   "returns": "không trả giá trị",
+   "exceptions": "Bắt mọi ngoại lệ, ghi log, không ném lại (GeneralFunctions.cs:4249-4251). Lỗi giữa chừng để lại trạng thái dở dang: dòng đã chèn trên sheet nhưng mô hình có thể chưa cập nhật đủ."
+  },
+  "side_effects": ["chèn dòng", "đặt kiểu ô", "xóa đánh dấu lỗi", "cập nhật HTKKCMCSheetInfo", "ghi log khi lỗi"],
+  "confidence": "cao"
+ }
+}
