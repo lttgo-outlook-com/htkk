@@ -450,7 +450,7 @@ def main():
     for f in xidx['files']:
         k = f.get('key')
         if k and k.get('ma_file') and k.get('version_xml'):
-            kh = 'VersionKHBS' in (k.get('origin') or '') or '_KHBS_' in f['json']
+            kh = 'VersionKHBS' in (k.get('origin') or '') or '_KHBS_' in f['json'].upper()
             xsd_old[(k['ma_file'], k['version_xml'])] = f['json']
             (xsd_khbs if kh else xsd_by)[(k['ma_file'], k['version_xml'])] = f['json']
 
@@ -517,6 +517,17 @@ def main():
                 xs[e['path'].lstrip('/')] = e
         for c in cells:
             e = xs.get(c.full)
+            if e is None and c.path:
+                # Path/TablePath đã bắt đầu từ gốc XSD (ví dụ TKhai/DLTKhai/...) hoặc ghép bị lặp đoạn liền kề
+                cands = [c.path, (c.tpath + '/' + c.path) if c.dynamic else None]
+                parts = c.full.split('/')
+                col = [q for i, q in enumerate(parts) if i == 0 or q != parts[i - 1]]
+                cands.append('/'.join(col))
+                for cand in cands:
+                    if cand and cand in xs:
+                        e = xs[cand]
+                        c.full = cand
+                        break
             if e is None and c.path and not c.dynamic:
                 node0 = info['sheets'][c.sheet].get('XMLnode') or ''
                 par0 = node0.rsplit('/', 1)[0] if '/' in node0 else ''
@@ -545,6 +556,9 @@ def main():
                         c.full = cand[0]
             c.in_xsd = e is not None and e.get('kind') != 'attribute'
             c.xsd = e if c.in_xsd else None
+            if not c.in_xsd:
+                pp = c.full.split('/')
+                c.full = '/'.join(q for i, q in enumerate(pp) if i == 0 or q != pp[i - 1])
 
         data = [c for c in cells if c.in_xsd]
         off = [c for c in cells if not c.in_xsd]
