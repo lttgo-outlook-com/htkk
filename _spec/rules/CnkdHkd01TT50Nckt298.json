@@ -4614,6 +4614,7 @@
         "when": []
       },
       "guards": [
+        "table.TableName == \"table_1\" || table.TableName == \"table_2\" || table.TableName == \"table_3\"",
         "!(isEmpty(opaque(expr:SwitchExpression)))",
         "table.TableName == table.TableName",
         "loop: foreach@2325 table in tk.SheetInfos[0].Tables",
@@ -5454,6 +5455,7 @@
       },
       "guards": [
         "trigger.col == G || opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[0], trigger.row) >= 0",
+        "table.TableName == \"table_1\" || table.TableName == \"table_2\"",
         "loop: foreach@2197 table in tk.SheetInfos[0].Tables",
         "loop: for@2204 i from 0 step +1 while i < count(table.RowsValues)"
       ],
@@ -5536,6 +5538,7 @@
       },
       "guards": [
         "trigger.col == G || opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[0], trigger.row) >= 0",
+        "table.TableName == \"table_1\" || table.TableName == \"table_2\"",
         "table.TableName == \"table_1\"",
         "loop: foreach@2197 table in tk.SheetInfos[0].Tables",
         "loop: for@2204 i from 0 step +1 while i < count(table.RowsValues)"
@@ -5620,6 +5623,7 @@
       "guards": [
         "trigger.col == G || opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[0], trigger.row) >= 0",
         "bool(cell(S0!B28)#269.value)",
+        "table2.TableName == \"table_1\" || table2.TableName == \"table_2\"",
         "bool(cell(S0!BS{table2.DataLocationTemplateRowStart})#2230.value)",
         "table2.TableName == \"table_1\"",
         "loop: foreach@2230 table2 in tk.SheetInfos[0].Tables"
@@ -5631,7 +5635,7 @@
             "sheet": 0,
             "cell": "BT{table2.DataLocationTemplateRowStart}"
           },
-          "value": "{last_in_loop(foreach@2197 table in tk.SheetInfos[0].Tables, from 0, last sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num, where !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName == \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value)))+num(cell(S0!BT{table2.DataLocationTemplateRowStart})#2230.value)}",
+          "value": "{accum(num := cases(table.TableName != \"table_1\" && table.TableName != \"table_2\" -> num | else -> sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num, where !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName == \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value))), from 0, foreach@2197 table in tk.SheetInfos[0].Tables)+num(cell(S0!BT{table2.DataLocationTemplateRowStart})#2230.value)}",
           "params": {
             "prop": "value"
           },
@@ -5703,7 +5707,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: last_in_loop(foreach@2197 table in tk.SheetInfos[0].Tables, from 0, last sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num, where !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName == \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value))), num(cell(S0!BT{table2.DataLocationTemplateRowStart})#2230.value), table2.DataLocationTemplateRowStart, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: accum(num := cases(table.TableName != \"table_1\" && table.TableName != \"table_2\" -> num | else -> sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num, where !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName == \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value))), from 0, foreach@2197 table in tk.SheetInfos[0].Tables), num(cell(S0!BT{table2.DataLocationTemplateRowStart})#2230.value), table2.DataLocationTemplateRowStart, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
         {
@@ -5718,7 +5722,7 @@
           "ref": "num",
           "origin": "loop",
           "at": 2197,
-          "desc": "biến mang qua vòng lặp dòng 2197: giá trị trước vòng 0, cuối mỗi vòng num := sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num, where !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName == \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value))"
+          "desc": "biến mang qua vòng lặp dòng 2197: giá trị trước vòng 0, cuối mỗi vòng num := cases(table.TableName != \"table_1\" && table.TableName != \"table_2\" -> num | else -> sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num, where !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName == \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value)))"
         },
         {
           "name": "table",
@@ -5763,6 +5767,7 @@
       "guards": [
         "trigger.col == G || opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[0], trigger.row) >= 0",
         "bool(cell(S0!B28)#269.value)",
+        "table2.TableName == \"table_1\" || table2.TableName == \"table_2\"",
         "bool(cell(S0!BS{table2.DataLocationTemplateRowStart})#2230.value)",
         "table2.TableName != \"table_1\"",
         "loop: foreach@2230 table2 in tk.SheetInfos[0].Tables"
@@ -5774,7 +5779,7 @@
             "sheet": 0,
             "cell": "BT{table2.DataLocationTemplateRowStart}"
           },
-          "value": "{last_in_loop(foreach@2197 table in tk.SheetInfos[0].Tables, from 0, last sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num2, where (bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value) || table.TableName != \"table_1\") && !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName != \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value)))+num(cell(S0!BT{table2.DataLocationTemplateRowStart})#2230.value)}",
+          "value": "{accum(num2 := cases(table.TableName != \"table_1\" && table.TableName != \"table_2\" -> num2 | else -> sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num2, where (bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value) || table.TableName != \"table_1\") && !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName != \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value))), from 0, foreach@2197 table in tk.SheetInfos[0].Tables)+num(cell(S0!BT{table2.DataLocationTemplateRowStart})#2230.value)}",
           "params": {
             "prop": "value"
           },
@@ -5846,7 +5851,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: last_in_loop(foreach@2197 table in tk.SheetInfos[0].Tables, from 0, last sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num2, where (bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value) || table.TableName != \"table_1\") && !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName != \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value))), num(cell(S0!BT{table2.DataLocationTemplateRowStart})#2230.value), table2.DataLocationTemplateRowStart, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: accum(num2 := cases(table.TableName != \"table_1\" && table.TableName != \"table_2\" -> num2 | else -> sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num2, where (bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value) || table.TableName != \"table_1\") && !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName != \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value))), from 0, foreach@2197 table in tk.SheetInfos[0].Tables), num(cell(S0!BT{table2.DataLocationTemplateRowStart})#2230.value), table2.DataLocationTemplateRowStart, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
         {
@@ -5861,7 +5866,7 @@
           "ref": "num2",
           "origin": "loop",
           "at": 2197,
-          "desc": "biến mang qua vòng lặp dòng 2197: giá trị trước vòng 0, cuối mỗi vòng num2 := sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num2, where (bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value) || table.TableName != \"table_1\") && !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName != \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value))"
+          "desc": "biến mang qua vòng lặp dòng 2197: giá trị trước vòng 0, cuối mỗi vòng num2 := cases(table.TableName != \"table_1\" && table.TableName != \"table_2\" -> num2 | else -> sum_over(for@2204 i from 0 step +1 while i < count(table.RowsValues), from num2, where (bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value) || table.TableName != \"table_1\") && !(bool(cell(S0!BS{i+table.DataLocationTemplateRowStart})#2204.value)) && table.TableName != \"table_1\", step num(cell(S0!BT{i+table.DataLocationTemplateRowStart})#2208.value)))"
         },
         {
           "name": "table",
@@ -5972,6 +5977,7 @@
       },
       "guards": [
         "trigger.col == G || opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[0], trigger.row) >= 0",
+        "tk.SheetInfos[0].Tables[i].TableName != \"table_8\"",
         "!(isEmpty(cell(S0!BV{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart})#2003.text))",
         "!(contains(list, cell(S0!BV{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart})#2003.text))",
         "count(opaque(GeneralFunctions.SplitString2, cell(S0!BV{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart})#2003.text, \"###\")) == 4",
@@ -6070,6 +6076,7 @@
       },
       "guards": [
         "trigger.col == G || opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[0], trigger.row) >= 0",
+        "tk.SheetInfos[0].Tables[i].TableName == \"table_1\" || tk.SheetInfos[0].Tables[i].TableName == \"table_2\" || tk.SheetInfos[0].Tables[i].TableName == \"table_3\"",
         "!(isEmpty(cell(S0!BW{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart})#2024.text))",
         "!(contains(list, cell(S0!BW{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart})#2024.text))",
         "count(opaque(GeneralFunctions.SplitString2, cell(S0!BW{j+tk.SheetInfos[0].Tables[i].DataLocationTemplateRowStart})#2024.text, \"###\")) == 4",
@@ -6169,6 +6176,7 @@
       "guards": [
         "trigger.col == G || opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[0], trigger.row) >= 0",
         "count(list) != 0",
+        "tk.SheetInfos[0].Tables[i@2069].TableName != \"table_8\"",
         "item == cell(S0!BV{i@2043+tk.SheetInfos[0].Tables[i@2069].DataLocationTemplateRowStart})#2016.text",
         "!(hasKey(dicKeysTableD, cell(S0!BV{i@2043+tk.SheetInfos[0].Tables[i@2069].DataLocationTemplateRowStart})#2016.text))",
         "loop: for@2069 i@2069 from 0 step +1 while i@2069 < count(tk.SheetInfos[0].Tables)-1",
@@ -6317,8 +6325,9 @@
       "guards": [
         "trigger.col == G || opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[0], trigger.row) >= 0",
         "count(list) != 0",
-        "item2 == cell(S0!BW{i@2043+tk.SheetInfos[0].Tables[i@2098].DataLocationTemplateRowStart})#2016.text",
-        "!(hasKey(dicKeysTableD, cell(S0!BW{i@2043+tk.SheetInfos[0].Tables[i@2098].DataLocationTemplateRowStart})#2016.text))",
+        "tk.SheetInfos[0].Tables[i@2098].TableName == \"table_1\" || tk.SheetInfos[0].Tables[i@2098].TableName == \"table_2\" || tk.SheetInfos[0].Tables[i@2098].TableName == \"table_3\"",
+        "item2 == cell(S0!BW{i@2043+tk.SheetInfos[0].Tables[i@2098].DataLocationTemplateRowStart})#2069.text",
+        "!(hasKey(dicKeysTableD, cell(S0!BW{i@2043+tk.SheetInfos[0].Tables[i@2098].DataLocationTemplateRowStart})#2069.text))",
         "loop: for@2098 i@2098 from 0 step +1 while i@2098 < count(tk.SheetInfos[0].Tables)-1",
         "loop: foreach@2109 item2 in list",
         "loop: for@2043 i@2043 from 0 step +1 while i@2043 < count(tk.SheetInfos[0].Tables[i@2098].RowsValues)"
@@ -6369,10 +6378,14 @@
           ]
         },
         {
-          "ref": "cell(S0!BW{i@2043+tk.SheetInfos[0].Tables[i@2098].DataLocationTemplateRowStart})#2016",
+          "ref": "cell(S0!BW{i@2043+tk.SheetInfos[0].Tables[i@2098].DataLocationTemplateRowStart})#2069",
           "kind": "co_the_ghi",
-          "after": "hợp nhánh dòng 2016: ô được ghi trên một số nhánh (dòng 1015, 1946, 1961, 1975, 1988, 1995, 2003, 2016, 2024, 2182, 2210, 2241, 2245, 2342, 2377)",
+          "after": "hợp nhánh dòng 2069: ô được ghi trên một số nhánh (dòng 174, 208, 228, 255, 1015, 1946, 1961, 1975, 1988, 1995, 2003, 2016, 2024, 2182, 2210, 2241, 2245, 2342, 2377)",
           "writes": [
+            174,
+            208,
+            228,
+            255,
             1015,
             1946,
             1961,
@@ -7012,6 +7025,7 @@
         "when": []
       },
       "guards": [
+        "table.TableName == \"table_1\" || table.TableName == \"table_2\" || table.TableName == \"table_3\"",
         "!(isEmpty(opaque(expr:SwitchExpression)))",
         "table.TableName == table.TableName",
         "loop: foreach@2325 table in tk.SheetInfos[0].Tables",

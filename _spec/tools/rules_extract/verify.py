@@ -973,5 +973,149 @@ say(cv_cat.get("visible", 0) == 0 and cv_cat.get("dinh_dang", 0) == 0, "(9d) 0 p
 for x in kind_bad[:3]:
     print("   kind sai:", x)
 say(not kind_bad, "(9d) mỗi phiên bản có kind ghi|co_the_ghi (co_the_ghi kèm calls): sai %d" % len(kind_bad))
+# ---------- (10) vòng chốt T2 ----------
+# (10a) guard sau thoát sớm: khối "if (c) { ...; continue|break|return|throw; }" không có else; effect ở các câu lệnh sau khối
+# trong cùng khối bao phải mang guard phủ định c. Đối chiếu bằng văn bản: trong cùng hook, bản ghi có effect (không qua via) trong
+# khối if mang guard g; bản ghi có effect sau khối phải có guard thuộc negs(g) (cùng định nghĩa phủ định với (8a)).
+STR_RE = re.compile(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')
+EXIT_RE = re.compile(r"^(continue;|break;|return\b.*;|throw\b.*;)$")
+def brace_pairs(L):
+    st, pairs, parent = [], {}, {}
+    for i, s in enumerate(L):
+        t = STR_RE.sub('""', s).strip()
+        if t == "{":
+            parent[i] = st[-1] if st else None
+            st.append(i)
+        elif t.startswith("}") and st:
+            pairs[st.pop()] = i
+    return pairs, parent
+def prev_nonempty(L, i):
+    j = i - 1
+    while j >= 0 and not L[j].strip():
+        j -= 1
+    return j
+def bparse(x):
+    """cây logic của một guard: ("or"|"and", [..]) | ("not", t) | ("atom", khóa); so sánh bù dùng chung khóa (== / !=, < / >=, > / <=)"""
+    x = x.strip()
+    ops = top_scan(x)
+    for j in (" || ", " && "):
+        cut = [i for i, op in ops if op == j]
+        if cut:
+            parts, st = [], 0
+            for i in cut:
+                parts.append(x[st:i]); st = i + len(j)
+            parts.append(x[st:])
+            return ("or" if j == " || " else "and", [bparse(q) for q in parts])
+    inner = balanced_inner(x)
+    if inner is not None:
+        return ("not", bparse(inner))
+    if x.startswith("(") and x.endswith(")") and balanced_inner("!" + x) is not None:
+        return bparse(x[1:-1])
+    if x.startswith("!") and not x.startswith("!="):
+        return ("not", bparse(x[1:]))
+    if len(ops) == 1:
+        i, op = ops[0]
+        l, r = x[:i].strip(), x[i + len(op):].strip()
+        o = op.strip()
+        base = {"==": "==", "!=": "==", "<": "<", ">=": "<", ">": ">", "<=": ">"}[o]
+        t = ("atom", (l, base, r))
+        return ("not", t) if o in ("!=", ">=", "<=") else t
+    return ("atom", (x,))
+def batoms(t, acc):
+    if t[0] == "atom":
+        acc.add(t[1])
+    elif t[0] == "not":
+        batoms(t[1], acc)
+    else:
+        for q in t[1]:
+            batoms(q, acc)
+    return acc
+def beval(t, asg):
+    if t[0] == "atom":
+        return asg[t[1]]
+    if t[0] == "not":
+        return not beval(t[1], asg)
+    if t[0] == "and":
+        return all(beval(q, asg) for q in t[1])
+    return any(beval(q, asg) for q in t[1])
+def contradicts(pg, tg):
+    """True khi hội các guard pg và hội các guard tg không cùng đúng được (nguyên tử độc lập); None khi quá nhiều nguyên tử"""
+    if not (set(pg) - set(tg)) or not tg:
+        return False
+    ts = [bparse(g) for g in tg]
+    ta = set().union(*[batoms(t, set()) for t in ts])
+    # thường một guard của pg (phủ định điều kiện if) đã mâu thuẫn với các guard của tg cùng nguyên tử
+    for g in sorted(pg):
+        pt = bparse(g); pa = batoms(pt, set())
+        rel = [t for t in ts if batoms(t, set()) & pa]
+        at1 = sorted(pa.union(*[batoms(t, set()) for t in rel]))
+        if rel and len(at1) <= 14 and not any(beval(pt, a) and all(beval(t, a) for t in rel) for a in ({k: bool(m >> i & 1) for i, k in enumerate(at1)} for m in range(1 << len(at1)))):
+            return True
+    ps = [t for t in (bparse(g) for g in pg) if batoms(t, set()) & ta]
+    if not ps:
+        return False
+    at = sorted(ta.union(*[batoms(t, set()) for t in ps]))
+    if len(at) > 14:
+        return None
+    for m in range(1 << len(at)):
+        asg = {k: bool(m >> i & 1) for i, k in enumerate(at)}
+        if all(beval(t, asg) for t in ts) and all(beval(t, asg) for t in ps):
+            return False
+    return True
+recs_by_file = collections.defaultdict(list)
+for b, r in all_records():
+    recs_by_file[r["source"]["file"]].append(r)
+ee_blocks = collections.Counter(); ee_big = 0; ee_checked = 0; ee_nocmp = 0; ee_bad = []; ee_eff = 0
+for sf, rs in sorted(recs_by_file.items()):
+    L = src_lines(sf)
+    pairs, parent = brace_pairs(L)
+    hooks = collections.defaultdict(list)
+    for r in rs:
+        hooks[r["hook"]].append(r)
+    for o, cl in sorted(pairs.items()):
+        h = prev_nonempty(L, o)
+        if h < 0 or not re.match(r"^\s*if \(", L[h]):
+            continue
+        nx = prev_nonempty(L, cl + 2) if False else cl + 1
+        while nx < len(L) and not L[nx].strip():
+            nx += 1
+        if nx < len(L) and L[nx].strip().startswith("else"):
+            continue
+        last = prev_nonempty(L, cl)
+        m = EXIT_RE.match(L[last].strip())
+        if not m or last <= o:
+            continue
+        enc = parent.get(o)
+        if enc is None or enc not in pairs:
+            continue
+        ee_blocks[m.group(1).split()[0].rstrip(";")] += 1
+        lo_t, hi_t, lo_p, hi_p = o, cl, cl + 1, pairs[enc] - 1
+        for hk, hr in hooks.items():
+            T = [r for r in hr if any(lo_t < e["at"] < hi_t and "via" not in e for e in r["effects"])]
+            P = [r for r in hr if any(lo_p <= e["at"] <= hi_p and "via" not in e for e in r["effects"])]
+            if not P:
+                continue
+            if not T:
+                ee_nocmp += 1
+                continue
+            ee_checked += 1
+            tgs = [set([x for x in r["guards"] if not x.startswith("loop: ")] + list(r["trigger"]["when"])) for r in T]
+            for r in P:
+                ee_eff += 1
+                pg = set([x for x in r["guards"] if not x.startswith("loop: ")] + list(r["trigger"]["when"]))
+                cr = [contradicts(pg, tg) for tg in tgs]
+                ee_big += sum(1 for c in cr if c is None)
+                if not all(c is not False for c in cr):
+                    if not ee_bad:
+                        print("   (10a) ví dụ: P", sorted(pg)[:6], "| T", [sorted(t)[:6] for t in tgs][:3])
+                    ee_bad.append("%s:%d %s %s effect %s" % (sf.split("/")[-1], h + 1, hk, L[last].strip()[:12], sorted(e["at"] for e in r["effects"] if lo_p <= e["at"] <= hi_p)[:4]))
+for x in ee_bad[:6]:
+    print("   (10a) thiếu guard phủ định:", x)
+if ee_bad:
+    print("   (10a) khối thiếu guard:", " ".join(sorted(set(x.split(" ")[0] + "/" + x.split(" ")[2] for x in ee_bad))))
+print("   (10a) khối thoát sớm (if không else): %s; cặp (khối, hook) có effect sau khối: đối chiếu được %d, không có effect trong khối để đối chiếu %d; bản ghi sau khối đã kiểm %d (cặp quá 14 nguyên tử, không kết luận: %d)"
+      % (dict(sorted(ee_blocks.items())), ee_checked, ee_nocmp, ee_eff, ee_big))
+say(not ee_bad, "(10a) bản ghi có effect sau khối thoát sớm mà thiếu guard phủ định điều kiện if: %d (khối %d)" % (len(ee_bad), len(set(x.split(" ")[0] for x in ee_bad))))
+
 print("KẾT LUẬN:", "ĐẠT" if ok else "CÓ MỤC TRƯỢT")
 sys.exit(0 if ok else 1)

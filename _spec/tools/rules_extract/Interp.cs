@@ -131,6 +131,22 @@ public sealed class Interp
     }
     /// phiên bản trước vòng và phiên bản đầu vòng của các vòng lặp đang phân tích (EnterLoop đẩy, Loop lấy ra)
     readonly Stack<(long, long)> loopVers = new();
+    /// đích của break/continue: vòng lặp (Sw = false) hoặc switch (Sw = true); lưu trạng thái tại lệnh nhảy để hợp ở cuối thân vòng
+    /// (continue), sau vòng hoặc sau nhánh switch (break). Câu lệnh sau lệnh nhảy trong cùng khối không chạy trên đường đó.
+    sealed class JumpCtx { public bool Sw; public readonly List<State> Cont = new(), Brk = new(); }
+    readonly List<JumpCtx> jumps = new();
+    /// ký hiệu đầu vòng của biến khai báo kiểu chuỗi/đối tượng
+    readonly HashSet<string> strAtoms = new(StringComparer.Ordinal);
+    /// hợp các trạng thái còn sống vào target: đường đi chung là tiền tố chung, phần sau tiền tố là điều kiện của từng trạng thái
+    void Join(State target, List<State> states, int line)
+    {
+        var live = states.Where(s => !s.Dead).ToList();
+        if (live.Count == 0) { target.Dead = true; return; }
+        int n = live.Min(s => s.Path.Count), p = 0;
+        while (p < n && live.All(s => ReferenceEquals(s.Path[p], live[0].Path[p]))) p++;
+        target.Path = live[0].Path.GetRange(0, p); target.Dead = false; target.Threw = false;
+        Merge(target, live.Select(s => (C.And(s.Path.Skip(p).Select(x => x.C)), s)).ToList(), line);
+    }
     /// phiên bản đầu vòng của các vòng đang phân tích: hợp nhánh trong thân vòng không lấy dòng đầu vòng làm dòng ghi gốc
     /// (trừ khi chỉ còn nguồn đó), để dòng đầu vòng không theo phiên bản ra ngoài vòng
     readonly HashSet<long> activeLoop = new();
@@ -459,7 +475,15 @@ public sealed class Interp
             case TryStatementSyntax ts2:
                 Exec(ts2.Block, st, f);
                 if (st.Threw) { st.Dead = false; st.Threw = false; }
-                if (ts2.Finally != null) { st.Dead = false; Exec(ts2.Finally.Block, st, f); }
+                // finally chạy cả khi khối try kết thúc bằng return/break/continue; sau finally đường đó vẫn đã thoát
+                if (ts2.Finally != null) { bool wd = st.Dead; st.Dead = false; Exec(ts2.Finally.Block, st, f); if (wd) st.Dead = true; }
+                break;
+            case BreakStatementSyntax:
+                if (jumps.Count > 0) { jumps[^1].Brk.Add(st.Clone()); st.Dead = true; }
+                break;
+            case ContinueStatementSyntax:
+                for (int i = jumps.Count - 1; i >= 0; i--)
+                    if (!jumps[i].Sw) { jumps[i].Cont.Add(st.Clone()); st.Dead = true; break; }
                 break;
             case UsingStatementSyntax us:
                 if (us.Declaration != null) foreach (var v in us.Declaration.Variables) { used = new(); Assign(st, v.Identifier.Text, v.Initializer != null ? Eval(v.Initializer.Value, st, f) : UninitSym(v.Identifier.Text, Line(v)), Line(v)); }
@@ -533,13 +557,13 @@ public sealed class Interp
                         var c = C.Or(cs); labels.Add(c);
                         var bs = st.Clone(); bs.Path = bs.Path.Add(new PathItem(c, Line(sec)));
                         if (c is CConst k0 && !k0.B) { bs.Dead = true; foreach (var x in sec.Statements) DropConst(x, f, "nhãn case dòng " + Line(sec) + " không khớp giá trị switch dòng " + ln); }
-                        foreach (var x in sec.Statements) { if (bs.Dead) break; Exec(x, bs, f); }
+                        bs = SwitchSection(sec, bs, f);
                         branches.Add((c, bs));
                     }
                     var dc = C.Not(C.Or(labels));
                     var ds2 = st.Clone(); ds2.Path = ds2.Path.Add(new PathItem(dc, def != null ? Line(def) : ln));
                     if (dc is CConst k1 && !k1.B) { ds2.Dead = true; if (def != null) foreach (var x in def.Statements) DropConst(x, f, "nhánh default dòng " + Line(def) + " không chạy vì giá trị switch dòng " + ln + " luôn khớp một nhãn case"); }
-                    if (def != null) foreach (var x in def.Statements) { if (ds2.Dead) break; Exec(x, ds2, f); }
+                    if (def != null) ds2 = SwitchSection(def, ds2, f);
                     branches.Add((dc, ds2));
                     Merge(st, branches, ln);
                     break;
@@ -550,6 +574,18 @@ public sealed class Interp
             case FixedStatementSyntax fx: Exec(fx.Statement, st, f); break;
             default: break; // break/continue/goto/empty/local function: bỏ qua
         }
+    }
+
+    /// một nhánh switch: break thoát nhánh; trạng thái sau nhánh là hợp các đường tới break và đường chạy hết nhánh
+    State SwitchSection(SwitchSectionSyntax sec, State bs, Frame f)
+    {
+        if (bs.Dead) return bs;
+        var jc = new JumpCtx { Sw = true }; jumps.Add(jc);
+        foreach (var x in sec.Statements) { if (bs.Dead) break; Exec(x, bs, f); }
+        jumps.RemoveAt(jumps.Count - 1);
+        if (jc.Brk.Count == 0) return bs;
+        var all = new List<State>(jc.Brk); if (!bs.Dead) all.Add(bs);
+        var t = bs.Clone(); Join(t, all, Line(sec)); return t;
     }
 
     const int MaxUnroll = 40;
@@ -577,11 +613,28 @@ public sealed class Interp
         }
         used = savedUsed;
         if (vals.Count == 0) return false; // không kết luận vòng lặp 0 lần, để phân tích ký hiệu
+        var brk = new List<State>();
         foreach (var v in vals)
         {
             if (st.Dead) break;
             st.Env[name] = new Entry(v, ImmutableSortedSet.Create(Line(fs)));
+            var jc = new JumpCtx(); jumps.Add(jc);
             Exec(fs.Statement, st, f);
+            jumps.RemoveAt(jumps.Count - 1);
+            if (jc.Cont.Count > 0)
+            {
+                // continue: vòng sau chạy từ hợp các đường tới continue và đường chạy hết thân
+                var all = new List<State>(jc.Cont); if (!st.Dead) all.Add(st);
+                var t = st.Clone(); Join(t, all, Line(fs));
+                st.Env = t.Env; st.CopyVers(t); st.Path = t.Path; st.Dead = t.Dead; st.Threw = t.Threw;
+            }
+            brk.AddRange(jc.Brk);
+        }
+        if (brk.Count > 0)
+        {
+            var all = new List<State>(brk); if (!st.Dead) all.Add(st);
+            var t = st.Clone(); Join(t, all, Line(fs));
+            st.Env = t.Env; st.CopyVers(t); st.Path = t.Path; st.Dead = t.Dead; st.Threw = t.Threw;
         }
         return true;
     }
@@ -609,6 +662,10 @@ public sealed class Interp
         {
             var si = RegSym(n, "loop", line, "giá trị đầu mỗi vòng của vòng lặp dòng " + line);
             atoms[n] = si.Ref;
+            // biến chuỗi/đối tượng mang qua vòng: phép chuyển số trên nó không được bỏ (int(text) khác text)
+            if (loopNode != null && loopNode.Ancestors().OfType<BaseMethodDeclarationSyntax>().FirstOrDefault() is { } md
+                && md.DescendantNodes().OfType<VariableDeclaratorSyntax>().FirstOrDefault(d => d.Identifier.Text == n)?.Parent is VariableDeclarationSyntax vd
+                && vd.Type.ToString() is "string" or "object" or "String" or "Object") strAtoms.Add(si.Ref);
             st.Env[n] = new Entry(VLin.Atom(si.Ref), ImmutableSortedSet<int>.Empty);
         }
         return atoms;
@@ -621,14 +678,21 @@ public sealed class Interp
         var li = new LoopInfo(head + (cond != null ? " " + cond : ""), line);
         var lp = loopVers.Count > 0 ? loopVers.Pop() : (st.WildV, st.WildV);
         var bs = st.Clone(); bs.Loops = bs.Loops.Add(li);
+        var b0 = bs.Clone(); var jc = new JumpCtx(); jumps.Add(jc);
         Exec(body, bs, f);
+        jumps.RemoveAt(jumps.Count - 1);
+        // continue: cuối thân vòng là hợp các đường tới continue và đường chạy hết thân
+        if (jc.Cont.Count > 0) { var all = new List<State>(jc.Cont); if (!bs.Dead) all.Add(bs); Join(b0, all, line); bs = b0; }
         if (incs != null) { bs.Dead = false; foreach (var inc in incs.Value) { used = new(); ExecExpr(inc, bs, f); } }
         // vòng lặp chạy 0 hoặc nhiều lần: hợp phiên bản ô trước vòng và sau thân vòng; phiên bản đầu vòng chỉ dùng trong thân vòng,
         // sau vòng ô giữ phiên bản trước vòng hoặc phiên bản của lệnh ghi trong thân (theo vùng ghi)
         var pre0 = st.Clone();
         if (pre0.WildV == lp.Item2) pre0.WildV = lp.Item1;
         if (bs.WildV == lp.Item2) bs.WildV = lp.Item1;
-        MergeVers(st, new List<State> { pre0, bs }, line);
+        var outs = new List<State> { pre0, bs };
+        // break: phiên bản ô tại lệnh break cũng ra sau vòng
+        foreach (var b in jc.Brk) { var bc = b.Clone(); if (bc.WildV == lp.Item2) bc.WildV = lp.Item1; outs.Add(bc); }
+        MergeVers(st, outs, line);
         activeLoop.Remove(lp.Item2);
         // biến cảm ứng: giá trị đầu và bước hằng
         var ind = new List<string>();
@@ -1481,7 +1545,7 @@ public sealed class Interp
                         if (k.Val is string s) { if (isInt && long.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var l)) return new VConst(l); if (double.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var d)) return isInt ? new VConst((long)d) : new VConst(d); }
                         if (k.IsNum) return k;
                     }
-                    if (v is VLin vl && (!isInt || !vl.T.Keys.Any(a => a.Contains("cell(") || a.Contains("num(")))) return v;
+                    if (v is VLin vl && (!isInt || !vl.T.Keys.Any(a => a.Contains("cell(") || a.Contains("num("))) && !vl.T.Keys.Any(strAtoms.Contains)) return v;
                     var fv = Fn(isInt ? "int" : "num", v);
                     return VLin.Atom(((VSym)fv).Text);
                 }
