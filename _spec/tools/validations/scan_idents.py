@@ -19,6 +19,8 @@ PATS = {
     ".Text": r"\.Text\b",
     "lambda =>": r"=>",
 }
+VARRE = re.compile(r"(?<![\w.@])((?:num|text|flag|value|obj)\d*)(?![\w(])")
+DEFRE = re.compile(r"(?:FOR(?: EACH)?|CASE) (\w+)|[(,] ?(\w+): ")
 NOINIT = re.compile(r"^L\d+[^:]*: (\+\+|[+-]=)")
 
 
@@ -27,6 +29,8 @@ def main():
     cnt = {k: 0 for k in PATS}
     ex = {k: [] for k in PATS}
     tot = noinit = 0
+    free = 0
+    freeex = []
     for f in sorted(glob.glob(os.path.join(d, "*.json")) + glob.glob(os.path.join(d, "_app", "*.json"))):
         if os.path.basename(f) in ("index.json", "messages_unresolved.json"):
             continue
@@ -40,6 +44,13 @@ def main():
                         cnt[k] += 1
                         if len(ex[k]) < 2:
                             ex[k].append("%s:%s %s" % (os.path.basename(f), c["source"]["lines"][0], mm.group(0)))
+                cond = re.sub(r'"(?:[^"\\]|\\.)*"', '""', c["condition"])
+                bound = {k.split("@")[0] for k in c["bindings"]} | set(x for t in DEFRE.findall(cond) for x in t if x)
+                miss = sorted({x for x in VARRE.findall(cond) if x not in bound})
+                if miss:
+                    free += 1
+                    if len(freeex) < 12:
+                        freeex.append("%s:%s %s" % (os.path.basename(f), c["source"]["lines"][0], miss))
                 for b, v in c["bindings"].items():
                     if "@L" in b and NOINIT.search(v) and "init:" not in v:
                         noinit += 1
@@ -47,7 +58,10 @@ def main():
     for k in PATS:
         print("%-22s %d" % (k, cnt[k]))
     print("binding ++/+= thiếu khởi tạo (không có 'init:')", noinit)
+    print("check có biến num/text/flag/value/obj tự do trong condition (không binding, không FOR/lambda)", free)
     if "-v" in sys.argv:
+        for x in freeex:
+            print("tự do |", x)
         for k, e in ex.items():
             for x in e:
                 print(k, "|", x)
