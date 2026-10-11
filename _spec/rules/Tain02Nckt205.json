@@ -68,8 +68,8 @@
       },
       "guards": [
         "int(period.Nam) < 2014",
-        "loop: for@42 i from 0 step +1 while i < tk.SheetInfos[0].Tables.Count",
-        "loop: for@48 j from 0 step +1 while j < tk.SheetInfos[0].Tables[i].RowsValues.Count"
+        "loop: for@42 i from 0 step +1 while i < count(tk.SheetInfos[0].Tables)",
+        "loop: for@48 j from 0 step +1 while j < count(tk.SheetInfos[0].Tables[i].RowsValues)"
       ],
       "effects": [
         {
@@ -82,6 +82,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Tain02Nckt205.cs",
         "lines": [
@@ -95,21 +96,31 @@
       "symbols": [
         {
           "name": "i",
+          "ref": "i",
           "origin": "loop",
           "at": 42,
           "desc": "biến mang qua vòng lặp dòng 42: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
         },
         {
           "name": "j",
-          "origin": "loop",
-          "at": 42,
-          "desc": "biến mang qua vòng lặp dòng 42: giá trị trước vòng ?, cuối mỗi vòng j := j"
-        },
-        {
-          "name": "j",
+          "ref": "j",
           "origin": "loop",
           "at": 48,
           "desc": "biến mang qua vòng lặp dòng 48: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 31,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 31,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -166,6 +177,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Tain02Nckt205.cs",
         "lines": [
@@ -204,7 +216,7 @@
         ]
       },
       "guards": [
-        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"",
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row})#79.text}\")}\"",
         "int(item.Value[4]) == 0",
         "loop: foreach@79 item in field(dicDMKhoangSan)"
       ],
@@ -217,7 +229,7 @@
               "sheet(0)",
               "trigger.row-1",
               "6",
-              "opaque(HTKKFile.GetMessage)"
+              "opaque(HTKKFile.GetMessage, sheet(0), [4, 23])"
             ],
             "call": "HTKKFile.SetNodeBackGroundPink"
           },
@@ -236,6 +248,12 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!{col(trigger.col)}{trigger.row})#79",
+          "after": "vòng lặp dòng 79 có lệnh hoặc lời gọi có thể ghi ô"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Tain02Nckt205.cs",
         "lines": [
@@ -249,6 +267,7 @@
       "symbols": [
         {
           "name": "item",
+          "ref": "item",
           "origin": "foreach",
           "at": 79,
           "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
@@ -281,7 +300,7 @@
         ]
       },
       "guards": [
-        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\"",
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row})#79.text}\")}\"",
         "loop: foreach@79 item in field(dicDMKhoangSan)"
       ],
       "effects": [
@@ -294,7 +313,7 @@
           "value": {
             "cases": [
               {
-                "when": "split(item.Key, [\"_\"]).Length > 3",
+                "when": "length(split(item.Key, [\"_\"])) > 3",
                 "value": "{split(item.Key, [\"_\"])[2]}"
               },
               {
@@ -344,8 +363,8 @@
           "value": {
             "cases": [
               {
-                "when": "!(isEmpty(item.Key)) && field(_dmKSData) != null && field(_dmKSData).Count > 0 && opaque(Find) != null && opaque(<obj>.ToNumber) > 0",
-                "value": "{num(opaque(<obj>.ToNumber))}"
+                "when": "!(isEmpty(item.Key)) && field(_dmKSData) != null && count(field(_dmKSData)) > 0 && opaque(Find) != null && opaque(<obj>.ToNumber, opaque(Find).cqtgia) > 0",
+                "value": "{num(opaque(<obj>.ToNumber, opaque(Find).cqtgia))}"
               },
               {
                 "when": "else",
@@ -369,6 +388,12 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!{col(trigger.col)}{trigger.row})#79",
+          "after": "vòng lặp dòng 79 có lệnh hoặc lời gọi có thể ghi ô"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Tain02Nckt205.cs",
         "lines": [
@@ -377,11 +402,12 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: field(_dmKSData), field(_dmKSData).Count, giá trị hoặc tham số có phần chưa giải, item.Key, item.Value[3], item.Value[4], num(opaque(<obj>.ToNumber)), opaque:<obj>.ToNumber",
+      "reason": "chưa giải: count(field(_dmKSData)), field(_dmKSData), giá trị hoặc tham số có phần chưa giải, item.Key, item.Value[3], item.Value[4], length(split(item.Key, [\"_\"])), num(opaque(<obj>.ToNumber, opaque(Find).cqtgia))",
       "unreachable": false,
       "symbols": [
         {
           "name": "item",
+          "ref": "item",
           "origin": "foreach",
           "at": 79,
           "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
@@ -414,7 +440,7 @@
         ]
       },
       "guards": [
-        "\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\" == \"Tài nguyên khác\"",
+        "\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row})#86.text}\")}\" == \"Tài nguyên khác\"",
         "loop: foreach@79 item in field(dicDMKhoangSan)"
       ],
       "effects": [
@@ -426,6 +452,12 @@
           },
           "at": 108,
           "status": "parametric"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!{col(trigger.col)}{trigger.row})#86",
+          "after": "hợp nhánh dòng 86: trên một số nhánh có lệnh ghi ô (dòng 79, 103)"
         }
       ],
       "source": {
@@ -441,6 +473,7 @@
       "symbols": [
         {
           "name": "item",
+          "ref": "item",
           "origin": "foreach",
           "at": 79,
           "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
@@ -473,7 +506,7 @@
         ]
       },
       "guards": [
-        "\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row}).text}\")}\" != \"Tài nguyên khác\"",
+        "\"{trim(\"{cell(S0!{col(trigger.col)}{trigger.row})#86.text}\")}\" != \"Tài nguyên khác\"",
         "loop: foreach@79 item in field(dicDMKhoangSan)"
       ],
       "effects": [
@@ -485,6 +518,12 @@
           },
           "at": 112,
           "status": "parametric"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!{col(trigger.col)}{trigger.row})#86",
+          "after": "hợp nhánh dòng 86: trên một số nhánh có lệnh ghi ô (dòng 79, 103)"
         }
       ],
       "source": {
@@ -500,6 +539,7 @@
       "symbols": [
         {
           "name": "item",
+          "ref": "item",
           "origin": "foreach",
           "at": 79,
           "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
@@ -547,6 +587,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Tain02Nckt205.cs",
         "lines": [
@@ -585,7 +626,7 @@
         ]
       },
       "guards": [
-        "num(cell(S0!{col(trigger.col)}{trigger.row}).value) > 0"
+        "num(cell(S0!{col(trigger.col)}{trigger.row})#137.value) > 0"
       ],
       "effects": [
         {
@@ -600,6 +641,12 @@
           },
           "at": 146,
           "status": "parametric"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!{col(trigger.col)}{trigger.row})#137",
+          "after": "hợp nhánh dòng 137: trên một số nhánh có lệnh ghi ô (dòng 139)"
         }
       ],
       "source": {
@@ -640,9 +687,9 @@
         ]
       },
       "guards": [
-        "num(cell(S0!{col(trigger.col)}{trigger.row}).value) > 0",
-        "item.Value.Length > 3",
-        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"",
+        "num(cell(S0!{col(trigger.col)}{trigger.row})#137.value) > 0",
+        "length(item.Value) > 3",
+        "\"{trim(\"{item.Value[2]}\")}\" == \"{trim(\"{cell(S0!G{trigger.row})#147.text}\")}\"",
         "loop: foreach@147 item in field(dicDMKhoangSan)"
       ],
       "effects": [
@@ -660,6 +707,16 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!G{trigger.row})#147",
+          "after": "vòng lặp dòng 147 có lệnh hoặc lời gọi có thể ghi ô"
+        },
+        {
+          "ref": "cell(S0!{col(trigger.col)}{trigger.row})#137",
+          "after": "hợp nhánh dòng 137: trên một số nhánh có lệnh ghi ô (dòng 139)"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Tain02Nckt205.cs",
         "lines": [
@@ -673,6 +730,7 @@
       "symbols": [
         {
           "name": "item",
+          "ref": "item",
           "origin": "foreach",
           "at": 147,
           "desc": "phần tử đang duyệt của field(dicDMKhoangSan)"
@@ -722,6 +780,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Tain02Nckt205.cs",
         "lines": [
@@ -760,17 +819,17 @@
         ]
       },
       "guards": [
-        "!(isEmpty(cell(S0!F{trigger.row}).value))",
+        "!(isEmpty(cell(S0!F{trigger.row})#144.value))",
         "field(_dmKSData) != null",
-        "field(_dmKSData).Count > 0",
+        "count(field(_dmKSData)) > 0",
         "period.dicVar != null",
-        "period.dicVar.Count > 0",
+        "count(period.dicVar) > 0",
         "hasKey(PeriodInfo.dicVar, \"IS_DM_MOI\")",
-        "opaque(<obj>.ToNumber) == 0",
-        "opaque(<obj>.ToNumber) != 0",
+        "opaque(<obj>.ToNumber, cell(S0!AD{trigger.row})#144.value) == 0",
+        "opaque(<obj>.ToNumber, cell(S0!V{trigger.row})#144.value) != 0",
         "opaque(Find) != null",
-        "opaque(<obj>.ToNumber) > 0",
-        "opaque(<obj>.ToNumber) < opaque(<obj>.ToNumber)"
+        "opaque(<obj>.ToNumber, opaque(Find).cqtgia) > 0",
+        "opaque(<obj>.ToNumber, cell(S0!V{trigger.row})#144.value) < opaque(<obj>.ToNumber, opaque(Find).cqtgia)"
       ],
       "effects": [
         {
@@ -781,13 +840,27 @@
               "sheet(0)",
               "trigger.row-1",
               "21",
-              "opaque(HTKKFile.GetMessage)"
+              "opaque(HTKKFile.GetMessage, sheet(0), [4, 22])"
             ],
             "call": "HTKKFile.SetNodeBackGroundPink"
           },
           "at": 989,
           "via": "validateTaiNguyen@157",
           "status": "opaque"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!AD{trigger.row})#144",
+          "after": "hợp nhánh dòng 144: trên một số nhánh có lệnh ghi ô (dòng 137, 147)"
+        },
+        {
+          "ref": "cell(S0!F{trigger.row})#144",
+          "after": "hợp nhánh dòng 144: trên một số nhánh có lệnh ghi ô (dòng 137, 147)"
+        },
+        {
+          "ref": "cell(S0!V{trigger.row})#144",
+          "after": "hợp nhánh dòng 144: trên một số nhánh có lệnh ghi ô (dòng 137, 147)"
         }
       ],
       "source": {
@@ -800,7 +873,15 @@
       "status": "ui_only",
       "reason": "chỉ có thao tác giao diện, không tác dụng lên ô",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 123,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -828,17 +909,17 @@
         ]
       },
       "guards": [
-        "!(isEmpty(cell(S0!F{trigger.row}).value))",
+        "!(isEmpty(cell(S0!F{trigger.row})#144.value))",
         "field(_dmKSData) != null",
-        "field(_dmKSData).Count > 0",
+        "count(field(_dmKSData)) > 0",
         "period.dicVar != null",
-        "period.dicVar.Count > 0",
+        "count(period.dicVar) > 0",
         "hasKey(PeriodInfo.dicVar, \"IS_DM_MOI\")",
-        "opaque(<obj>.ToNumber) == 0",
-        "opaque(<obj>.ToNumber) != 0",
+        "opaque(<obj>.ToNumber, cell(S0!AD{trigger.row})#144.value) == 0",
+        "opaque(<obj>.ToNumber, cell(S0!V{trigger.row})#144.value) != 0",
         "opaque(Find) != null",
-        "opaque(<obj>.ToNumber) <= 0",
-        "opaque(<obj>.ToNumber) < opaque(<obj>.ToNumber)"
+        "opaque(<obj>.ToNumber, opaque(Find).cqtgia) <= 0",
+        "opaque(<obj>.ToNumber, cell(S0!V{trigger.row})#144.value) < opaque(<obj>.ToNumber, opaque(Find).giatoithieu)"
       ],
       "effects": [
         {
@@ -849,13 +930,27 @@
               "sheet(0)",
               "trigger.row-1",
               "21",
-              "opaque(HTKKFile.GetMessage)"
+              "opaque(HTKKFile.GetMessage, sheet(0), [4, 21])"
             ],
             "call": "HTKKFile.SetNodeBackGroundPink"
           },
           "at": 994,
           "via": "validateTaiNguyen@157",
           "status": "opaque"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!AD{trigger.row})#144",
+          "after": "hợp nhánh dòng 144: trên một số nhánh có lệnh ghi ô (dòng 137, 147)"
+        },
+        {
+          "ref": "cell(S0!F{trigger.row})#144",
+          "after": "hợp nhánh dòng 144: trên một số nhánh có lệnh ghi ô (dòng 137, 147)"
+        },
+        {
+          "ref": "cell(S0!V{trigger.row})#144",
+          "after": "hợp nhánh dòng 144: trên một số nhánh có lệnh ghi ô (dòng 137, 147)"
         }
       ],
       "source": {
@@ -868,7 +963,15 @@
       "status": "ui_only",
       "reason": "chỉ có thao tác giao diện, không tác dụng lên ô",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 123,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -896,7 +999,7 @@
         ]
       },
       "guards": [
-        "num(cell(S0!AD{trigger.row}).value) > 0"
+        "num(cell(S0!AD{trigger.row})#141.value) > 0"
       ],
       "effects": [
         {
@@ -924,6 +1027,12 @@
           },
           "at": 162,
           "status": "parametric"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!AD{trigger.row})#141",
+          "after": "hợp nhánh dòng 141: trên một số nhánh có lệnh ghi ô (dòng 137, 157)"
         }
       ],
       "source": {

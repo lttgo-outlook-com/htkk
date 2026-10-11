@@ -275,7 +275,7 @@ def placeholders(t):
 def rec_tokens(o, k, acc):
     if isinstance(o, dict):
         for kk, v in o.items():
-            if kk in ("reason", "file", "call", "via", "note", "base", "symbols", "source", "key", "hook", "kind", "status", "prop"):
+            if kk in ("reason", "file", "call", "via", "note", "base", "symbols", "source", "key", "hook", "kind", "status", "prop", "after", "targetReason", "template"):
                 continue
             rec_tokens(v, kk, acc)
     elif isinstance(o, list):
@@ -283,7 +283,8 @@ def rec_tokens(o, k, acc):
             rec_tokens(v, k, acc)
     elif isinstance(o, str):
         t = placeholders(o) if k in ("formula", "value") else o
-        t = re.sub(r"field\(\w+\)|obj\(\w*\)|opaque\([^()]*\)", "", lit.sub('""', t))
+        t = re.sub(r"field\(\w+\)|obj\(\w*\)|opaque\([^(),]*\)", "", lit.sub('""', t))
+        t = re.sub(r"opaque\([^(),]*, ", "(", t)
         acc.update(tok.findall(t))
 free_recs = 0; free_ex = []; nrec_all = 0
 files = [(c["class"], os.path.join(rules, c["class"] + ".json")) for c in classes]
@@ -447,8 +448,20 @@ mname = re.compile(r"^\t(?:(?:public|private|protected|internal|static|virtual|o
 pdecl = re.compile(r"[(,]\s*(?:ref\s+|out\s+|params\s+)?[\w.<>\[\]?]+\s+(\w+)\s*(?:=[^,)]*)?(?=[,)])")
 KIND_OK = re.compile(r"^(?:<\w+>\.\w+|[A-Za-z_]\w*(?:\.\w+)+|expr:\w+|binary:\w+|target:\w+|[a-z][a-z0-9-]*|[A-Z][A-Za-z]*)$")
 # từ vựng loại của công cụ (nhãn cố định, không lấy từ mã nguồn): không đối chiếu với tên trong tệp
-KINDS = {"array-index", "budget", "call", "cells-index", "compound", "div0", "format-template", "Format", "index-out-of-range", "lambda", "letters", "letters<1", "no-case", "pattern", "result", "tab-index", "too-many-cases", "branches"}
+KINDS = {"null-deref", "array-index", "budget", "call", "cells-index", "compound", "div0", "format-template", "Format", "index-out-of-range", "lambda", "letters", "letters<1", "no-case", "pattern", "result", "tab-index", "too-many-cases", "branches"}
 lab_bad = []; lab_n = 0
+def heads7h(t):
+    # nhãn opaque(Tên, đối số...): chỉ xét phần tên (trước dấu phẩy ngoài cùng)
+    i = 0
+    while True:
+        i = t.find("opaque(", i)
+        if i < 0:
+            return
+        j, dep = i + 7, 0
+        while j < len(t) and not (dep == 0 and t[j] in ",)"):
+            dep += {"(": 1, ")": -1}.get(t[j], 0); j += 1
+        yield t[i + 7:j]
+        i += 7
 names_cache = {}
 for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
     b = os.path.basename(f)
@@ -463,7 +476,7 @@ for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
                 nm |= set(rx2.findall(txt))
             names_cache[fsrc] = nm
         nm = names_cache[fsrc]
-        for lab in re.findall(r"opaque\(([^()]*)\)", json.dumps({k: v for k, v in r.items() if k not in ("reason", "symbols")}, ensure_ascii=False)):
+        for lab in heads7h(json.dumps({k: v for k, v in r.items() if k not in ("reason", "symbols", "cellVersions")}, ensure_ascii=False)):
             lab_n += 1
             first = lab.split(".")[0].split(":")[-1]
             unq = "." not in lab
@@ -546,5 +559,190 @@ say(all(g for _, g in cj), "(7j) các ca QC lần 3 (1)-(6) đúng")
 # (7k) không còn dấu ẩn nội bộ trong JSON
 leak = [os.path.basename(f) for f in glob.glob(os.path.join(rules, "*.json")) if "\\u001f" in open(f).read().lower() or "\x1f" in open(f).read()]
 say(not leak, "(7k) JSON không chứa dấu ẩn nội bộ: %d tệp vi phạm" % len(leak))
+# ---------- (8) QC lần 4 ----------
+def all_records():
+    for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+        b = os.path.basename(f)
+        if b in ("formula_points.json", "opaque_calls.json", "index.json", "lock_config.json"):
+            continue
+        for r in json.load(open(f))["records"]:
+            yield b, r
+CMP_OPS = [" == ", " != ", " <= ", " >= ", " < ", " > "]
+INV = {" == ": " != ", " != ": " == ", " <= ": " > ", " > ": " <= ", " >= ": " < ", " < ": " >= "}
+def top_scan(s):
+    """vị trí các toán tử ở mức ngoài cùng (ngoài ngoặc và chuỗi)"""
+    dep, q, i, ops = 0, False, 0, []
+    while i < len(s):
+        ch = s[i]
+        if q:
+            if ch == "\\":
+                i += 2; continue
+            if ch == '"':
+                q = False
+        elif ch == '"':
+            q = True
+        elif ch in "([{":
+            dep += 1
+        elif ch in ")]}":
+            dep -= 1
+        elif dep == 0:
+            for op in (" && ", " || ") + tuple(CMP_OPS):
+                if s.startswith(op, i):
+                    ops.append((i, op)); i += len(op) - 1; break
+        i += 1
+    return ops
+def balanced_inner(s):
+    if not (s.startswith("!(") and s.endswith(")")):
+        return None
+    dep = 0
+    for i, ch in enumerate(s[1:], 1):
+        if ch == "(":
+            dep += 1
+        elif ch == ")":
+            dep -= 1
+            if dep == 0 and i != len(s) - 1:
+                return None
+    return s[2:-1]
+def negs(g):
+    out = {"!(" + g + ")"}
+    inner = balanced_inner(g)
+    if inner is not None:
+        out.add(inner)
+    ops = top_scan(g)
+    if len(ops) == 1 and ops[0][1] in INV:
+        i, op = ops[0]
+        out.add(g[:i] + INV[op] + g[i + len(op):])
+    return out
+gng = collections.Counter(); gng_unr = 0; gng_files = set(); gng_ex = []
+for b, r in all_records():
+    conj = [g for g in r["guards"] if not g.startswith("loop: ")] + list(r["trigger"]["when"])
+    cs = set(conj)
+    hit = [g for g in conj if negs(g) & cs]
+    if hit:
+        if r["unreachable"]:
+            gng_unr += 1
+            continue
+        kind = "cell" if any("cell(" in g for g in hit) else "field" if any("field(" in g for g in hit) else "opaque" if any("opaque(" in g for g in hit) else "khác"
+        gng[kind] += 1; gng_files.add(b)
+        if len(gng_ex) < 6:
+            gng_ex.append("%s %s %s %s" % (b, r["hook"], r["source"]["lines"], hit[0][:90]))
+for x in gng_ex:
+    print("   g và !(g):", x)
+print("   (8a) theo loại:", dict(gng), "; bản ghi unreachable có g và !(g) cùng phiên bản (mâu thuẫn thật, đã gắn cờ):", gng_unr)
+say(sum(gng.values()) == 0, "(8a) bản ghi (không gắn unreachable) có g và !(g) cùng phiên bản trong guards/trigger: %d (%d tệp)" % (sum(gng.values()), len(gng_files)))
+
+lk_null = 0; lk_null_noreason = []; lk_tot = 0; lk_chk = 0; lk_chk_tgt = 0
+for b, r in all_records():
+    for e in r["effects"]:
+        if e["op"] in ("lock", "unlock"):
+            lk_tot += 1
+            p = e.get("params", {})
+            if p.get("via") == "checkLockUnLockCells":
+                lk_chk += 1
+                if e.get("target") is not None:
+                    lk_chk_tgt += 1
+            if e.get("target") is None:
+                lk_null += 1
+                if not p.get("targetReason"):
+                    lk_null_noreason.append("%s %s at=%s" % (b, r["hook"], e["at"]))
+for x in lk_null_noreason[:5]:
+    print("   lock thiếu đích không lý do:", x)
+say(not lk_null_noreason, "(8b) effect lock/unlock: %d; checkLockUnLockCells %d (có ô đích %d); target null %d, thiếu lý do (params.targetReason) %d" % (lk_tot, lk_chk, lk_chk_tgt, lk_null, len(lk_null_noreason)))
+
+def rec_leaves(o, acc, k=""):
+    if isinstance(o, dict):
+        for kk, v in o.items():
+            if kk not in ("reason", "symbols", "key", "source", "hook", "kind", "status", "note", "via", "file", "base", "targetReason"):
+                rec_leaves(v, acc, kk)
+    elif isinstance(o, list):
+        for v in o:
+            rec_leaves(v, acc, k)
+    elif isinstance(o, str):
+        acc.append(lit.sub('""', o))
+def rec_text(r):
+    acc = []; rec_leaves(r, acc)
+    return "\n".join(acc)
+nulls = 0; null_recs = 0; null_ex = []
+bare_cl = 0; bare_ex = []; cnt_free = 0; cnt_ex = []
+bare_rx = re.compile(r"(?<![\w.\])$@])([A-Za-z_]\w*)(?:@\d+)?\.(Count|Length)\b")
+cnt_rx = re.compile(r"\b(?:count|length)\(([A-Za-z_]\w*)(?:@\d+)?\)")
+VOCAB = {"tk", "ttc", "period", "header", "sheet", "spread", "trigger"}
+for b, r in all_records():
+    t = rec_text(r)
+    n = len(re.findall(r"(?<![\w.])null\.", t))
+    if n:
+        nulls += n; null_recs += 1
+        if len(null_ex) < 5:
+            null_ex.append("%s %s %s" % (b, r["hook"], r["source"]["lines"]))
+    syn = {s["name"] for s in r.get("symbols", [])}
+    for m in bare_rx.finditer(t):
+        bare_cl += 1
+        if len(bare_ex) < 5:
+            bare_ex.append("%s %s %s" % (b, r["hook"], m.group(0)))
+    for m in cnt_rx.finditer(t):
+        if m.group(1) not in syn and m.group(1) not in VOCAB:
+            cnt_free += 1
+            if len(cnt_ex) < 5:
+                cnt_ex.append("%s %s count/length(%s)" % (b, r["hook"], m.group(1)))
+for x in null_ex:
+    print("   null.:", x)
+say(nulls == 0, "(8c) \"null.\" trong bản ghi: %d lần, %d bản ghi" % (nulls, null_recs))
+for x in bare_ex + cnt_ex:
+    print("   Count/Length:", x)
+say(bare_cl == 0 and cnt_free == 0, "(8d) .Count/.Length trực tiếp trên tên: %d; count(x)/length(x) với x không khai trong symbols: %d" % (bare_cl, cnt_free))
+
+# (8e) symbols: một tên nhiều nguồn trong cùng bản ghi phải tách khóa tên@dòng (ref khác nhau, có mặt trong văn bản)
+ms_bad = []; ms_n = 0
+for b, r in all_records():
+    by = collections.defaultdict(list)
+    for s in r.get("symbols", []):
+        by[s["name"]].append(s)
+    t = json.dumps({k: v for k, v in r.items() if k not in ("reason", "symbols")}, ensure_ascii=False)
+    for nm, l in by.items():
+        if len(l) < 2:
+            continue
+        ms_n += 1
+        refs = [s.get("ref") for s in l]
+        if None in refs or len(set(refs)) != len(refs) or any(not re.search(r"(?<![\w.])" + re.escape(x) + r"(?!\d)", t) for x in refs):
+            ms_bad.append("%s %s %s %s" % (b, r["hook"], nm, refs[:4]))
+for x in ms_bad[:5]:
+    print("   symbols nhiều nguồn:", x)
+say(not ms_bad, "(8e) tên symbols nhiều nguồn trong cùng bản ghi: %d, chưa tách khóa tên@dòng %d" % (ms_n, len(ms_bad)))
+
+# (8f) nhãn opaque mất đối số với hàm đã biết có tham số bắt buộc
+sdecl = re.compile(r"public static [\w<>\[\],.?]+ (\w+)\(([^)]*)\)")
+KNOWN = {"DateTime.Compare", "File.Exists", "Directory.Exists", "Path.Combine", "string.Join", "String.Join", "Regex.IsMatch", "Regex.Replace", "Regex.Match", "decimal.Round", "Math.Pow", "Convert.ToString"}
+for cf in ("GeneralFunctions", "HTKKFile", "HTKKFormater", "ConvertHelpers"):
+    p = os.path.join(dec, "tax.htkk.business/TAX.HTKK.Business", cf + ".cs")
+    if not os.path.exists(p):
+        continue
+    arity = collections.defaultdict(set)
+    for nm, ps in sdecl.findall(open(p, encoding="utf-8-sig").read()):
+        req = [x for x in ps.split(",") if x.strip() and "=" not in x and not x.strip().startswith("params ")]
+        arity[nm].add(len(req))
+    for nm, s in arity.items():
+        if min(s) > 0:
+            KNOWN.add(cf + "." + nm)
+def opaque_labels(t):
+    i = 0
+    while True:
+        i = t.find("opaque(", i)
+        if i < 0:
+            return
+        j, dep = i + 7, 1
+        while j < len(t) and dep:
+            dep += {"(": 1, ")": -1}.get(t[j], 0); j += 1
+        yield t[i + 7:j - 1]
+        i += 7
+lost = collections.Counter(); op_n = 0
+for b, r in all_records():
+    for lab in opaque_labels(rec_text(r)):
+        op_n += 1
+        head = lab.split(", ")[0]
+        if head in KNOWN and head == lab:
+            lost[head] += 1
+print("   (8f) hàm đã biết có tham số bắt buộc: %d; nhãn mất đối số nhiều nhất: %s" % (len(KNOWN), lost.most_common(5)))
+say(not lost, "(8f) nhãn opaque(Tên) của hàm đã biết mà không giữ đối số: %d / %d nhãn" % (sum(lost.values()), op_n))
+
 print("KẾT LUẬN:", "ĐẠT" if ok else "CÓ MỤC TRƯỢT")
 sys.exit(0 if ok else 1)

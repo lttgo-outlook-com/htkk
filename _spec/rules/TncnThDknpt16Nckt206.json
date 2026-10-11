@@ -89,7 +89,7 @@
           },
           "params": {
             "prop": "CellType",
-            "value": "celltype(Button, TwoState=false, Text=opaque(HTKKFile.GetMessage), ButtonColor=opaque(Color.FromArgb), TextColor=Color.Blue)"
+            "value": "celltype(Button, TwoState=false, Text=opaque(HTKKFile.GetMessage, \"0346\"), ButtonColor=opaque(Color.FromArgb, 240, 240, 240), TextColor=Color.Blue)"
           },
           "at": 29,
           "status": "unresolved"
@@ -102,12 +102,13 @@
           },
           "params": {
             "cellTypeAt": 29,
-            "text": "opaque(HTKKFile.GetMessage)"
+            "text": "opaque(HTKKFile.GetMessage, \"0346\")"
           },
           "at": 26,
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
         "lines": [
@@ -138,8 +139,8 @@
         "when": []
       },
       "guards": [
-        "opaque(ConvertHelpers.ConvertToString) == \"Khác\"",
-        "loop: for@34 i from 0 step +1 while i < tk.SheetInfos[0].Tables[0].RowsValues.Count"
+        "opaque(ConvertHelpers.ConvertToString, cell(S0!P{i+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart})#34.value) == \"Khác\"",
+        "loop: for@34 i from 0 step +1 while i < count(tk.SheetInfos[0].Tables[0].RowsValues)"
       ],
       "effects": [
         {
@@ -170,6 +171,12 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!P{i+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart})#34",
+          "after": "vòng lặp dòng 34 có lệnh hoặc lời gọi có thể ghi ô"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
         "lines": [
@@ -183,9 +190,17 @@
       "symbols": [
         {
           "name": "i",
+          "ref": "i",
           "origin": "loop",
           "at": 34,
           "desc": "biến mang qua vòng lặp dòng 34: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 20,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -302,6 +317,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
         "lines": [
@@ -463,6 +479,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
         "lines": [
@@ -476,9 +493,10 @@
       "symbols": [
         {
           "name": "value",
+          "ref": "value",
           "origin": "out",
           "at": 90,
-          "desc": "giá trị tra từ bảng HTKKWinDictionaryDiaDanh.QuocTich theo khóa cell(S0!{col(trigger.col)}{trigger.row}).text tại dòng 90, không có khóa thì giá trị mặc định"
+          "desc": "giá trị tra từ bảng HTKKWinDictionaryDiaDanh.QuocTich theo khóa cell(S0!{col(trigger.col)}{trigger.row})#55.text tại dòng 90, không có khóa thì giá trị mặc định"
         }
       ]
     },
@@ -631,6 +649,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
         "lines": [
@@ -644,9 +663,10 @@
       "symbols": [
         {
           "name": "value",
+          "ref": "value",
           "origin": "out",
           "at": 90,
-          "desc": "giá trị tra từ bảng HTKKWinDictionaryDiaDanh.QuocTich theo khóa cell(S0!{col(trigger.col)}{trigger.row}).text tại dòng 90, không có khóa thì giá trị mặc định"
+          "desc": "giá trị tra từ bảng HTKKWinDictionaryDiaDanh.QuocTich theo khóa cell(S0!{col(trigger.col)}{trigger.row})#55.text tại dòng 90, không có khóa thì giá trị mặc định"
         }
       ]
     },
@@ -673,11 +693,11 @@
       },
       "guards": [
         "idxRow == 0",
-        "opaque(Directory.Exists)",
-        "accum(flag := cases(indexOf(fileInfo.Name, \"05_3_QTT_TNCN\") > -1 && indexOf(fileInfo.Name, period.Nam) > 0 -> true | else -> flag), from false, foreach@714 fileInfo in opaque(<obj>.GetFiles))",
+        "opaque(Directory.Exists, \"{HTKKConfig.DATAFILES}\\{ttc.mst}\")",
+        "accum(flag := cases(indexOf(fileInfo.Name, \"05_3_QTT_TNCN\") > -1 && indexOf(fileInfo.Name, period.Nam) > 0 -> true | else -> flag), from false, foreach@714 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo), \"*.xml\"))",
         "item.Attributes[\"Dynamic\"].Value == \"0\"",
-        "loop: foreach@731 item in opaque(<obj>.SelectSingleNode).ChildNodes",
-        "loop: foreach@741 item2 in opaque(<obj>.SelectSingleNode).ChildNodes"
+        "loop: foreach@731 item in opaque(<obj>.SelectSingleNode, obj(HTKKCMCXML).XDocument, \"/Sections\").ChildNodes",
+        "loop: foreach@741 item2 in opaque(<obj>.SelectSingleNode, item, \"Cells\").ChildNodes"
       ],
       "effects": [
         {
@@ -685,7 +705,7 @@
           "target": null,
           "params": {
             "args": [
-              "opaque(<obj>.GetStaticCellInfo)"
+              "opaque(<obj>.GetStaticCellInfo, obj(HTKKCMCSheetInfo), item2)"
             ],
             "call": "<obj>.Add"
           },
@@ -694,6 +714,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
         "lines": [
@@ -707,33 +728,52 @@
       "symbols": [
         {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 714,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo), \"*.xml\")"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 714,
           "desc": "biến mang qua vòng lặp dòng 714: giá trị trước vòng false, cuối mỗi vòng flag := cases(indexOf(fileInfo.Name, \"05_3_QTT_TNCN\") > -1 && indexOf(fileInfo.Name, period.Nam) > 0 -> true | else -> flag)"
         },
         {
           "name": "idxRow",
+          "ref": "idxRow",
           "origin": "param",
           "at": 129,
           "desc": "tham số của method ButtonClick_0, giá trị do nơi gọi truyền vào"
         },
         {
           "name": "item",
+          "ref": "item",
           "origin": "foreach",
           "at": 731,
-          "desc": "phần tử đang duyệt của opaque(<obj>.SelectSingleNode).ChildNodes"
+          "desc": "phần tử đang duyệt của opaque(<obj>.SelectSingleNode, obj(HTKKCMCXML).XDocument, \"/Sections\").ChildNodes"
         },
         {
           "name": "item2",
+          "ref": "item2",
           "origin": "foreach",
           "at": 741,
-          "desc": "phần tử đang duyệt của opaque(<obj>.SelectSingleNode).ChildNodes"
+          "desc": "phần tử đang duyệt của opaque(<obj>.SelectSingleNode, item, \"Cells\").ChildNodes"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 129,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method ButtonClick_0"
+        },
+        {
+          "name": "ttc",
+          "ref": "ttc",
+          "origin": "hook-param",
+          "at": 129,
+          "desc": "tham số TTinChung (HTKKCMCTTinChungInfo) của method ButtonClick_0"
         }
       ]
     },
@@ -760,10 +800,10 @@
       },
       "guards": [
         "idxRow == 0",
-        "opaque(Directory.Exists)",
-        "accum(flag := cases(indexOf(fileInfo.Name, \"05_3_QTT_TNCN\") > -1 && indexOf(fileInfo.Name, period.Nam) > 0 -> true | else -> flag), from false, foreach@714 fileInfo in opaque(<obj>.GetFiles))",
+        "opaque(Directory.Exists, \"{HTKKConfig.DATAFILES}\\{ttc.mst}\")",
+        "accum(flag := cases(indexOf(fileInfo.Name, \"05_3_QTT_TNCN\") > -1 && indexOf(fileInfo.Name, period.Nam) > 0 -> true | else -> flag), from false, foreach@714 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo), \"*.xml\"))",
         "item.Attributes[\"Dynamic\"].Value != \"0\"",
-        "loop: foreach@731 item in opaque(<obj>.SelectSingleNode).ChildNodes"
+        "loop: foreach@731 item in opaque(<obj>.SelectSingleNode, obj(HTKKCMCXML).XDocument, \"/Sections\").ChildNodes"
       ],
       "effects": [
         {
@@ -771,7 +811,7 @@
           "target": null,
           "params": {
             "args": [
-              "opaque(<obj>.GetTable)"
+              "opaque(<obj>.GetTable, obj(HTKKCMCSheetInfo), item)"
             ],
             "call": "<obj>.Add"
           },
@@ -780,6 +820,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
         "lines": [
@@ -793,27 +834,45 @@
       "symbols": [
         {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 714,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo), \"*.xml\")"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 714,
           "desc": "biến mang qua vòng lặp dòng 714: giá trị trước vòng false, cuối mỗi vòng flag := cases(indexOf(fileInfo.Name, \"05_3_QTT_TNCN\") > -1 && indexOf(fileInfo.Name, period.Nam) > 0 -> true | else -> flag)"
         },
         {
           "name": "idxRow",
+          "ref": "idxRow",
           "origin": "param",
           "at": 129,
           "desc": "tham số của method ButtonClick_0, giá trị do nơi gọi truyền vào"
         },
         {
           "name": "item",
+          "ref": "item",
           "origin": "foreach",
           "at": 731,
-          "desc": "phần tử đang duyệt của opaque(<obj>.SelectSingleNode).ChildNodes"
+          "desc": "phần tử đang duyệt của opaque(<obj>.SelectSingleNode, obj(HTKKCMCXML).XDocument, \"/Sections\").ChildNodes"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 129,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method ButtonClick_0"
+        },
+        {
+          "name": "ttc",
+          "ref": "ttc",
+          "origin": "hook-param",
+          "at": 129,
+          "desc": "tham số TTinChung (HTKKCMCTTinChungInfo) của method ButtonClick_0"
         }
       ]
     },
@@ -840,11 +899,11 @@
       },
       "guards": [
         "idxRow == 0",
-        "opaque(Directory.Exists)",
-        "accum(flag := cases(indexOf(fileInfo.Name, \"05_3_QTT_TNCN\") > -1 && indexOf(fileInfo.Name, period.Nam) > 0 -> true | else -> flag), from false, foreach@714 fileInfo in opaque(<obj>.GetFiles))",
-        "obj(HTKKCMCSheetInfo).Tables.Count > 0",
-        "obj(HTKKCMCSheetInfo).Tables[0].RowsValues.Count > 0",
-        "loop: for@754 j from 0 step +1 while j < obj(HTKKCMCSheetInfo).Tables[0].RowsValues.Count"
+        "opaque(Directory.Exists, \"{HTKKConfig.DATAFILES}\\{ttc.mst}\")",
+        "accum(flag := cases(indexOf(fileInfo.Name, \"05_3_QTT_TNCN\") > -1 && indexOf(fileInfo.Name, period.Nam) > 0 -> true | else -> flag), from false, foreach@714 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo), \"*.xml\"))",
+        "count(obj(HTKKCMCSheetInfo).Tables) > 0",
+        "count(obj(HTKKCMCSheetInfo).Tables[0].RowsValues) > 0",
+        "loop: for@754 j from 0 step +1 while j < count(obj(HTKKCMCSheetInfo).Tables[0].RowsValues)"
       ],
       "effects": [
         {
@@ -861,6 +920,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
         "lines": [
@@ -874,27 +934,45 @@
       "symbols": [
         {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 714,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo), \"*.xml\")"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 714,
           "desc": "biến mang qua vòng lặp dòng 714: giá trị trước vòng false, cuối mỗi vòng flag := cases(indexOf(fileInfo.Name, \"05_3_QTT_TNCN\") > -1 && indexOf(fileInfo.Name, period.Nam) > 0 -> true | else -> flag)"
         },
         {
           "name": "idxRow",
+          "ref": "idxRow",
           "origin": "param",
           "at": 129,
           "desc": "tham số của method ButtonClick_0, giá trị do nơi gọi truyền vào"
         },
         {
           "name": "j",
+          "ref": "j",
           "origin": "loop",
           "at": 754,
           "desc": "biến mang qua vòng lặp dòng 754: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 129,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method ButtonClick_0"
+        },
+        {
+          "name": "ttc",
+          "ref": "ttc",
+          "origin": "hook-param",
+          "at": 129,
+          "desc": "tham số TTinChung (HTKKCMCTTinChungInfo) của method ButtonClick_0"
         }
       ]
     },
@@ -952,6 +1030,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
         "lines": [
@@ -965,6 +1044,7 @@
       "symbols": [
         {
           "name": "idxRow",
+          "ref": "idxRow",
           "origin": "param",
           "at": 129,
           "desc": "tham số của method ButtonClick_0, giá trị do nơi gọi truyền vào"

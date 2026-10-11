@@ -43,9 +43,9 @@
       "guards": [
         "obj(DirectoryInfo).Exists",
         "period.LoaiToKhai == \"C\"",
-        "opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy).Count > 0",
-        "opaque(<obj>.GetFiles).Length > 0",
-        "last_in_loop(foreach@101 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from 0, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@104 fileInfo in opaque(<obj>.GetFiles))) < 0"
+        "count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0",
+        "length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+        "last_in_loop(foreach@101 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from 0, last accum(result@104 := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"Q_51\")) | else -> result@104), from result@101, foreach@104 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))) < 0"
       ],
       "effects": [
         {
@@ -54,7 +54,7 @@
             "sheet": 0,
             "cell": "U36"
           },
-          "value": "{(last_in_loop(foreach@101 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from 0, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@104 fileInfo in opaque(<obj>.GetFiles)))*-1)}",
+          "value": "{(last_in_loop(foreach@101 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from 0, last accum(result@104 := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"Q_51\")) | else -> result@104), from result@101, foreach@104 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo))))*-1)}",
           "params": {
             "prop": "value"
           },
@@ -62,6 +62,7 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt03TT89Nckt309.cs",
         "lines": [
@@ -70,32 +71,57 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: (last_in_loop(foreach@101 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from 0, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@104 fileInfo in opaque(<obj>.GetFiles)))*-1), giá trị hoặc tham số có phần chưa giải, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: (last_in_loop(foreach@101 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from 0, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"Q_51\")) | else -> result), from result, foreach@104 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo))))*-1), giá trị hoặc tham số có phần chưa giải, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
         {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 104,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
+        },
+        {
+          "name": "header",
+          "ref": "header",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số HeaderInfo (HTKKHeaderInfo) của method AutoBindData_0"
         },
         {
           "name": "item",
+          "ref": "item",
           "origin": "foreach",
           "at": 101,
-          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
         },
         {
           "name": "result",
+          "ref": "result@101",
           "origin": "loop",
           "at": 101,
-          "desc": "biến mang qua vòng lặp dòng 101: giá trị trước vòng 0, cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@104 fileInfo in opaque(<obj>.GetFiles))"
+          "desc": "biến mang qua vòng lặp dòng 101: giá trị trước vòng 0, cuối mỗi vòng result := accum(result@104 := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"Q_51\")) | else -> result@104), from result@101, foreach@104 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))"
         },
         {
           "name": "result",
+          "ref": "result@104",
           "origin": "loop",
           "at": 104,
-          "desc": "biến mang qua vòng lặp dòng 104: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result)"
+          "desc": "biến mang qua vòng lặp dòng 104: giá trị trước vòng result@101, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"Q_51\")) | else -> result@104)"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -117,7 +143,7 @@
         "when": []
       },
       "guards": [
-        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy).Count <= 0 || opaque(<obj>.GetFiles).Length <= 0 || last_in_loop(foreach@101 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from 0, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@104 fileInfo in opaque(<obj>.GetFiles))) >= 0"
+        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) <= 0 || length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) <= 0 || last_in_loop(foreach@101 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from 0, last accum(result@104 := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"Q_51\")) | else -> result@104), from result@101, foreach@104 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))) >= 0"
       ],
       "effects": [
         {
@@ -134,6 +160,7 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt03TT89Nckt309.cs",
         "lines": [
@@ -147,27 +174,52 @@
       "symbols": [
         {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 104,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
+        },
+        {
+          "name": "header",
+          "ref": "header",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số HeaderInfo (HTKKHeaderInfo) của method AutoBindData_0"
         },
         {
           "name": "item",
+          "ref": "item",
           "origin": "foreach",
           "at": 101,
-          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
         },
         {
           "name": "result",
+          "ref": "result@101",
           "origin": "loop",
           "at": 101,
-          "desc": "biến mang qua vòng lặp dòng 101: giá trị trước vòng 0, cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@104 fileInfo in opaque(<obj>.GetFiles))"
+          "desc": "biến mang qua vòng lặp dòng 101: giá trị trước vòng 0, cuối mỗi vòng result := accum(result@104 := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"Q_51\")) | else -> result@104), from result@101, foreach@104 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))"
         },
         {
           "name": "result",
+          "ref": "result@104",
           "origin": "loop",
           "at": 104,
-          "desc": "biến mang qua vòng lặp dòng 104: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result)"
+          "desc": "biến mang qua vòng lặp dòng 104: giá trị trước vòng result@101, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"Q_51\")) | else -> result@104)"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -206,6 +258,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt03TT89Nckt309.cs",
         "lines": [
@@ -216,7 +269,22 @@
       "status": "resolved",
       "reason": "",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
+        }
+      ]
     },
     {
       "key": {
@@ -251,6 +319,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt03TT89Nckt309.cs",
         "lines": [
@@ -261,7 +330,22 @@
       "status": "resolved",
       "reason": "",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 18,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
+        }
+      ]
     }
   ]
 }
