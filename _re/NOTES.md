@@ -6,7 +6,15 @@ Nguồn: `HTKK_5.7.9_DLL_signed.rar` (bộ cài InstallShield, build 2026-10-06,
 - 21 DLL còn lại đều managed: FarPoint (spreadsheet UI), BarcodeLib/TBarcode5 (in mã vạch), SharpSVN (auto-update?), Newtonsoft.Json, Ionic.Zip, vnconvert (bộ chuyển mã Việt), NUnit.
 
 Mục đích: decompile và lập danh mục, tìm hiểu toàn bộ công cụ HTKK 5.7.9 của Tổng cục Thuế (logic/algorithm, dữ liệu, static behavior); KHÔNG nhằm làm đầu vào dựng web app.
-Đầu ra đặc tả máy đọc được nằm trong `_spec/` (do các việc khác tạo).
+Đầu ra đặc tả máy đọc được nằm trong `_spec/`; bảng thư mục, lệnh chạy lại, số liệu, lệnh dotnet và giới hạn đã biết: **`_spec/README.md`** (chạy lại và kiểm toàn bộ: `sh _spec/tools/rebuild_all.sh`).
+
+**Cấu trúc `_forms` (cập nhật 11/10/2026)**:
+- `_forms/<nhóm>/<form>/`: template, XSD, XML mẫu của từng form (thư mục = FolderName/MaFile trong `menu.xml`); `cong_thuc.txt` chỉ có ở form có ô công thức.
+- `_forms/_shared/<TÊN>/`: tệp dùng chung (`HEADER`, `IN_TMP`, `XSD_CHUNG`).
+- `_forms/_ngoai_menu/<STEM>/`: tệp nhận dạng được stem nhưng không khớp form nào trong menu (72 thư mục).
+- `_forms/_manifest.csv`: truy vết từng tệp (src, dst, rule, version, sha256, bằng chứng).
+- Pending: 15 tệp chưa xác định form, ghi ở `_re/pending_mapping.csv`, không nằm trong `_forms`.
+- `cong_thuc.txt` nay sinh từ JSON bằng `_spec/tools/render_cong_thuc.py` (không sửa tay); phần văn xuôi cũ đã bỏ, khôi phục được từ commit 155aff1 (lệnh `git show 155aff1:_forms/<thư mục>/cong_thuc.txt`).
 
 ## 1. Architecture (UI — `htkk.exe`, namespace `HTKK`)
 
