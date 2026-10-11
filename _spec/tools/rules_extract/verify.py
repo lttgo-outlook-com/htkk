@@ -768,7 +768,7 @@ for b, r in all_records():
         if head in KNOWN and head == lab:
             lost[head] += 1
 print("   (8f) hàm đã biết có tham số bắt buộc: %d; nhãn mất đối số nhiều nhất: %s" % (len(KNOWN), lost.most_common(5)))
-say(not lost, "(8f) nhãn opaque(Tên) của hàm đã biết mà không giữ đối số: %d / %d nhãn" % (sum(lost.values()), op_n))
+say(not lost, "(8f) nhãn opaque(Tên) của hàm đã biết mà không giữ đối số: %d / %d nhãn (tổng theo legend.counting, không bỏ literal: %d; số phân tích được sau khi bỏ chuỗi literal: %d)" % (sum(lost.values()), op_def, op_def, op_n))
 
 # (8g) các ca QC lần 4 (1)-(7)
 cq = []
@@ -842,7 +842,8 @@ for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
                 dlg_n += 1; dlg_bad.append("%s %s @%d %s" % (b, h["hook"], x["at"], x["reason"]))
 for x in dlg_bad[:5]:
     print("   dropped hằng dựa trên hộp thoại:", x)
-say(not dlg_bad, "(9a) dropped nhánh hằng tại điều kiện dựa trên kết quả hộp thoại: %d lượt, sai hướng so với giá trị khởi tạo/hộp thoại %d" % (dlg_n, len(dlg_bad)))
+print("   (9a) dropped trên nhánh không hiện hộp thoại (biến giữ giá trị khởi tạo, đúng hướng): %d" % (dlg_n - len(dlg_bad)))
+say(not dlg_bad, "(9a) dropped có lý do hằng dựa trên ký hiệu hộp thoại (hướng khác giá trị khởi tạo, hoặc điều kiện form.Yes/No): %d" % len(dlg_bad))
 # (9b) nhãn opaque của phép tìm/định dạng/hàm vô danh phải giữ đối số
 lab_rx = re.compile(r"opaque\((Find|FirstOrDefault|First|Format|lambda)\)")
 miss9b = collections.Counter(); lam_n = 0; find_n = 0
