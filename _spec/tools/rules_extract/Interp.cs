@@ -162,53 +162,67 @@ public sealed class Interp
     readonly Dictionary<long, (string Kind, SortedSet<string> Calls)> verKind = new();
     /// "cell(S0!L8)#74" -> loại, dòng lệnh ghi gốc, tên lời gọi
     public readonly Dictionary<string, (string Kind, int[] Writes, string[] Calls)> VerMeta = new(StringComparer.Ordinal);
-    long NewVer(int line, string desc, IEnumerable<long> from = null, string kind = "ghi", IEnumerable<string> calls = null)
+    /// phiên bản gốc (lệnh ghi hoặc lời gọi) của mỗi phiên bản: theo dòng ghi (verOrig, như verWrites) và theo loại (verOrigK);
+    /// vùng ghi của phiên bản gốc (null = có thể ghi ô bất kỳ). Dòng ghi hiển thị cho một ô chỉ lấy phiên bản gốc có vùng giao ô đó.
+    readonly Dictionary<long, SortedSet<long>> verOrig = new(), verOrigK = new();
+    readonly Dictionary<long, Rgn> verRg = new();
+    /// số ô có phiên bản mà không phiên bản gốc nào giao vùng ô (giữ mọi phiên bản gốc)
+    public static int RgnFallback;
+    /// chỗ đặt danh sách dòng ghi trong mô tả phiên bản hợp nhánh, điền khi gắn nhãn theo ô
+    const string WPh = "\u0001W";
+    long NewVer(int line, string desc, IEnumerable<long> from = null, string kind = "ghi", IEnumerable<string> calls = null, Rgn rgn = null)
     {
         var id = Mk.Next(); verInfo[id] = (line, desc);
         var w = new SortedSet<int>(); var cs = new SortedSet<string>(StringComparer.Ordinal); string k = kind;
-        if (from == null) { w.Add(line); if (calls != null) cs.UnionWith(calls); }
+        var og = new SortedSet<long>(); var ogk = new SortedSet<long>();
+        if (from == null) { w.Add(line); if (calls != null) cs.UnionWith(calls); og.Add(id); ogk.Add(id); verRg[id] = rgn; }
         else
         {
             k = "ghi";
             var fl = from.ToList();
             foreach (var v in fl)
-                if (v > 0 && verKind.TryGetValue(v, out var vk)) { if (vk.Kind == "co_the_ghi") k = "co_the_ghi"; cs.UnionWith(vk.Calls); }
-            foreach (var v in SrcVers(fl)) w.UnionWith(verWrites[v]);
+                if (v > 0 && verKind.TryGetValue(v, out var vk)) { if (vk.Kind == "co_the_ghi") k = "co_the_ghi"; cs.UnionWith(vk.Calls); ogk.UnionWith(verOrigK[v]); }
+            foreach (var v in SrcVers(fl)) { w.UnionWith(verWrites[v]); og.UnionWith(verOrig[v]); }
         }
-        verWrites[id] = w; verKind[id] = (k, cs); return id;
+        verWrites[id] = w; verKind[id] = (k, cs); verOrig[id] = og; verOrigK[id] = ogk; return id;
     }
     readonly Dictionary<V, List<Effect>> pendingBtn = new(ReferenceEqualityComparer.Instance);
     /// vùng ô (sheet, dòng, cột 0-based); thành phần lúc chạy là bất kỳ
-    sealed record Rgn(string S, long R1, long R2, long C1, long C2);
+    /// RS/CS: phần ký hiệu của chỉ số hàng/cột tuyến tính (cùng phần ký hiệu, khác hằng RO/CO thì rời nhau)
+    public sealed record Rgn(string S, long R1, long R2, long C1, long C2, string RS = null, long RO = 0, string CS = null, long CO = 0);
     readonly Dictionary<string, Rgn> rgnOf = new(StringComparer.Ordinal);
     static long? Lc(V v) => v is VConst k && k.Val is long l ? l : null;
     string RegionKey(VCell c, out bool exact)
     {
         string s = c.S.Index is VConst sk ? R.Expr(sk, new Flags()) : null;
         long? r1 = null, r2 = null, c1 = null, c2 = null;
+        string rs = null, cs = null; long ro = 0, co = 0;
+        static string Ls(V v, out long off) { off = 0; if (v is VLin l) { off = l.C; return string.Join(",", l.T.Select(kv => kv.Key + "*" + kv.Value.ToString(CultureInfo.InvariantCulture))); } return null; }
         switch (c.Kind)
         {
-            case "cell": r1 = r2 = Lc(c.R1); c1 = c2 = Lc(c.C1); break;
+            case "cell": r1 = r2 = Lc(c.R1); c1 = c2 = Lc(c.C1); if (r1 == null) rs = Ls(c.R1, out ro); if (c1 == null) cs = Ls(c.C1, out co); break;
             case "range":
                 r1 = Lc(c.R1); r2 = Lc(c.R2); c1 = Lc(c.C1); c2 = Lc(c.C2);
                 if (r1 == null || r2 == null) r1 = r2 = null;
                 if (c1 == null || c2 == null) c1 = c2 = null;
                 break;
-            case "row": r1 = r2 = Lc(c.R1); break;
-            case "col": c1 = c2 = Lc(c.C1); break;
+            case "row": r1 = r2 = Lc(c.R1); if (r1 == null) rs = Ls(c.R1, out ro); break;
+            case "col": c1 = c2 = Lc(c.C1); if (c1 == null) cs = Ls(c.C1, out co); break;
         }
         exact = s != null && c.Kind == "cell" && r1 != null && c1 != null;
         static string P(long? x) => x == null ? "*" : x.Value.ToString(CultureInfo.InvariantCulture);
-        var key = (s ?? "*") + "|" + P(r1) + "|" + P(r2) + "|" + P(c1) + "|" + P(c2);
-        if (!rgnOf.ContainsKey(key)) rgnOf[key] = new Rgn(s, r1 ?? long.MinValue, r2 ?? long.MaxValue, c1 ?? long.MinValue, c2 ?? long.MaxValue);
+        static string Q(string sy, long o) => sy == null ? "" : "~" + sy + "@" + o.ToString(CultureInfo.InvariantCulture);
+        var key = (s ?? "*") + "|" + P(r1) + "|" + P(r2) + Q(rs, ro) + "|" + P(c1) + "|" + P(c2) + Q(cs, co);
+        if (!rgnOf.ContainsKey(key)) rgnOf[key] = new Rgn(s, r1 ?? long.MinValue, r2 ?? long.MaxValue, c1 ?? long.MinValue, c2 ?? long.MaxValue, rs, ro, cs, co);
         return key;
     }
-    static bool Overlap(Rgn a, Rgn b) => (a.S == null || b.S == null || a.S == b.S) && a.R1 <= b.R2 && b.R1 <= a.R2 && a.C1 <= b.C2 && b.C1 <= a.C2;
+    static bool Overlap(Rgn a, Rgn b) => (a.S == null || b.S == null || a.S == b.S) && a.R1 <= b.R2 && b.R1 <= a.R2 && a.C1 <= b.C2 && b.C1 <= a.C2
+        && !(a.RS != null && a.RS == b.RS && a.RO != b.RO) && !(a.CS != null && a.CS == b.CS && a.CO != b.CO);
     void Wild(State st, int line, string desc, string kind, IEnumerable<string> calls) { st.WildV = NewVer(line, desc, null, kind, calls); }
     /// lệnh đổi giá trị ô: phiên bản mới chỉ cho vùng được ghi (ô hằng, hoặc cột/hàng/sheet khi chỉ số lúc chạy)
     void WriteCell(State st, VCell c, int line, string desc, string kind = "ghi", IEnumerable<string> calls = null)
     {
-        var key = RegionKey(c, out var exact); var v = NewVer(line, desc, null, kind, calls);
+        var key = RegionKey(c, out var exact); var v = NewVer(line, desc, null, kind, calls, rgnOf[key]);
         if (exact) st.CV = st.CV.SetItem(key, v); else st.RV = st.RV.SetItem(key, v);
     }
     /// phiên bản hiệu lực của vùng trong một trạng thái: lớn nhất trong các lệnh ghi có vùng giao với vùng đọc
@@ -222,7 +236,7 @@ public sealed class Interp
     }
     long ReadVer(State st, VCell c) { var k = RegionKey(c, out var exact); return EffVer(st, k, exact); }
     /// nhãn phiên bản hiển thị #<dòng sự kiện tạo phiên bản>; cùng ô cùng dòng nhiều phiên bản thì #<dòng>.2, .3 theo thứ tự gặp
-    string VerTag(string cellText, long ver)
+    string VerTag(VCell cell, string cellText, long ver)
     {
         if (ver <= 0) return "";
         if (!verLabel.TryGetValue(cellText, out var m)) verLabel[cellText] = m = new();
@@ -232,9 +246,27 @@ public sealed class Interp
         while (m.ContainsValue(lab)) lab = b + "." + (++n).ToString(CultureInfo.InvariantCulture);
         m[ver] = lab;
         var rf = "cell(" + cellText + ")" + lab;
-        VerRefs[rf] = vi.Desc;
         (string Kind, SortedSet<string> Calls) vk = verKind.TryGetValue(ver, out var vk0) ? vk0 : ("co_the_ghi", new SortedSet<string>(StringComparer.Ordinal));
-        VerMeta[rf] = (vk.Kind, verWrites.TryGetValue(ver, out var vw) ? vw.ToArray() : Array.Empty<int>(), vk.Calls.ToArray());
+        int[] wr = verWrites.TryGetValue(ver, out var vw) ? vw.ToArray() : Array.Empty<int>();
+        string desc = vi.Desc;
+        if (verOrig.TryGetValue(ver, out var og))
+        {
+            // dòng ghi, loại, lời gọi theo vùng ô đang đọc: chỉ phiên bản gốc có vùng ghi giao ô này
+            var g = rgnOf[RegionKey(cell, out _)];
+            bool Hit(long o) => verRg.GetValueOrDefault(o) is not Rgn r || Overlap(r, g);
+            var ogf = og.Where(Hit).ToList();
+            if (ogf.Count == 0 && og.Count > 0) { RgnFallback++; ogf = og.ToList(); }
+            wr = ogf.SelectMany(o => verWrites[o]).Distinct().OrderBy(x => x).ToArray();
+            var okf = verOrigK[ver].Where(Hit).ToList(); if (okf.Count == 0) okf = verOrigK[ver].ToList();
+            if (okf.Count > 0)
+            {
+                var cs2 = new SortedSet<string>(okf.SelectMany(o => verKind[o].Calls), StringComparer.Ordinal);
+                vk = (okf.Any(o => verKind[o].Kind == "co_the_ghi") ? "co_the_ghi" : "ghi", cs2);
+            }
+            desc = desc.Replace(WPh, string.Join(", ", wr));
+        }
+        VerRefs[rf] = desc;
+        VerMeta[rf] = (vk.Kind, wr, vk.Calls.ToArray());
         return lab;
     }
     string WriteLines(IEnumerable<long> vs) => string.Join(", ", SrcVers(vs).SelectMany(v => verWrites[v]).Distinct().OrderBy(x => x));
@@ -244,7 +276,13 @@ public sealed class Interp
     {
         if (live.Count == 0) return;
         var wv = live.Select(s => s.WildV).ToList();
-        long wild = wv.All(v => v == wv[0]) ? wv[0] : NewVer(line, "hợp nhánh dòng " + line + ": trên một số nhánh có lời gọi có thể ghi ô (dòng " + WriteLines(wv) + ")", wv);
+        long wild = wv.All(v => v == wv[0]) ? wv[0] : NewVer(line, "hợp nhánh dòng " + line + ": trên một số nhánh có lời gọi có thể ghi ô (dòng " + WPh + ")", wv);
+        // mục vùng được ghi trong các nhánh (giá trị khác nhau giữa các nhánh): mỗi mục là một lệnh ghi cuối có thể có cho phần ô
+        // giao với nó, nên phiên bản hợp nhánh của một khóa lấy nguồn từ mọi mục như vậy giao khóa (không chỉ phiên bản lớn nhất)
+        var div = new List<(string K, long V)>();
+        foreach (var s in live)
+            foreach (var kv in s.RV.Concat(s.CV))
+                if (!live.All(o => (o.RV.TryGetValue(kv.Key, out var x) || o.CV.TryGetValue(kv.Key, out x)) && x == kv.Value)) div.Add((kv.Key, kv.Value));
         ImmutableDictionary<string, long> MergeMap(Func<State, ImmutableDictionary<string, long>> sel, bool exact)
         {
             var keys = new SortedSet<string>(live.SelectMany(s => sel(s).Keys), StringComparer.Ordinal);
@@ -254,7 +292,8 @@ public sealed class Interp
                 var raw = live.Select(s => sel(s).GetValueOrDefault(k)).ToList();
                 if (raw.All(v => v == raw[0]) && live.All(s => s.WildV == live[0].WildV) && live.All(s => s.RV == live[0].RV)) { bld[k] = raw[0]; continue; }
                 var vs = live.Select(s => EffVer(s, k, exact)).ToList();
-                bld[k] = vs.All(v => v == vs[0]) ? vs[0] : NewVer(line, "hợp nhánh dòng " + line + ": ô được ghi trên một số nhánh (dòng " + WriteLines(vs) + ")", vs);
+                if (!vs.All(v => v == vs[0])) { var gk = rgnOf[k]; foreach (var (dk, dv) in div) if (Overlap(gk, rgnOf[dk])) vs.Add(dv); }
+                bld[k] = vs.Take(live.Count).All(v => v == vs[0]) ? vs[0] : NewVer(line, "hợp nhánh dòng " + line + ": ô được ghi trên một số nhánh (dòng " + WPh + ")", vs);
             }
             return bld.ToImmutable();
         }
@@ -1221,7 +1260,7 @@ public sealed class Interp
                     var fl = new Flags(); string rf = R.CellRef(c, fl);
                     string pre = R.SheetPrefix(c.S, new Flags());
                     long ver = ReadVer(st, c);
-                    return new VSym("cell(" + pre + rf + ")" + VerTag(pre + rf, ver) + "." + n.ToLowerInvariant(), fl.Opaque);
+                    return new VSym("cell(" + pre + rf + ")" + VerTag(c, pre + rf, ver) + "." + n.ToLowerInvariant(), fl.Opaque);
                 }
             case VCellInfo ci:
                 if (n == "CellTemplate" || n == "Location") return ci;

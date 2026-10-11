@@ -523,53 +523,7 @@ for x in st_bad[:5]:
     print("   trạng thái sai:", x)
 say(not st_bad, "(7i) effect resolved/parametric không chứa opaque (kể cả điều kiện): vi phạm %d" % len(st_bad))
 
-# (7j) ca QC lần 3
-def recs_of(c):
-    return json.load(open(os.path.join(rules, c + ".json")))
-cj = []
-d1 = recs_of("BctcTt200DdNckt226")
-for hk, ln in (("ButtonClick_0", 377), ("ButtonClick_1", 396), ("ButtonClick_2", 415), ("ButtonClick_3", 434)):
-    effs = [e for r in d1["records"] if r["hook"] == hk for e in r["effects"] if (e.get("via") or "").startswith("getSoKyTruoc@%d" % ln) and e["op"] == "setValue"]
-    cj.append(("(1) %s getSoKyTruoc@%d setValue qua via: %d" % (hk, ln, len(effs)), len(effs) > 0))
-d2 = recs_of("Cnkd01TT40Nckt253")
-# định nghĩa chặt (QC lần 6): chỉ lệnh đổi giá trị ô tạo phiên bản; RemoveValidate/SetNodeBackGroundPink không ghi ô, nên hai lần đọc B10
-# không qua lệnh ghi là cùng giá trị và mâu thuẫn là thật. Trượt khi bản ghi unreachable dựa trên B10 có SetHinhThucKeKhai (ghi B10) trên đường đi.
-ub10 = [r for r in d2["records"] if r["unreachable"] and any("cell(S0!B10).value" in g for g in r["guards"])]
-bad2 = [r for r in ub10 if any("SetHinhThucKeKhai@" in (e.get("via") or "") for e in r["effects"]) or any("SetHinhThucKeKhai" in v["after"] for v in r["cellVersions"])]
-cj.append(("(2) Cnkd01TT40Nckt253: bản ghi unreachable dựa trên ô B10 có SetHinhThucKeKhai (ghi B10) trên đường đi: %d; unreachable B10 không qua lệnh ghi giá trị (mâu thuẫn thật): %d" % (len(bad2), len(ub10) - len(bad2)), not bad2))
-d3 = recs_of("AcTb03Nckt210")
-r87 = [r for r in d3["records"] for e in r["effects"] if e["at"] == 87]
-cj.append(("(2) AcTb03Nckt210 dòng 87 có effect, không gắn unreachable: %d bản ghi, unreachable %d" % (len(r87), sum(r["unreachable"] for r in r87)), bool(r87) and not any(r["unreachable"] for r in r87)))
-d4 = recs_of("CnkdBcSdhd01Nckt250")
-tabs = {e["at"] for r in d4["records"] for e in r["effects"] if e["op"] == "setTabColor"}
-cj.append(("(3) CnkdBcSdhd01Nckt250 setTabColor tại 2135, 2144: %s" % sorted(tabs & {2135, 2144}), {2135, 2144} <= tabs))
-d5 = recs_of("Ttdb01ND373Nckt293")
-h5 = [h for h in d5["hooks"] if h["hook"] == "ClearData_1"][0]
-cj.append(("(3) Ttdb01ND373Nckt293:1440 checkLockUnLockCells có dropped (ngoại lệ chắc chắn dòng 1439) hoặc effect", any(x["at"] == 1440 for x in h5["dropped"]) or any(e["at"] == 1440 and e["op"] == "lock" for r in d5["records"] for e in r["effects"])))
-d6 = recs_of("CnkdTcktHkd01Nckt289")
-e6 = [e for r in d6["records"] for e in r["effects"] if e["at"] in (90, 91) and "via" not in e]
-cj.append(("(4) CnkdTcktHkd01Nckt289:90-91 ToIntOrDefault -> int(ô): %d effect" % len(e6), bool(e6) and all("int(cell(" in json.dumps(e, ensure_ascii=False) for e in e6)))
-d7 = recs_of("TncnXsbhdcHkd01Nckt289")
-g7 = [g for r in d7["records"] for g in r["guards"] if "500000000" in g]
-cj.append(("(4) TncnXsbhdcHkd01Nckt289:332 điều kiện %s" % sorted(set(g7))[:1], bool(g7) and all("int(cell(" in g for g in g7)))
-d8 = recs_of("Gtgt02TT80Nckt251")
-e8 = [e for r in d8["records"] for e in r["effects"] if e["at"] in (155, 159, 163, 167) and "via" not in e]
-cj.append(("(6) Gtgt02TT80Nckt251:155-167 giữ chỉ số mảng, không còn null[...]: %s" % [json.dumps(e["value"], ensure_ascii=False)[:70] for e in e8[:2]], bool(e8) and all("null[" not in json.dumps(e["value"]) and re.search(r"\[\d+\]", json.dumps(e["value"])) for e in e8)))
-for msg, good in cj:
-    print("   " + ("đúng " if good else "SAI ") + msg)
-say(all(g for _, g in cj), "(7j) các ca QC lần 3 (1)-(6) đúng")
-
-# (7k) không còn dấu ẩn nội bộ trong JSON
-leak = [os.path.basename(f) for f in glob.glob(os.path.join(rules, "*.json")) if "\\u001f" in open(f).read().lower() or "\x1f" in open(f).read()]
-say(not leak, "(7k) JSON không chứa dấu ẩn nội bộ: %d tệp vi phạm" % len(leak))
-# ---------- (8) QC lần 4 ----------
-def all_records():
-    for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
-        b = os.path.basename(f)
-        if b in ("formula_points.json", "opaque_calls.json", "index.json", "lock_config.json"):
-            continue
-        for r in json.load(open(f))["records"]:
-            yield b, r
+# phủ định văn bản của guard (dùng ở (7j), (8a), (10a))
 CMP_OPS = [" == ", " != ", " <= ", " >= ", " < ", " > "]
 INV = {" == ": " != ", " != ": " == ", " <= ": " > ", " > ": " <= ", " >= ": " < ", " < ": " >= "}
 def top_scan(s):
@@ -616,6 +570,92 @@ def negs(g):
         i, op = ops[0]
         out.add(g[:i] + INV[op] + g[i + len(op):])
     return out
+# (7j) ca QC lần 3
+def recs_of(c):
+    return json.load(open(os.path.join(rules, c + ".json")))
+cj = []
+d1 = recs_of("BctcTt200DdNckt226")
+for hk, ln in (("ButtonClick_0", 377), ("ButtonClick_1", 396), ("ButtonClick_2", 415), ("ButtonClick_3", 434)):
+    effs = [e for r in d1["records"] if r["hook"] == hk for e in r["effects"] if (e.get("via") or "").startswith("getSoKyTruoc@%d" % ln) and e["op"] == "setValue"]
+    cj.append(("(1) %s getSoKyTruoc@%d setValue qua via: %d" % (hk, ln, len(effs)), len(effs) > 0))
+d2 = recs_of("Cnkd01TT40Nckt253")
+# định nghĩa chặt (QC lần 7): bản ghi unreachable dựa trên ô B10 chỉ đúng khi cặp mâu thuẫn là hai lần đọc CÙNG phiên bản
+# (cùng tag #...) và không có lệnh ghi B10 trên đường đi. Trượt khi (a) cặp literal B10 mâu thuẫn (g và phủ định của g sau khi bỏ
+# tag) mang tag khác nhau mà không có cặp cùng tag, hoặc (b) cặp cùng tag nhưng bản ghi có lệnh ghi B10 (effect setValue/setFormula
+# đích S0 B10, hoặc via qua method có lệnh ghi B10 theo effect của chính class).
+B10TAG = re.compile(r"cell\(S0!B10\)(#\d+(?:\.\d+)?)?")
+def b10_pairs(r):
+    gs = [g for g in [x for x in r["guards"] if not x.startswith("loop: ")] + list(r["trigger"]["when"]) if "cell(S0!B10)" in g]
+    same, diff = [], []
+    for i, g in enumerate(gs):
+        for h in gs[i + 1:]:
+            if B10TAG.sub("cell(S0!B10)", h) in negs(B10TAG.sub("cell(S0!B10)", g)) or B10TAG.sub("cell(S0!B10)", g) in negs(B10TAG.sub("cell(S0!B10)", h)):
+                (same if sorted(set(B10TAG.findall(g))) == sorted(set(B10TAG.findall(h))) else diff).append((g, h))
+    return same, diff
+def b10_writers(d):
+    w = set()
+    for r in d["records"]:
+        for e in r["effects"]:
+            t = e.get("target") or {}
+            if e["op"] in ("setValue", "setFormula") and t.get("sheet") == 0 and t.get("cell") == "B10" and e.get("via"):
+                w.add(e["via"].split("@")[0])
+    return w
+def b10_writes(r, wr):
+    for e in r["effects"]:
+        t = e.get("target") or {}
+        if e["op"] in ("setValue", "setFormula") and t.get("sheet") == 0 and t.get("cell") == "B10":
+            return True
+        if (e.get("via") or "").split("@")[0] in wr:
+            return True
+    return False
+def check_7j2(d):
+    wr = b10_writers(d)
+    ub = [r for r in d["records"] if r["unreachable"] and any("cell(S0!B10)" in g for g in r["guards"] + list(r["trigger"]["when"]))]
+    bad_a = bad_b = real = 0
+    for r in ub:
+        same, diff = b10_pairs(r)
+        if diff and not same:
+            bad_a += 1
+        elif same and b10_writes(r, wr):
+            bad_b += 1
+        elif same:
+            real += 1
+    return len(ub), real, bad_a, bad_b, sorted(wr)
+n2, real2, ba2, bb2, wr2 = check_7j2(d2)
+cj.append(("(2) Cnkd01TT40Nckt253: bản ghi unreachable dựa trên B10 %d; mâu thuẫn thật (cùng tag, không ghi B10 trên đường đi) %d; cặp khác tag %d; cặp cùng tag mà có lệnh ghi B10 %d; method ghi B10: %s" % (n2, real2, ba2, bb2, wr2), ba2 == 0 and bb2 == 0 and real2 > 0))
+d3 = recs_of("AcTb03Nckt210")
+r87 = [r for r in d3["records"] for e in r["effects"] if e["at"] == 87]
+cj.append(("(2) AcTb03Nckt210 dòng 87 có effect, không gắn unreachable: %d bản ghi, unreachable %d" % (len(r87), sum(r["unreachable"] for r in r87)), bool(r87) and not any(r["unreachable"] for r in r87)))
+d4 = recs_of("CnkdBcSdhd01Nckt250")
+tabs = {e["at"] for r in d4["records"] for e in r["effects"] if e["op"] == "setTabColor"}
+cj.append(("(3) CnkdBcSdhd01Nckt250 setTabColor tại 2135, 2144: %s" % sorted(tabs & {2135, 2144}), {2135, 2144} <= tabs))
+d5 = recs_of("Ttdb01ND373Nckt293")
+h5 = [h for h in d5["hooks"] if h["hook"] == "ClearData_1"][0]
+cj.append(("(3) Ttdb01ND373Nckt293:1440 checkLockUnLockCells có dropped (ngoại lệ chắc chắn dòng 1439) hoặc effect", any(x["at"] == 1440 for x in h5["dropped"]) or any(e["at"] == 1440 and e["op"] == "lock" for r in d5["records"] for e in r["effects"])))
+d6 = recs_of("CnkdTcktHkd01Nckt289")
+e6 = [e for r in d6["records"] for e in r["effects"] if e["at"] in (90, 91) and "via" not in e]
+cj.append(("(4) CnkdTcktHkd01Nckt289:90-91 ToIntOrDefault -> int(ô): %d effect" % len(e6), bool(e6) and all("int(cell(" in json.dumps(e, ensure_ascii=False) for e in e6)))
+d7 = recs_of("TncnXsbhdcHkd01Nckt289")
+g7 = [g for r in d7["records"] for g in r["guards"] if "500000000" in g]
+cj.append(("(4) TncnXsbhdcHkd01Nckt289:332 điều kiện %s" % sorted(set(g7))[:1], bool(g7) and all("int(cell(" in g for g in g7)))
+d8 = recs_of("Gtgt02TT80Nckt251")
+e8 = [e for r in d8["records"] for e in r["effects"] if e["at"] in (155, 159, 163, 167) and "via" not in e]
+cj.append(("(6) Gtgt02TT80Nckt251:155-167 giữ chỉ số mảng, không còn null[...]: %s" % [json.dumps(e["value"], ensure_ascii=False)[:70] for e in e8[:2]], bool(e8) and all("null[" not in json.dumps(e["value"]) and re.search(r"\[\d+\]", json.dumps(e["value"])) for e in e8)))
+for msg, good in cj:
+    print("   " + ("đúng " if good else "SAI ") + msg)
+say(all(g for _, g in cj), "(7j) các ca QC lần 3 (1)-(6) đúng")
+
+# (7k) không còn dấu ẩn nội bộ trong JSON
+leak = [os.path.basename(f) for f in glob.glob(os.path.join(rules, "*.json")) if "\\u001f" in open(f).read().lower() or "\x1f" in open(f).read()]
+say(not leak, "(7k) JSON không chứa dấu ẩn nội bộ: %d tệp vi phạm" % len(leak))
+# ---------- (8) QC lần 4 ----------
+def all_records():
+    for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+        b = os.path.basename(f)
+        if b in ("formula_points.json", "opaque_calls.json", "index.json", "lock_config.json"):
+            continue
+        for r in json.load(open(f))["records"]:
+            yield b, r
 gng_unr_lit = 0; gng_unr_opq = 0
 gng = collections.Counter(); gng_unr = 0; gng_unr_k = collections.Counter(); gng_files = set(); gng_ex = []
 for b, r in all_records():
@@ -1117,5 +1157,84 @@ print("   (10a) khối thoát sớm (if không else): %s; cặp (khối, hook) c
       % (dict(sorted(ee_blocks.items())), ee_checked, ee_nocmp, ee_eff, ee_big))
 say(not ee_bad, "(10a) bản ghi có effect sau khối thoát sớm mà thiếu guard phủ định điều kiện if: %d (khối %d)" % (len(ee_bad), len(set(x.split(" ")[0] for x in ee_bad))))
 
+
+# (10b) writes theo vùng: dòng ghi của một phiên bản ô phải ghi vào cột (và hàng) của ô khi cả hai là hằng.
+# Chỉ số cột hằng: số, ColumnLettersToIndex("X") - 1, ArrayCellId("X_n")[0]; hàng hằng: số, ArrayCellId("X_n")[1].
+def col_idx(letters):
+    n = 0
+    for ch in letters:
+        n = n * 26 + ord(ch) - 64
+    return n - 1
+def cells_writes(line):
+    out = []
+    for m in re.finditer(r"\.Cells\[", line):
+        i, dep, st, args = m.end(), 1, m.end(), []
+        while i < len(line) and dep:
+            ch = line[i]
+            if ch in "[(":
+                dep += 1
+            elif ch in "])":
+                dep -= 1
+            elif ch == "," and dep == 1:
+                args.append(line[st:i]); st = i + 1
+            i += 1
+        args.append(line[st:i - 1])
+        if re.match(r"\.(Value|Text|Formula)\s*=[^=]", line[i:]):
+            out.append([a.strip() for a in args])
+    return out
+def const_col(a):
+    if re.fullmatch(r"\d+", a):
+        return int(a)
+    m = re.fullmatch(r'(?:HTKKFile\.)?ColumnLettersToIndex\("([A-Z]+)"\) - 1', a)
+    if m:
+        return col_idx(m.group(1))
+    m = re.fullmatch(r'(?:GeneralFunctions\.)?ArrayCellId\("([A-Z]+)_\d+"\)\[0\]', a)
+    return col_idx(m.group(1)) if m else None
+def const_row(a):
+    if re.fullmatch(r"\d+", a):
+        return int(a)
+    m = re.fullmatch(r'(?:GeneralFunctions\.)?ArrayCellId\("[A-Z]+_(\d+)"\)\[1\]', a)
+    return int(m.group(1)) - 1 if m else None
+REF_RE = re.compile(r"cell\(.*!([A-Z]+)(\d+|\{.*\})\)#")
+wr_chk = 0; wr_bad = []
+for b, r in all_records():
+    L = src_lines(r["source"]["file"])
+    for v in r["cellVersions"]:
+        m = REF_RE.match(v["ref"])
+        if not m:
+            continue
+        rc = col_idx(m.group(1)); rr = int(m.group(2)) - 1 if m.group(2).isdigit() else None
+        for n in v["writes"]:
+            if not 0 < n <= len(L):
+                continue
+            cw = cells_writes(L[n - 1])
+            if len(cw) != 1 or len(cw[0]) != 2:
+                continue
+            c0, r0 = const_col(cw[0][1]), const_row(cw[0][0])
+            if c0 is None and (r0 is None or rr is None):
+                continue
+            wr_chk += 1
+            if (c0 is not None and c0 != rc) or (r0 is not None and rr is not None and r0 != rr):
+                wr_bad.append("%s %s %s -> dòng %d: %s" % (b, r["hook"], v["ref"][-40:], n, L[n - 1].strip()[:70]))
+for x in sorted(set(wr_bad))[:6]:
+    print("   (10b) dòng ghi khác ô:", x)
+say(not wr_bad, "(10b) writes theo vùng: %d cặp (phiên bản, dòng ghi) có cột/hàng hằng ở cả hai phía; ghi khác cột/hàng %d" % (wr_chk, len(wr_bad)))
+d10 = recs_of("Tndn03TT80Nckt283")
+v10 = [v for r in d10["records"] if r["hook"] == "ButtonClick_17" for v in r["cellVersions"] if v["ref"] == "cell(S17!N{count(tk.SheetInfos[17].Tables[0].RowsValues)+43})#3154"]
+w10 = sorted(set(w for v in v10 for w in v["writes"]))
+say(bool(v10) and {3162, 3179} <= set(w10) and not ({3048, 3145, 3164, 3170} & set(w10)),
+    "(10b) Tndn03TT80Nckt283 ButtonClick_17 N{count+43}#3154: writes %s (có 3162, 3179; không 3048, 3145, 3164, 3170)" % w10)
+
+# (10c) định nghĩa đếm unreachable (legend.counting): theo bản ghi và theo khóa (lớp, hook, dòng nguồn, effect at, via)
+u_rec = 0; u_keys = set()
+for b, r in all_records():
+    if r["unreachable"]:
+        u_rec += 1
+        effs = r["effects"] or [{"at": None}]
+        for e in effs:
+            u_keys.add((r["key"].get("Class") if isinstance(r.get("key"), dict) else b, r["hook"], tuple(r["source"]["lines"]), e.get("at"), e.get("via")))
+leg = json.load(open(os.path.join(rules, "index.json"))).get("legend", {}).get("counting", "") if os.path.exists(os.path.join(rules, "index.json")) else ""
+print("   (10c) unreachable: %d bản ghi (unreachable=true trên mọi tệp JSON có records); %d khóa (lớp, hook, dòng nguồn, effect at, via)" % (u_rec, len(u_keys)))
+say("unreachable" in leg and "khóa" in leg, "(10c) legend.counting ghi định nghĩa đếm unreachable theo bản ghi và theo khóa")
 print("KẾT LUẬN:", "ĐẠT" if ok else "CÓ MỤC TRƯỢT")
 sys.exit(0 if ok else 1)
