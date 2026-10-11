@@ -1468,10 +1468,12 @@
    "semantics": {
     "precondition": "strMST là chuỗi (ValidateBase.cs:361-368).",
     "effects": "Không có.",
-    "returns": "true nếu CheckStringIsNumber là true và độ dài đúng 5, ngược lại false.",
-    "exceptions": "Không bắt. strMST null có thể ném tùy CheckStringIsNumber (chưa đọc)."
+    "returns": "true nếu CheckStringIsNumber là true và độ dài đúng 5, ngược lại false. CheckStringIsNumber trả true khi mọi ký tự thỏa char.IsDigit (kể cả chữ số Unicode không phải 0-9), chuỗi rỗng cho true nhưng sau đó độ dài khác 5 nên false (ValidateBase.cs:370-373).",
+    "exceptions": "Không bắt. strMST null làm CheckStringIsNumber ném ArgumentNullException."
    },
-   "side_effects": [],
+   "side_effects": [
+    "ném ngoại lệ khi đầu vào null"
+   ],
    "calls": [
     "ValidateBase.CheckStringIsNumber"
    ],
@@ -1484,7 +1486,7 @@
      ]
     ]
    },
-   "confidence": "vừa",
+   "confidence": "cao",
    "call_count": {
     "t2": 0,
     "t3": 70,
@@ -2659,6 +2661,47 @@
    }
   },
   {
+   "name": "HTKKFormater.ConvertToDateTime",
+   "overloads": [
+    {
+     "params": "input: string, success: bool",
+     "return_type": "DateTime",
+     "lines": [
+      174,
+      196
+     ]
+    }
+   ],
+   "purpose": "Phân tích chuỗi ngày dd/MM/yyyy (bỏ khoảng trắng và gạch dưới) và báo thành công qua tham số out.",
+   "semantics": {
+    "precondition": "input là chuỗi (HTKKFormater.cs:174-196).",
+    "effects": "Gán success. Ban đầu true, thành false nếu chuỗi sau khi bỏ khoảng trắng và gạch dưới không dài đúng 10 ký tự, nhưng vẫn thử phân tích.",
+    "returns": "Ngày phân tích theo mẫu dd/MM/yyyy (Convert.ToDateTime với provider tự dựng). Khi có ngoại lệ (ví dụ chuỗi sai ngày) trả 01/01/1900 và success false.",
+    "exceptions": "Bắt mọi ngoại lệ, ghi log. Chuỗi 10 ký tự nhưng sai ngày thì thành 01/01/1900, không phải MinValue. Chuỗi dài khác 10 nhưng phân tích được thì success false mà vẫn trả ngày phân tích."
+   },
+   "side_effects": [
+    "ghi log khi lỗi"
+   ],
+   "calls": [
+    "HTKKFile.Log"
+   ],
+   "source": {
+    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFormater.cs",
+    "lines": [
+     [
+      174,
+      196
+     ]
+    ]
+   },
+   "confidence": "cao",
+   "call_count": {
+    "t2": 0,
+    "t3": 28,
+    "total": 28
+   }
+  },
+  {
    "name": "GeneralFunctions.GetCatalogueFileName",
    "overloads": [
     {
@@ -3116,47 +3159,6 @@
    "call_count": {
     "t2": 22,
     "t3": 0,
-    "total": 22
-   }
-  },
-  {
-   "name": "HTKKFormater.ConvertToDateTime",
-   "overloads": [
-    {
-     "params": "input: string, success: bool",
-     "return_type": "DateTime",
-     "lines": [
-      174,
-      196
-     ]
-    }
-   ],
-   "purpose": "Phân tích chuỗi ngày dd/MM/yyyy (bỏ khoảng trắng và gạch dưới) và báo thành công qua tham số out.",
-   "semantics": {
-    "precondition": "input là chuỗi (HTKKFormater.cs:174-196).",
-    "effects": "Gán success. Ban đầu true, thành false nếu chuỗi sau khi bỏ khoảng trắng và gạch dưới không dài đúng 10 ký tự, nhưng vẫn thử phân tích.",
-    "returns": "Ngày phân tích theo mẫu dd/MM/yyyy (Convert.ToDateTime với provider tự dựng). Khi có ngoại lệ (ví dụ chuỗi sai ngày) trả 01/01/1900 và success false.",
-    "exceptions": "Bắt mọi ngoại lệ, ghi log. Chuỗi 10 ký tự nhưng sai ngày thì thành 01/01/1900, không phải MinValue. Chuỗi dài khác 10 nhưng phân tích được thì success false mà vẫn trả ngày phân tích."
-   },
-   "side_effects": [
-    "ghi log khi lỗi"
-   ],
-   "calls": [
-    "HTKKFile.Log"
-   ],
-   "source": {
-    "file": "_decompiled/tax.htkk.utilities/TAX.HTKK.Utilities.Core/HTKKFormater.cs",
-    "lines": [
-     [
-      174,
-      196
-     ]
-    ]
-   },
-   "confidence": "cao",
-   "call_count": {
-    "t2": 0,
-    "t3": 22,
     "total": 22
    }
   },

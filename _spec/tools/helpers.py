@@ -74,9 +74,15 @@ def resolve_convert_to_datetime(chk):
             text = fh.read()
     except OSError:
         return None
+    has_f = "HTKKFormater.ConvertToDateTime(" in text
+    has_h = "ConvertHelpers.ConvertToDateTime(" in text
     if re.search(r"ConvertToDateTime\([^\n]*,\s*success\)", chk["condition"]):
-        return "HTKKFormater.ConvertToDateTime" if "HTKKFormater.ConvertToDateTime(" in text else None
-    if "ConvertHelpers.ConvertToDateTime(" in text:
+        return "HTKKFormater.ConvertToDateTime" if has_f else None
+    if has_h and not has_f:
+        return "ConvertHelpers.ConvertToDateTime"
+    if has_f and not has_h:
+        return "HTKKFormater.ConvertToDateTime"
+    if has_h and has_f:
         return "ConvertHelpers.ConvertToDateTime"
     return None
 
@@ -370,6 +376,10 @@ def main():
         if rp in dump:
             bad.append(("overloads.params", "còn chuỗi chữ ký C# nguyên văn", rp[:60]))
     n_params = sum(len(v["overloads"]) for v in spec.values())
+    old_conf = collections.Counter()
+    for k in old_chosen:
+        old_conf[overlay[k]["confidence"] if k in overlay else "thấp"] += 1
+    print("Confidence tập phủ định nghĩa cũ:", dict(old_conf))
     print("Số overload có params viết lại trung tính:", n_params, "| chuỗi chữ ký thô còn sót:", sum(1 for rp in raw_params if rp in dump))
     print("Kiểm tra không chép nguyên văn:", "ĐẠT" if not bad else "KHÔNG ĐẠT %s" % bad[:5])
     print("Số đặc tả có overlay tay:", sum(1 for k in spec if k in overlay),
@@ -398,7 +408,10 @@ def main():
                "cover_set_size": len(chosen), "covered_sites": cum, "coverage_pct": round(100 * cum / grand, 4),
                "crosscheck_set_sum_equal": cum == cum2, "unmatched_in_index": unmatched,
                
+               "old_definition": {"coverage_pct": round(100 * old_cum / old_grand, 4), "covered": old_cum, "total": old_grand,
+                                  "cover_set_size": len(old_chosen), "confidence": dict(old_conf)},
                "notes": {
+                   "t3_convert_to_datetime_expanded": "Sau mở rộng mẫu số có thêm 6 lượt ConvertToDateTime không qualified trong bindings: TncnThDknpt16Nckt206.cs dòng 643, 644, 658, 659 (gọi ở dòng 609, 622) và Tndn03Nckt231.cs dòng 681, 693 (gọi ở dòng 668, 675). Cả hai tệp chỉ gọi HTKKFormater.ConvertToDateTime với tham số out success, không có ConvertHelpers.ConvertToDateTime, nên gán HTKKFormater. Không còn vị trí chưa gán.",
                    "t2_convert_to_datetime": "T2 4b70bc8 không còn ghi 231 lượt ConvertHelpers.ConvertToDateTime (T2 trước d5157c1) trong opaque_calls.json. Tra _spec/rules của T2: tên này xuất hiện 0 lần, toDate(...) xuất hiện 1657 lần. Dnht01Nckt241, 222, 244, 283, 286 (cùng nguồn Dnht01Nckt241.cs:366-385) mỗi tệp có 7 chuỗi toDate với dd/MM/yyyy thay cho lời gọi, nghĩa là T2 đã mô hình hóa ConvertToDateTime thành toDate. Các tệp BlpTbac01Nckt200, CnkdBcSdhd01Nckt250, Tncn05DkThTctNckt100/101, Tndn04TT80Nckt269, Ntnn01TT80Nckt251 có lời gọi trong mã nguồn nhưng 0 toDate và 0 tên helper trong rules, tức nằm ở phần T3 (kiểm tra) hoặc chưa trích; chưa xác minh từng vị trí một. Kết luận: giảm 231 lượt là do mô hình hóa, không phải mất dữ liệu, nhưng độ phủ vị trí còn lại chưa kiểm hết.",
                    "t3_convert_to_datetime_unassigned": "11 điều kiện T3 gọi ConvertToDateTime không qualified, đều có tên chuẩn trong tệp nguồn. Đã gán: BkntKtnt01Tt89Nckt309.cs dòng 233 là HTKKFormater.ConvertToDateTime (đối số thứ hai là biến success, overload out bool, gọi ở dòng 219). 10 vị trí còn lại là ConvertHelpers.ConvertToDateTime (đối số thứ hai là định dạng dd/MM/yyyy): BkntKtnt01Tt89Nckt309.cs dòng 271, 278, 285, 299, 311 (gọi ở dòng 269, 276, 283, 297, 309) và Ntnn04TT80Nckt251.cs dòng 275, 280, 293, 298, 303 (gọi ở dòng 267, 290). Quy tắc gán nằm ở resolve_convert_to_datetime trong helpers.py. Không còn vị trí chưa gán.",
                },
