@@ -131,6 +131,15 @@ public sealed class Interp
     }
     /// phiên bản trước vòng và phiên bản đầu vòng của các vòng lặp đang phân tích (EnterLoop đẩy, Loop lấy ra)
     readonly Stack<(long, long)> loopVers = new();
+    /// phiên bản đầu vòng của các vòng đang phân tích: hợp nhánh trong thân vòng không lấy dòng đầu vòng làm dòng ghi gốc
+    /// (trừ khi chỉ còn nguồn đó), để dòng đầu vòng không theo phiên bản ra ngoài vòng
+    readonly HashSet<long> activeLoop = new();
+    List<long> SrcVers(IEnumerable<long> vs)
+    {
+        var src = vs.Where(v => v > 0 && verWrites.ContainsKey(v)).Distinct().ToList();
+        var nl = src.Where(v => !activeLoop.Contains(v)).ToList();
+        return nl.Count > 0 ? nl : src;
+    }
     /// dòng lệnh ghi (hoặc vòng lặp có ghi) gốc của mỗi phiên bản; phiên bản hợp nhánh lấy hợp các dòng gốc của nhánh
     readonly Dictionary<long, SortedSet<int>> verWrites = new();
     /// loại phiên bản: ghi | co_the_ghi, kèm tên lời gọi; hợp nhánh là co_the_ghi nếu một nguồn là co_the_ghi
@@ -145,8 +154,10 @@ public sealed class Interp
         else
         {
             k = "ghi";
-            foreach (var v in from)
-                if (v > 0 && verWrites.TryGetValue(v, out var wv)) { w.UnionWith(wv); var vk = verKind[v]; if (vk.Kind == "co_the_ghi") k = "co_the_ghi"; cs.UnionWith(vk.Calls); }
+            var fl = from.ToList();
+            foreach (var v in fl)
+                if (v > 0 && verKind.TryGetValue(v, out var vk)) { if (vk.Kind == "co_the_ghi") k = "co_the_ghi"; cs.UnionWith(vk.Calls); }
+            foreach (var v in SrcVers(fl)) w.UnionWith(verWrites[v]);
         }
         verWrites[id] = w; verKind[id] = (k, cs); return id;
     }
@@ -210,7 +221,7 @@ public sealed class Interp
         VerMeta[rf] = (vk.Kind, verWrites.TryGetValue(ver, out var vw) ? vw.ToArray() : Array.Empty<int>(), vk.Calls.ToArray());
         return lab;
     }
-    string WriteLines(IEnumerable<long> vs) => string.Join(", ", vs.Where(v => v > 0 && verWrites.ContainsKey(v)).SelectMany(v => verWrites[v]).Distinct().OrderBy(x => x));
+    string WriteLines(IEnumerable<long> vs) => string.Join(", ", SrcVers(vs).SelectMany(v => verWrites[v]).Distinct().OrderBy(x => x));
     /// hợp phiên bản ô của các nhánh còn sống: khác nhau thì tạo phiên bản mới tại dòng hợp nhánh.
     /// Thứ tự: lời gọi có thể ghi (WildV), vùng (RV), ô hằng (CV); mỗi khóa so phiên bản hiệu lực của từng nhánh (kể cả vùng phủ nó)
     void MergeVers(State st, List<State> live, int line)
@@ -590,7 +601,7 @@ public sealed class Interp
             if (MayWrite(loopNode)) fieldVer = Mk.Next();
             // phiên bản đầu vòng: chỉ khi thân vòng có lệnh đổi giá trị ô hoặc lời gọi có thể ghi; chỉ có hiệu lực trong thân vòng (xem Loop)
             var lw = LoopWrites(loopNode, f?.Cls);
-            if (lw.Kind != null) Wild(st, line, "vòng lặp dòng " + line + (lw.Kind == "ghi" ? " có lệnh ghi giá trị ô" : " có lời gọi có thể ghi ô (" + string.Join(", ", lw.Calls) + ")"), lw.Kind, lw.Calls);
+            if (lw.Kind != null) { Wild(st, line, "vòng lặp dòng " + line + (lw.Kind == "ghi" ? " có lệnh ghi giá trị ô" : " có lời gọi có thể ghi ô (" + string.Join(", ", lw.Calls) + ")"), lw.Kind, lw.Calls); activeLoop.Add(st.WildV); }
         }
         loopVers.Push((pre, st.WildV));
         var atoms = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -618,6 +629,7 @@ public sealed class Interp
         if (pre0.WildV == lp.Item2) pre0.WildV = lp.Item1;
         if (bs.WildV == lp.Item2) bs.WildV = lp.Item1;
         MergeVers(st, new List<State> { pre0, bs }, line);
+        activeLoop.Remove(lp.Item2);
         // biến cảm ứng: giá trị đầu và bước hằng
         var ind = new List<string>();
         foreach (var n in assigned.OrderBy(x => (declared != null && declared.Contains(x)) ? 0 : 1).ThenBy(x => x, StringComparer.Ordinal))
