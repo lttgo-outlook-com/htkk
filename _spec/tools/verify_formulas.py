@@ -269,6 +269,7 @@ def make_norm(enabled):
             if 'xlfn' in enabled:
                 s = s.replace('_xlfn.', '')
             if 'ref_junk' in enabled:
+                s = re.sub(r"'#REF'!\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?", '#REF!', s)  # dạng có nháy SheetJS in: '#REF'!E26
                 s = re.sub(r'#REF!\$?[A-Z]{1,3}\$?\d+', '#REF!', s)
             if 'quote' in enabled:
                 s = re.sub(r"'([^']*)'!", r'\1!', s)
@@ -285,7 +286,7 @@ NORM_DESC = {
     'quote': "SheetJS bỏ nháy đơn quanh tên sheet ('01'!A1 thành 01!A1)",
     'ref_sheet': 'tham chiếu 3D lỗi: bản này giữ tên sheet (Sheet!#REF!), SheetJS chỉ in #REF!',
     'xlfn': 'hàm tương lai: bản này giữ _xlfn.IFNA (như lưu trong tệp), SheetJS bỏ tiền tố',
-    'ref_junk_lost3d': 'ptgRef3d/ptgArea3d trỏ sheet đã xóa (itab 0xFFFE/0xFFFF): SheetJS in #REF!V30, bản này in #REF! và giữ địa chỉ trong lost_refs',
+    'ref_junk_lost3d': 'ptgRef3d/ptgArea3d trỏ sheet đã xóa (itab 0xFFFE/0xFFFF): SheetJS in #REF!V30 hoặc '#REF'!V30 (có nháy), bản này in #REF! và giữ địa chỉ trong lost_refs',
     'ref_junk_referr': 'ptgRefErr (0x2A): SheetJS in #REF! kèm địa chỉ rác, bản này chỉ #REF!',
 }
 
@@ -505,7 +506,7 @@ def main():
                 lr = f.get('lost_refs')
                 used = tuple(('ref_junk_lost3d' if lr else 'ref_junk_referr') if u == 'ref_junk' else u for u in used)
                 if lr:
-                    got = [m.replace('$', '') for m in re.findall(r'#REF!(\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?)', b)]
+                    got = [m.replace('$', '') for m in re.findall(r"#REF'?!(\$?[A-Z]{1,3}\$?\d+(?::\$?[A-Z]{1,3}\$?\d+)?)", b)]
                     want = [r_['ref_a1'].replace('$', '') for r_ in lr]
                     cnt['lost3d_addr_match' if got == want else 'lost3d_addr_nomatch'] += 1
             need[used] += 1
