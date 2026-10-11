@@ -67,6 +67,8 @@ def main():
         for k, e in ex.items():
             for x in e:
                 print(k, "|", x)
+    # exit code: 0 khi mọi mẫu, binding thiếu khởi tạo và biến tự do đều bằng 0; 1 khi có lệch
+    sys.exit(1 if (any(cnt[k] for k in PATS) or noinit or free) else 0)
 
 
 main()

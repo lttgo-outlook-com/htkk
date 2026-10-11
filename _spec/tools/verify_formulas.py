@@ -286,7 +286,7 @@ NORM_DESC = {
     'quote': "SheetJS bỏ nháy đơn quanh tên sheet ('01'!A1 thành 01!A1)",
     'ref_sheet': 'tham chiếu 3D lỗi: bản này giữ tên sheet (Sheet!#REF!), SheetJS chỉ in #REF!',
     'xlfn': 'hàm tương lai: bản này giữ _xlfn.IFNA (như lưu trong tệp), SheetJS bỏ tiền tố',
-    'ref_junk_lost3d': 'ptgRef3d/ptgArea3d trỏ sheet đã xóa (itab 0xFFFE/0xFFFF): SheetJS in #REF!V30 hoặc '#REF'!V30 (có nháy), bản này in #REF! và giữ địa chỉ trong lost_refs',
+    'ref_junk_lost3d': "ptgRef3d/ptgArea3d trỏ sheet đã xóa (itab 0xFFFE/0xFFFF): SheetJS in #REF!V30 hoặc '#REF'!V30 (có nháy), bản này in #REF! và giữ địa chỉ trong lost_refs",
     'ref_junk_referr': 'ptgRefErr (0x2A): SheetJS in #REF! kèm địa chỉ rác, bản này chỉ #REF!',
 }
 
