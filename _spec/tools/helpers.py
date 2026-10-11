@@ -13,8 +13,8 @@ import sys
 
 WT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ROOT = "/Users/tuanle/codes/HTKK"
-T2 = ROOT + "/.claude/worktrees/agent-a638a7f65966b6d67/_spec/rules/opaque_calls.json"
-T3DIR = ROOT + "/.claude/worktrees/agent-a51ffc579b757e7c6/_spec/validations"
+T2 = ROOT + "/.claude/worktrees/agent-a69710347074048d8/_spec/rules/opaque_calls.json"
+T3DIR = ROOT + "/.claude/worktrees/agent-ae09dfc0b7c50411a/_spec/validations"
 IDX = ROOT + "/.claude/worktrees/agent-a9857e03398898f03/_spec/csharp/index.json"
 DEC = ROOT + "/_decompiled/"
 OUT = WT + "/_spec/helpers/"
@@ -221,9 +221,9 @@ def input_versions():
     for f in t3files:
         h.update(open(f, "rb").read())
     return {
-        "T2": {"worktree": "agent-a638a7f65966b6d67", "head_commit": worktree_head("agent-a638a7f65966b6d67"),
+        "T2": {"worktree": "agent-a69710347074048d8", "head_commit": worktree_head("agent-a69710347074048d8"),
                "file": "_spec/rules/opaque_calls.json", "sha256_16": sha(T2)},
-        "T3": {"worktree": "agent-a51ffc579b757e7c6", "head_commit": worktree_head("agent-a51ffc579b757e7c6"),
+        "T3": {"worktree": "agent-ae09dfc0b7c50411a", "head_commit": worktree_head("agent-ae09dfc0b7c50411a"),
                "files": len(t3files), "sha256_16_all_files": h.hexdigest()[:16],
                "messages_unresolved_sha256_16": sha(T3DIR + "/messages_unresolved.json")},
         "T0_index": {"worktree": "agent-a9857e03398898f03", "head_commit": worktree_head("agent-a9857e03398898f03"),
@@ -262,7 +262,7 @@ def main():
     print("Tên chưa khớp index:", unmatched)
 
     overlay = {}
-    for opn in ("manual_overlay.json", "manual_overlay2.json", "manual_overlay3.json"):
+    for opn in ("manual_overlay.json", "manual_overlay2.json", "manual_overlay3.json", "manual_overlay4.json"):
         op = OUT + opn
         if os.path.exists(op):
             overlay.update(json.load(open(op)))
@@ -303,7 +303,7 @@ def main():
     print("Số đặc tả có overlay tay:", sum(1 for k in spec if k in overlay),
           "| confidence:", dict(collections.Counter(v["confidence"] for v in spec.values())))
 
-    json.dump({"generated_from": {"T2": T2.split("/.claude/")[1], "T3": "agent-a51ffc579b757e7c6/_spec/validations",
+    json.dump({"generated_from": {"T2": T2.split("/.claude/")[1], "T3": "agent-ae09dfc0b7c50411a/_spec/validations",
                                   "index": "agent-a9857e03398898f03/_spec/csharp/index.json"},
                "count": len(spec), "helpers": list(spec.values())},
               open(OUT + "helpers.json", "w"), ensure_ascii=False, indent=1)
