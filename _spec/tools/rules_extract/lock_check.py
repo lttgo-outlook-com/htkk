@@ -36,7 +36,7 @@ for cls, hook, at, sh, cell, crow, tpl in pick:
     rown = int(re.search(r"AK(\d+)", crow).group(1))
     row = next(x for x in c["rows"] if x["row"] == rown)
     tg = [(t["refSheet"], "%s%d" % (t["col"], t["row"])) for t in row.get("targets", [])]
-    in_am = any(cell == x for _, x in tg) and sh == row["sheet"]
+    in_am = any(cell == x for _, x in tg) and sh == row["refSheet"] and all(s == row["refSheet"] for s, _ in tg)
     if tpl not in books:
         books[tpl] = Book(os.path.join(root, tpl))
     bk = books[tpl]

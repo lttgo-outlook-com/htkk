@@ -613,7 +613,7 @@ def negs(g):
         i, op = ops[0]
         out.add(g[:i] + INV[op] + g[i + len(op):])
     return out
-gng = collections.Counter(); gng_unr = 0; gng_files = set(); gng_ex = []
+gng = collections.Counter(); gng_unr = 0; gng_unr_k = collections.Counter(); gng_files = set(); gng_ex = []
 for b, r in all_records():
     conj = [g for g in r["guards"] if not g.startswith("loop: ")] + list(r["trigger"]["when"])
     cs = set(conj)
@@ -621,6 +621,7 @@ for b, r in all_records():
     if hit:
         if r["unreachable"]:
             gng_unr += 1
+            gng_unr_k["cell" if any("cell(" in g for g in hit) else "field" if any("field(" in g for g in hit) else "opaque" if any("opaque(" in g for g in hit) else "khác"] += 1
             continue
         kind = "cell" if any("cell(" in g for g in hit) else "field" if any("field(" in g for g in hit) else "opaque" if any("opaque(" in g for g in hit) else "khác"
         gng[kind] += 1; gng_files.add(b)
@@ -628,7 +629,7 @@ for b, r in all_records():
             gng_ex.append("%s %s %s %s" % (b, r["hook"], r["source"]["lines"], hit[0][:90]))
 for x in gng_ex:
     print("   g và !(g):", x)
-print("   (8a) theo loại:", dict(gng), "; bản ghi unreachable có g và !(g) cùng phiên bản (mâu thuẫn thật, đã gắn cờ):", gng_unr)
+print("   (8a) theo loại:", dict(gng), "; bản ghi unreachable có g và !(g) cùng phiên bản (mâu thuẫn thật, đã gắn cờ):", gng_unr, dict(gng_unr_k))
 say(sum(gng.values()) == 0, "(8a) bản ghi (không gắn unreachable) có g và !(g) cùng phiên bản trong guards/trigger: %d (%d tệp)" % (sum(gng.values()), len(gng_files)))
 
 lk_null = 0; lk_null_noreason = []; lk_tot = 0; lk_chk = 0; lk_chk_tgt = 0
@@ -744,5 +745,31 @@ for b, r in all_records():
 print("   (8f) hàm đã biết có tham số bắt buộc: %d; nhãn mất đối số nhiều nhất: %s" % (len(KNOWN), lost.most_common(5)))
 say(not lost, "(8f) nhãn opaque(Tên) của hàm đã biết mà không giữ đối số: %d / %d nhãn" % (sum(lost.values()), op_n))
 
+# (8g) các ca QC lần 4 (1)-(7)
+cq = []
+for c in ("AcTb03Nckt210", "AcBc21Nckt210", "BlpBc21Nckt210"):
+    dd = recs_of(c)
+    rs = [r for r in dd["records"] if r["hook"] == "AutoBindData_0" and any(re.search(r"cell\(S0![A-Z]+8\)#\d+", g) for g in r["guards"]) and r["cellVersions"]]
+    cq.append(("(1) %s AutoBindData_0: bản ghi có đọc ô dòng 8 sau lệnh ghi mang nhãn #dòng và cellVersions: %d" % (c, len(rs)), len(rs) > 0))
+dd = recs_of("BctcTt200DdNckt226")
+cd = [x for h in dd["hooks"] for x in h["dropped"] if x.get("kind") == "callee" and x.get("via", "").startswith("getSoKyTruoc@377") and x["reason"].startswith("nhánh hằng sai")]
+cq.append(("(3) BctcTt200DdNckt226 dropped callee qua getSoKyTruoc@377 lý do nhánh hằng sai: %d" % len(cd), len(cd) > 0))
+dd = recs_of("Gtgt02TT80Nckt251")
+r4 = [r for r in dd["records"] if any(155 <= e["at"] <= 167 and "via" not in e for e in r["effects"])]
+it4 = [[(s["at"]) for s in r["symbols"] if s["name"] == "item"] for r in r4]
+cq.append(("(4) Gtgt02TT80Nckt251:155-167: %d bản ghi, null. %d, nguồn item %s" % (len(r4), sum(rec_text(r).count("null.") for r in r4), it4[:2]), bool(r4) and all(x == [375] for x in it4) and not any("null." in rec_text(r) for r in r4)))
+n5 = sum(len(re.findall(r"(?<![\w.])(?:text3|list|sInfo)(?:@\d+)?\.(?:Count|Length)\b", rec_text(r))) for _, r in all_records())
+cq.append(("(5) text3/list/sInfo .Count/.Length còn lại: %d" % n5, n5 == 0))
+dc = [lab for _, r in all_records() for lab in opaque_labels(rec_text(r)) if lab.startswith("DateTime.Compare")]
+r87 = [e for r in recs_of("AcTb03Nckt210")["records"] for e in r["effects"] if e["at"] == 87]
+cq.append(("(6) opaque(DateTime.Compare...) %d nhãn, thiếu đối số %d; AcTb03Nckt210:87 GetStrByLengh có đối số: %s" % (len(dc), sum(1 for x in dc if x == "DateTime.Compare"), any("opaque(GeneralFunctions.GetStrByLengh, " in json.dumps(e, ensure_ascii=False) for e in r87)),
+           bool(dc) and all(x != "DateTime.Compare" for x in dc) and any("opaque(GeneralFunctions.GetStrByLengh, " in json.dumps(e, ensure_ascii=False) for e in r87)))
+dd = recs_of("Tts01TT40Nckt249")
+d7 = [x for h in dd["hooks"] if h["hook"] == "CellChange_1" for x in h["dropped"] if x["at"] == 595]
+tabs = {(r["source"]["file"], e["at"]) for _, r in all_records() for e in r["effects"] if e["op"] == "setTabColor" and "via" not in e and r["kind"] != "helper"}
+cq.append(("(7) Tts01TT40Nckt249 CellChange_1 dropped@595 nêu RemoveDataRows: %s; setTabColor cấp hook %d vị trí" % (all("RemoveDataRows" in x["reason"] for x in d7) and bool(d7), len(tabs)), bool(d7) and all("RemoveDataRows" in x["reason"] for x in d7) and len(tabs) == 58))
+for msg, good in cq:
+    print("   " + ("đúng " if good else "SAI ") + msg)
+say(all(g for _, g in cq), "(8g) các ca QC lần 4 (1)-(7) đúng")
 print("KẾT LUẬN:", "ĐẠT" if ok else "CÓ MỤC TRƯỢT")
 sys.exit(0 if ok else 1)

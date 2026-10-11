@@ -60,7 +60,7 @@ public sealed class Effect
 public sealed class CallRec { public int Line; public string Name, Via, Reason; public int Depth; public bool Followed; public int EffBefore, EffAfter, DropBefore, DropAfter; }
 
 /// Bảng cấu hình khóa/mở ô ở sheet cuối của mẫu .xls (lock_config.json do lock_config.py sinh)
-public sealed class LockRow { public int Row, Sheet, ControlRow; public string ControlCol, AL, ALn, AN, Skip, Error; public bool ANformula, AMempty; public object ALvalue; public List<(int Row, string Col)> Targets = new(); }
+public sealed class LockRow { public int Row, Sheet, RefSheet, ControlRow; public string ControlCol, AL, ALn, AN, Skip, Error; public bool ANformula, AMempty; public object ALvalue; public List<(int Row, string Col)> Targets = new(); }
 public sealed class LockCfg { public string Template, BA1, Stop, Error; public int LastSheet; public readonly List<LockRow> Rows = new(); }
 
 public sealed class Interp
@@ -1492,16 +1492,18 @@ public sealed class Interp
             var e = NewEffect(st, f, ln); e.Op = op; e.Path = path;
             e.Params["via"] = "checkLockUnLockCells"; e.Params["template"] = cfg.Template;
             e.Params["configRow"] = "S" + cfg.LastSheet + "!AK" + r.Row + ":AN" + r.Row;
-            e.Params["control"] = "S" + r.Sheet + "!" + r.ControlCol + r.ControlRow;
+            e.Params["control"] = "S" + r.RefSheet + "!" + r.ControlCol + r.ControlRow;
+            if (r.Sheet != r.RefSheet) e.Params["sheetNote"] = "DetectIndexOfSheet dùng Contains: theo tên tab trong mẫu thì sheet đầu tiên khớp là S" + r.Sheet + " (tên là chuỗi con của tên sheet được tham chiếu), tên sheet lúc chạy lấy từ thông tin sheet của tờ khai (WinSpreadProcess.cs:1701) nên chưa xác định, ghi theo sheet được tham chiếu S" + r.RefSheet;
             return e;
         }
         foreach (var r in cfg.Rows)
         {
             if (r.Error != null || r.Skip != null) continue;
-            var dyn = new CAtom("inDynamicTable", new VConst((long)r.Sheet), new VConst((long)r.ControlRow));
-            Cond tblOk = tblChk is VConst tk && tk.Val is long tv && tv < 0 ? CConst.T : C.Or(C.Cmp("<", tblChk, new VConst(0L)), C.Cmp("==", Fn("tableIndexOf", new VConst((long)r.Sheet), new VConst((long)r.ControlRow)), tblChk));
+            // sheet đích: sheet mà AK tham chiếu (DetectIndexOfSheet so Contains trên tên sheet lúc chạy, gán từ sInfo.SheetName tại WinSpreadProcess.cs:1701)
+            var dyn = new CAtom("inDynamicTable", new VConst((long)r.RefSheet), new VConst((long)r.ControlRow));
+            Cond tblOk = tblChk is VConst tk && tk.Val is long tv && tv < 0 ? CConst.T : C.Or(C.Cmp("<", tblChk, new VConst(0L)), C.Cmp("==", Fn("tableIndexOf", new VConst((long)r.RefSheet), new VConst((long)r.ControlRow)), tblChk));
             var dynC = C.And(dyn, tblOk);
-            var sheetV = new VSheet(new VConst((long)r.Sheet));
+            var sheetV = new VSheet(new VConst((long)r.RefSheet));
             string clear = r.ANformula ? "cell(S" + cfg.LastSheet + "!AN" + r.Row + ").text == \"1\" (ô AN là công thức)" : r.AN == "1" ? "có (AN" + r.Row + " = \"1\" trong mẫu): khi khóa thì xóa giá trị ô (số 0, checkbox false, chữ rỗng)" : null;
             // nhánh bảng động: ghi công thức AL dịch dòng vào cột BB (ColumnLettersToIndex("BA") = 53 dùng làm chỉ số cột gốc 0) rồi đọc lại chữ
             if (r.AL != null)

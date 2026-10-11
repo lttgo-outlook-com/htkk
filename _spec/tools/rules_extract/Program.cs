@@ -26,6 +26,7 @@ if (args.Length > 3)
             {
                 var lr = new LockRow { Row = r.GetProperty("row").GetInt32(), AL = S(r, "AL"), ALn = S(r, "ALn"), Skip = S(r, "skip"), Error = S(r, "error"), ControlCol = S(r, "controlCol") };
                 if (r.TryGetProperty("sheet", out var sh)) lr.Sheet = sh.GetInt32();
+                lr.RefSheet = r.TryGetProperty("refSheet", out var rsh) ? rsh.GetInt32() : lr.Sheet;
                 if (r.TryGetProperty("controlRow", out var cr)) lr.ControlRow = cr.GetInt32();
                 if (r.TryGetProperty("AN", out var an)) lr.AN = an.ValueKind == JsonValueKind.String ? an.GetString() : an.ToString();
                 if (r.TryGetProperty("ANformula", out var anf)) lr.ANformula = anf.GetBoolean();
@@ -800,6 +801,7 @@ Write("index.json", new Dictionary<string, object>
         ["opaque"] = "opaque(Tên, đối số...) là lời gọi chưa giải kèm đối số đã đánh giá (lời gọi trên đối tượng <obj>.Tên: đối số đầu là đối tượng nhận). opaque(call, method, đối số...) là method cùng class không nội tuyến. opaque(result, method) là giá trị trả về không xác định. opaque(branches, biến) là giá trị phụ thuộc quá nhiều nhánh.",
         ["null_branch"] = "Nhánh giá trị null bị truy cập thành viên (ngoại lệ) được bỏ khỏi cases. truy cập thành viên trên null chắc chắn thì câu lệnh vào dropped (ngoại lệ chắc chắn).",
         ["dropped_const"] = "dropped kind=callee: lệnh ghi trong method nội tuyến không chạy vì nhánh điều kiện gấp thành hằng (nhánh hằng sai), kèm via.",
+        ["lock_table"] = "inDynamicTable(s, r): dòng mẫu r của sheet s thuộc một bảng động (GeneralFunctions.DetectIndexOfTable >= 0), không xác định tĩnh nên cả hai nhánh đều được ghi kèm điều kiện. tableIndexOf(s, r): chỉ số bảng đó. dataRow: dòng dữ liệu thứ j của bảng động (DataLocationTemplateRowStart + j).",
         ["lock_config"] = "checkLockUnLockCells: ô đích, điều kiện khóa và xóa dữ liệu lấy từ bảng cấu hình cột AK/AL/AM/AN sheet cuối của mẫu .xls (lock_config.json). targetReason khi không xác định được.",
     },
     ["dropped_callee_const_branch"] = constDropN,
