@@ -1033,6 +1033,10 @@ def main(argv):
         index.append({"json": jname + ".json", "source_file": nm, "sha256": sc.sha,
                       "key": ({"ma_file": key["ma_file"], "version_xml": key["version_xml"],
                                "menu_ids": key["menu_ids"], "origin": key["origin"]} if key else None),
+                      # kind: khbs nếu origin là VersionKHBS của menu.xml hoặc tên tệp nguồn/JSON có khbs_ ở đầu
+                      # hoặc sau dấu _ (không phân biệt hoa thường); còn lại main
+                      "kind": ("khbs" if (key and key["origin"] == "menu.xml (VersionKHBS)") or any(
+                          re.search(r"(^|_)khbs_", x.lower()) for x in (nm, jname + ".json")) else "main"),
                       "entries": len(entries), "redefines": len(doc_applied), "unresolved": len(unres_list)})
 
     # 5b. doi chieu path voi XML mau trong _forms (tep *_mau-xml.xml, thuoc tinh Path)
