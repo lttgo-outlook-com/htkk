@@ -88,7 +88,7 @@ def load_menu():
             for s in val.findall('Sheet'):
                 sheets.append({'ID': s.get('ID'), 'SheetName': s.get('SheetName'),
                                'DataFile': s.get('DataFile'), 'XMLnode': s.get('XMLnode')})
-        forms[key] = {'menu_id': m.get('ID'), 'folder': val.get('FolderName') if val is not None else None,
+        forms[key] = {'kieu_khbs': m.get('KieuKHBS'), 'menu_id': m.get('ID'), 'folder': val.get('FolderName') if val is not None else None,
                       'sheets': sheets}
     return forms
 
@@ -463,6 +463,15 @@ def main():
                 l['khbs_sections_ton_tai'] = kx
                 l['khbs_xsd_ton_tai'] = ks
             sheet_log.append(l)
+        khbs_sheets = {l['sheet'] for l in log if l.get('nhom_khbs')}
+        khbs = {}
+
+        def kadd(sheet, kind, ref, field, val=1):
+            e = khbs.setdefault((sheet, kind, ref), {'nguon_tinh': set(), 'nguon_kiem': set(), 'lock': 0, 'unlock': 0, 'setvalue': 0})
+            if field in ('nguon_tinh', 'nguon_kiem'):
+                e[field].add(val)
+            else:
+                e[field] += 1
         # độc lập: đếm Cell có Path bằng regex
         for p in sorted(set(sec_files.values())):  # đếm theo form (tệp dùng chung tính lại mỗi form)
             t = open(p, 'rb').read()
@@ -632,6 +641,12 @@ def main():
                     continue
                 sh = t.get('sheet')
                 cs = t.get('cell')
+                if isinstance(sh, str) and 'activeSheet' in sh:
+                    mg = [re.fullmatch(r'activeSheet\(\) == (\d+)', q.strip()) for q in (r.get('guards') or [])]
+                    mg = [q for q in mg if q]
+                    if len(mg) == 1:
+                        sh = int(mg[0].group(1))
+                        G['csharp_effect_activeSheet_giai_duoc'] += 1
                 if not isinstance(sh, int):
                     unmapped['csharp']['sheet_khong_phai_so:%s' % type(sh).__name__ if not isinstance(sh, str) else 'sheet_dong:%s' % ('sView' if 'sView' in sh else 'activeSheet' if 'active' in sh else 'khac')] += 1
                     continue
@@ -645,6 +660,17 @@ def main():
                         unmapped['csharp'][err] += 1
                         continue
                     cs = cs2
+                if sh in khbs_sheets and (A1.match(cs) or RANGE.match(cs)):
+                    G['csharp_effect_khbs_theo_toa_do'] += 1
+                    if op == 'setFormula' and e.get('formula') not in (None, ''):
+                        kadd(sh, 'xls', cs, 'nguon_tinh', 'csharp')
+                    elif op == 'lock':
+                        kadd(sh, 'xls', cs, 'lock')
+                    elif op == 'unlock':
+                        kadd(sh, 'xls', cs, 'unlock')
+                    elif op == 'setValue':
+                        kadd(sh, 'xls', cs, 'setvalue')
+                    continue
                 hit = match_literal(data, space, sh, cs)
                 if not hit:
                     unmapped['csharp']['o_literal_khong_phai_o_du_lieu_XML'] += 1
@@ -693,6 +719,10 @@ def main():
                 if '{' in co or '(' in co:
                     unmapped['t3']['toa_do_chay_luc_chay'] += 1
                     continue
+                if s in khbs_sheets:
+                    G['t3_cell_khbs_theo_toa_do'] += 1
+                    kadd(s, 'xls', co, 'nguon_kiem', 'validate')
+                    continue
                 hit = match_literal(data, space, s, co)
                 if not hit:
                     conflicts['validate_o_khong_co_trong_xml'].append({
@@ -735,6 +765,35 @@ def main():
                         c.chk['dv'].append(d['type'])
                         break
 
+        # ---- KHBS: phủ theo toạ độ (sheet, ô) từ T1 khi không có Sections
+        for kind in ('xls', 'xls1'):
+            nm = sheetnames.get(kind)
+            if not nm:
+                continue
+            for si in sorted(khbs_sheets):
+                if si >= len(nm):
+                    continue
+                for (shn, cell), f in fx[kind].items():
+                    if shn == nm[si]:
+                        kadd(si, kind, cell, 'nguon_tinh', kind)
+        for l in log:
+            if l.get('nhom_khbs'):
+                l['phu_toa_do'] = len([1 for k in khbs if k[0] == l['sheet']])
+                l['nguon_mau_khbs'] = ('sheet %s trong .xls của form (T1, T2, T3)' % l['ID'])
+                if info.get('kieu_khbs') == '3':
+                    l['quy_tac_thay_sheet'] = ('WinFnProcess.cs:69-80: KieuKHBS=="3" và LoaiToKhai=="B": 2 sheet cuối (trước Header) '
+                                               'bị thay bằng sheet 0,1 của _forms/_ngoai_menu/KHBS_TT80*/khbs_tt80_<VersionKHBS>.xls; chưa phủ ô của mẫu chung')
+                if not l['phu_toa_do']:
+                    l['khbs_khong_phu_ly_do'] = 'sheet không có công thức T1, không có effect C# và không có check Validate theo toạ độ literal'
+        khbs_out = [{'sheet': k[0], 'sheet_id': info['sheets'][k[0]]['ID'], 'khong_gian': k[1], 'cell': k[2],
+                     'nguon_tinh': sorted(v['nguon_tinh']), 'nguon_kiem': sorted(v['nguon_kiem']),
+                     'khoa': {'lock': v['lock'], 'unlock': v['unlock']}, 'csharp_setvalue': v['setvalue'],
+                     'nhan': 'tinh_tu_dong_hoac_ca_hai' if v['nguon_tinh'] else 'nhap_tay_hoac_chi_kiem'}
+                    for k, v in sorted(khbs.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2]))]
+        G['khbs_o_theo_toa_do'] += len(khbs_out)
+        G['khbs_sheet_co_toa_do'] += len([1 for l in log if l.get('phu_toa_do')])
+        G['khbs_sheet_khong_phu'] += len([1 for l in log if l.get('nhom_khbs') and not l.get('phu_toa_do')])
+
         # ---- XSD + nhãn + xung đột
         out_cells = []
         counts = Counter()
@@ -763,6 +822,22 @@ def main():
             else:
                 label = 'tinh_tu_dong'
             counts[label] += 1
+            if c.dynamic:
+                G['dyn_o'] += 1
+                if c.row0 is None or c.row0_2 is None:
+                    G['dyn_thieu_hang_mau'] += 1
+                if not (c.cid and re.fullmatch(r'[A-Z]+', c.cid)):
+                    G['dyn_cot_khong_hop_le'] += 1
+                if c.calc.get('xls'):
+                    G['dyn_co_T1_xls_hang_mau'] += 1
+                if c.calc.get('xls1'):
+                    G['dyn_co_T1_xls1_hang_mau'] += 1
+                if c.calc.get('csharp') or c.calc.get('csharp_value') or c.locks['lock'] or c.locks['unlock']:
+                    G['dyn_co_T2_hang_mau'] += 1
+                if c.calc.get('rowreplace'):
+                    G['dyn_co_rowreplace'] += 1
+                if c.chk.get('validate'):
+                    G['dyn_co_validate_hang_mau'] += 1
             if c.ctl == '16':
                 ctl16[label] += 1
             cks = []
@@ -845,7 +920,7 @@ def main():
         out = {'header': {'form': {'MaFile': mafile, 'VersionXML': ver, 'MenuID': info['menu_id']},
                           'toa_do_csharp': spname, 'xsd_json': xj, 'xsd_thay_the_form_goc': bool(xj_fb), 'tep_Sections': {str(k): os.path.relpath(v, ROOT) for k, v in sorted(sec_files.items())},
                           'dinh_nghia': 'xem coverage.py'},
-               'cells': out_cells, 'path_ngoai_xsd': off_recs}
+               'cells': out_cells, 'path_ngoai_xsd': off_recs, 'khbs_cells_theo_toa_do': khbs_out}
         with open(os.path.join(a.out, '%s_%s.json' % (mafile, ver)), 'w', encoding='utf-8') as f:
             json.dump(out, f, ensure_ascii=False, sort_keys=True, indent=1)
             f.write('\n')
@@ -907,6 +982,8 @@ def main():
     print('kiem_cheo_regex_Cell_co_Path (tong ca ngoai XSD)', indep_total,
           '== o_du_lieu + ngoai_xsd?', indep_total == G['o_du_lieu'] + G['cell_path_ngoai_xsd'])
     print('xung_dot', {k: len(v) for k, v in sorted(conflicts.items())})
+    print('dong_dong', {k: v for k, v in sorted(G.items()) if k.startswith('dyn_')})
+    print('khbs: o_theo_toa_do', G['khbs_o_theo_toa_do'], 'sheet_co_toa_do', G['khbs_sheet_co_toa_do'], 'sheet_khong_phu', G['khbs_sheet_khong_phu'], '| effect_khbs', G['csharp_effect_khbs_theo_toa_do'], 't3_khbs', G['t3_cell_khbs_theo_toa_do'], '| activeSheet_giai_duoc', G['csharp_effect_activeSheet_giai_duoc'])
     print('csharp_effect', G['csharp_effect'], 'anh_xa', G['csharp_effect_anh_xa'],
           'unreachable_bo_qua', G['csharp_unreachable_bo_qua'], 'khong_thuoc_form', G['csharp_effect_khong_thuoc_form'])
     print('t3_check_trong_form', G['t3_check'], 't3_o_anh_xa', G['t3_cell_anh_xa'], 't3_check_khong_thuoc_form', G['t3_check_khong_thuoc_form'])
