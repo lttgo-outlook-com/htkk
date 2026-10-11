@@ -867,35 +867,105 @@ for b, r in all_records():
 for x in nn9_ex:
     print("   null[/null.:", x)
 say(nn9 == 0, "(9c) \"null[\" hoặc \"null.\" trong bản ghi: %d" % nn9)
-# (9d) cellVersions chỉ trỏ dòng có lệnh ghi (hoặc lời gọi có thể ghi, hoặc đầu vòng lặp có ghi); dòng lời gọi giao diện không tính
+# (9d) cellVersions theo định nghĩa chặt: chỉ lệnh đổi GIÁ TRỊ ô tạo phiên bản (kind "ghi"): gán .Value/.Text/.Formula,
+# ResetValue/ResetText/ResetFormula, Clear*, chèn/xóa hàng (dịch ô), helper ghi giá trị đã biết; đầu vòng lặp chỉ hợp lệ khi thân
+# vòng có lệnh như vậy hoặc lời gọi có thể ghi. Lời gọi chưa rõ có ghi ô (kind "co_the_ghi") phải có mặt ở dòng được trỏ.
+# Không tính là dòng ghi: dòng chỉ gán biến cục bộ hoặc chỉ có lời gọi không ghi ô (đọc ô, giao diện, xóa kiểm tra/ghi chú, màu nền),
+# dòng chỉ đổi Visible/Height/Width, BackColor/ForeColor/Note/Locked/CellType/Font/căn lề/Border.
 UI = {"SuspendLayout", "ResumeLayout", "SetActiveCell", "Focus", "ShowCell", "ShowActiveCell", "Invalidate", "Select", "BringToFront", "SetViewportTopRow", "SetViewportLeftColumn", "SetActiveSheet", "SetNodeBackGroundPink", "SetRowHeight", "SetColumnWidth", "Refresh", "Update", "PerformLayout", "ScrollTo", "SetFocus"}
-KW = {"if", "for", "foreach", "while", "switch", "catch", "using", "lock", "return", "new", "typeof", "nameof"}
-def write_line(t):
-    s0 = t.strip()
-    if re.match(r"(for|foreach|while|do)\b", s0):
-        return True
-    s1 = lit.sub('""', s0)
-    if re.search(r"(?<![=!<>+\-*/%&|^])=(?!=)|\+=|-=|\+\+|--", s1) and not re.match(r"(if|else if|while)\b", s1):
-        return True
-    calls = [c for c in re.findall(r"(\w+)\s*\(", s1) if c not in KW]
-    return bool(calls) and not all(c in UI for c in calls)
-cv_n = 0; cv_bad = []
+# lời gọi không ghi ô: đọc ô/giao diện/ghi chú/kiểm tra (đối chiếu thân method trong _decompiled: không gán Value/Text/Formula, không Reset/Clear/chèn hàng)
+NOWRITE9 = UI | {"RemoveValidate", "RemoveValidateCell", "GetMessage", "GetRowIndexInSViewByCompares", "ConvertCellValueToText", "UpdateFromSViewToSInfo",
+                 "GetValue", "ChangeLockedCell", "GetPreferredHeight", "SetNodeBackGroundWhite", "SetNote", "ResetNote", "GetCurrentMethod", "Log", "LogErrorBigData"}
+PURE9 = {"ToString", "ToStringOrDefault", "ToIntOrDefault", "ToBoolOrDefault", "Trim", "TrimEnd", "TrimStart", "ToUpper", "ToLower", "Equals", "Contains", "ContainsKey",
+         "TryGetValue", "StartsWith", "EndsWith", "IndexOf", "LastIndexOf", "Substring", "Replace", "Split", "Format", "Concat", "Parse", "TryParse", "ToInt32", "ToInt64",
+         "ToInt16", "ToDouble", "ToDecimal", "ToBoolean", "ConvertToInt", "ConvertToLong", "ConvertToDouble", "ConvertToDecimal", "ConvertToDouble1", "ConvertToDecimal1",
+         "ConvertToBool", "ConvertToString", "IsNullOrEmpty", "IsNullOrWhiteSpace", "isNullString", "ArrayCellId", "ColumnLettersToIndex", "ColumnIndexToLetters",
+         "GetValueCustom", "GetObjectValue", "Round", "Abs", "Max", "Min", "Floor", "Ceiling", "Count", "Any", "ToList", "ToArray", "Where", "Select", "FirstOrDefault",
+         "First", "Find", "FindIndex", "FindAll", "PadLeft", "PadRight", "ConvertToDateTime", "ToDateTime", "Exists", "Sum", "GetLength", "AddDays", "AddMonths",
+         "ParseExact", "Compare", "DaysInMonth", "Show", "WriteLine", "FromArgb", "FromHtml", "GetType", "Add", "Remove", "RemoveAt", "Insert", "Clear", "Value"}
+KW9 = {"if", "for", "foreach", "while", "switch", "catch", "using", "lock", "return", "new", "typeof", "nameof", "else", "do", "sizeof", "default"}
+VALW = re.compile(r"\.(?:Value|Text|Formula)\s*=(?!=)|\.Reset(?:Value|Text|Formula)\s*\(|\.Clear(?:Range|Data|Selection|All)\s*\(|\b(?:AddRows?|RemoveRows?|InsertRows?|DeleteRows?|InsertTableRow|RemoveDataRows|RecalculateAll|Recalculate)\s*\(|\.Rows\.(?:Add|Remove|Insert)\s*\(")
+PROPW = re.compile(r"\.(?:Visible|Height|Width)\s*=(?!=)")
+FMTW = re.compile(r"\.(?:BackColor|ForeColor|Note|NoteStyle|Locked|CellType|Font|HorizontalAlignment|VerticalAlignment|Formatter|Border|Tag|CanFocus)\s*=(?!=)|\]\.Reset(?!Value\b|Text\b|Formula\b)\w+\s*\(")
+def calls9(s1):
+    s2 = re.sub(r"\bnew\s+[\w.<>]+\s*\(", "(", s1)
+    out = []
+    for c in re.findall(r"(\w+)\s*\(", s2):
+        if c in KW9:
+            continue
+        if re.match(r"Reset(?!Value$|Text$|Formula$)", c) and "_" not in c:
+            continue  # ResetBackColor, ResetNote...: trả định dạng, không đổi giá trị
+        out.append(c)
+    return out
+def maywrite_calls(s1):
+    return [c for c in calls9(s1) if c not in NOWRITE9 and c not in PURE9 and not c.startswith(("SetNodeBackGround", "RemoveValidate"))]
+def loop_body(L, n):
+    # thân vòng lặp bắt đầu ở dòng n (1-based): khối {...} hoặc một câu lệnh
+    out = []; depth = 0; started = False
+    for j in range(n - 1, min(len(L), n + 3000)):
+        t = lit.sub('""', L[j])
+        if j > n - 1 or "{" in t:
+            out.append(t)
+        for ch in t:
+            if ch == "{": depth += 1; started = True
+            elif ch == "}": depth -= 1
+        if started and depth <= 0:
+            break
+        if not started and j > n - 1 and t.strip().endswith(";"):
+            break
+    return out
+def classify9(L, n, memo={}):
+    """ghi | co_the_ghi | loop_ghi | loop_khong | visible | dinh_dang | chi_doc"""
+    t = L[n - 1].strip(); s1 = lit.sub('""', t)
+    if re.match(r"(for|foreach|while|do)\b", t):
+        key = (id(L), n)
+        if key not in memo:
+            body = loop_body(L, n)
+            memo[key] = "loop_ghi" if any(VALW.search(x) or maywrite_calls(x) for x in body) else "loop_khong"
+        return memo[key]
+    if VALW.search(s1):
+        return "ghi"
+    if maywrite_calls(s1):
+        return "co_the_ghi"
+    if PROPW.search(s1):
+        return "visible"
+    if FMTW.search(s1):
+        return "dinh_dang"
+    return "chi_doc"
+def version_lines(v):
+    if "writes" in v:
+        return list(v["writes"])
+    a2 = re.sub(r"^hợp nhánh dòng \d+: ", "", v["after"])
+    return list(map(int, re.findall(r"\d+", " ".join(re.findall(r"dòng ([\d, ]+)", a2)))))
+cv_n = 0; cv_bad = []; cv_cat = {}; kind_n = {}; kind_bad = []
 for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
     b = os.path.basename(f)
     if b in ("formula_points.json", "opaque_calls.json", "index.json"):
         continue
     d = json.load(open(f))
+    if "records" not in d:
+        continue
     for r in d["records"]:
         L = src_lines(r["source"]["file"])
         for v in r["cellVersions"]:
-            a = v["after"]
-            a2 = re.sub(r"^hợp nhánh dòng \d+: ", "", a)
-            for n in map(int, re.findall(r"\d+", " ".join(re.findall(r"dòng ([\d, ]+)", a2)))):
+            k = v.get("kind")
+            kind_n[k] = kind_n.get(k, 0) + 1
+            if k not in ("ghi", "co_the_ghi") or (k == "co_the_ghi" and not v.get("calls")):
+                kind_bad.append("%s %s %s kind=%s" % (b, r["hook"], v["ref"][-14:], k))
+            for n in version_lines(v):
                 cv_n += 1
-                if not (0 < n <= len(L)) or not write_line(L[n - 1]):
-                    cv_bad.append("%s %s %s -> dòng %d: %s" % (b, r["hook"], v["ref"][-12:], n, (L[n - 1].strip() if 0 < n <= len(L) else "?")[:60]))
-for x in sorted(set(cv_bad))[:5]:
-    print("   cellVersions trỏ dòng không ghi:", x)
-say(not cv_bad, "(9d) cellVersions: %d tham chiếu dòng, trỏ dòng không có lệnh ghi %d" % (cv_n, len(cv_bad)))
+                c = classify9(L, n) if 0 < n <= len(L) else "ngoai_tep"
+                cv_cat[c] = cv_cat.get(c, 0) + 1
+                if c not in ("ghi", "co_the_ghi", "loop_ghi"):
+                    cv_bad.append("%s %s %s -> dòng %d [%s]: %s" % (b, r["hook"], v["ref"][-14:], n, c, (L[n - 1].strip() if 0 < n <= len(L) else "?")[:60]))
+for x in sorted(set(cv_bad))[:6]:
+    print("   cellVersions trỏ dòng không ghi giá trị:", x)
+print("   (9d) phân loại dòng được trỏ:", json.dumps(dict(sorted(cv_cat.items())), ensure_ascii=False), "| kind:", json.dumps({str(k): n for k, n in sorted(kind_n.items(), key=lambda x: str(x[0]))}, ensure_ascii=False))
+say(not cv_bad, "(9d) cellVersions: %d tham chiếu dòng, trỏ dòng không đổi giá trị ô %d (chỉ đọc/gán biến cục bộ %d, Visible/Height/Width %d, BackColor/Note/Locked/CellType %d, vòng lặp không ghi %d)"
+    % (cv_n, len(cv_bad), cv_cat.get("chi_doc", 0), cv_cat.get("visible", 0), cv_cat.get("dinh_dang", 0), cv_cat.get("loop_khong", 0)))
+say(cv_cat.get("visible", 0) == 0 and cv_cat.get("dinh_dang", 0) == 0, "(9d) 0 phiên bản trỏ dòng Visible/Height/Width/BackColor/Note/Locked/CellType: %d" % (cv_cat.get("visible", 0) + cv_cat.get("dinh_dang", 0)))
+for x in kind_bad[:3]:
+    print("   kind sai:", x)
+say(not kind_bad, "(9d) mỗi phiên bản có kind ghi|co_the_ghi (co_the_ghi kèm calls): sai %d" % len(kind_bad))
 print("KẾT LUẬN:", "ĐẠT" if ok else "CÓ MỤC TRƯỢT")
 sys.exit(0 if ok else 1)
