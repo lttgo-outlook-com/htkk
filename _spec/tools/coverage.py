@@ -22,7 +22,9 @@ ROOT = os.getcwd()
 MENU = '/Users/tuanle/codes/HTKK/_extracted/menu.xml'
 T2 = '/Users/tuanle/codes/HTKK/.claude/worktrees/agent-a69710347074048d8/_spec/rules/'
 T3 = '/Users/tuanle/codes/HTKK/.claude/worktrees/agent-ae09dfc0b7c50411a/_spec/validations/'
-INPUT_STATUS = {'0001'}  # StatusID coi là ô nhập (kiểm bằng bảng chéo StatusID x có công thức Excel)
+# StatusID chỉ được parse vào HTKKCMCCellInfo, không có mã C# nào đọc lại; hằng HTKKConstant.cs:49-51:
+# STATUS_ID_LOAD_DT_YES="0001" (ô nạp dữ liệu từ tệp), STATUS_ID_LOAD_DT_NO="0002". Dùng 0001 làm ô nhập (heuristic).
+INPUT_STATUS = {'0001'}
 
 
 def col2n(c):
@@ -487,6 +489,14 @@ def main():
                 if len(cand) == 1:
                     e = xs[cand[0]]
                     c.full = cand[0]
+            if e is None and c.path:
+                # hậu tố duy nhất toàn XSD (XMLnode trong menu có thể thiếu đoạn PLuc/...)
+                suf = (c.tpath + '/' + c.path) if c.dynamic else c.path
+                if '/' in suf:
+                    cand = [p for p in xs if p.endswith('/' + suf)]
+                    if len(cand) == 1:
+                        e = xs[cand[0]]
+                        c.full = cand[0]
             c.in_xsd = e is not None and e.get('kind') != 'attribute'
             c.xsd = e if c.in_xsd else None
 
