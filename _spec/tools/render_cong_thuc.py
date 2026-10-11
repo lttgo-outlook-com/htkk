@@ -220,9 +220,9 @@ def when_text(rec):
 
 def load_rules(rules_dir):
     """Đọc <rules_dir>/<Class>.json (T2) theo định dạng thật: {key,file,hooks,records[]}.
-    Trả {Class: {'lines': [...], 'by_sheet_other': {sheet: {'setValue':n,'lock':n}}, 'unreach': {sheet: [records, setFormula]},
+    Trả {Class: {'lines': [...], 'by_sheet_other': {sheet: {'setValue':n,'lock':n,'unlock':n}}, 'unreach': {sheet: [records, setFormula]},
                   'n_effects': số effect setFormula không unreachable, 'n_lines': số dòng (mỗi nhánh cases một dòng)}}.
-    Chỉ lấy op setFormula không unreachable thành dòng; setValue và lock chỉ đếm theo sheet."""
+    Chỉ lấy op setFormula không unreachable thành dòng; setValue, lock và unlock chỉ đếm theo sheet."""
     out = {}
     if not rules_dir:
         return out
@@ -256,7 +256,7 @@ def load_rules(rules_dir):
                 sh = sheet_ref(e.get('target'))
                 if sh is None:
                     sh = rsheet
-                if e['op'] in ('setValue', 'lock'):
+                if e['op'] in ('setValue', 'lock', 'unlock'):
                     d['other'][sh][e['op']] += 1
                     continue
                 if e['op'] != 'setFormula':
@@ -373,8 +373,8 @@ def render_block(repo, row, ent, jdoc, classes, cls_of, menu_by_mafile, rowrep, 
                 out.append('#   phiên bản ô %s: %s' % (esc(r_), esc(af)))
         if nsh or other.get(sh) or unreach.get(sh):
             o, u = other.get(sh, {}), unreach.get(sh, [0, 0])
-            out.append('# C# tóm tắt sheet: %d dòng setFormula (liệt kê ở trên); setValue %d, lock %d (không liệt kê); '
-                       'bản ghi unreachable bỏ %d (%d setFormula)' % (nsh, o.get('setValue', 0), o.get('lock', 0), u[0], u[1]))
+            out.append('# C# tóm tắt sheet: %d dòng setFormula (liệt kê ở trên); setValue %d, lock %d, unlock %d (không liệt kê); '
+                       'bản ghi unreachable bỏ %d (%d setFormula)' % (nsh, o.get('setValue', 0), o.get('lock', 0), o.get('unlock', 0), u[0], u[1]))
         ncs += nsh
     out.append('=> %d cell công thức trong file này' % ncell)
     if crules:
