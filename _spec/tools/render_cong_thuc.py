@@ -25,15 +25,18 @@ Chạy (nên dùng venv có olefile để lấy nhãn ô; không có olefile th�
   ## sheet: <tên sheet>
   REF | công thức | nhãn | nguồn          (ô theo hàng rồi cột; nguồn = xls|xls1|xlsx, C#:Class.Method:Lnn, ROWREPLACE)
   C# có điều kiện: REF | công thức | nhãn | C#:... | khi: <guard>
+  #   phiên bản ô <ref>#L: <after>   (1.1.0: sau dòng C#, mỗi nhãn cell(...)#L có trong ô đích, công thức,
+                                     điều kiện hoặc sheet đích, lấy từ cellVersions của bản ghi T2)
+  Đầu vào T2: _spec/rules/<Class>.json sha256_16=...   (1.1.0: dòng header khi khối có class T2)
   => N cell công thức trong file này
   ## ROWREPLACE ...  (nếu MenuID có trong mapcongthucchosua)
   ## SUPBOOK (tham chiếu ngoài)  [ext:n] đường dẫn | sheet
 Escape trong công thức và nhãn: CR -> \\r, LF -> \\n, dấu \\ -> \\\\, ký tự | trong nhãn -> ¦.
 Tham chiếu ngoài trong công thức đã ở dạng [ext:n] (T1); bảng SUPBOOK in cuối khối.
 """
-import os, sys, re, csv, json, struct, argparse, collections
+import os, sys, re, csv, json, struct, argparse, collections, hashlib
 
-VERSION = '1.0.0'
+VERSION = '1.1.0'
 GEN = 'render_cong_thuc.py@' + VERSION
 LABEL_MAX = 60
 
@@ -226,7 +229,8 @@ def load_rules(rules_dir):
     for fn in sorted(os.listdir(rules_dir)):
         if not fn.endswith('.json') or fn in RULES_SKIP:
             continue
-        j = json.load(open(os.path.join(rules_dir, fn), encoding='utf-8'))
+        raw = open(os.path.join(rules_dir, fn), 'rb').read()
+        j = json.loads(raw.decode('utf-8'))
         if not isinstance(j, dict) or not isinstance(j.get('records'), list):
             continue
         cls = j['key']['Class']
@@ -244,6 +248,10 @@ def load_rules(rules_dir):
             if w:
                 khi_pre.append('kích hoạt: ' + w)
             khi_pre += [str(g) for g in rec.get('guards') or []]
+            cvmap = {}
+            for v in rec.get('cellVersions') or []:
+                if isinstance(v, dict) and v.get('ref'):
+                    cvmap.setdefault(v["ref"], v.get("after", ""))
             for ei, e in enumerate(rec['effects']):
                 sh = sheet_ref(e.get('target'))
                 if sh is None:
@@ -270,11 +278,17 @@ def load_rules(rules_dir):
                         ftxt = cv
                     else:
                         ftxt = json.dumps(cv, ensure_ascii=False, sort_keys=True)
-                    d['lines'].append({'sheet': sh, 'cell': (e.get('target') or {}).get('cell', '?'), 'formula': ftxt,
-                                       'method': rec.get('hook', '?'), 'line': e.get('at', '?'), 'khi': ' && '.join(khi),
-                                       'ord': (cls, ri, ei, ci)})
+                    cell = (e.get('target') or {}).get('cell', '?')
+                    khi_txt = ' && '.join(khi)
+                    blob = '%s\n%s\n%s\n%s' % (cell, ftxt, khi_txt, sh if isinstance(sh, str) else '')
+                    vers = [(r_, cvmap[r_]) for r_ in sorted(cvmap) if r_ in blob and re.search(re.escape(r_) + r"(?![0-9]|\.[0-9])", blob)]
+                    d['lines'].append({'sheet': sh, 'cell': cell, 'formula': ftxt,
+                                       'method': rec.get('hook', '?'), 'line': e.get('at', '?'), 'khi': khi_txt,
+                                       'ord': (cls, ri, ei, ci), 'versions': vers})
                     d['n_lines'] += 1
         d['cls'] = cls
+        d['file'] = fn
+        d['sha256_16'] = hashlib.sha256(raw).hexdigest()[:16]
         out[cls] = d
     return out
 
@@ -294,6 +308,8 @@ def render_block(repo, row, ent, jdoc, classes, cls_of, menu_by_mafile, rowrep, 
     out.append('MenuID: %s' % (mid_file or '-'))
     out.append('Nguồn sha256: %s' % ent['source_sha256'])
     out.append('Generator: %s' % GEN)
+    if crules:
+        out.append('Đầu vào T2: _spec/rules/%s sha256_16=%s' % (crules['file'], crules['sha256_16']))
     out.append('=== FILE: %s ===' % base)
 
     labels = {}
@@ -353,6 +369,8 @@ def render_block(repo, row, ent, jdoc, classes, cls_of, menu_by_mafile, rowrep, 
                 if x['khi']:
                     line += ' | khi: %s' % esc(x['khi'])
             out.append(line)
+            for r_, af in (x.get('versions') or ()) if kind != 'base' else ():
+                out.append('#   phiên bản ô %s: %s' % (esc(r_), esc(af)))
         if nsh or other.get(sh) or unreach.get(sh):
             o, u = other.get(sh, {}), unreach.get(sh, [0, 0])
             out.append('# C# tóm tắt sheet: %d dòng setFormula (liệt kê ở trên); setValue %d, lock %d (không liệt kê); '
