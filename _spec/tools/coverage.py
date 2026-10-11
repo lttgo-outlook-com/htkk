@@ -253,7 +253,10 @@ def build_cells(sheets, sec_files, ver):
                     if c.path.startswith('HSoThueDTu'):
                         c.full = c.path
                     else:
-                        c.full = (node + '/' + c.path) if node else c.path
+                        if node and c.path.split('/')[0] == node.rsplit('/', 1)[-1]:
+                            c.full = (parent + '/' + c.path) if parent else c.path
+                        else:
+                            c.full = (node + '/' + c.path) if node else c.path
                 cells.append(c)
     return cells, log
 
@@ -421,10 +424,14 @@ def main():
     t3, t3_un = load_t3(a.t3)
     xidx = jload(os.path.join(ROOT, '_spec', 'xsd', 'index.json'))
     xsd_by = {}
+    xsd_khbs = {}
+    xsd_old = {}
     for f in xidx['files']:
         k = f.get('key')
         if k and k.get('ma_file') and k.get('version_xml'):
-            xsd_by[(k['ma_file'], k['version_xml'])] = f['json']
+            kh = 'VersionKHBS' in (k.get('origin') or '') or '_KHBS_' in f['json']
+            xsd_old[(k['ma_file'], k['version_xml'])] = f['json']
+            (xsd_khbs if kh else xsd_by)[(k['ma_file'], k['version_xml'])] = f['json']
 
     G = Counter()  # tổng
     unmapped = defaultdict(Counter)  # nhóm -> lý do -> số
@@ -466,6 +473,15 @@ def main():
         # XSD
         xs = {}
         xj = xsd_by.get(key)
+        if xsd_old.get(key) and 'KHBS' in xsd_old[key].upper():
+            G['form_xsd_cu_dung_khbs_cho_sheet_chinh'] += 1
+        xj_fb = None
+        if xj is None:
+            G['form_khong_co_xsd_chinh'] += 1
+            base = mafile.replace('_VIEW', '')
+            if base != mafile and xsd_by.get((base, ver)):
+                xj = xj_fb = xsd_by[(base, ver)]
+                G['form_xsd_theo_form_goc_khong_VIEW'] += 1
         if xj and os.path.exists(os.path.join(ROOT, '_spec', 'xsd', xj)):
             for e in jload(os.path.join(ROOT, '_spec', 'xsd', xj))['elements']:
                 xs[e['path'].lstrip('/')] = e
@@ -802,7 +818,7 @@ def main():
                      'controltype': c.ctl, 'dong_dong': c.dynamic} for c in off]
         G['cell_path_ngoai_xsd'] += len(off)
         out = {'header': {'form': {'MaFile': mafile, 'VersionXML': ver, 'MenuID': info['menu_id']},
-                          'toa_do_csharp': spname, 'xsd_json': xj, 'tep_Sections': {str(k): os.path.relpath(v, ROOT) for k, v in sorted(sec_files.items())},
+                          'toa_do_csharp': spname, 'xsd_json': xj, 'xsd_thay_the_form_goc': bool(xj_fb), 'tep_Sections': {str(k): os.path.relpath(v, ROOT) for k, v in sorted(sec_files.items())},
                           'dinh_nghia': 'xem coverage.py'},
                'cells': out_cells, 'path_ngoai_xsd': off_recs}
         with open(os.path.join(a.out, '%s_%s.json' % (mafile, ver)), 'w', encoding='utf-8') as f:
@@ -857,6 +873,7 @@ def main():
 
     # ---- báo cáo
     print('so_form_xu_ly', nform)
+    print('form_xsd_cu_dung_khbs (truoc)', G['form_xsd_cu_dung_khbs_cho_sheet_chinh'], '| form_khong_co_xsd_chinh (sau)', G['form_khong_co_xsd_chinh'])
     print('tong_o_du_lieu', G['o_du_lieu'], '| o_path_ngoai_xsd', G['cell_path_ngoai_xsd'])
     print('nhan', {k: G['nhan_' + k] for k in ('tinh_tu_dong', 'nhap_tay', 'ca_hai')},
           'tong_nhan', sum(G['nhan_' + k] for k in ('tinh_tu_dong', 'nhap_tay', 'ca_hai')))
