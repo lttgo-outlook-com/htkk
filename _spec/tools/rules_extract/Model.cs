@@ -52,8 +52,10 @@ public sealed class VSym : V { public readonly string Text; public readonly bool
 /// Mỗi lần đánh giá có Id riêng: hai lần đánh giá khác nhau không bao giờ coi là cùng giá trị.
 public sealed class VOpaque : V
 {
-    public readonly string What, SymName; public readonly long Id;
+    public readonly string What, SymName; public readonly long Id; public readonly List<V> Args;
     public VOpaque(string w, string sym = null) { What = w; SymName = sym; Id = Mk.Next(); }
+    /// nhãn kèm đối số: opaque(Tên, đối số 1, ...)
+    public VOpaque(string w, List<V> args) { What = w; Args = args; Id = Mk.Next(); }
     protected override string MakeKey() => "op:" + What + "#" + Id;
 }
 /// Đánh dấu ẩn trong văn bản ký hiệu: phân biệt danh tính (phiên bản ô sau lệnh ghi, lần đánh giá opaque, biến out) mà không đổi phần hiển thị.
@@ -67,6 +69,12 @@ public static class Mk
     static readonly System.Text.RegularExpressions.Regex Rx = new("\u001F[^\u001F]*\u001F", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
     static readonly System.Text.RegularExpressions.Regex RxName = new("\u001F\\d+:([A-Za-z_]\\w*)\u001F", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
     public static string Strip(string s) => s != null && s.IndexOf(M) >= 0 ? Rx.Replace(s, "") : s;
+    /// dấu ký hiệu có tên: tên + \u001Fs<id>\u001F (id của mục symbols trong Interp); đổi thành tên hoặc tên@dòng khi ghi bản ghi
+    public static string SymTag(long id) => M + "s" + id.ToString(CultureInfo.InvariantCulture) + M;
+    public static readonly System.Text.RegularExpressions.Regex RxSym = new("([A-Za-z_]\\w*)\u001Fs(\\d+)\u001F", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+    public static bool HasSym(string s) => s != null && s.IndexOf(M) >= 0 && RxSym.IsMatch(s);
+    /// bỏ mọi dấu ẩn trừ dấu ký hiệu có tên
+    public static string StripKeepSym(string s) => s != null && s.IndexOf(M) >= 0 ? Rx.Replace(s, m => m.Value.Length > 2 && m.Value[1] == 's' && m.Value.Skip(2).Take(m.Value.Length - 3).All(char.IsDigit) ? m.Value : "") : s;
     public static IEnumerable<string> Names(string s) => s.IndexOf(M) < 0 ? Enumerable.Empty<string>() : RxName.Matches(s).Select(m => m.Groups[1].Value);
 }
 public sealed class VArr : V { public readonly List<V> Items; public VArr(List<V> i) { Items = i; } protected override string MakeKey() => "arr[" + string.Join(";", Items.Select(i => i.Key)) + "]"; }
@@ -275,7 +283,7 @@ public static class R
                     return sb.ToString();
                 }
             case VSym y: f.Sym = true; if (y.HasOpaque) f.Opaque = true; f.Notes.Add(y.Text); return y.Text;
-            case VOpaque o: f.Opaque = true; f.Notes.Add("opaque:" + o.What); return "opaque(" + o.What + ")" + Mk.Tag(o.Id, o.SymName);
+            case VOpaque o: f.Opaque = true; f.Notes.Add("opaque:" + o.What); return "opaque(" + o.What + (o.Args is { Count: > 0 } ? ", " + string.Join(", ", o.Args.Select(a => a == null ? "null" : Expr(a, f))) : "") + ")" + Mk.Tag(o.Id, o.SymName);
             case VArr a: return "[" + string.Join(", ", a.Items.Select(i => Expr(i, f))) + "]";
             case VCat c: return "\"" + Template(c, f) + "\"";
             case VCases cs: return "cases(" + string.Join(" | ", cs.Alts.Select(a => (a.When == null ? "else" : Cond(a.When, f)) + " -> " + Expr(a.Val, f))) + ")";

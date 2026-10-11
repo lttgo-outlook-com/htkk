@@ -8,7 +8,36 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using RulesExtract;
 
-if (args.Length < 3) { Console.Error.WriteLine("Dùng: RulesExtract <decompiledDir> <_spec/csharp> <outDir>"); return 2; }
+if (args.Length < 3) { Console.Error.WriteLine("Dùng: RulesExtract <decompiledDir> <_spec/csharp> <outDir> [lock_config.json]"); return 2; }
+// cấu hình checkLockUnLockCells theo class (lock_config.py đọc sheet cuối mẫu .xls)
+var lockCfgs = new Dictionary<string, LockCfg>(StringComparer.Ordinal);
+if (args.Length > 3)
+{
+    using var lj = JsonDocument.Parse(File.ReadAllText(args[3]));
+    foreach (var cp in lj.RootElement.EnumerateObject())
+    {
+        var c = new LockCfg();
+        var o = cp.Value;
+        string S(JsonElement e, string k) => e.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+        c.Error = S(o, "error"); c.Template = S(o, "template"); c.BA1 = S(o, "BA1"); c.Stop = S(o, "stop");
+        if (o.TryGetProperty("lastSheet", out var ls)) c.LastSheet = ls.GetInt32();
+        if (o.TryGetProperty("rows", out var rows))
+            foreach (var r in rows.EnumerateArray())
+            {
+                var lr = new LockRow { Row = r.GetProperty("row").GetInt32(), AL = S(r, "AL"), ALn = S(r, "ALn"), Skip = S(r, "skip"), Error = S(r, "error"), ControlCol = S(r, "controlCol") };
+                if (r.TryGetProperty("sheet", out var sh)) lr.Sheet = sh.GetInt32();
+                lr.RefSheet = r.TryGetProperty("refSheet", out var rsh) ? rsh.GetInt32() : lr.Sheet;
+                if (r.TryGetProperty("controlRow", out var cr)) lr.ControlRow = cr.GetInt32();
+                if (r.TryGetProperty("AN", out var an)) lr.AN = an.ValueKind == JsonValueKind.String ? an.GetString() : an.ToString();
+                if (r.TryGetProperty("ANformula", out var anf)) lr.ANformula = anf.GetBoolean();
+                if (r.TryGetProperty("AMempty", out var ame)) lr.AMempty = ame.GetBoolean();
+                if (r.TryGetProperty("ALvalue", out var alv)) lr.ALvalue = alv.ValueKind == JsonValueKind.Number ? alv.GetDouble() : alv.ValueKind == JsonValueKind.String ? alv.GetString() : null;
+                if (r.TryGetProperty("targets", out var ts)) foreach (var t in ts.EnumerateArray()) lr.Targets.Add((t.GetProperty("row").GetInt32(), t.GetProperty("col").GetString()));
+                c.Rows.Add(lr);
+            }
+        lockCfgs[cp.Name] = c;
+    }
+}
 string decDir = Path.GetFullPath(args[0]);
 string idxDir = args[1];
 string outDir = args[2];
@@ -308,7 +337,8 @@ void Tokens(object o, string k, HashSet<string> acc)
             foreach (var nm in Mk.Names(t)) acc.Add(nm);
             t = Mk.Strip(t);
             t = litRx.Replace(t, "\"\"");
-            t = System.Text.RegularExpressions.Regex.Replace(t, @"field\(\w+\)|obj\(\w*\)|opaque\([^()]*\)", "");
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"field\(\w+\)|obj\(\w*\)|opaque\([^(),]*\)", "");
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"opaque\([^(),]*, ", "(");
             foreach (System.Text.RegularExpressions.Match m in tokRx.Matches(t)) acc.Add(m.Value);
             foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(t, @"@(\d+)")) acc.Add("@" + m.Groups[1].Value);
             break;
@@ -338,7 +368,41 @@ bool Contradictory(List<Cond> conj)
 }
 int recUnreachable = 0, recWithSyms = 0, symEntries = 0;
 
-List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<string, object> key, string hook, string kind, int sheet, string file, string ctxLabel, SortedDictionary<string, List<SymInfo>> syms)
+// đổi dấu ký hiệu trong chuỗi: tên (một nguồn trong bản ghi) hoặc tên@dòng (nhiều nguồn cùng tên)
+object Rewrite(object o, Func<string, string> fn)
+{
+    switch (o)
+    {
+        case string t: return fn(t);
+        case System.Collections.IDictionary d:
+            foreach (var k in d.Keys.Cast<object>().ToList()) d[k] = Rewrite(d[k], fn);
+            return d;
+        case System.Collections.IList l:
+            for (int i = 0; i < l.Count; i++) l[i] = Rewrite(l[i], fn);
+            return l;
+        default: return o;
+    }
+}
+void CollectSym(object o, SortedSet<long> acc)
+{
+    switch (o)
+    {
+        case string t: if (t.IndexOf(Mk.M) >= 0) foreach (System.Text.RegularExpressions.Match m in Mk.RxSym.Matches(t)) acc.Add(long.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture)); break;
+        case System.Collections.IDictionary d: foreach (System.Collections.DictionaryEntry e in d) CollectSym(e.Value, acc); break;
+        case System.Collections.IEnumerable l: foreach (var x in l) CollectSym(x, acc); break;
+    }
+}
+void AllStrings(object o, List<string> acc)
+{
+    switch (o)
+    {
+        case string t: acc.Add(t); break;
+        case System.Collections.IDictionary d: foreach (System.Collections.DictionaryEntry e in d) AllStrings(e.Value, acc); break;
+        case System.Collections.IEnumerable l: foreach (var x in l) AllStrings(x, acc); break;
+    }
+}
+int symFallback = 0;
+List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<string, object> key, string hook, string kind, int sheet, string file, string ctxLabel, SortedDictionary<string, List<SymInfo>> syms, Interp itp)
 {
     var groupConj = new Dictionary<string, List<List<Cond>>>(StringComparer.Ordinal);
     var groupNames = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
@@ -361,12 +425,12 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
         // nhóm theo văn bản hiển thị (bỏ dấu ẩn); cờ unreachable chỉ khi mọi effect của nhóm có đường đi mâu thuẫn
         var rawNames = guards.SelectMany(Mk.Names).ToList();
         foreach (var gtxt in guards) KindNames(gtxt, null, groupKinds.TryGetValue(string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards.Select(Mk.Strip).Distinct(StringComparer.Ordinal)), out var gkk) ? gkk : (groupKinds[string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards.Select(Mk.Strip).Distinct(StringComparer.Ordinal))] = new SortedDictionary<string, string>(StringComparer.Ordinal)));
-        guards = guards.Select(Mk.Strip).Distinct(StringComparer.Ordinal).ToList();
+        guards = guards.Select(Mk.StripKeepSym).Distinct(StringComparer.Ordinal).ToList();
         string gk = string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards);
         if (!gidx.TryGetValue(gk, out var gi)) { gi = groups.Count; gidx[gk] = gi; groups.Add((gk, new List<Effect>(), trig, guards)); groupConj[gk] = new List<List<Cond>>(); groupNames[gk] = new HashSet<string>(StringComparer.Ordinal); }
         groupNames[gk].UnionWith(rawNames);
         effRaw++;
-        string ek = gk + "\u0003" + ef.Op + "|" + Mk.Strip(ef.Target == null ? "" : R.Expr(ef.Target, new Flags())) + "|" + Mk.Strip(ef.Val == null ? "" : R.Expr(ef.Val, new Flags())) + "|" + ef.Line + "|" + ef.Via + "|" + Mk.Strip(JsonSerializer.Serialize(ef.Params, jsonOpt));
+        string ek = gk + "\u0003" + ef.Op + "|" + Mk.StripKeepSym(ef.Target == null ? "" : R.Expr(ef.Target, new Flags())) + "|" + Mk.StripKeepSym(ef.Val == null ? "" : R.Expr(ef.Val, new Flags())) + "|" + ef.Line + "|" + ef.Via + "|" + Mk.Strip(JsonSerializer.Serialize(ef.Params, jsonOpt));
         groupConj[gk].Add(conj);
         if (!effSeen.Add(ek)) continue;
         effKept++;
@@ -430,18 +494,42 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
         bool unreach = groupConj[g.gk].All(Contradictory);
         if (unreach) { recUnreachable++; reason = "không tới được: điều kiện trên đường đi mâu thuẫn" + (reason.Length > 0 ? " | " + reason : ""); }
         var trigJ = BuildTrigger(g.trig, kind);
-        var toks = new HashSet<string>(StringComparer.Ordinal);
-        Tokens(g.guards, "guards", toks); Tokens(trigJ, "trigger", toks); Tokens(effJson, "effects", toks);
-        toks.UnionWith(groupNames[g.gk]);
-        var symJ = new List<object>();
-        foreach (var t in toks.OrderBy(x => x, StringComparer.Ordinal))
-            if (syms != null && syms.TryGetValue(t, out var sl0))
+        var guardsJ = new List<string>(g.guards);
+        // phiên bản ô có mặt trong bản ghi (trước khi đổi dấu ký hiệu)
+        var allS = new List<string>(guardsJ); AllStrings(trigJ, allS); AllStrings(effJson, allS);
+        var allTxt = string.Join("\n", allS);
+        var verJ = new List<object>();
+        foreach (var kv in itp.VerRefs.OrderBy(k => Mk.Strip(k.Key), StringComparer.Ordinal).ThenBy(k => k.Key, StringComparer.Ordinal))
+            if (allTxt.Contains(kv.Key, StringComparison.Ordinal))
+                verJ.Add(new Dictionary<string, object> { ["ref"] = kv.Key, ["after"] = kv.Value });
+        var ids = new SortedSet<long>();
+        CollectSym(guardsJ, ids); CollectSym(trigJ, ids); CollectSym(effJson, ids); CollectSym(verJ, ids);
+        var infos = ids.Select(i => itp.SymById[i]).ToList();
+        var refOf = new Dictionary<long, string>();
+        foreach (var gr in infos.GroupBy(i => i.Name, StringComparer.Ordinal))
+        {
+            var l = gr.OrderBy(i => i.Line).ThenBy(i => i.Origin, StringComparer.Ordinal).ToList();
+            foreach (var i in l)
             {
-                // biến lặp: chỉ giữ mục của vòng lặp được nhắc trong bản ghi (loop@dòng); không xác định thì giữ hết
-                var sl = sl0.Where(x => !(x.Origin is "loop" or "foreach") || toks.Contains("@" + x.Line)).ToList();
-                if (sl.Count == 0) sl = sl0;
-                foreach (var si in sl.OrderBy(x => x.Line).ThenBy(x => x.Origin, StringComparer.Ordinal))
-                    symJ.Add(new Dictionary<string, object> { ["name"] = si.Name, ["origin"] = si.Origin, ["at"] = si.Line, ["desc"] = si.Desc });
+                string rf = l.Count == 1 ? i.Name : i.Name + "@" + i.Line;
+                if (l.Count > 1 && l.Count(x => x.Line == i.Line) > 1) rf += "_" + i.Origin.Replace("-", "_");
+                refOf[i.Id] = rf;
+            }
+        }
+        string Ren(string t) => t.IndexOf(Mk.M) < 0 ? t : Mk.RxSym.Replace(t, m => refOf.TryGetValue(long.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture), out var rr) ? rr : m.Groups[1].Value);
+        guardsJ = guardsJ.Select(Ren).ToList(); Rewrite(trigJ, Ren); Rewrite(effJson, Ren); Rewrite(verJ, Ren);
+        var symJ = new List<object>();
+        foreach (var si in infos.OrderBy(x => x.Name, StringComparer.Ordinal).ThenBy(x => x.Line).ThenBy(x => x.Origin, StringComparer.Ordinal))
+            symJ.Add(new Dictionary<string, object> { ["name"] = si.Name, ["ref"] = refOf[si.Id], ["origin"] = si.Origin, ["at"] = si.Line, ["desc"] = Ren(si.Desc ?? "") });
+        // tên không mang dấu (chỉ có trong văn bản): tra theo tên khi tên có đúng một nguồn trong lần chạy
+        var toks = new HashSet<string>(StringComparer.Ordinal);
+        Tokens(guardsJ, "guards", toks); Tokens(trigJ, "trigger", toks); Tokens(effJson, "effects", toks);
+        var have = new HashSet<string>(infos.Select(i => i.Name), StringComparer.Ordinal);
+        foreach (var t in toks.OrderBy(x => x, StringComparer.Ordinal))
+            if (!have.Contains(t) && syms != null && syms.TryGetValue(t, out var sl0) && sl0.Count == 1)
+            {
+                var si = sl0[0]; symFallback++;
+                symJ.Add(new Dictionary<string, object> { ["name"] = si.Name, ["ref"] = si.Name, ["origin"] = si.Origin, ["at"] = si.Line, ["desc"] = Ren(si.Desc ?? "") });
             }
         // tên bị ẩn khỏi nhãn opaque(call/result/branches) luôn có mục symbols tương ứng
         var kinds = new SortedDictionary<string, string>(StringComparer.Ordinal);
@@ -451,7 +539,7 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
         {
             string org = kd == "call" ? "method" : kd == "result" ? "method-result" : "merge";
             if (!symJ.Any(x => x is Dictionary<string, object> sd && (string)sd["name"] == nm && (string)sd["origin"] == org))
-                symJ.Add(new Dictionary<string, object> { ["name"] = nm, ["origin"] = org, ["at"] = lmin == int.MaxValue ? 0 : lmin, ["desc"] = "tên bị ẩn khỏi nhãn opaque(" + kd + ")" });
+                symJ.Add(new Dictionary<string, object> { ["name"] = nm, ["ref"] = nm, ["origin"] = org, ["at"] = lmin == int.MaxValue ? 0 : lmin, ["desc"] = "tên bị ẩn khỏi nhãn opaque(" + kd + ")" });
         }
         if (symJ.Count > 0) { recWithSyms++; symEntries += symJ.Count; }
         recs.Add(new Dictionary<string, object>
@@ -461,8 +549,9 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
             ["kind"] = kind,
             ["sheetIndex"] = sheet >= 0 ? sheet : null,
             ["trigger"] = trigJ,
-            ["guards"] = g.guards,
+            ["guards"] = guardsJ,
             ["effects"] = effJson,
+            ["cellVersions"] = verJ,
             ["source"] = new Dictionary<string, object> { ["file"] = file, ["lines"] = new[] { lmin, lmax } },
             ["status"] = status,
             ["reason"] = reason,
@@ -485,11 +574,13 @@ var reachedMethods = new HashSet<string>(StringComparer.Ordinal); // file:spanSt
 List<Dictionary<string, object>> RunStandalone(string rel, ClassCtx cls, BaseMethodDeclarationSyntax m, Dictionary<string, object> key)
 {
     var it = new Interp(rel, opaqueSites);
+    if (cls != null) it.IsWriterMethod = nm => WritesCells(cls, nm, null);
+    if (cls != null) it.Lock = lockCfgs.GetValueOrDefault(cls.Name);
     Interp.CurSheet = -1;
     it.RunMethod(m, cls, BindParams(m, -1, null), null, null, null);
     string name = Interp.MethodName(m);
     if (it.Truncated) truncated.Add(rel + ":" + name);
-    return BuildRecords(it.Effects, key, name, "helper", -1, rel, "standalone", it.Syms);
+    return BuildRecords(it.Effects, key, name, "helper", -1, rel, "standalone", it.Syms, it);
 }
 
 // ---------- 394 class ----------
@@ -510,6 +601,7 @@ ClassCtx OwnerOf(string rel, SyntaxNode n)
 }
 
 var perClassOut = new Dictionary<string, (Dictionary<string, object> key, string rel, List<object> hooks, List<Dictionary<string, object>> recs)>(StringComparer.Ordinal);
+int constDropN = 0;
 foreach (var row in classRows)
 {
     string cname = row.GetProperty("class").GetString();
@@ -530,6 +622,8 @@ foreach (var row in classRows)
              ?? cls.Methods.GetValueOrDefault(name)?.FirstOrDefault();
         if (m == null) continue;
         var it = new Interp(rel, opaqueSites);
+        it.IsWriterMethod = nm => WritesCells(cls, nm, null);
+        it.Lock = lockCfgs.GetValueOrDefault(cname);
         Interp.CurSheet = sheet;
         it.RunMethod(m, cls, BindParams(m, sheet, kind), null, null, null);
         hookCounts[kind]++;
@@ -593,6 +687,13 @@ foreach (var row in classRows)
                     why = "đã nội tuyến " + cn + "@" + l0 + " nhưng không lệnh ghi ô nào tới được: " + (inner.Count > 0 ? string.Join("; ", inner.Distinct().Take(3)) : "nhánh ghi ô bị loại theo đối số truyền vào hoặc trả về sớm");
                 }
             }
+            if (cat.StartsWith("call:", StringComparison.Ordinal) && why != null)
+            {
+                // effect opaque qua cùng lời gọi: nêu rõ trong lý do (không có lệnh ghi ô xác định, còn lời gọi chưa giải có thể ghi ô)
+                string cn2 = cat.Substring(5);
+                var opqCalls = it.Effects.Where(e => e.Op == "opaque" && e.Via != null && (e.Via == cn2 + "@" + l0 || e.Via.StartsWith(cn2 + "@" + l0 + " > ", StringComparison.Ordinal))).Select(e => (string)e.Params["call"]).Distinct().OrderBy(x => x, StringComparer.Ordinal).ToList();
+                if (opqCalls.Count > 0) why = why.Replace(") không ghi ô, chỉ overload khác", ") không có lệnh ghi ô xác định, chỉ overload khác") + ". Tác dụng còn lại qua lời gọi này là lời gọi chưa giải có thể ghi ô (effect opaque): " + string.Join(", ", opqCalls);
+            }
             why ??= Generic(n);
             var dj = new Dictionary<string, object> { ["at"] = l0, ["reason"] = why };
             if (cat != "cell") dj["kind"] = cat.StartsWith("call:", StringComparison.Ordinal) ? "call" : cat;
@@ -601,7 +702,15 @@ foreach (var row in classRows)
             if (!cat.StartsWith("call:", StringComparison.Ordinal) && cat != "cell") stmtDropped[cat] = stmtDropped.GetValueOrDefault(cat) + 1;
             else if (cat != "cell") stmtDropped["call"] = stmtDropped.GetValueOrDefault("call") + 1;
         }
-        var r = BuildRecords(it.Effects, key, name, kind, sheet, rel, "hook", it.Syms);
+        // dòng trong method nội tuyến bị bỏ vì nhánh điều kiện gấp thành hằng (không có effect cùng via tại dòng đó)
+        var seenCD = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (cl, cv, cr) in it.ConstDrops)
+        {
+            if (cv == null || it.Effects.Any(e => e.Line == cl && e.Via == cv) || !seenCD.Add(cl + "|" + cv)) continue;
+            dropped.Add(new Dictionary<string, object> { ["at"] = cl, ["kind"] = "callee", ["via"] = cv, ["reason"] = cr });
+            constDropN++;
+        }
+        var r = BuildRecords(it.Effects, key, name, kind, sheet, rel, "hook", it.Syms, it);
         if (it.Truncated) truncated.Add(rel + ":" + name);
         var span = m.GetLocation().GetLineSpan();
         hookList.Add(new Dictionary<string, object> { ["hook"] = name, ["kind"] = kind, ["sheetIndex"] = sheet >= 0 ? sheet : null, ["lines"] = new[] { span.StartLinePosition.Line + 1, span.EndLinePosition.Line + 1 }, ["records"] = r.Count, ["effects"] = it.Effects.Count, ["truncated"] = it.Truncated, ["dropped"] = dropped });
@@ -684,6 +793,18 @@ truncated.Sort(StringComparer.Ordinal);
 Write("index.json", new Dictionary<string, object>
 {
     ["tool"] = "_spec/tools/rules_extract (Roslyn ParseText, không biên dịch)",
+    ["legend"] = new Dictionary<string, object>
+    {
+        ["cell_version"] = "cell(S<n>!X)#L là giá trị ô đọc sau sự kiện tại dòng L trên đường đi: lệnh tác động lên ô đó (ghi giá trị/công thức, khóa/mở, định dạng), lệnh/lời gọi có thể ghi ô bất kỳ, vòng lặp có ghi ô, hoặc hợp nhánh (một nhánh có ghi). #L.k khi cùng ô cùng dòng có nhiều phiên bản. Không có #L là giá trị trước mọi lệnh ghi trên đường đi. Hai lần đọc chỉ là cùng giá trị khi cùng nhãn. Mô tả từng nhãn ở trường cellVersions của bản ghi (ref, after).",
+        ["symbols_ref"] = "Mỗi mục symbols là một nguồn (origin, at = dòng). Bản ghi chỉ liệt kê nguồn thật sự có mặt trên đường đi của bản ghi. Một tên có nhiều nguồn trong cùng bản ghi thì văn bản và trường ref viết tên@dòng (thêm _origin khi trùng dòng).",
+        ["count_length"] = "count(x) là số phần tử, length(x) là độ dài chuỗi/mảng của giá trị lúc chạy x.",
+        ["opaque"] = "opaque(Tên, đối số...) là lời gọi chưa giải kèm đối số đã đánh giá (lời gọi trên đối tượng <obj>.Tên: đối số đầu là đối tượng nhận). opaque(call, method, đối số...) là method cùng class không nội tuyến. opaque(result, method) là giá trị trả về không xác định. opaque(branches, biến) là giá trị phụ thuộc quá nhiều nhánh.",
+        ["null_branch"] = "Nhánh giá trị null bị truy cập thành viên (ngoại lệ) được bỏ khỏi cases. truy cập thành viên trên null chắc chắn thì câu lệnh vào dropped (ngoại lệ chắc chắn).",
+        ["dropped_const"] = "dropped kind=callee: lệnh ghi trong method nội tuyến không chạy vì nhánh điều kiện gấp thành hằng (nhánh hằng sai), kèm via.",
+        ["lock_table"] = "inDynamicTable(s, r): dòng mẫu r của sheet s thuộc một bảng động (GeneralFunctions.DetectIndexOfTable >= 0), không xác định tĩnh nên cả hai nhánh đều được ghi kèm điều kiện. tableIndexOf(s, r): chỉ số bảng đó. dataRow: dòng dữ liệu thứ j của bảng động (DataLocationTemplateRowStart + j).",
+        ["lock_config"] = "checkLockUnLockCells: ô đích, điều kiện khóa và xóa dữ liệu lấy từ bảng cấu hình cột AK/AL/AM/AN sheet cuối của mẫu .xls (lock_config.json). targetReason khi không xác định được.",
+    },
+    ["dropped_callee_const_branch"] = constDropN,
     ["classes"] = perClassOut.Count,
     ["hook_counts"] = hookCounts,
     ["hook_counts_T0_index_394_classes"] = t0Biz,
@@ -701,5 +822,6 @@ Write("index.json", new Dictionary<string, object>
     ["truncated"] = truncated,
     ["class_list"] = classSummaries,
 });
+Console.Error.WriteLine("symbols tra theo tên (không dấu): " + symFallback);
 Console.WriteLine($"classes={perClassOut.Count} hooks={string.Join(",", hookCounts.Select(k => k.Key + ":" + k.Value))} records={totalRecords} points={ptList.Count} {string.Join(",", ptCounts.Select(k => k.Key + ":" + k.Value))} truncated={truncated.Count}");
 return 0;

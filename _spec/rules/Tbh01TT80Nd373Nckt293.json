@@ -88,7 +88,7 @@
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.DetectIndexOfTable) >= 0"
+        "opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[1], trigger.row) >= 0"
       ],
       "effects": [
         {
@@ -98,7 +98,7 @@
             "args": [
               "sheet(1)",
               "tk.SheetInfos[1]",
-              "opaque(GeneralFunctions.DetectIndexOfTable)",
+              "opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[1], trigger.row)",
               "-1",
               "4",
               "64",
@@ -110,6 +110,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Tbh01TT80Nd373Nckt293.cs",
         "lines": [
@@ -120,7 +121,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.SetLaiDongCon",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 36,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_1"
+        }
+      ]
     },
     {
       "key": {
@@ -155,13 +164,19 @@
             "sheet": 1,
             "cell": "{col(colIndex(PL_01-1_TBH_TB/tongCong))}{rowIndex(PL_01-1_TBH_TB/tongCong)}"
           },
-          "value": "{last_in_loop(foreach@238 table in tk.SheetInfos[1].Tables, from 0, last sum_over(for@242 i from 0 step +1 while i < table.RowsValues.Count, from num, where cell(S1!AV{i+table.DataLocationTemplateRowStart}).value != null, step num(cell(S1!AV{i+table.DataLocationTemplateRowStart}).value)))}",
+          "value": "{last_in_loop(foreach@238 table in tk.SheetInfos[1].Tables, from 0, last sum_over(for@242 i from 0 step +1 while i < count(table.RowsValues), from num, where cell(S1!AV{i+table.DataLocationTemplateRowStart})#44.value != null, step num(cell(S1!AV{i+table.DataLocationTemplateRowStart})#44.value)))}",
           "params": {
             "prop": "value"
           },
           "at": 252,
           "via": "tinhTongCt11_pl@54",
           "status": "parametric"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S1!AV{i+table.DataLocationTemplateRowStart})#44",
+          "after": "hợp nhánh dòng 44: trên một số nhánh có lệnh ghi ô (dòng 47)"
         }
       ],
       "source": {
@@ -172,38 +187,36 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: colIndex(PL_01-1_TBH_TB/tongCong), last_in_loop(foreach@238 table in tk.SheetInfos[1].Tables, from 0, last sum_over(for@242 i from 0 step +1 while i < table.RowsValues.Count, from num, where cell(S1!AV{i+table.DataLocationTemplateRowStart}).value != null, step num(cell(S1!AV{i+table.DataLocationTemplateRowStart}).value))), rowIndex(PL_01-1_TBH_TB/tongCong)",
+      "reason": "placeholder: colIndex(PL_01-1_TBH_TB/tongCong), last_in_loop(foreach@238 table in tk.SheetInfos[1].Tables, from 0, last sum_over(for@242 i from 0 step +1 while i < count(table.RowsValues), from num, where cell(S1!AV{i+table.DataLocationTemplateRowStart})#44.value != null, step num(cell(S1!AV{i+table.DataLocationTemplateRowStart})#44.value))), rowIndex(PL_01-1_TBH_TB/tongCong)",
       "unreachable": false,
       "symbols": [
         {
           "name": "i",
-          "origin": "loop",
-          "at": 238,
-          "desc": "biến mang qua vòng lặp dòng 238: giá trị trước vòng ?, cuối mỗi vòng i := i"
-        },
-        {
-          "name": "i",
+          "ref": "i",
           "origin": "loop",
           "at": 242,
           "desc": "biến mang qua vòng lặp dòng 242: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
         },
         {
           "name": "num",
+          "ref": "num",
           "origin": "loop",
           "at": 238,
-          "desc": "biến mang qua vòng lặp dòng 238: giá trị trước vòng 0, cuối mỗi vòng num := sum_over(for@242 i from 0 step +1 while i < table.RowsValues.Count, from num, where cell(S1!AV{i+table.DataLocationTemplateRowStart}).value != null, step num(cell(S1!AV{i+table.DataLocationTemplateRowStart}).value))"
-        },
-        {
-          "name": "num",
-          "origin": "loop",
-          "at": 242,
-          "desc": "biến mang qua vòng lặp dòng 242: giá trị trước vòng num, cuối mỗi vòng num := cases(cell(S1!AV{i+table.DataLocationTemplateRowStart}).value != null -> num+num(cell(S1!AV{i+table.DataLocationTemplateRowStart}).value) | else -> num)"
+          "desc": "biến mang qua vòng lặp dòng 238: giá trị trước vòng 0, cuối mỗi vòng num := sum_over(for@242 i from 0 step +1 while i < count(table.RowsValues), from num, where cell(S1!AV{i+table.DataLocationTemplateRowStart})#44.value != null, step num(cell(S1!AV{i+table.DataLocationTemplateRowStart})#44.value))"
         },
         {
           "name": "table",
+          "ref": "table",
           "origin": "foreach",
           "at": 238,
           "desc": "phần tử đang duyệt của tk.SheetInfos[1].Tables"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 36,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_1"
         }
       ]
     },
@@ -244,6 +257,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Tbh01TT80Nd373Nckt293.cs",
         "lines": [

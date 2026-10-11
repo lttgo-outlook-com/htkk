@@ -102,6 +102,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -133,9 +134,9 @@
       },
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
-        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles).Length > 0",
-        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles))"
+        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)))",
+        "length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))"
       ],
       "effects": [
         {
@@ -143,7 +144,7 @@
           "target": null,
           "params": {
             "args": [
-              "\"{HTKKConfig.DATAFILES}\\{header.mst}\\{opaque(GeneralFunctions.GetPreperiodFileName_Quy)}.xml\""
+              "\"{HTKKConfig.DATAFILES}\\{header.mst}\\{opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)}.xml\""
             ],
             "call": "<obj>.Load"
           },
@@ -157,7 +158,7 @@
           "params": {
             "args": [
               "tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-              "cases(dictionary.Count == 0 -> 0 | else -> list.Count)"
+              "cases(count(dictionary) == 0 -> 0 | else -> count(list))"
             ],
             "call": "<obj>.IncrementStaticCell"
           },
@@ -166,6 +167,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -179,39 +181,52 @@
       "symbols": [
         {
           "name": "dictionary",
-          "origin": "local-map",
-          "at": 198,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 198, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "dictionary",
+          "ref": "dictionary",
           "origin": "loop-collection",
           "at": 199,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 199, nội dung lúc chạy"
         },
         {
-          "name": "dictionary",
-          "origin": "local-map",
-          "at": 224,
-          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
-        },
-        {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 130,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 130,
-          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag)"
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag)"
+        },
+        {
+          "name": "header",
+          "ref": "header",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số HeaderInfo (HTKKHeaderInfo) của method AutoBindData_0"
         },
         {
           "name": "list",
+          "ref": "list",
           "origin": "loop-collection",
           "at": 217,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 217, nội dung lúc chạy"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -234,11 +249,11 @@
       },
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
-        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles).Length > 0",
-        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles))",
-        "contains(lstCellPath, opaque(<obj>.SelectNodes)[i].Attributes[\"Path\"].Value)",
-        "loop: for@199 i from 0 step +1 while i < opaque(<obj>.SelectNodes).Count"
+        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)))",
+        "length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))",
+        "contains(lstCellPath, opaque(<obj>.SelectNodes, opaque(<obj>.SelectSingleNode, obj(XmlDocument), \"Sections/Section[@TableName='{tk.SheetInfos[0].Tables[0].TableName}']\"), \"RowInfo/Cell\")[i].Attributes[\"Path\"].Value)",
+        "loop: for@199 i from 0 step +1 while i < count(opaque(<obj>.SelectNodes, opaque(<obj>.SelectSingleNode, obj(XmlDocument), \"Sections/Section[@TableName='{tk.SheetInfos[0].Tables[0].TableName}']\"), \"RowInfo/Cell\"))"
       ],
       "effects": [
         {
@@ -247,7 +262,7 @@
           "params": {
             "args": [
               "i",
-              "opaque(<obj>.SelectNodes)[i].Attributes[\"Path\"].Value"
+              "opaque(<obj>.SelectNodes, opaque(<obj>.SelectSingleNode, obj(XmlDocument), \"Sections/Section[@TableName='{tk.SheetInfos[0].Tables[0].TableName}']\"), \"RowInfo/Cell\")[i].Attributes[\"Path\"].Value"
             ],
             "call": "<obj>.Add"
           },
@@ -256,6 +271,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -269,33 +285,45 @@
       "symbols": [
         {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 130,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 130,
-          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag)"
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag)"
         },
         {
           "name": "i",
+          "ref": "i",
           "origin": "loop",
           "at": 199,
           "desc": "biến mang qua vòng lặp dòng 199: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
         },
         {
           "name": "lstCellPath",
+          "ref": "lstCellPath",
           "origin": "loop",
           "at": 199,
           "desc": "biến mang qua vòng lặp dòng 199: giá trị trước vòng [\"null_3\", \"ct06\", \"ct07\", \"ct23\", \"ct24\", \"ct25\"], cuối mỗi vòng lstCellPath := lstCellPath"
         },
         {
-          "name": "lstCellPath",
-          "origin": "loop-collection",
-          "at": 199,
-          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 199, nội dung lúc chạy"
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -318,10 +346,10 @@
       },
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
-        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles).Length > 0",
-        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles))",
-        "loop: for@199 i from 0 step +1 while i < opaque(<obj>.SelectNodes).Count"
+        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)))",
+        "length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))",
+        "loop: for@199 i from 0 step +1 while i < count(opaque(<obj>.SelectNodes, opaque(<obj>.SelectSingleNode, obj(XmlDocument), \"Sections/Section[@TableName='{tk.SheetInfos[0].Tables[0].TableName}']\"), \"RowInfo/Cell\"))"
       ],
       "effects": [
         {
@@ -329,7 +357,7 @@
           "target": null,
           "params": {
             "args": [
-              "opaque(<obj>.SelectNodes)[i].Attributes[\"Path\"].Value"
+              "opaque(<obj>.SelectNodes, opaque(<obj>.SelectSingleNode, obj(XmlDocument), \"Sections/Section[@TableName='{tk.SheetInfos[0].Tables[0].TableName}']\"), \"RowInfo/Cell\")[i].Attributes[\"Path\"].Value"
             ],
             "call": "<obj>.Remove"
           },
@@ -338,6 +366,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -351,21 +380,38 @@
       "symbols": [
         {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 130,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 130,
-          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag)"
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag)"
         },
         {
           "name": "i",
+          "ref": "i",
           "origin": "loop",
           "at": 199,
           "desc": "biến mang qua vòng lặp dòng 199: giá trị trước vòng 0, cuối mỗi vòng i := i+1"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -388,13 +434,13 @@
       },
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
-        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles).Length > 0",
-        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles))",
-        "dictionary.Count != 0",
+        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)))",
+        "length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))",
+        "count(dictionary) != 0",
         "hasKey(dictionary, k)",
-        "loop: for@217 j from 0 step +1 while j < opaque(<obj>.SelectNodes).Count",
-        "loop: for@222 k from 0 step +1 while k < split(opaque(ConvertHelpers.ConvertToString), [\"###\"]).Length"
+        "loop: for@217 j from 0 step +1 while j < count(opaque(<obj>.SelectNodes, opaque(<obj>.SelectSingleNode, obj(XmlDocument), \"Sections/Section[@TableName='{tk.SheetInfos[0].Tables[0].TableName}']\"), \"RowData\"))",
+        "loop: for@222 k from 0 step +1 while k < length(split(opaque(ConvertHelpers.ConvertToString, opaque(<obj>.SelectNodes, opaque(<obj>.SelectSingleNode, obj(XmlDocument), \"Sections/Section[@TableName='{tk.SheetInfos[0].Tables[0].TableName}']\"), \"RowData\")[j].InnerXml), [\"###\"]))"
       ],
       "effects": [
         {
@@ -403,7 +449,7 @@
           "params": {
             "args": [
               "dictionary[k]",
-              "split(opaque(ConvertHelpers.ConvertToString), [\"###\"])[k]"
+              "split(opaque(ConvertHelpers.ConvertToString, opaque(<obj>.SelectNodes, opaque(<obj>.SelectSingleNode, obj(XmlDocument), \"Sections/Section[@TableName='{tk.SheetInfos[0].Tables[0].TableName}']\"), \"RowData\")[j].InnerXml), [\"###\"])[k]"
             ],
             "call": "<obj>.Add"
           },
@@ -412,6 +458,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -425,51 +472,52 @@
       "symbols": [
         {
           "name": "dictionary",
-          "origin": "local-map",
-          "at": 198,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 198, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "dictionary",
+          "ref": "dictionary",
           "origin": "loop-collection",
           "at": 199,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 199, nội dung lúc chạy"
         },
         {
-          "name": "dictionary",
-          "origin": "local-map",
-          "at": 224,
-          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
-        },
-        {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 130,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 130,
-          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag)"
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag)"
         },
         {
           "name": "j",
+          "ref": "j",
           "origin": "loop",
           "at": 217,
           "desc": "biến mang qua vòng lặp dòng 217: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
         },
         {
           "name": "k",
-          "origin": "loop",
-          "at": 217,
-          "desc": "biến mang qua vòng lặp dòng 217: giá trị trước vòng ?, cuối mỗi vòng k := k"
-        },
-        {
-          "name": "k",
+          "ref": "k",
           "origin": "loop",
           "at": 222,
           "desc": "biến mang qua vòng lặp dòng 222: giá trị trước vòng 0, cuối mỗi vòng k := k+1"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -492,11 +540,11 @@
       },
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
-        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles).Length > 0",
-        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles))",
-        "dictionary.Count != 0",
-        "loop: for@217 j from 0 step +1 while j < opaque(<obj>.SelectNodes).Count"
+        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)))",
+        "length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))",
+        "count(dictionary) != 0",
+        "loop: for@217 j from 0 step +1 while j < count(opaque(<obj>.SelectNodes, opaque(<obj>.SelectSingleNode, obj(XmlDocument), \"Sections/Section[@TableName='{tk.SheetInfos[0].Tables[0].TableName}']\"), \"RowData\"))"
       ],
       "effects": [
         {
@@ -513,6 +561,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -526,63 +575,52 @@
       "symbols": [
         {
           "name": "dictionary",
-          "origin": "local-map",
-          "at": 198,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 198, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "dictionary",
+          "ref": "dictionary",
           "origin": "loop-collection",
           "at": 199,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 199, nội dung lúc chạy"
         },
         {
-          "name": "dictionary",
-          "origin": "local-map",
-          "at": 224,
-          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
-        },
-        {
           "name": "dictionary2",
-          "origin": "loop",
-          "at": 217,
-          "desc": "biến mang qua vòng lặp dòng 217: giá trị trước vòng ?, cuối mỗi vòng dictionary2 := dictionary2"
-        },
-        {
-          "name": "dictionary2",
-          "origin": "loop-collection",
-          "at": 217,
-          "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 217, nội dung lúc chạy"
-        },
-        {
-          "name": "dictionary2",
-          "origin": "local-map",
-          "at": 219,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 219, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "dictionary2",
+          "ref": "dictionary2",
           "origin": "loop-collection",
           "at": 222,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 222, nội dung lúc chạy"
         },
         {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 130,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 130,
-          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag)"
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag)"
         },
         {
           "name": "j",
+          "ref": "j",
           "origin": "loop",
           "at": 217,
           "desc": "biến mang qua vòng lặp dòng 217: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -605,10 +643,10 @@
       },
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
-        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles).Length > 0",
-        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles))",
-        "loop: for@156 j from 0 step +1 while dictionary.Count == 0 && j < 0 || dictionary.Count != 0 && j < list.Count"
+        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)))",
+        "length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))",
+        "loop: for@156 j from 0 step +1 while count(dictionary) == 0 && j < 0 || count(dictionary) != 0 && j < count(list)"
       ],
       "effects": [
         {
@@ -658,6 +696,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -671,45 +710,52 @@
       "symbols": [
         {
           "name": "dictionary",
-          "origin": "local-map",
-          "at": 198,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 198, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "dictionary",
+          "ref": "dictionary",
           "origin": "loop-collection",
           "at": 199,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 199, nội dung lúc chạy"
         },
         {
-          "name": "dictionary",
-          "origin": "local-map",
-          "at": 224,
-          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
-        },
-        {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 130,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 130,
-          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag)"
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag)"
         },
         {
           "name": "j",
+          "ref": "j",
           "origin": "loop",
           "at": 156,
           "desc": "biến mang qua vòng lặp dòng 156: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
         },
         {
           "name": "list",
+          "ref": "list",
           "origin": "loop-collection",
           "at": 217,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 217, nội dung lúc chạy"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -732,10 +778,10 @@
       },
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
-        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles).Length > 0",
-        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles))",
-        "loop: for@164 j from 0 step +1 while dictionary.Count == 0 && j < 0 || dictionary.Count != 0 && j < list.Count"
+        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)))",
+        "length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))",
+        "loop: for@164 j from 0 step +1 while count(dictionary) == 0 && j < 0 || count(dictionary) != 0 && j < count(list)"
       ],
       "effects": [
         {
@@ -747,7 +793,7 @@
           "value": {
             "cases": [
               {
-                "when": "dictionary.Count == 0",
+                "when": "count(dictionary) == 0",
                 "value": "{rowValues[j][\"null_3\"]}"
               },
               {
@@ -772,7 +818,7 @@
           "value": {
             "cases": [
               {
-                "when": "dictionary.Count == 0",
+                "when": "count(dictionary) == 0",
                 "value": "{rowValues[j][\"ct06\"]}"
               },
               {
@@ -797,7 +843,7 @@
           "value": {
             "cases": [
               {
-                "when": "dictionary.Count == 0",
+                "when": "count(dictionary) == 0",
                 "value": "{rowValues[j][\"ct07\"]}"
               },
               {
@@ -822,7 +868,7 @@
           "value": {
             "cases": [
               {
-                "when": "dictionary.Count == 0",
+                "when": "count(dictionary) == 0",
                 "value": "{rowValues[j][\"ct23\"]}"
               },
               {
@@ -847,7 +893,7 @@
           "value": {
             "cases": [
               {
-                "when": "dictionary.Count == 0",
+                "when": "count(dictionary) == 0",
                 "value": "{rowValues[j][\"ct24\"]}"
               },
               {
@@ -869,7 +915,7 @@
             "sheet": 0,
             "cell": "F{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}"
           },
-          "value": "{int(cases(dictionary.Count == 0 -> rowValues[j][\"ct25\"] | else -> list[j][\"ct25\"]))}",
+          "value": "{int(cases(count(dictionary) == 0 -> rowValues[j][\"ct25\"] | else -> list[j][\"ct25\"]))}",
           "params": {
             "prop": "value"
           },
@@ -878,6 +924,7 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -886,50 +933,57 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: dictionary.Count, int(cases(dictionary.Count == 0 -> rowValues[j][\"ct25\"] | else -> list[j][\"ct25\"])), j, list[j][\"ct06\"], list[j][\"ct07\"], list[j][\"ct23\"], list[j][\"ct24\"], list[j][\"null_3\"]",
+      "reason": "chưa giải: count(dictionary), int(cases(count(dictionary) == 0 -> rowValues[j][\"ct25\"] | else -> list[j][\"ct25\"])), j, list[j][\"ct06\"], list[j][\"ct07\"], list[j][\"ct23\"], list[j][\"ct24\"], list[j][\"null_3\"]",
       "unreachable": false,
       "symbols": [
         {
           "name": "dictionary",
-          "origin": "local-map",
-          "at": 198,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 198, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "dictionary",
+          "ref": "dictionary",
           "origin": "loop-collection",
           "at": 199,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 199, nội dung lúc chạy"
         },
         {
-          "name": "dictionary",
-          "origin": "local-map",
-          "at": 224,
-          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
-        },
-        {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 130,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 130,
-          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag)"
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag)"
         },
         {
           "name": "j",
+          "ref": "j",
           "origin": "loop",
           "at": 164,
           "desc": "biến mang qua vòng lặp dòng 164: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
         },
         {
           "name": "list",
+          "ref": "list",
           "origin": "loop-collection",
           "at": 217,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 217, nội dung lúc chạy"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -952,11 +1006,11 @@
       },
       "guards": [
         "!(tk.SheetInfos[0].IsReadDataFile)",
-        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy)))",
-        "opaque(<obj>.GetFiles).Length > 0",
-        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles))",
-        "cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}).height < (opaque(<cell>.GetPreferredHeight)-5) || cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}).height > (opaque(<cell>.GetPreferredHeight)+5)",
-        "loop: for@164 j from 0 step +1 while dictionary.Count == 0 && j < 0 || dictionary.Count != 0 && j < list.Count"
+        "!(isEmpty(opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)))",
+        "length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+        "accum(flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag), from false, foreach@130 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))",
+        "cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart})#173.height < (opaque(<cell>.GetPreferredHeight, cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}))-5) || cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart})#173.height > (opaque(<cell>.GetPreferredHeight, cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}))+5)",
+        "loop: for@164 j from 0 step +1 while count(dictionary) == 0 && j < 0 || count(dictionary) != 0 && j < count(list)"
       ],
       "effects": [
         {
@@ -966,11 +1020,17 @@
             "cell": "{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}"
           },
           "params": {
-            "height": "opaque(<cell>.GetPreferredHeight)"
+            "height": "opaque(<cell>.GetPreferredHeight, cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}))"
           },
           "at": 176,
           "via": "LayGiaTriTonKyTruoc@103",
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}:{j+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart})#173",
+          "after": "lời gọi chưa giải <cell>.GetPreferredHeight dòng 173 (có thể ghi ô)"
         }
       ],
       "source": {
@@ -986,45 +1046,52 @@
       "symbols": [
         {
           "name": "dictionary",
-          "origin": "local-map",
-          "at": 198,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 198, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "dictionary",
+          "ref": "dictionary",
           "origin": "loop-collection",
           "at": 199,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 199, nội dung lúc chạy"
         },
         {
-          "name": "dictionary",
-          "origin": "local-map",
-          "at": 224,
-          "desc": "bảng tra (từ điển) cục bộ, nội dung nạp lúc chạy"
-        },
-        {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 130,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
         },
         {
           "name": "flag",
+          "ref": "flag",
           "origin": "loop",
           "at": 130,
-          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy)) -> true | else -> flag)"
+          "desc": "biến mang qua vòng lặp dòng 130: giá trị trước vòng false, cuối mỗi vòng flag := cases(contains(fileInfo.Name, opaque(GeneralFunctions.GetPreperiodFileName_Quy, period, tk)) -> true | else -> flag)"
         },
         {
           "name": "j",
+          "ref": "j",
           "origin": "loop",
           "at": 164,
           "desc": "biến mang qua vòng lặp dòng 164: giá trị trước vòng 0, cuối mỗi vòng j := j+1"
         },
         {
           "name": "list",
+          "ref": "list",
           "origin": "loop-collection",
           "at": 217,
           "desc": "tập hợp được thêm/bớt phần tử trong vòng lặp dòng 217, nội dung lúc chạy"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -1074,6 +1141,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -1084,7 +1152,15 @@
       "status": "parametric",
       "reason": "placeholder: period.DenNgay, period.TuNgay",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 95,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1101,7 +1177,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "E"
           ]
@@ -1109,7 +1185,7 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == E"
         ]
       },
@@ -1121,7 +1197,7 @@
             "sheet": 0,
             "cell": "E{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatKyHieu)}",
+          "value": "{opaque(GeneralFunctions.FormatKyHieu, cell(S0!E{trigger.row}).text)}",
           "params": {
             "prop": "text"
           },
@@ -1129,6 +1205,7 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -1137,9 +1214,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatKyHieu, trigger.row",
+      "reason": "chưa giải: cell(S0!E{trigger.row}).text, giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatKyHieu, trigger.row",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1156,7 +1241,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "G",
             "H",
@@ -1167,7 +1252,7 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == K || trigger.col == L || trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U",
           "trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J"
         ]
@@ -1180,12 +1265,18 @@
             "sheet": 0,
             "cell": "{col(trigger.col)}{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, cell(S0!{col(trigger.col)}{trigger.row})#262.text)}",
           "params": {
             "prop": "text"
           },
           "at": 272,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!{col(trigger.col)}{trigger.row})#262",
+          "after": "hợp nhánh dòng 262: trên một số nhánh có lệnh ghi ô (dòng 265)"
         }
       ],
       "source": {
@@ -1196,9 +1287,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatSoHD, trigger.col, trigger.row",
+      "reason": "chưa giải: cell(S0!{col(trigger.col)}{trigger.row})#262.text, giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatSoHD, trigger.col, trigger.row",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1215,7 +1314,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "K",
             "L",
@@ -1232,13 +1331,13 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == K || trigger.col == L || trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U"
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\"",
-        "int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) > 0"
+        "opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0] != \"-1\"",
+        "int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) > 0"
       ],
       "effects": [
         {
@@ -1247,7 +1346,7 @@
             "sheet": 0,
             "cell": "K{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0])}",
           "params": {
             "prop": "text"
           },
@@ -1260,12 +1359,34 @@
             "sheet": 0,
             "cell": "L{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, \"{int(cell(S0!M{trigger.row})#277.value)+int(opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0])-1}\")}",
           "params": {
             "prop": "text"
           },
           "at": 294,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!G{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!M{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
         }
       ],
       "source": {
@@ -1276,9 +1397,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(cell(S0!M{trigger.row})#277.value), int(opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0]), opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0], opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1295,7 +1424,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "K",
             "L",
@@ -1312,13 +1441,13 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == K || trigger.col == L || trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U"
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\"",
-        "int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0"
+        "opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0] != \"-1\"",
+        "int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0"
       ],
       "effects": [
         {
@@ -1335,6 +1464,24 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!G{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -1345,7 +1492,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1362,7 +1517,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "K",
             "L",
@@ -1379,12 +1534,12 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == K || trigger.col == L || trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U"
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\""
+        "opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0] != \"-1\""
       ],
       "effects": [
         {
@@ -1393,12 +1548,30 @@
             "sheet": 0,
             "cell": "F{trigger.row}"
           },
-          "value": "{int(opaque(GeneralFunctions.getTusoDenso)[2])}",
+          "value": "{int(opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[2])}",
           "params": {
             "prop": "value"
           },
           "at": 300,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!G{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
         }
       ],
       "source": {
@@ -1409,9 +1582,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(opaque(GeneralFunctions.getTusoDenso)[2]), trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[2]), trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1428,7 +1609,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "Q",
             "S",
@@ -1439,7 +1620,7 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == Q || trigger.col == S || trigger.col == U || trigger.col == O"
         ]
       },
@@ -1451,7 +1632,7 @@
             "sheet": 0,
             "cell": "P{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.GetSoLuongHD)}",
+          "value": "{opaque(GeneralFunctions.GetSoLuongHD, cell(S0!Q{trigger.row})#267.text)}",
           "params": {
             "prop": "value"
           },
@@ -1464,7 +1645,7 @@
             "sheet": 0,
             "cell": "R{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.GetSoLuongHD)}",
+          "value": "{opaque(GeneralFunctions.GetSoLuongHD, cell(S0!S{trigger.row})#307.text)}",
           "params": {
             "prop": "value"
           },
@@ -1477,12 +1658,26 @@
             "sheet": 0,
             "cell": "T{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.GetSoLuongHD)}",
+          "value": "{opaque(GeneralFunctions.GetSoLuongHD, cell(S0!U{trigger.row})#310.text)}",
           "params": {
             "prop": "value"
           },
           "at": 313,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!Q{trigger.row})#267",
+          "after": "hợp nhánh dòng 267: trên một số nhánh có lệnh ghi ô (dòng 262, 284)"
+        },
+        {
+          "ref": "cell(S0!S{trigger.row})#307",
+          "after": "sau lệnh setValue dòng 307"
+        },
+        {
+          "ref": "cell(S0!U{trigger.row})#310",
+          "after": "sau lệnh setValue dòng 310"
         }
       ],
       "source": {
@@ -1493,9 +1688,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.GetSoLuongHD, trigger.row",
+      "reason": "chưa giải: cell(S0!Q{trigger.row})#267.text, cell(S0!S{trigger.row})#307.text, cell(S0!U{trigger.row})#310.text, giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.GetSoLuongHD, trigger.row",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1512,7 +1715,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "Q",
             "S",
@@ -1523,13 +1726,13 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == Q || trigger.col == S || trigger.col == U || trigger.col == O"
         ]
       },
       "guards": [
-        "int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) > 0",
-        "trigger.col != K && trigger.col != L && trigger.col != G && trigger.col != H && trigger.col != I && trigger.col != J && trigger.col != O && trigger.col != Q && trigger.col != S && trigger.col != U || opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\""
+        "int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) > 0",
+        "trigger.col != K && trigger.col != L && trigger.col != G && trigger.col != H && trigger.col != I && trigger.col != J && trigger.col != O && trigger.col != Q && trigger.col != S && trigger.col != U || opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0] != \"-1\""
       ],
       "effects": [
         {
@@ -1538,12 +1741,30 @@
             "sheet": 0,
             "cell": "K{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, cases(trigger.col == K || trigger.col == L || trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U -> opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0] | else -> 0))}",
           "params": {
             "prop": "text"
           },
           "at": 326,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!G{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
         }
       ],
       "source": {
@@ -1554,9 +1775,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0], opaque:GeneralFunctions.FormatSoHD, trigger.col, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1573,7 +1802,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "Q",
             "S",
@@ -1584,12 +1813,12 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == Q || trigger.col == S || trigger.col == U || trigger.col == O"
         ]
       },
       "guards": [
-        "int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) > 0"
+        "int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) > 0"
       ],
       "effects": [
         {
@@ -1598,12 +1827,22 @@
             "sheet": 0,
             "cell": "L{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, \"{int(cell(S0!K{trigger.row})#324.value)+int(cell(S0!M{trigger.row})#324.value)-1}\")}",
           "params": {
             "prop": "text"
           },
           "at": 331,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!K{trigger.row})#324",
+          "after": "hợp nhánh dòng 324: trên một số nhánh có lệnh ghi ô (dòng 317, 326)"
+        },
+        {
+          "ref": "cell(S0!M{trigger.row})#324",
+          "after": "hợp nhánh dòng 324: trên một số nhánh có lệnh ghi ô (dòng 317, 326)"
         }
       ],
       "source": {
@@ -1614,9 +1853,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(cell(S0!K{trigger.row})#324.value), int(cell(S0!M{trigger.row})#324.value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1633,7 +1880,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "Q",
             "S",
@@ -1644,12 +1891,12 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == Q || trigger.col == S || trigger.col == U || trigger.col == O"
         ]
       },
       "guards": [
-        "int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0"
+        "int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0"
       ],
       "effects": [
         {
@@ -1679,6 +1926,7 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -1689,7 +1937,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1706,7 +1962,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "O"
           ]
@@ -1714,7 +1970,7 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == O"
         ]
       },
@@ -1728,12 +1984,22 @@
             "sheet": 0,
             "cell": "L{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, \"{int(cell(S0!K{trigger.row})#303.text)+int(cell(S0!M{trigger.row})#303.value)-1}\")}",
           "params": {
             "prop": "text"
           },
           "at": 349,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!K{trigger.row})#303",
+          "after": "hợp nhánh dòng 303: trên một số nhánh có lệnh ghi ô (dòng 267, 322)"
+        },
+        {
+          "ref": "cell(S0!M{trigger.row})#303",
+          "after": "hợp nhánh dòng 303: trên một số nhánh có lệnh ghi ô (dòng 267, 322)"
         }
       ],
       "source": {
@@ -1744,9 +2010,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(cell(S0!K{trigger.row})#303.text), int(cell(S0!M{trigger.row})#303.value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1763,7 +2037,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "O"
           ]
@@ -1771,13 +2045,13 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == O"
         ]
       },
       "guards": [
         "opaque(too-many-cases) > 0",
-        "trigger.col != K && trigger.col != L && trigger.col != G && trigger.col != H && trigger.col != I && trigger.col != J && trigger.col != O && trigger.col != Q && trigger.col != S && trigger.col != U || opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\""
+        "trigger.col != K && trigger.col != L && trigger.col != G && trigger.col != H && trigger.col != I && trigger.col != J && trigger.col != O && trigger.col != Q && trigger.col != S && trigger.col != U || opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0] != \"-1\""
       ],
       "effects": [
         {
@@ -1786,12 +2060,30 @@
             "sheet": 0,
             "cell": "K{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, cases(trigger.col == K || trigger.col == L || trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U -> opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0] | else -> 0))}",
           "params": {
             "prop": "text"
           },
           "at": 352,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!G{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#277",
+          "after": "lời gọi chưa giải ConvertHelpers.ConvertCellValueToText dòng 277 (có thể ghi ô)"
         }
       ],
       "source": {
@@ -1802,9 +2094,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#277.text, cell(S0!H{trigger.row})#277.text, cell(S0!I{trigger.row})#277.text, cell(S0!J{trigger.row})#277.text)[0], opaque:GeneralFunctions.FormatSoHD, trigger.col, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1821,7 +2121,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "O"
           ]
@@ -1829,7 +2129,7 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == O"
         ]
       },
@@ -1864,6 +2164,7 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -1874,7 +2175,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1891,7 +2200,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "G",
             "H",
@@ -1906,14 +2215,14 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U"
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\"",
-        "int(cell(S0!F{trigger.row}).value) == int(cell(S0!M{trigger.row}).value)",
-        "int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) > 0"
+        "opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#339.text, cell(S0!H{trigger.row})#339.text, cell(S0!I{trigger.row})#339.text, cell(S0!J{trigger.row})#339.text)[0] != \"-1\"",
+        "int(cell(S0!F{trigger.row})#339.value) == int(cell(S0!M{trigger.row})#339.value)",
+        "int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) > 0"
       ],
       "effects": [
         {
@@ -1948,12 +2257,38 @@
             "sheet": 0,
             "cell": "Y{trigger.row}"
           },
-          "value": "{int(cell(S0!F{trigger.row}).value)-int(cell(S0!M{trigger.row}).value)}",
+          "value": "{int(cell(S0!F{trigger.row})#339.value)-int(cell(S0!M{trigger.row})#339.value)}",
           "params": {
             "prop": "value"
           },
           "at": 391,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!F{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!G{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!M{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
         }
       ],
       "source": {
@@ -1964,9 +2299,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: int(cell(S0!F{trigger.row}).value), int(cell(S0!M{trigger.row}).value), trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: int(cell(S0!F{trigger.row})#339.value), int(cell(S0!M{trigger.row})#339.value), trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1983,7 +2326,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "G",
             "H",
@@ -1998,15 +2341,15 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U"
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\"",
-        "int(cell(S0!F{trigger.row}).value) != int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0",
-        "int(cell(S0!F{trigger.row}).value) > int(cell(S0!M{trigger.row}).value)",
-        "int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) > 0"
+        "opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#339.text, cell(S0!H{trigger.row})#339.text, cell(S0!I{trigger.row})#339.text, cell(S0!J{trigger.row})#339.text)[0] != \"-1\"",
+        "int(cell(S0!F{trigger.row})#339.value) != int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0",
+        "int(cell(S0!F{trigger.row})#339.value) > int(cell(S0!M{trigger.row})#339.value)",
+        "int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) > 0"
       ],
       "effects": [
         {
@@ -2015,7 +2358,7 @@
             "sheet": 0,
             "cell": "W{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, \"{int(cell(S0!K{trigger.row})#339.text)+int(cell(S0!M{trigger.row})#339.value)}\")}",
           "params": {
             "prop": "text"
           },
@@ -2028,7 +2371,7 @@
             "sheet": 0,
             "cell": "X{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, \"{int(cell(S0!F{trigger.row})#339.value)+int(cell(S0!K{trigger.row})#339.text)-1}\")}",
           "params": {
             "prop": "text"
           },
@@ -2041,12 +2384,42 @@
             "sheet": 0,
             "cell": "Y{trigger.row}"
           },
-          "value": "{int(cell(S0!F{trigger.row}).value)-int(cell(S0!M{trigger.row}).value)}",
+          "value": "{int(cell(S0!F{trigger.row})#339.value)-int(cell(S0!M{trigger.row})#339.value)}",
           "params": {
             "prop": "value"
           },
           "at": 398,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!F{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!G{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!K{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!M{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
         }
       ],
       "source": {
@@ -2057,9 +2430,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(cell(S0!F{trigger.row}).value), int(cell(S0!M{trigger.row}).value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(cell(S0!F{trigger.row})#339.value), int(cell(S0!K{trigger.row})#339.text), int(cell(S0!M{trigger.row})#339.value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2076,7 +2457,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "G",
             "H",
@@ -2091,17 +2472,17 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U"
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\"",
-        "int(cell(S0!F{trigger.row}).value) != int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0",
-        "int(cell(S0!F{trigger.row}).value) <= int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0",
-        "int(cell(S0!F{trigger.row}).value) > int(cell(S0!M{trigger.row}).value) && int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) > 0 || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) == 0",
-        "isEmpty(cell(S0!G{trigger.row}).text)",
-        "isEmpty(cell(S0!H{trigger.row}).text)"
+        "opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#339.text, cell(S0!H{trigger.row})#339.text, cell(S0!I{trigger.row})#339.text, cell(S0!J{trigger.row})#339.text)[0] != \"-1\"",
+        "int(cell(S0!F{trigger.row})#339.value) != int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0",
+        "int(cell(S0!F{trigger.row})#339.value) <= int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0",
+        "int(cell(S0!F{trigger.row})#339.value) > int(cell(S0!M{trigger.row})#339.value) && int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) > 0 || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) == 0",
+        "isEmpty(cell(S0!G{trigger.row})#339.text)",
+        "isEmpty(cell(S0!H{trigger.row})#339.text)"
       ],
       "effects": [
         {
@@ -2110,7 +2491,7 @@
             "sheet": 0,
             "cell": "W{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, cell(S0!I{trigger.row})#339.text)}",
           "params": {
             "prop": "text"
           },
@@ -2123,7 +2504,7 @@
             "sheet": 0,
             "cell": "X{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, cell(S0!J{trigger.row})#339.text)}",
           "params": {
             "prop": "text"
           },
@@ -2136,12 +2517,38 @@
             "sheet": 0,
             "cell": "Y{trigger.row}"
           },
-          "value": "{int(cell(S0!F{trigger.row}).value)}",
+          "value": "{int(cell(S0!F{trigger.row})#339.value)}",
           "params": {
             "prop": "value"
           },
           "at": 405,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!F{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!G{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!M{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
         }
       ],
       "source": {
@@ -2152,9 +2559,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(cell(S0!F{trigger.row}).value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: cell(S0!I{trigger.row})#339.text, cell(S0!J{trigger.row})#339.text, giá trị hoặc tham số có phần chưa giải, int(cell(S0!F{trigger.row})#339.value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2171,7 +2586,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "G",
             "H",
@@ -2186,18 +2601,18 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U"
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\"",
-        "int(cell(S0!F{trigger.row}).value) != int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0",
-        "int(cell(S0!F{trigger.row}).value) <= int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0",
-        "(int(cell(S0!F{trigger.row}).value) <= int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0) && int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) != 0 || !(isEmpty(cell(S0!G{trigger.row}).text)) || !(isEmpty(cell(S0!H{trigger.row}).text))",
-        "int(cell(S0!F{trigger.row}).value) > int(cell(S0!M{trigger.row}).value) && int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) == 0 || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) == 0",
-        "isEmpty(cell(S0!I{trigger.row}).text)",
-        "isEmpty(cell(S0!J{trigger.row}).text)"
+        "opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#339.text, cell(S0!H{trigger.row})#339.text, cell(S0!I{trigger.row})#339.text, cell(S0!J{trigger.row})#339.text)[0] != \"-1\"",
+        "int(cell(S0!F{trigger.row})#339.value) != int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0",
+        "int(cell(S0!F{trigger.row})#339.value) <= int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0",
+        "(int(cell(S0!F{trigger.row})#339.value) <= int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0) && int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) != 0 || !(isEmpty(cell(S0!G{trigger.row})#339.text)) || !(isEmpty(cell(S0!H{trigger.row})#339.text))",
+        "int(cell(S0!F{trigger.row})#339.value) > int(cell(S0!M{trigger.row})#339.value) && int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) == 0 || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) == 0",
+        "isEmpty(cell(S0!I{trigger.row})#339.text)",
+        "isEmpty(cell(S0!J{trigger.row})#339.text)"
       ],
       "effects": [
         {
@@ -2206,7 +2621,7 @@
             "sheet": 0,
             "cell": "W{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, cell(S0!G{trigger.row})#339.text)}",
           "params": {
             "prop": "text"
           },
@@ -2219,7 +2634,7 @@
             "sheet": 0,
             "cell": "X{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, cell(S0!H{trigger.row})#339.text)}",
           "params": {
             "prop": "text"
           },
@@ -2232,12 +2647,38 @@
             "sheet": 0,
             "cell": "Y{trigger.row}"
           },
-          "value": "{int(cell(S0!F{trigger.row}).value)}",
+          "value": "{int(cell(S0!F{trigger.row})#339.value)}",
           "params": {
             "prop": "value"
           },
           "at": 412,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!F{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!G{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!M{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
         }
       ],
       "source": {
@@ -2248,9 +2689,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(cell(S0!F{trigger.row}).value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: cell(S0!G{trigger.row})#339.text, cell(S0!H{trigger.row})#339.text, giá trị hoặc tham số có phần chưa giải, int(cell(S0!F{trigger.row})#339.value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2267,7 +2716,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "G",
             "H",
@@ -2282,16 +2731,16 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == G || trigger.col == H || trigger.col == I || trigger.col == J || trigger.col == O || trigger.col == Q || trigger.col == S || trigger.col == U"
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.getTusoDenso)[0] != \"-1\"",
-        "int(cell(S0!F{trigger.row}).value) != int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0",
-        "int(cell(S0!F{trigger.row}).value) <= int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0",
-        "(int(cell(S0!F{trigger.row}).value) <= int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) <= 0) && int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) != 0 || !(isEmpty(cell(S0!G{trigger.row}).text)) || !(isEmpty(cell(S0!H{trigger.row}).text))",
-        "(int(cell(S0!F{trigger.row}).value) <= int(cell(S0!M{trigger.row}).value) || int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) != 0) && int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText))+int(opaque(ConvertHelpers.ConvertCellValueToText)) != 0 || !(isEmpty(cell(S0!I{trigger.row}).text)) || !(isEmpty(cell(S0!J{trigger.row}).text))"
+        "opaque(GeneralFunctions.getTusoDenso, cell(S0!G{trigger.row})#339.text, cell(S0!H{trigger.row})#339.text, cell(S0!I{trigger.row})#339.text, cell(S0!J{trigger.row})#339.text)[0] != \"-1\"",
+        "int(cell(S0!F{trigger.row})#339.value) != int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0",
+        "int(cell(S0!F{trigger.row})#339.value) <= int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0",
+        "(int(cell(S0!F{trigger.row})#339.value) <= int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) <= 0) && int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) != 0 || !(isEmpty(cell(S0!G{trigger.row})#339.text)) || !(isEmpty(cell(S0!H{trigger.row})#339.text))",
+        "(int(cell(S0!F{trigger.row})#339.value) <= int(cell(S0!M{trigger.row})#339.value) || int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) != 0) && int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 14))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 15))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 17))+int(opaque(ConvertHelpers.ConvertCellValueToText, sheet(0), trigger.row-1, 19)) != 0 || !(isEmpty(cell(S0!I{trigger.row})#339.text)) || !(isEmpty(cell(S0!J{trigger.row})#339.text))"
       ],
       "effects": [
         {
@@ -2300,7 +2749,7 @@
             "sheet": 0,
             "cell": "W{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, cell(S0!G{trigger.row})#339.text)}",
           "params": {
             "prop": "text"
           },
@@ -2313,7 +2762,7 @@
             "sheet": 0,
             "cell": "X{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.FormatSoHD)}",
+          "value": "{opaque(GeneralFunctions.FormatSoHD, cell(S0!J{trigger.row})#339.text)}",
           "params": {
             "prop": "text"
           },
@@ -2326,12 +2775,38 @@
             "sheet": 0,
             "cell": "Y{trigger.row}"
           },
-          "value": "{int(cell(S0!F{trigger.row}).value)}",
+          "value": "{int(cell(S0!F{trigger.row})#339.value)}",
           "params": {
             "prop": "value"
           },
           "at": 419,
           "status": "unresolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!F{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!G{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!H{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!I{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!J{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
+        },
+        {
+          "ref": "cell(S0!M{trigger.row})#339",
+          "after": "hợp nhánh dòng 339: trên một số nhánh có lệnh ghi ô (dòng 303, 347)"
         }
       ],
       "source": {
@@ -2342,9 +2817,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, int(cell(S0!F{trigger.row}).value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: cell(S0!G{trigger.row})#339.text, cell(S0!J{trigger.row})#339.text, giá trị hoặc tham số có phần chưa giải, int(cell(S0!F{trigger.row})#339.value), opaque:GeneralFunctions.FormatSoHD, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2361,7 +2844,7 @@
         "cells": [],
         "rowRange": {
           "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1}",
           "cols": [
             "D"
           ]
@@ -2369,7 +2852,7 @@
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
           "trigger.row >= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart",
-          "trigger.row <= tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count-1",
+          "trigger.row <= count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart-1",
           "trigger.col == D"
         ]
       },
@@ -2381,12 +2864,18 @@
             "sheet": 0,
             "cell": "D{trigger.row}"
           },
-          "value": "{upper(\"{cell(S0!D{trigger.row}).text}\")}",
+          "value": "{upper(\"{cell(S0!D{trigger.row})#361.text}\")}",
           "params": {
             "prop": "text"
           },
           "at": 426,
           "status": "parametric"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!D{trigger.row})#361",
+          "after": "hợp nhánh dòng 361: trên một số nhánh có lệnh ghi ô (dòng 339, 384)"
         }
       ],
       "source": {
@@ -2397,9 +2886,17 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: trigger.row, upper(\"{cell(S0!D{trigger.row}).text}\")",
+      "reason": "placeholder: trigger.row, upper(\"{cell(S0!D{trigger.row})#361.text}\")",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2415,16 +2912,16 @@
       "trigger": {
         "cells": [],
         "rowRange": {
-          "from": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count+8}",
-          "to": "{tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count+11}",
+          "from": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+8}",
+          "to": "{count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+11}",
           "cols": [
             "K"
           ]
         },
         "base": "iRow/iCol 1-based (dòng/cột Excel)",
         "when": [
-          "trigger.row > tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count+7",
-          "trigger.row < tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count+12",
+          "trigger.row > count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+7",
+          "trigger.row < count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+12",
           "trigger.col == K"
         ]
       },
@@ -2439,19 +2936,19 @@
           "formula": {
             "cases": [
               {
-                "when": "trigger.row == tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count+11",
+                "when": "trigger.row == count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+11",
                 "value": "ROUND(K{trigger.row}*0.02,0)"
               },
               {
-                "when": "trigger.row == tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count+10",
+                "when": "trigger.row == count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+10",
                 "value": "ROUND(K{trigger.row}*0.03,0)"
               },
               {
-                "when": "trigger.row == tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count+9",
+                "when": "trigger.row == count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+9",
                 "value": "ROUND(K{trigger.row}*0.05,0)"
               },
               {
-                "when": "trigger.row == tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+tk.SheetInfos[0].Tables[0].RowsValues.Count+8",
+                "when": "trigger.row == count(tk.SheetInfos[0].Tables[0].RowsValues)+tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart+8",
                 "value": "ROUND(K{trigger.row}*0.01,0)"
               },
               {
@@ -2464,6 +2961,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
         "lines": [
@@ -2472,9 +2970,17 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart, tk.SheetInfos[0].Tables[0].RowsValues.Count, trigger.row",
+      "reason": "placeholder: count(tk.SheetInfos[0].Tables[0].RowsValues), tk.SheetInfos[0].Tables[0].DataLocationTemplateRowStart, trigger.row",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 240,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     }
   ]
 }

@@ -19,7 +19,14 @@
       "records": 10,
       "effects": 56,
       "truncated": false,
-      "dropped": []
+      "dropped": [
+        {
+          "at": 1357,
+          "kind": "callee",
+          "via": "XuLyCheckboxCt21@184",
+          "reason": "nhánh hằng sai: điều kiện dòng 1342 luôn đúng, nhánh else không chạy"
+        }
+      ]
     },
     {
       "hook": "AutoBindData_2",
@@ -214,7 +221,20 @@
       "records": 2,
       "effects": 13,
       "truncated": false,
-      "dropped": []
+      "dropped": [
+        {
+          "at": 1347,
+          "kind": "callee",
+          "via": "XuLyCheckboxCt21@1027",
+          "reason": "nhánh hằng sai: điều kiện dòng 1342 luôn sai"
+        },
+        {
+          "at": 1348,
+          "kind": "callee",
+          "via": "XuLyCheckboxCt21@1027",
+          "reason": "nhánh hằng sai: điều kiện dòng 1342 luôn sai"
+        }
+      ]
     },
     {
       "hook": "ButtonClick_5",
@@ -263,8 +283,8 @@
         1172,
         1214
       ],
-      "records": 7,
-      "effects": 14,
+      "records": 8,
+      "effects": 16,
       "truncated": false,
       "dropped": []
     },
@@ -436,7 +456,7 @@
             "sheet": 0,
             "cell": "Q4"
           },
-          "value": "{accum(result := cases(split(item.Attributes[\"Value\"].Value, \"###\").Length >= 3 && period.TieuMucHachToanVal == split(item.Attributes[\"Value\"].Value, \"###\")[1] && split(item.Attributes[\"Value\"].Value, \"###\")[0] == \"01_GTGT_TT80\" -> split(item.Attributes[\"Value\"].Value, \"###\")[2] | else -> result), from \"\", foreach@1459 item in opaque(<obj>.GetElementsByTagName))}",
+          "value": "{accum(result@1459 := cases(length(split(item@1459.Attributes[\"Value\"].Value, \"###\")) >= 3 && period.TieuMucHachToanVal == split(item@1459.Attributes[\"Value\"].Value, \"###\")[1] && split(item@1459.Attributes[\"Value\"].Value, \"###\")[0] == \"01_GTGT_TT80\" -> split(item@1459.Attributes[\"Value\"].Value, \"###\")[2] | else -> result@1459), from \"\", foreach@1459 item@1459 in opaque(<obj>.GetElementsByTagName, obj(XmlDataDocument), \"Item\"))}",
           "params": {
             "prop": "text"
           },
@@ -449,7 +469,7 @@
             "sheet": 0,
             "cell": "L28"
           },
-          "value": "{opaque(GeneralFunctions.GetTenTmByMaTm)}",
+          "value": "{opaque(GeneralFunctions.GetTenTmByMaTm, \"{trim(\"{cell(S0!L27)#167.text}\")}\", opaque(GeneralFunctions.GetNgayDauKyKeKhai, ttc, period))}",
           "params": {
             "prop": "value"
           },
@@ -465,8 +485,8 @@
           "value": {
             "cases": [
               {
-                "when": "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy).Count > 0 && opaque(<obj>.GetFiles).Length > 0",
-                "value": "{last_in_loop(foreach@1416 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from null, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@1419 fileInfo in opaque(<obj>.GetFiles)))}"
+                "when": "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0",
+                "value": "{last_in_loop(foreach@1416 item@1416 in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from null, last accum(result@1419 := cases(contains(fileInfo.Name, item@1416) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"L_62\")) | else -> result@1419), from result@1416, foreach@1419 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo))))}"
               },
               {
                 "when": "else",
@@ -485,8 +505,8 @@
           "target": null,
           "params": {
             "args": [
-              "opaque(GeneralFunctions.GetHeaderInfo).maCQTCapCuc",
-              "opaque(GeneralFunctions.GetHeaderInfo).maCQTNoiNop",
+              "opaque(GeneralFunctions.GetHeaderInfo, ttc.mst).maCQTCapCuc",
+              "opaque(GeneralFunctions.GetHeaderInfo, ttc.mst).maCQTNoiNop",
               "sheet(0)",
               "period",
               "[3, 21]",
@@ -630,6 +650,12 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!L27)#167",
+          "after": "hợp nhánh dòng 167: ô được ghi trên một số nhánh (dòng 169, 171)"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -638,44 +664,78 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: accum(result := cases(split(item.Attributes[\"Value\"].Value, \"###\").Length >= 3 && period.TieuMucHachToanVal == split(item.Attributes[\"Value\"].Value, \"###\")[1] && split(item.Attributes[\"Value\"].Value, \"###\")[0] == \"01_GTGT_TT80\" -> split(item.Attributes[\"Value\"].Value, \"###\")[2] | else -> result), from \"\", foreach@1459 item in opaque(<obj>.GetElementsByTagName)), giá trị hoặc tham số có phần chưa giải, gọi chưa giải: <obj>.Load, gọi chưa giải: GeneralFunctions.ThayDoiTinhTheoCQT, last_in_loop(foreach@1416 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy), from null, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@1419 fileInfo in opaque(<obj>.GetFiles))), obj(DirectoryInfo).Exists, opaque(<obj>.GetFiles).Length, opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy).Count",
+      "reason": "chưa giải: accum(result := cases(length(split(item.Attributes[\"Value\"].Value, \"###\")) >= 3 && period.TieuMucHachToanVal == split(item.Attributes[\"Value\"].Value, \"###\")[1] && split(item.Attributes[\"Value\"].Value, \"###\")[0] == \"01_GTGT_TT80\" -> split(item.Attributes[\"Value\"].Value, \"###\")[2] | else -> result), from \"\", foreach@1459 item in opaque(<obj>.GetElementsByTagName, obj(XmlDataDocument), \"Item\")), count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)), giá trị hoặc tham số có phần chưa giải, gọi chưa giải: <obj>.Load, gọi chưa giải: GeneralFunctions.ThayDoiTinhTheoCQT, last_in_loop(foreach@1416 item in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from null, last accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"L_62\")) | else -> result), from result, foreach@1419 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))), length(opaque(<obj>.GetFiles, obj(DirectoryInfo))), obj(DirectoryInfo).Exists",
       "unreachable": false,
       "symbols": [
         {
           "name": "fileInfo",
+          "ref": "fileInfo",
           "origin": "foreach",
           "at": 1419,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
+        },
+        {
+          "name": "header",
+          "ref": "header",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số HeaderInfo (HTKKHeaderInfo) của method AutoBindData_0"
         },
         {
           "name": "item",
+          "ref": "item@1416",
           "origin": "foreach",
           "at": 1416,
-          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy)"
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)"
         },
         {
           "name": "item",
+          "ref": "item@1459",
           "origin": "foreach",
           "at": 1459,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetElementsByTagName)"
+          "desc": "phần tử đang duyệt của opaque(<obj>.GetElementsByTagName, obj(XmlDataDocument), \"Item\")"
+        },
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
         },
         {
           "name": "result",
+          "ref": "result@1416",
           "origin": "loop",
           "at": 1416,
-          "desc": "biến mang qua vòng lặp dòng 1416: giá trị trước vòng null, cuối mỗi vòng result := accum(result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result), from result, foreach@1419 fileInfo in opaque(<obj>.GetFiles))"
+          "desc": "biến mang qua vòng lặp dòng 1416: giá trị trước vòng null, cuối mỗi vòng result := accum(result@1419 := cases(contains(fileInfo.Name, item@1416) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"L_62\")) | else -> result@1419), from result@1416, foreach@1419 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))"
         },
         {
           "name": "result",
+          "ref": "result@1419",
           "origin": "loop",
           "at": 1419,
-          "desc": "biến mang qua vòng lặp dòng 1419: giá trị trước vòng result, cuối mỗi vòng result := cases(contains(fileInfo.Name, item) -> num(opaque(GeneralFunctions.GetValueInXml)) | else -> result)"
+          "desc": "biến mang qua vòng lặp dòng 1419: giá trị trước vòng result@1416, cuối mỗi vòng result := cases(contains(fileInfo.Name, item@1416) -> num(opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", \"L_62\")) | else -> result@1419)"
         },
         {
           "name": "result",
+          "ref": "result@1459",
           "origin": "loop",
           "at": 1459,
-          "desc": "biến mang qua vòng lặp dòng 1459: giá trị trước vòng \"\", cuối mỗi vòng result := cases(split(item.Attributes[\"Value\"].Value, \"###\").Length >= 3 && period.TieuMucHachToanVal == split(item.Attributes[\"Value\"].Value, \"###\")[1] && split(item.Attributes[\"Value\"].Value, \"###\")[0] == \"01_GTGT_TT80\" -> split(item.Attributes[\"Value\"].Value, \"###\")[2] | else -> result)"
+          "desc": "biến mang qua vòng lặp dòng 1459: giá trị trước vòng \"\", cuối mỗi vòng result := cases(length(split(item@1459.Attributes[\"Value\"].Value, \"###\")) >= 3 && period.TieuMucHachToanVal == split(item@1459.Attributes[\"Value\"].Value, \"###\")[1] && split(item@1459.Attributes[\"Value\"].Value, \"###\")[0] == \"01_GTGT_TT80\" -> split(item@1459.Attributes[\"Value\"].Value, \"###\")[2] | else -> result@1459)"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "ttc",
+          "ref": "ttc",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số TTinChung (HTKKCMCTTinChungInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -714,6 +774,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -724,7 +785,15 @@
       "status": "resolved",
       "reason": "",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        }
+      ]
     },
     {
       "key": {
@@ -762,6 +831,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -772,7 +842,15 @@
       "status": "resolved",
       "reason": "",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        }
+      ]
     },
     {
       "key": {
@@ -810,6 +888,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -820,7 +899,15 @@
       "status": "resolved",
       "reason": "",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1132,6 +1219,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -1286,6 +1374,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -1333,6 +1422,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -1343,7 +1433,22 @@
       "status": "resolved",
       "reason": "",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1378,6 +1483,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -1388,7 +1494,22 @@
       "status": "resolved",
       "reason": "",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "period",
+          "ref": "period",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 159,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1408,7 +1529,7 @@
         "when": []
       },
       "guards": [
-        "num(cell(S0!L59).value) != 0"
+        "num(cell(S0!L59)#1410.value) != 0"
       ],
       "effects": [
         {
@@ -1434,6 +1555,12 @@
           "at": 1388,
           "via": "XuLyChiTieu40@198",
           "status": "resolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!L59)#1410",
+          "after": "hợp nhánh dòng 1410: trên một số nhánh có lệnh hoặc lời gọi có thể ghi ô (dòng 1413)"
         }
       ],
       "source": {
@@ -1466,7 +1593,7 @@
         "when": []
       },
       "guards": [
-        "num(cell(S0!L59).value) == 0"
+        "num(cell(S0!L59)#1410.value) == 0"
       ],
       "effects": [
         {
@@ -1478,6 +1605,12 @@
           "at": 1392,
           "via": "XuLyChiTieu40@198",
           "status": "resolved"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!L59)#1410",
+          "after": "hợp nhánh dòng 1410: trên một số nhánh có lệnh hoặc lời gọi có thể ghi ô (dòng 1413)"
         }
       ],
       "source": {
@@ -1540,6 +1673,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -1697,6 +1831,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -1707,7 +1842,15 @@
       "status": "parametric",
       "reason": "placeholder: tk.SheetInfos[1], tk.SheetInfos[2], tk.SheetInfos[3], tk.SheetInfos[4], tk.SheetInfos[5]",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 886,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method Refresh_1"
+        }
+      ]
     },
     {
       "key": {
@@ -1854,6 +1997,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -1864,7 +2008,15 @@
       "status": "parametric",
       "reason": "placeholder: tk.SheetInfos[1], tk.SheetInfos[2], tk.SheetInfos[3], tk.SheetInfos[4], tk.SheetInfos[5]",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 898,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method ClearData_1"
+        }
+      ]
     },
     {
       "key": {
@@ -2021,6 +2173,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -2031,7 +2184,15 @@
       "status": "parametric",
       "reason": "placeholder: tk.SheetInfos[1], tk.SheetInfos[2], tk.SheetInfos[3], tk.SheetInfos[4], tk.SheetInfos[5]",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 910,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method Refresh_2"
+        }
+      ]
     },
     {
       "key": {
@@ -2188,6 +2349,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -2198,7 +2360,15 @@
       "status": "parametric",
       "reason": "placeholder: tk.SheetInfos[1], tk.SheetInfos[2], tk.SheetInfos[3], tk.SheetInfos[4], tk.SheetInfos[5]",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 924,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method ClearData_2"
+        }
+      ]
     },
     {
       "key": {
@@ -2355,6 +2525,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -2365,7 +2536,15 @@
       "status": "parametric",
       "reason": "placeholder: tk.SheetInfos[1], tk.SheetInfos[2], tk.SheetInfos[3], tk.SheetInfos[4], tk.SheetInfos[5]",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 938,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method Refresh_3"
+        }
+      ]
     },
     {
       "key": {
@@ -2522,6 +2701,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -2532,7 +2712,15 @@
       "status": "parametric",
       "reason": "placeholder: tk.SheetInfos[1], tk.SheetInfos[2], tk.SheetInfos[3], tk.SheetInfos[4], tk.SheetInfos[5]",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 952,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method ClearData_3"
+        }
+      ]
     },
     {
       "key": {
@@ -2689,6 +2877,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -2699,7 +2888,15 @@
       "status": "parametric",
       "reason": "placeholder: tk.SheetInfos[1], tk.SheetInfos[2], tk.SheetInfos[3], tk.SheetInfos[4], tk.SheetInfos[5]",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 966,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method Refresh_4"
+        }
+      ]
     },
     {
       "key": {
@@ -2856,6 +3053,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -2866,7 +3064,15 @@
       "status": "parametric",
       "reason": "placeholder: tk.SheetInfos[1], tk.SheetInfos[2], tk.SheetInfos[3], tk.SheetInfos[4], tk.SheetInfos[5]",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 980,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method ClearData_4"
+        }
+      ]
     },
     {
       "key": {
@@ -3013,6 +3219,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3170,6 +3377,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3220,6 +3428,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3376,6 +3585,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3441,6 +3651,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3499,6 +3710,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3543,6 +3755,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3596,6 +3809,7 @@
           "status": "resolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3648,6 +3862,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3760,6 +3975,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3773,21 +3989,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1579,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1579, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1580,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1580"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1573,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1573, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1069,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
         }
       ]
     },
@@ -3823,13 +4042,19 @@
             "sheet": 0,
             "cell": "L48"
           },
-          "value": "{cell(S0!P48).value}",
+          "value": "{cell(S0!P48)#1565.value}",
           "params": {
             "prop": "value"
           },
           "at": 1701,
           "via": "TinhCt33TrenToKhai@1088",
           "status": "parametric"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S0!P48)#1565",
+          "after": "hợp nhánh dòng 1565: trên một số nhánh có lệnh hoặc lời gọi có thể ghi ô (dòng 1588)"
         }
       ],
       "source": {
@@ -3840,7 +4065,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S0!P48).value",
+      "reason": "placeholder: cell(S0!P48)#1565.value",
       "unreachable": false,
       "symbols": []
     },
@@ -3890,6 +4115,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3900,7 +4126,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.SetLaiDongCon",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1098,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_1"
+        }
+      ]
     },
     {
       "key": {
@@ -3948,6 +4182,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -3958,7 +4193,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.SetLaiDongCon",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1098,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_1"
+        }
+      ]
     },
     {
       "key": {
@@ -3997,7 +4240,7 @@
             "sheet": 1,
             "cell": "U{table.DataLocationTemplateRowStart-1}"
           },
-          "value": "{opaque(GeneralFunctions.CalculateColSumTable)}",
+          "value": "{opaque(GeneralFunctions.CalculateColSumTable, sheet(1), table, 21)}",
           "params": {
             "prop": "value"
           },
@@ -4005,6 +4248,7 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4013,14 +4257,22 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.CalculateColSumTable, table.DataLocationTemplateRowStart",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.CalculateColSumTable, table, table.DataLocationTemplateRowStart",
       "unreachable": false,
       "symbols": [
         {
           "name": "table",
+          "ref": "table",
           "origin": "foreach",
           "at": 1135,
           "desc": "phần tử đang duyệt của tk.SheetInfos[1].Tables"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1098,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_1"
         }
       ]
     },
@@ -4057,7 +4309,7 @@
           "params": {
             "args": [
               "sheet(1)",
-              "\"{trim(\"{cell(S1!AH{trigger.row}).text}\")}\"",
+              "\"{trim(\"{cell(S1!AH{trigger.row})#1133.text}\")}\"",
               "trigger.row",
               "18",
               "36",
@@ -4069,6 +4321,12 @@
           },
           "at": 1149,
           "status": "opaque"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S1!AH{trigger.row})#1133",
+          "after": "hợp nhánh dòng 1133: trên một số nhánh có lệnh ghi ô (dòng 1129, 1135)"
         }
       ],
       "source": {
@@ -4109,8 +4367,8 @@
         ]
       },
       "guards": [
-        "opaque(GeneralFunctions.DetectIndexOfTable) >= 0",
-        "opaque(GeneralFunctions.GetRowIndexInSViewByCompare).Count > 1"
+        "opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[1], trigger.row) >= 0",
+        "count(opaque(GeneralFunctions.GetRowIndexInSViewByCompare, sheet(1), tk.SheetInfos[1].Tables[opaque(GeneralFunctions.DetectIndexOfTable, tk.SheetInfos[1], trigger.row)], 33, \"01\")) > 1"
       ],
       "effects": [
         {
@@ -4121,7 +4379,7 @@
               "sheet(1)",
               "trigger.row-1",
               "2",
-              "\"{trim(\"{cell(S[sheets().Count-1]!E51).text}\")}\""
+              "\"{trim(\"{cell(S[count(sheets())-1]!E51).text}\")}\""
             ],
             "call": "HTKKFile.SetNodeBackGroundPink"
           },
@@ -4129,6 +4387,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4139,7 +4398,15 @@
       "status": "ui_only",
       "reason": "chỉ có thao tác giao diện, không tác dụng lên ô",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1098,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_1"
+        }
+      ]
     },
     {
       "key": {
@@ -4177,7 +4444,7 @@
             "sheet": 1,
             "cell": "{col(colIndex(PLuc_01_2_GTGT/ct13))}{rowIndex(PLuc_01_2_GTGT/ct13)}"
           },
-          "value": "{opaque(GeneralFunctions.CalculateSumHeaderByGroup)}",
+          "value": "{opaque(GeneralFunctions.CalculateSumHeaderByGroup, sheet(1), tk.SheetInfos[1].Tables, 20)}",
           "params": {
             "prop": "value"
           },
@@ -4191,7 +4458,7 @@
             "sheet": 1,
             "cell": "{col(colIndex(PLuc_01_2_GTGT/ct14))}{rowIndex(PLuc_01_2_GTGT/ct14)}"
           },
-          "value": "{opaque(GeneralFunctions.CalculateSumByGroup)}",
+          "value": "{opaque(GeneralFunctions.CalculateSumByGroup, sheet(1), tk.SheetInfos[1].Tables, 24, false)}",
           "params": {
             "prop": "value"
           },
@@ -4200,6 +4467,7 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4208,9 +4476,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: colIndex(PLuc_01_2_GTGT/ct13), colIndex(PLuc_01_2_GTGT/ct14), giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.CalculateSumByGroup, opaque:GeneralFunctions.CalculateSumHeaderByGroup, rowIndex(PLuc_01_2_GTGT/ct13), rowIndex(PLuc_01_2_GTGT/ct14)",
+      "reason": "chưa giải: colIndex(PLuc_01_2_GTGT/ct13), colIndex(PLuc_01_2_GTGT/ct14), giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.CalculateSumByGroup, opaque:GeneralFunctions.CalculateSumHeaderByGroup, rowIndex(PLuc_01_2_GTGT/ct13), rowIndex(PLuc_01_2_GTGT/ct14), tk.SheetInfos[1].Tables",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1098,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_1"
+        }
+      ]
     },
     {
       "key": {
@@ -4258,6 +4534,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4268,7 +4545,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.SetLaiDongCon",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1172,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_2"
+        }
+      ]
     },
     {
       "key": {
@@ -4303,7 +4588,7 @@
           "params": {
             "args": [
               "sheet(2)",
-              "\"{trim(\"{cell(S2!AI{trigger.row}).text}\")}\"",
+              "\"{trim(\"{cell(S2!AI{trigger.row})#1188.text}\")}\"",
               "trigger.row",
               "18",
               "37",
@@ -4315,6 +4600,12 @@
           },
           "at": 1195,
           "status": "opaque"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S2!AI{trigger.row})#1188",
+          "after": "hợp nhánh dòng 1188: trên một số nhánh có lệnh ghi ô (dòng 1190)"
         }
       ],
       "source": {
@@ -4432,6 +4723,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4445,21 +4737,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1579,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1579, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1580,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1580"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1573,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1573, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1172,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_2"
         }
       ]
     },
@@ -4544,6 +4839,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4554,7 +4850,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add, gọi chưa giải: GeneralFunctions.fpSpReindexingTableTemplate",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1172,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_2"
+        }
+      ]
     },
     {
       "key": {
@@ -4602,6 +4906,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4615,21 +4920,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1579,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1579, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1580,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1580"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1573,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1573, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1172,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_2"
         }
       ]
     },
@@ -4684,6 +4992,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4694,7 +5003,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.TinhLaiCacGiaTriKhiThayDoiTuBangSangBang",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1172,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_2"
+        }
+      ]
     },
     {
       "key": {
@@ -4721,21 +5038,58 @@
           "trigger.col == C"
         ]
       },
-      "guards": [],
+      "guards": [
+        "trim(cell(S8!BA1)#1197.text) == \"1\"",
+        "inDynamicTable(2, 47)"
+      ],
       "effects": [
         {
-          "op": "lock",
-          "target": null,
+          "op": "setFormula",
+          "target": {
+            "sheet": 8,
+            "cell": "BB2"
+          },
+          "formula": "IF(TRIM(cell(S2!AP{dataRow})) == \"03\", 0, 1)",
           "params": {
-            "clearData": "ô cột AN của dòng cấu hình == \"1\"",
-            "enabled": "ô BA1 của sheet cuối == \"1\"",
-            "locked": "khóa khi (bảng động) kết quả công thức cột AL áp cho từng dòng dữ liệu == \"0\", hoặc (ô tĩnh) giá trị cột AL == 0, ngược lại mở khóa",
-            "note": "ô đích theo cấu hình lúc chạy",
-            "targets": "ô đích theo bảng cấu hình ở sheet cuối, mỗi dòng cấu hình: cột AK xác định sheet và bảng đích, cột AM liệt kê ô đích (nối bằng &)",
+            "configRow": "S8!AK2:AN2",
+            "control": "S2!C47",
+            "note": "công thức AL2 (IF(TRIM('01_3'!AP47)=\"03\",0,1)) đổi dòng mẫu 47 thành dòng dữ liệu, ghi vào cột BB vì ColumnLettersToIndex(\"BA\") = 53 dùng làm chỉ số cột gốc 0",
+            "sheetNote": "DetectIndexOfSheet dùng Contains: theo tên tab trong mẫu thì sheet đầu tiên khớp là S0 (tên là chuỗi con của tên sheet được tham chiếu), tên sheet lúc chạy lấy từ thông tin sheet của tờ khai (WinSpreadProcess.cs:1701) nên chưa xác định, ghi theo sheet được tham chiếu S2",
+            "template": "_forms/01_GTGT/01_GTGT_TT80/01_GTGT_TT80_v2.5.1_mau.xls",
             "via": "checkLockUnLockCells"
           },
           "at": 1207,
-          "status": "unresolved"
+          "status": "resolved"
+        },
+        {
+          "op": "lock",
+          "target": {
+            "sheet": 2,
+            "cell": "J{dataRow}"
+          },
+          "params": {
+            "backColor": "MA_COLOR_LOCKED khi khóa, MA_COLOR_UNLOCK khi mở",
+            "clearData": "có (AN2 = \"1\" trong mẫu): khi khóa thì xóa giá trị ô (số 0, checkbox false, chữ rỗng)",
+            "configRow": "S8!AK2:AN2",
+            "control": "S2!C47",
+            "locked": "cell(S8!BB2)#1207.text == \"0\"",
+            "rows": "mỗi dòng dữ liệu của bảng, ô mẫu J47 dịch theo dòng",
+            "sheetNote": "DetectIndexOfSheet dùng Contains: theo tên tab trong mẫu thì sheet đầu tiên khớp là S0 (tên là chuỗi con của tên sheet được tham chiếu), tên sheet lúc chạy lấy từ thông tin sheet của tờ khai (WinSpreadProcess.cs:1701) nên chưa xác định, ghi theo sheet được tham chiếu S2",
+            "template": "_forms/01_GTGT/01_GTGT_TT80/01_GTGT_TT80_v2.5.1_mau.xls",
+            "via": "checkLockUnLockCells"
+          },
+          "at": 1207,
+          "status": "parametric"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S8!BA1)#1197",
+          "after": "hợp nhánh dòng 1197: trên một số nhánh có lệnh hoặc lời gọi có thể ghi ô (dòng 1565)"
+        },
+        {
+          "ref": "cell(S8!BB2)#1207",
+          "after": "sau lệnh setFormula dòng 1207"
         }
       ],
       "source": {
@@ -4745,8 +5099,90 @@
           1207
         ]
       },
-      "status": "unresolved",
-      "reason": "chưa giải: ô đích chưa xác định trong phạm vi phân tích",
+      "status": "parametric",
+      "reason": "placeholder: cell(S8!BB2)#1207.text, dataRow",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "dataRow",
+          "ref": "dataRow",
+          "origin": "checkLockUnLockCells",
+          "at": 1207,
+          "desc": "dòng dữ liệu thứ j của bảng động chứa dòng mẫu (DataLocationTemplateRowStart + j), j chạy qua mọi dòng dữ liệu của bảng"
+        }
+      ]
+    },
+    {
+      "key": {
+        "MenuID": null,
+        "MaFile": null,
+        "VersionXML": null,
+        "Class": "Gtgt01TT80Nckt251",
+        "in_menu": false
+      },
+      "hook": "CellChange_2",
+      "kind": "CellChange",
+      "sheetIndex": 2,
+      "trigger": {
+        "cells": [],
+        "rowRange": {
+          "from": null,
+          "to": null,
+          "cols": [
+            "C"
+          ]
+        },
+        "base": "iRow/iCol 1-based (dòng/cột Excel)",
+        "when": [
+          "trigger.col == C"
+        ]
+      },
+      "guards": [
+        "trim(cell(S8!BA1)#1197.text) == \"1\"",
+        "!(inDynamicTable(2, 47))"
+      ],
+      "effects": [
+        {
+          "op": "lock",
+          "target": {
+            "sheet": 2,
+            "cell": "J47"
+          },
+          "params": {
+            "alFormula": "IF(TRIM(cell(S2!AP47)) == \"03\", 0, 1)",
+            "alTemplateValue": 1,
+            "backColor": "MA_COLOR_LOCKED khi khóa, MA_COLOR_UNLOCK khi mở",
+            "clearData": "có (AN2 = \"1\" trong mẫu): khi khóa thì xóa giá trị ô (số 0, checkbox false, chữ rỗng)",
+            "configRow": "S8!AK2:AN2",
+            "control": "S2!C47",
+            "locked": "int(cell(S8!AL2)#1207.value) == 0",
+            "sheetNote": "DetectIndexOfSheet dùng Contains: theo tên tab trong mẫu thì sheet đầu tiên khớp là S0 (tên là chuỗi con của tên sheet được tham chiếu), tên sheet lúc chạy lấy từ thông tin sheet của tờ khai (WinSpreadProcess.cs:1701) nên chưa xác định, ghi theo sheet được tham chiếu S2",
+            "template": "_forms/01_GTGT/01_GTGT_TT80/01_GTGT_TT80_v2.5.1_mau.xls",
+            "via": "checkLockUnLockCells"
+          },
+          "at": 1207,
+          "status": "parametric"
+        }
+      ],
+      "cellVersions": [
+        {
+          "ref": "cell(S8!AL2)#1207",
+          "after": "sau lệnh lock dòng 1207"
+        },
+        {
+          "ref": "cell(S8!BA1)#1197",
+          "after": "hợp nhánh dòng 1197: trên một số nhánh có lệnh hoặc lời gọi có thể ghi ô (dòng 1565)"
+        }
+      ],
+      "source": {
+        "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
+        "lines": [
+          1205,
+          1207
+        ]
+      },
+      "status": "parametric",
+      "reason": "placeholder: int(cell(S8!AL2)#1207.value)",
       "unreachable": false,
       "symbols": []
     },
@@ -4797,6 +5233,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4913,6 +5350,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -4926,21 +5364,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1541,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1541, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1542,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1542"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1534,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1534, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1216,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_3"
         }
       ]
     },
@@ -5026,6 +5467,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5036,7 +5478,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1216,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_3"
+        }
+      ]
     },
     {
       "key": {
@@ -5085,6 +5535,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5098,21 +5549,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1541,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1541, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1542,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1542"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1534,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1534, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1216,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_3"
         }
       ]
     },
@@ -5169,6 +5623,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5179,7 +5634,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.TinhLaiCacGiaTriKhiThayDoiTuBangSangBang",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1216,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_3"
+        }
+      ]
     },
     {
       "key": {
@@ -5202,7 +5665,7 @@
         "sheet(3) != null",
         "tk.SheetInfos[3] != null",
         "loop: foreach@1675 table in tk.SheetInfos[3].Tables",
-        "loop: for@1678 num7 from 0 step +1 while num7 < table.RowsValues.Count"
+        "loop: for@1678 num7 from 0 step +1 while num7 < count(table.RowsValues)"
       ],
       "effects": [
         {
@@ -5214,12 +5677,12 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241.value) < 0",
                 "value": 0
               },
               {
                 "when": "else",
-                "value": "{cell(S3!Z{num7+table.DataLocationTemplateRowStart}).value}"
+                "value": "{cell(S3!Z{num7+table.DataLocationTemplateRowStart})#1678.value}"
               }
             ]
           },
@@ -5239,8 +5702,8 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
-                "value": "{cell(S3!AA{num7+table.DataLocationTemplateRowStart}).value}"
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241.value) < 0",
+                "value": "{cell(S3!AA{num7+table.DataLocationTemplateRowStart})#1680.value}"
               },
               {
                 "when": "else",
@@ -5256,6 +5719,20 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S3!AA{num7+table.DataLocationTemplateRowStart})#1680",
+          "after": "sau lệnh setValue dòng 1680 qua TinhCot_17_21_Pl_01_6CSSX@1249"
+        },
+        {
+          "ref": "cell(S3!Z{num7+table.DataLocationTemplateRowStart})#1678",
+          "after": "vòng lặp dòng 1678 có lệnh hoặc lời gọi có thể ghi ô"
+        },
+        {
+          "ref": "cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241",
+          "after": "hợp nhánh dòng 1241: trên một số nhánh có lệnh ghi ô (dòng 1522)"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5264,26 +5741,29 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S3!AA{num7+table.DataLocationTemplateRowStart}).value, cell(S3!Z{num7+table.DataLocationTemplateRowStart}).value, num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value), num7, table.DataLocationTemplateRowStart",
+      "reason": "placeholder: cell(S3!AA{num7+table.DataLocationTemplateRowStart})#1680.value, cell(S3!Z{num7+table.DataLocationTemplateRowStart})#1678.value, num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241.value), num7, table.DataLocationTemplateRowStart",
       "unreachable": false,
       "symbols": [
         {
           "name": "num7",
-          "origin": "loop",
-          "at": 1675,
-          "desc": "biến mang qua vòng lặp dòng 1675: giá trị trước vòng ?, cuối mỗi vòng num7 := num7"
-        },
-        {
-          "name": "num7",
+          "ref": "num7",
           "origin": "loop",
           "at": 1678,
           "desc": "biến mang qua vòng lặp dòng 1678: giá trị trước vòng 0, cuối mỗi vòng num7 := num7+1"
         },
         {
           "name": "table",
+          "ref": "table",
           "origin": "foreach",
           "at": 1675,
           "desc": "phần tử đang duyệt của tk.SheetInfos[3].Tables"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1216,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_3"
         }
       ]
     },
@@ -5318,12 +5798,12 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241.value) < 0",
                 "value": 0
               },
               {
                 "when": "else",
-                "value": "{cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)}).value}"
+                "value": "{cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)})#1675.value}"
               }
             ]
           },
@@ -5343,12 +5823,12 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241.value) < 0",
                 "value": 0
               },
               {
                 "when": "else",
-                "value": "{cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)}).value}"
+                "value": "{cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)})#1684.value}"
               }
             ]
           },
@@ -5368,8 +5848,8 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
-                "value": "{cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)}).value}"
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241.value) < 0",
+                "value": "{cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)})#1685.value}"
               },
               {
                 "when": "else",
@@ -5393,8 +5873,8 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
-                "value": "{cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)}).value}"
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241.value) < 0",
+                "value": "{cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)})#1686.value}"
               },
               {
                 "when": "else",
@@ -5410,6 +5890,28 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)})#1685",
+          "after": "sau lệnh setValue dòng 1685 qua TinhCot_17_21_Pl_01_6CSSX@1249"
+        },
+        {
+          "ref": "cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)})#1686",
+          "after": "sau lệnh setValue dòng 1686 qua TinhCot_17_21_Pl_01_6CSSX@1249"
+        },
+        {
+          "ref": "cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)})#1675",
+          "after": "hợp nhánh dòng 1675: trên một số nhánh có lệnh ghi ô (dòng 1675, 1678)"
+        },
+        {
+          "ref": "cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)})#1684",
+          "after": "sau lệnh setValue dòng 1684 qua TinhCot_17_21_Pl_01_6CSSX@1249"
+        },
+        {
+          "ref": "cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241",
+          "after": "hợp nhánh dòng 1241: trên một số nhánh có lệnh ghi ô (dòng 1522)"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5418,9 +5920,17 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)}).value, cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)}).value, cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)}).value, cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)}).value, num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value), rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19), rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23), rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)",
+      "reason": "placeholder: cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)})#1685.value, cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)})#1686.value, cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)})#1675.value, cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)})#1684.value, num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1241.value), rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19), rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23), rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1216,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_3"
+        }
+      ]
     },
     {
       "key": {
@@ -5455,6 +5965,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5465,7 +5976,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.fpSpReindexingTableTemplate",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1216,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_3"
+        }
+      ]
     },
     {
       "key": {
@@ -5514,6 +6033,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5629,6 +6149,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5642,21 +6163,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1619,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1619, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1620,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1620"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1613,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1613, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1258,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_4"
         }
       ]
     },
@@ -5741,6 +6265,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5751,7 +6276,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: <obj>.Add, gọi chưa giải: GeneralFunctions.fpSpReindexingTableTemplate",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1258,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_4"
+        }
+      ]
     },
     {
       "key": {
@@ -5799,6 +6332,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5812,21 +6346,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1619,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1619, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1620,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1620"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1613,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1613, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1258,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_4"
         }
       ]
     },
@@ -5881,6 +6418,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -5891,7 +6429,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.TinhLaiCacGiaTriKhiThayDoiTuBangSangBang",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1258,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_4"
+        }
+      ]
     },
     {
       "key": {
@@ -5927,6 +6473,7 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -6038,6 +6585,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -6051,21 +6599,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1619,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1619, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1620,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1620"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1613,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1613, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1307,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method UpdateFormula_4"
         }
       ]
     },
@@ -6096,7 +6647,7 @@
             "sheet": 1,
             "cell": "{col(colIndex(PLuc_01_2_GTGT/ct13))}{rowIndex(PLuc_01_2_GTGT/ct13)}"
           },
-          "value": "{opaque(GeneralFunctions.CalculateSumHeaderByGroup)}",
+          "value": "{opaque(GeneralFunctions.CalculateSumHeaderByGroup, sheet(1), tk.SheetInfos[1].Tables, 20)}",
           "params": {
             "prop": "value"
           },
@@ -6110,7 +6661,7 @@
             "sheet": 1,
             "cell": "{col(colIndex(PLuc_01_2_GTGT/ct14))}{rowIndex(PLuc_01_2_GTGT/ct14)}"
           },
-          "value": "{opaque(GeneralFunctions.CalculateSumByGroup)}",
+          "value": "{opaque(GeneralFunctions.CalculateSumByGroup, sheet(1), tk.SheetInfos[1].Tables, 24, false)}",
           "params": {
             "prop": "value"
           },
@@ -6119,6 +6670,7 @@
           "status": "unresolved"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -6127,9 +6679,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: colIndex(PLuc_01_2_GTGT/ct13), colIndex(PLuc_01_2_GTGT/ct14), giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.CalculateSumByGroup, opaque:GeneralFunctions.CalculateSumHeaderByGroup, rowIndex(PLuc_01_2_GTGT/ct13), rowIndex(PLuc_01_2_GTGT/ct14)",
+      "reason": "chưa giải: colIndex(PLuc_01_2_GTGT/ct13), colIndex(PLuc_01_2_GTGT/ct14), giá trị hoặc tham số có phần chưa giải, opaque:GeneralFunctions.CalculateSumByGroup, opaque:GeneralFunctions.CalculateSumHeaderByGroup, rowIndex(PLuc_01_2_GTGT/ct13), rowIndex(PLuc_01_2_GTGT/ct14), tk.SheetInfos[1].Tables",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1473,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method UpdateFormula_1"
+        }
+      ]
     },
     {
       "key": {
@@ -6230,6 +6790,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -6243,21 +6804,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1579,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1579, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1580,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1580"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1573,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1573, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1486,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method UpdateFormula_2"
         }
       ]
     },
@@ -6360,6 +6924,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -6373,21 +6938,24 @@
       "symbols": [
         {
           "name": "checkExists",
-          "origin": "local-map",
-          "at": 1541,
-          "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1541, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "checkExists",
+          "ref": "checkExists",
           "origin": "out",
           "at": 1542,
           "desc": "nhận qua đối số out/ref của lời gọi GeneralFunctions.CopyTableToTable2 tại dòng 1542"
         },
         {
           "name": "dictionary",
+          "ref": "dictionary",
           "origin": "local-map",
           "at": 1534,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1534, nội dung nạp lúc chạy"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1499,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method UpdateFormula_3"
         }
       ]
     },
@@ -6412,7 +6980,7 @@
         "sheet(3) != null",
         "tk.SheetInfos[3] != null",
         "loop: foreach@1675 table in tk.SheetInfos[3].Tables",
-        "loop: for@1678 num7 from 0 step +1 while num7 < table.RowsValues.Count"
+        "loop: for@1678 num7 from 0 step +1 while num7 < count(table.RowsValues)"
       ],
       "effects": [
         {
@@ -6424,12 +6992,12 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522.value) < 0",
                 "value": 0
               },
               {
                 "when": "else",
-                "value": "{cell(S3!Z{num7+table.DataLocationTemplateRowStart}).value}"
+                "value": "{cell(S3!Z{num7+table.DataLocationTemplateRowStart})#1678.value}"
               }
             ]
           },
@@ -6449,8 +7017,8 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
-                "value": "{cell(S3!AA{num7+table.DataLocationTemplateRowStart}).value}"
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522.value) < 0",
+                "value": "{cell(S3!AA{num7+table.DataLocationTemplateRowStart})#1680.value}"
               },
               {
                 "when": "else",
@@ -6466,6 +7034,20 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S3!AA{num7+table.DataLocationTemplateRowStart})#1680",
+          "after": "sau lệnh setValue dòng 1680 qua TinhCot_17_21_Pl_01_6CSSX@1506"
+        },
+        {
+          "ref": "cell(S3!Z{num7+table.DataLocationTemplateRowStart})#1678",
+          "after": "vòng lặp dòng 1678 có lệnh hoặc lời gọi có thể ghi ô"
+        },
+        {
+          "ref": "cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522",
+          "after": "hợp nhánh dòng 1522: trên một số nhánh có lệnh ghi ô (dòng 1542)"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -6474,26 +7056,29 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S3!AA{num7+table.DataLocationTemplateRowStart}).value, cell(S3!Z{num7+table.DataLocationTemplateRowStart}).value, num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value), num7, table.DataLocationTemplateRowStart",
+      "reason": "placeholder: cell(S3!AA{num7+table.DataLocationTemplateRowStart})#1680.value, cell(S3!Z{num7+table.DataLocationTemplateRowStart})#1678.value, num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522.value), num7, table.DataLocationTemplateRowStart",
       "unreachable": false,
       "symbols": [
         {
           "name": "num7",
-          "origin": "loop",
-          "at": 1675,
-          "desc": "biến mang qua vòng lặp dòng 1675: giá trị trước vòng ?, cuối mỗi vòng num7 := num7"
-        },
-        {
-          "name": "num7",
+          "ref": "num7",
           "origin": "loop",
           "at": 1678,
           "desc": "biến mang qua vòng lặp dòng 1678: giá trị trước vòng 0, cuối mỗi vòng num7 := num7+1"
         },
         {
           "name": "table",
+          "ref": "table",
           "origin": "foreach",
           "at": 1675,
           "desc": "phần tử đang duyệt của tk.SheetInfos[3].Tables"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1499,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method UpdateFormula_3"
         }
       ]
     },
@@ -6528,12 +7113,12 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522.value) < 0",
                 "value": 0
               },
               {
                 "when": "else",
-                "value": "{cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)}).value}"
+                "value": "{cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)})#1675.value}"
               }
             ]
           },
@@ -6553,12 +7138,12 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522.value) < 0",
                 "value": 0
               },
               {
                 "when": "else",
-                "value": "{cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)}).value}"
+                "value": "{cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)})#1684.value}"
               }
             ]
           },
@@ -6578,8 +7163,8 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
-                "value": "{cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)}).value}"
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522.value) < 0",
+                "value": "{cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)})#1685.value}"
               },
               {
                 "when": "else",
@@ -6603,8 +7188,8 @@
           "value": {
             "cases": [
               {
-                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value) < 0",
-                "value": "{cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)}).value}"
+                "when": "num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522.value) < 0",
+                "value": "{cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)})#1686.value}"
               },
               {
                 "when": "else",
@@ -6620,6 +7205,28 @@
           "status": "parametric"
         }
       ],
+      "cellVersions": [
+        {
+          "ref": "cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)})#1685",
+          "after": "sau lệnh setValue dòng 1685 qua TinhCot_17_21_Pl_01_6CSSX@1506"
+        },
+        {
+          "ref": "cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)})#1686",
+          "after": "sau lệnh setValue dòng 1686 qua TinhCot_17_21_Pl_01_6CSSX@1506"
+        },
+        {
+          "ref": "cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)})#1675",
+          "after": "hợp nhánh dòng 1675: trên một số nhánh có lệnh ghi ô (dòng 1675, 1678)"
+        },
+        {
+          "ref": "cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)})#1684",
+          "after": "sau lệnh setValue dòng 1684 qua TinhCot_17_21_Pl_01_6CSSX@1506"
+        },
+        {
+          "ref": "cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522",
+          "after": "hợp nhánh dòng 1522: trên một số nhánh có lệnh ghi ô (dòng 1542)"
+        }
+      ],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -6628,9 +7235,17 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)}).value, cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)}).value, cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)}).value, cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)}).value, num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)}).value), rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19), rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23), rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)",
+      "reason": "placeholder: cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23)})#1685.value, cell(S3!AA{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct24)})#1686.value, cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19)})#1675.value, cell(S3!Z{rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)})#1684.value, num(cell(S3!{col(colIndex(path_22))}{rowIndex(path_22)})#1522.value), rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct19), rowIndex(Pluc_01_6_GTGT_CSSX/CongCacTinh/ct23), rowIndex(Pluc_01_6_GTGT_CSSX/SoThuePhaiNop/ct20)",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1499,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method UpdateFormula_3"
+        }
+      ]
     },
     {
       "key": {
@@ -6665,6 +7280,7 @@
           "status": "opaque"
         }
       ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
         "lines": [
@@ -6675,7 +7291,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.fpSpReindexingTableTemplate",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 1499,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method UpdateFormula_3"
+        }
+      ]
     }
   ]
 }
