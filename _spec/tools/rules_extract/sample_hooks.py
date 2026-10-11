@@ -7,7 +7,9 @@ import glob, json, os, random, re, sys
 
 dec, rules = sys.argv[1], sys.argv[2]
 seed = int(sys.argv[3]) if len(sys.argv) > 3 else 20261010
-EFF = re.compile(r"\.(?:Cells|Rows|Columns)\[.*\]\.\w+ = |\.(Formula|Value|Text|Locked|CellType|BackColor) = |ChangeValueCell\(|LockUnLockCols?\(|changFormatCell\(|\.Reset\w*\(\)")
+EFF = re.compile(r"\.(?:Cells|Rows|Columns)\[.*\]\.\w+ = |\.(Formula|Value|Text|Locked|CellType|BackColor) = |ChangeValueCell\(|LockUnLockCols?\(|changFormatCell\(|\.Reset\w*\(\)|TabStrip\[|checkLockUnLockCells\(")
+MDECL = re.compile(r"^\t(?:(?:public|private|protected|internal|static)\s+)*[\w<>\[\],.?]+\s+(\w+)\s*\(", re.M)
+CALL = re.compile(r"^\s*(?:[\w<>\[\],.]+\s+\w+\s*=\s*|\w+\s*=\s*)?(?:this\.)?(\w+)\s*\(")
 pool = {True: [], False: []}
 for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
     b = os.path.basename(f)
@@ -17,7 +19,8 @@ for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
     src = open(os.path.join(dec, d["file"]), encoding="utf-8-sig").read().split("\n")
     for h in d["hooks"]:
         s, e = h["lines"]
-        lines = [i for i in range(s, e + 1) if EFF.search(src[i - 1])]
+        mnames = set(MDECL.findall("\n".join(src)))
+        lines = [i for i in range(s + 1, e + 1) if EFF.search(src[i - 1]) or ((CALL.match(src[i - 1]) or [None, None])[1] in mnames)]
         if lines:
             pool[d["key"]["in_menu"]].append((d["key"]["Class"], h["hook"], d["file"], s, e, lines))
 rnd = random.Random(seed)
@@ -41,6 +44,18 @@ for n, (im, (cls, hook, path, s, e, lines)) in enumerate(pick, 1):
         for c in reversed(ctx[:4]):
             print("   ctx", c)
         print("   SRC %d: %s" % (ln, src[ln - 1].strip()[:260]))
+        cm = CALL.match(src[ln - 1])
+        if cm and not EFF.search(src[ln - 1]):
+            pre = "%s@%d" % (cm.group(1), ln)
+            vs = [(r, ef) for r in d["records"] if r["hook"] == hook for ef in r["effects"] if (ef.get("via") or "") == pre or (ef.get("via") or "").startswith(pre + " > ")]
+            ops = sorted({ef["op"] for _, ef in vs})
+            print("   VIA %s: %d effect %s" % (pre, len(vs), ops))
+            for r, ef in [x for x in vs if x[1]["op"] != "opaque"][:2]:
+                v = ef.get("formula", ef.get("value", ef.get("params", "")))
+                print("      at=%s %s S%s!%s %s | guards=%s | %s%s" % (ef["at"], ef["op"], (ef.get("target") or {}).get("sheet"), (ef.get("target") or {}).get("cell"), json.dumps(v, ensure_ascii=False)[:150], [g[:80] for g in r["guards"]][:3], ef["status"], " UNREACHABLE" if r.get("unreachable") else ""))
+        for x in [h for h in d["hooks"] if h["hook"] == hook][0]["dropped"]:
+            if x["at"] == ln:
+                print("   DROPPED", x["reason"][:160])
         for r in d["records"]:
             if r["hook"] != hook:
                 continue
