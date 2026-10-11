@@ -659,14 +659,19 @@ def main():
                         ftxt, err = resolve_text(str(f), by_sheet.get(sh, []), space) if '{' in str(f) else (str(f), None)
                         c.calc['csharp'].append({
                             'formula': ftxt, 'norm': norm_formula(ftxt) if not err else None,
-                            'err': err, 'hook': r['hook'], 'kind': r['kind'],
+                            'err': err, 'hook': r['hook'], 'kind': r['kind'], 'at': e.get('at') or 0,
                             'guards': r.get('guards') or [],
                             'when': (r.get('trigger') or {}).get('when') or [],
                             'src': '%s:%s' % (r['source']['file'], '-'.join(str(x) for x in r['source']['lines']))})
                     elif op == 'setValue':
                         c.calc['csharp_value'].append({'hook': r['hook'], 'value': str(e.get('value'))[:80]})
+                        if re.fullmatch(r'-?\d+(\.\d+)?|"[^"{}]*"|\'[^\'{}]*\'', str(e.get('value')).strip()):
+                            c.calc['csharp_const'].append(str(e.get('value'))[:40])
                     elif op == 'lock':
                         c.locks['lock'] += 1
+                        c.calc['lock_info'].append({'guards': r.get('guards') or [],
+                                                    'when': (r.get('trigger') or {}).get('when') or [],
+                                                    'hook': r['hook'], 'nguon': '%s:%s' % (r['source']['file'], '-'.join(str(q) for q in r['source']['lines']))})
                     elif op == 'unlock':
                         c.locks['unlock'] += 1
                     else:
@@ -777,7 +782,7 @@ def main():
                 'xls': c.calc.get('xls', [None])[0], 'xls1': c.calc.get('xls1', [None])[0],
                 'rowreplace': c.calc.get('rowreplace', []),
                 'csharp': [{k: v for k, v in x.items()} for x in c.calc.get('csharp', [])],
-                'csharp_setvalue': len(c.calc.get('csharp_value', [])),
+                'csharp_setvalue': len(c.calc.get('csharp_value', [])), 'co_dinh_gia_tri': bool(c.calc.get('csharp_const')),
                 'csharp_setformula_reset': len(c.calc.get('csharp_reset', [])),
                 'khoa': {'lock': c.locks['lock'], 'unlock': c.locks['unlock']},
                 'validate': c.chk.get('validate', []), 'dv': sorted(set(c.chk.get('dv', []))),
@@ -793,13 +798,30 @@ def main():
             if cs:
                 norms = sorted({x['norm'] for x in cs if x['norm']})
                 if exn is not None:
-                    diff = [x for x in cs if x['norm'] and x['norm'] != exn]
+                    # chỉ lấy lần ghi cuối của mỗi (hook, tệp, guards, when): lần ghi sau ghi đè lần trước
+                    last = {}
+                    for x in cs:
+                        gk = (x['hook'], x['src'].split(':')[0], tuple(x['guards']), tuple(x['when']))
+                        if gk not in last or x['at'] >= last[gk]['at']:
+                            last[gk] = x
+
+                    def tuong_duong(x):
+                        if x['norm'] == exn:
+                            return True
+                        if re.fullmatch(r'[A-Z]+\d+', x['norm']):
+                            nmx = sheetnames.get(spname)
+                            if nmx and c.sheet < len(nmx):
+                                f2 = fx[spname].get((nmx[c.sheet], x['norm']))
+                                if f2 is not None and norm_formula(f2) == exn:
+                                    return True
+                        return False
+                    diff = [x for x in last.values() if x['norm'] and not tuong_duong(x)]
                     if diff:
                         conflicts['excel_khac_csharp'].append({
                             'form': '%s_%s' % key, 'sheet': c.sheet, 'cell': cid_disp if not space else cid2_disp,
                             'space': spname, 'path': c.full, 'excel': exf[0],
                             'csharp': [{'formula': x['formula'], 'hook': x['hook'], 'guards': x['guards'],
-                                        'when': x['when'], 'nguon': x['src']} for x in diff],
+                                        'when': x['when'], 'nguon': x['src']} for x in sorted(diff, key=lambda q: q['src'])],
                             'nguon_excel': 'T1 %s' % fby[key][spname]['json']})
                 un = [x for x in cs if x['norm'] and not x['guards'] and not x['when']]
                 if len({x['norm'] for x in un}) >= 2:
@@ -808,10 +830,13 @@ def main():
                         'path': c.full,
                         'csharp': [{'formula': x['formula'], 'hook': x['hook'], 'nguon': x['src']} for x in un]})
             if c.locks['lock'] > 0 and c.locks['unlock'] == 0 and c.status in INPUT_STATUS:
-                conflicts['khoa_nhung_la_o_nhap'].append({
+                li = c.calc.get('lock_info', [])
+                cond = bool(li) and all(x['guards'] or x['when'] for x in li)
+                conflicts['khoa_co_dieu_kien' if cond else 'khoa_nhung_la_o_nhap'].append({
                     'form': '%s_%s' % key, 'sheet': c.sheet, 'cell': cid_disp if not space else cid2_disp,
                     'path': c.full, 'status_id': c.status, 'lock': c.locks['lock'],
-                    'co_nguon_tinh': sources})
+                    'co_nguon_tinh': sources, 'co_dinh_gia_tri': c.calc.get('csharp_const', [])[:3],
+                    'guard_khoa': [{'guards': x['guards'], 'when': x['when'], 'nguon': x['nguon']} for x in li[:3]]})
 
         # ô có Path nhưng không vào XSD
         off_recs = [{'sheet': c.sheet, 'cell_xls': c.cid, 'cell_xls1': c.cid2, 'path': c.full,
@@ -858,7 +883,8 @@ def main():
     cj = {'dinh_nghia': {
         'excel_khac_csharp': 'ô có công thức Excel (cùng không gian toạ độ C#) và C# setFormula khác sau chuẩn hóa (bỏ khoảng trắng, $, =, chữ hoa); C# setFormula rỗng (reset) không tính',
         'nhieu_csharp_khong_dieu_kien': '>=2 công thức C# chuẩn hóa khác nhau, guards rỗng và trigger.when rỗng',
-        'khoa_nhung_la_o_nhap': 'có effect lock, không có unlock cùng ô, và StatusID trong %s' % sorted(INPUT_STATUS),
+        'khoa_nhung_la_o_nhap': 'có effect lock không điều kiện (mọi lần khoá không có guards và trigger.when), không có unlock cùng ô, StatusID trong %s' % sorted(INPUT_STATUS),
+        'khoa_co_dieu_kien': 'như trên nhưng mọi lần khoá đều có guards hoặc trigger.when (kèm guard_khoa; co_dinh_gia_tri = setValue hằng cùng ô)',
         'validate_o_khong_co_trong_xml': 'check T3 có cells_marked literal S<n>!A1 không trùng ô dữ liệu nào của XML mẫu'},
         'so_luong': {k: len(v) for k, v in sorted(conflicts.items())},
         'unmapped': {g: dict(sorted(v.items())) for g, v in sorted(unmapped.items())},
@@ -898,7 +924,7 @@ def main():
         for tag, rec in rnd.sample(flat, a.sample):
             print('SAMPLE', tag, json.dumps(rec, ensure_ascii=False, sort_keys=True)[:900])
     # xung đột ví dụ
-    for k in ('excel_khac_csharp', 'nhieu_csharp_khong_dieu_kien', 'khoa_nhung_la_o_nhap', 'validate_o_khong_co_trong_xml'):
+    for k in ('excel_khac_csharp', 'nhieu_csharp_khong_dieu_kien', 'khoa_nhung_la_o_nhap', 'khoa_co_dieu_kien', 'validate_o_khong_co_trong_xml'):
         for x in conflicts.get(k, [])[:3]:
             print('VIDU', k, json.dumps(x, ensure_ascii=False, sort_keys=True)[:700])
 
