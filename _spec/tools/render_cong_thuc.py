@@ -11,7 +11,7 @@ Chạy (nên dùng venv có olefile để lấy nhãn ô; không có olefile th�
   _spec/formulas/index.json + <json>        công thức từng tệp (T1)
   _spec/csharp/classes.json                 MaFile + VersionXML -> Class, MenuID (T0)
   _spec/config/mapcongthucchosua.xml.json   công thức ROWREPLACE theo Map ID = MenuID (T4)
-  --rules <dir>  (tùy chọn)                 công thức do C# đặt (T2), xem load_rules()
+  --rules <dir>  (tùy chọn)                 công thức do C# đặt (T2), mặc định _spec/rules
   _forms/<thư mục>/<tệp bảng tính>          chỉ để đọc ô văn bản làm nhãn (BIFF, olefile)
 
 Định dạng một cong_thuc.txt (mỗi tệp bảng tính một khối, khối theo thứ tự đường dẫn: .xls rồi .xls1):
@@ -192,26 +192,95 @@ def nearest_label(rowcells, col):
     return best[1] if best else ''
 
 
-# ------------------------------------------------------------------ đầu vào T2 (tùy chọn)
-def load_rules(rules_dir, key):
-    """Công thức do C# đặt (T2). Chưa có định dạng chốt; bộ render đọc <rules_dir>/<key>.json
-    (key = khóa T1 của tệp, ví dụ 01_GTGT@v2.6.2@_1_gtgt_262.xls) dạng
-      {"rules": [{"sheet","cell","formula","class","method","line","guard"(tùy chọn)}]}
-    Không có tệp hoặc không đúng dạng thì bỏ qua (trả danh sách rỗng)."""
+# ------------------------------------------------------------------ đầu vào T2 (_spec/rules)
+RULES_SKIP = {'index.json', '_app.json', '_shared.json', 'opaque_calls.json', 'formula_points.json'}
+
+
+def sheet_ref(t):
+    """Khóa sheet của target: int (chỉ số sheet) hoặc str (sheet tham số); target rỗng -> None."""
+    return t.get('sheet') if isinstance(t, dict) else None
+
+
+def when_text(rec):
+    """Phần điều kiện kích hoạt của bản ghi (trigger) thành văn bản; rỗng nếu không có."""
+    tr = rec.get('trigger') or {}
+    parts = []
+    if tr.get('cells'):
+        parts.append('sửa ô ' + ','.join(tr['cells']))
+    rr = tr.get('rowRange')
+    if rr:
+        parts.append('sửa dòng %s..%s cột %s' % (rr.get('from'), rr.get('to'), ','.join(rr.get('cols') or []) or '*'))
+    if not parts and tr.get('when'):
+        parts.append(' && '.join(tr['when']))
+    return ' && '.join(parts)
+
+
+def load_rules(rules_dir):
+    """Đọc <rules_dir>/<Class>.json (T2) theo định dạng thật: {key,file,hooks,records[]}.
+    Trả {Class: {'lines': [...], 'by_sheet_other': {sheet: {'setValue':n,'lock':n}}, 'unreach': {sheet: [records, setFormula]},
+                  'n_effects': số effect setFormula không unreachable, 'n_lines': số dòng (mỗi nhánh cases một dòng)}}.
+    Chỉ lấy op setFormula không unreachable thành dòng; setValue và lock chỉ đếm theo sheet."""
+    out = {}
     if not rules_dir:
-        return []
-    p = os.path.join(rules_dir, key + '.json')
-    if not os.path.isfile(p):
-        return []
-    try:
-        j = json.load(open(p, encoding='utf-8'))
-        return [r for r in j.get('rules', []) if isinstance(r, dict) and r.get('sheet') is not None and r.get('cell') and 'formula' in r]
-    except (ValueError, OSError, AttributeError):
-        return []
+        return out
+    for fn in sorted(os.listdir(rules_dir)):
+        if not fn.endswith('.json') or fn in RULES_SKIP:
+            continue
+        j = json.load(open(os.path.join(rules_dir, fn), encoding='utf-8'))
+        if not isinstance(j, dict) or not isinstance(j.get('records'), list):
+            continue
+        cls = j['key']['Class']
+        d = {'lines': [], 'other': collections.defaultdict(lambda: collections.Counter()),
+             'unreach': collections.defaultdict(lambda: [0, 0]), 'n_effects': 0, 'n_lines': 0}
+        for ri, rec in enumerate(j['records']):
+            rsheet = rec.get('sheetIndex')
+            if rec.get('unreachable'):
+                u = d['unreach'][rsheet]
+                u[0] += 1
+                u[1] += sum(1 for e in rec['effects'] if e['op'] == 'setFormula')
+                continue
+            khi_pre = []
+            w = when_text(rec)
+            if w:
+                khi_pre.append('kích hoạt: ' + w)
+            khi_pre += [str(g) for g in rec.get('guards') or []]
+            for ei, e in enumerate(rec['effects']):
+                sh = sheet_ref(e.get('target'))
+                if sh is None:
+                    sh = rsheet
+                if e['op'] in ('setValue', 'lock'):
+                    d['other'][sh][e['op']] += 1
+                    continue
+                if e['op'] != 'setFormula':
+                    continue
+                d['n_effects'] += 1
+                f = e.get('formula')
+                if isinstance(f, dict) and isinstance(f.get('cases'), list):
+                    cases = [(c.get('when'), c.get('value')) for c in f['cases']]
+                else:
+                    cases = [(None, f)]
+                reset = bool((e.get('params') or {}).get('reset'))
+                for ci, (cw, cv) in enumerate(cases):
+                    khi = list(khi_pre)
+                    if cw is not None:
+                        khi.append('ngược lại' if cw == 'else' else str(cw))
+                    if cv is None or cv == '':
+                        ftxt = '<xóa>'
+                    elif isinstance(cv, str):
+                        ftxt = cv
+                    else:
+                        ftxt = json.dumps(cv, ensure_ascii=False, sort_keys=True)
+                    d['lines'].append({'sheet': sh, 'cell': (e.get('target') or {}).get('cell', '?'), 'formula': ftxt,
+                                       'method': rec.get('hook', '?'), 'line': e.get('at', '?'), 'khi': ' && '.join(khi),
+                                       'ord': (cls, ri, ei, ci)})
+                    d['n_lines'] += 1
+        d['cls'] = cls
+        out[cls] = d
+    return out
 
 
 # ------------------------------------------------------------------ dựng khối từng tệp
-def render_block(repo, row, ent, jdoc, classes, menu_by_mafile, rowrep, rules_dir, olefile, stats):
+def render_block(repo, row, ent, jdoc, classes, cls_of, menu_by_mafile, rowrep, crules, olefile, stats):
     # nguồn của ô gốc: xls | xls1 | xlsx (tên dst có thể bị cắt, ví dụ .xl, .xl1, nên suy theo định dạng và hậu tố 1)
     dext = row['dst'].rsplit('.', 1)[-1]
     ext = 'xlsx' if jdoc.get('format') == 'xlsx' else ('xls1' if dext.endswith('1') else 'xls')
@@ -220,7 +289,7 @@ def render_block(repo, row, ent, jdoc, classes, menu_by_mafile, rowrep, rules_di
     out = []
     out.append('MaFile: %s' % (ent.get('mafile') or '-'))
     out.append('VersionXML: %s' % (ent.get('version_xml') or '-'))
-    out.append('Class: %s' % (cl['class'] if cl else '-'))
+    out.append('Class: %s' % (cls_of.get((ent.get('mafile'), ent.get('version_xml'))) or '-'))
     mid_file = cl['MenuID'] if cl else menu_by_mafile.get(ent.get('mafile'))
     out.append('MenuID: %s' % (mid_file or '-'))
     out.append('Nguồn sha256: %s' % ent['source_sha256'])
@@ -236,20 +305,40 @@ def render_block(repo, row, ent, jdoc, classes, menu_by_mafile, rowrep, rules_di
             stats['label_fail'] += 1
 
     sheet_order = {s['name']: s['index'] for s in jdoc['sheets']}
-    rules = load_rules(rules_dir, jdoc['key'])
     by_sheet = collections.defaultdict(list)
     for x in jdoc['formulas']:
         by_sheet[x['sheet']].append(('base', x))
-    for r in rules:
-        by_sheet[r['sheet']].append(('rule', r))
+    idx_name = {s['index']: s['name'] for s in jdoc['sheets']}
+
+    def sheet_key(sh):
+        if isinstance(sh, int):
+            return idx_name.get(sh, 'S%d (không có trong tệp)' % sh)
+        return sh if sh in sheet_order else '%s (sheet tham số)' % sh
+
+    other = collections.defaultdict(collections.Counter)
+    unreach = collections.defaultdict(lambda: [0, 0])
+    ncs = 0
+    if crules:
+        for x in crules['lines']:
+            by_sheet[sheet_key(x['sheet'])].append(('rule', x))
+        for sh, c in crules['other'].items():
+            other[sheet_key(sh)].update(c)
+        for sh, u in crules['unreach'].items():
+            k = sheet_key(sh)
+            unreach[k][0] += u[0]
+            unreach[k][1] += u[1]
+        for k in list(other) + list(unreach):
+            by_sheet.setdefault(k, [])
     ncell = 0
     for sh in sorted(by_sheet, key=lambda n: (sheet_order.get(n, 10 ** 6), n)):
         out.append('## sheet: %s' % esc(sh))
-        items = sorted(by_sheet[sh], key=lambda t: (split_ref(t[1]['cell']), 0 if t[0] == 'base' else 1))
+        items = sorted(by_sheet[sh], key=lambda t: ((split_ref(t[1]['cell']), 0, t[1]['cell'], ()) if t[0] == 'base'
+                                                    else (split_ref(t[1]['cell']), 1, t[1]['cell'], t[1]['ord'])))
         lab = labels.get(sh, {})
+        nsh = 0
         for kind, x in items:
             rc = split_ref(x['cell'])
-            label = esc_label(nearest_label(lab.get(rc[0], ()), rc[1])) if lab else ''
+            label = esc_label(nearest_label(lab.get(rc[0], ()), rc[1])) if lab and rc[0] < 10 ** 9 else ''
             if kind == 'base':
                 ncell += 1
                 line = '%s | %s | %s | %s' % (x['cell'], esc(x['formula']), label, ext)
@@ -258,13 +347,23 @@ def render_block(repo, row, ent, jdoc, classes, menu_by_mafile, rowrep, rules_di
                 if 'lost_refs' in x:
                     line += ' | mất tham chiếu: %s' % esc(json.dumps(x['lost_refs'], ensure_ascii=False))
             else:
-                src = 'C#:%s.%s:L%s' % (x.get('class', '?'), x.get('method', '?'), x.get('line', '?'))
-                line = '%s | %s | %s | %s' % (x['cell'], esc(str(x['formula'])), label, src)
-                if x.get('guard'):
-                    line += ' | khi: %s' % esc(str(x['guard']))
+                nsh += 1
+                src = 'C#:%s.%s:L%s' % (x['ord'][0], x['method'], x['line'])
+                line = '%s | %s | %s | %s' % (x['cell'], esc(x['formula']), label, src)
+                if x['khi']:
+                    line += ' | khi: %s' % esc(x['khi'])
             out.append(line)
+        if nsh or other.get(sh) or unreach.get(sh):
+            o, u = other.get(sh, {}), unreach.get(sh, [0, 0])
+            out.append('# C# tóm tắt sheet: %d dòng setFormula (liệt kê ở trên); setValue %d, lock %d (không liệt kê); '
+                       'bản ghi unreachable bỏ %d (%d setFormula)' % (nsh, o.get('setValue', 0), o.get('lock', 0), u[0], u[1]))
+        ncs += nsh
     out.append('=> %d cell công thức trong file này' % ncell)
+    if crules:
+        out.append('=> %d dòng công thức C# trong file này (%d effect setFormula, class %s)'
+                   % (ncs, crules['n_effects'], crules['cls']))
     stats['cells'] += ncell
+    stats['cs_lines'] += ncs
     stats['files'] += 1
 
     mid = cl['MenuID'] if cl else None   # ROWREPLACE chỉ gắn với đúng phiên bản có trong menu
@@ -289,7 +388,7 @@ def render_block(repo, row, ent, jdoc, classes, menu_by_mafile, rowrep, rules_di
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repo', default=os.getcwd())
-    ap.add_argument('--rules', default=None, help='thư mục T2 (_spec/rules), tùy chọn')
+    ap.add_argument('--rules', default='_spec/rules', help='thư mục T2 (mặc định _spec/rules tương đối theo --repo); rỗng = bỏ C#')
     ap.add_argument('--no-labels', action='store_true')
     ap.add_argument('--dry-run', action='store_true')
     a = ap.parse_args()
@@ -314,6 +413,22 @@ def main():
         k = (c['MaFile'], c['VersionXML'])
         if k not in classes or (c.get('in_menu') and not classes[k].get('in_menu')):
             classes[k] = c
+    # class không có trong menu (phiên bản cũ của MenuClass, tên <MenuClass>Nckt<số phiên bản>): suy ra (MaFile, VersionXML)
+    # qua MenuClass của bản in_menu cùng tên gốc và VersionXML bỏ dấu chấm trùng số hậu tố
+    cls_of = {k: c['class'] for k, c in classes.items()}
+    mafile_of_menuclass = {c['MenuClass']: c['MaFile'] for c in classes.values()}
+    ver_digits = {}
+    for e in ent_by.values():
+        if e.get('mafile') and e.get('version_xml'):
+            ver_digits[(e['mafile'], e['version_xml'].replace('.', ''))] = e['version_xml']
+    for c in json.load(open(os.path.join(repo, '_spec', 'csharp', 'classes.json'), encoding='utf-8'))['classes']:
+        if c.get('in_menu'):
+            continue
+        m = re.match(r'^(.*)Nckt(\d+)$', c['class'])
+        mf = mafile_of_menuclass.get(m.group(1)) if m else None
+        vx = ver_digits.get((mf, m.group(2))) if mf else None
+        if vx and (mf, vx) not in cls_of:
+            cls_of[(mf, vx)] = c['class']
     menu_by_mafile = {c['MaFile']: c['MenuID'] for c in classes.values() if c.get('in_menu')}
     rowrep = {}
     for m in json.load(open(os.path.join(repo, '_spec', 'config', 'mapcongthucchosua.xml.json'), encoding='utf-8'))['root']['children']:
@@ -325,7 +440,16 @@ def main():
         if e:
             per_dir[os.path.dirname(r['dst'])].append((r, e))
 
-    stats = {'cells': 0, 'rowreplace': 0, 'label_ok': 0, 'label_fail': 0, 'files': 0}
+    rules_dir = os.path.join(repo, a.rules) if a.rules else None
+    crules_all = load_rules(rules_dir)
+    # mỗi class gắn đúng một lần: vào tệp đầu tiên (theo đường dẫn dst) của form (MaFile, VersionXML) có class đó
+    attach = {}
+    for r in sorted(manifest, key=lambda r: r['dst']):
+        e = ent_by.get((r['src'], r['sha256']))
+        cn = cls_of.get((e.get('mafile'), e.get('version_xml'))) if e else None
+        if cn and cn in crules_all and cn not in attach.values():
+            attach[(r['src'], r['sha256'])] = cn
+    stats = {'cells': 0, 'rowreplace': 0, 'label_ok': 0, 'label_fail': 0, 'files': 0, 'cs_lines': 0}
     created = rewritten = deleted = 0
     for d in sorted(per_dir):
         lines = []
@@ -333,7 +457,8 @@ def main():
             jdoc = json.load(open(os.path.join(FS, e['json']), encoding='utf-8'))
             if lines:
                 lines.append('')
-            lines += render_block(repo, r, e, jdoc, classes, menu_by_mafile, rowrep, a.rules, olefile, stats)
+            lines += render_block(repo, r, e, jdoc, classes, cls_of, menu_by_mafile, rowrep,
+                                 crules_all.get(attach.get((r['src'], r['sha256']))), olefile, stats)
         text = '\n'.join(lines) + '\n'
         p = os.path.join(F, d, 'cong_thuc.txt')
         existed = os.path.exists(p)
@@ -353,6 +478,18 @@ def main():
     print('cong_thuc.txt sinh ra: %d (ghi đè %d, tạo mới %d); xóa: %d' % (rewritten + created, rewritten, created, deleted))
     print('tệp nguồn có công thức: %d; dòng ô: %d; dòng ROWREPLACE: %d; nhãn đọc được ở %d tệp, lỗi %d tệp'
           % (stats['files'], stats['cells'], stats['rowreplace'], stats['label_ok'], stats['label_fail']))
+    if rules_dir:
+        mapped = sorted(set(attach.values()))
+        in_menu_cls = set(cls_of.values())
+        unm = {'không suy ra được (MaFile, VersionXML) có tệp bảng tính (không in_menu, hoặc MenuClass/phiên bản không khớp tệp)': [],
+               'form có MaFile + VersionXML nhưng không có tệp bảng tính có công thức Excel (không có cong_thuc.txt)': []}
+        for c in sorted(set(crules_all) - set(mapped)):
+            unm[list(unm)[0] if c not in in_menu_cls else list(unm)[1]].append(c)
+        print('class T2: %d; map được vào form: %d (effect setFormula %d, dòng C# %d); không map được: %d'
+              % (len(crules_all), len(mapped), sum(crules_all[c]['n_effects'] for c in mapped),
+                 stats['cs_lines'], len(unm[list(unm)[0]]) + len(unm[list(unm)[1]])))
+        for k, v in unm.items():
+            print('  không map được, lý do "%s": %d class, effect setFormula %d' % (k, len(v), sum(crules_all[c]['n_effects'] for c in v)))
 
 
 if __name__ == '__main__':

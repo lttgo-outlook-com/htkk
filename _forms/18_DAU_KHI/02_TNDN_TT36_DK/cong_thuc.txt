@@ -33,6 +33,7 @@ U91 | Header!V15 | Họ và tên: | xls
 AR91 | IF(Header!V41="","",Header!V41) | Người ký : | xls
 U93 | Header!V16 | Chứng chỉ hành nghề số: | xls
 AR93 | IF(Header!V42<>"",Header!V42,"") | Ngày ký : | xls
+# C# tóm tắt sheet: 0 dòng setFormula (liệt kê ở trên); setValue 14, lock 2 (không liệt kê); bản ghi unreachable bỏ 0 (0 setFormula)
 ## sheet: 01-1
 P2 | TRIM('01'!X4) | [02] Condensate: | xls
 Z2 | TRIM('01'!AH4) | [03] Khí thiên nhiên: | xls
@@ -46,12 +47,16 @@ T17 | '01'!Z49 | : | xls
 V17 | TRIM(Header!V6) | : | xls
 K18 | TRIM(Header!V5) | [08] Mã số thuế: | xls
 R19 | '01'!AV73 | USD | xls
+R19 | {replace("{cell(S1!R19).formula}", "01", "{sheetName(0)}")} | USD | C#:DkTndn02Nckt224.UpdateFormula_1:L147 | khi: contains(cell(S1!R19).formula, "01")
+R19 | <xóa> | USD | C#:DkTndn02Nckt224.Refresh_1:L166 | khi: actionType == 2
+R19 | {replace("{cell(S1!R19).formula}", "01", "{sheetName(0)}")} | USD | C#:DkTndn02Nckt224.Refresh_1:L173 | khi: actionType != 2 && contains(cell(S1!R19).formula, "01")
 AB27 | IF(ROUND($R$19*U27/100,2)>0,ROUND($R$19*U27/100,2),0) |  | xls
 U29 | SUM(U26:AA28) | % | xls
 AB29 | SUM(AB26:AK28) | % | xls
 F32 | Header!V15 | Họ và tên: | xls
 AD32 | Header!T5 | Người ký : | xls
 J34 | Header!V16 | Chứng chỉ hành nghề số: | xls
+# C# tóm tắt sheet: 3 dòng setFormula (liệt kê ở trên); setValue 1, lock 0 (không liệt kê); bản ghi unreachable bỏ 0 (0 setFormula)
 ## sheet: KHBS
 B3 | "Tờ khai thuế dầu khí mẫu số 02/TNDN-DK "&RIGHT(TRIM('01'!W11),LEN(TRIM('01'!W11))-5)&" ngày  "&MID(B47,1,2)&" tháng "&MID(B47,4,2)&" năm "&MID(B47,7,4)&")" |  | xls
 BF5 | ROUND(BH15*BE20*0.05/100,0) |  | xls
@@ -77,6 +82,7 @@ C31 | '01'!AV61 | Chỉ tiêu [28] phải nhỏ hơn hoặc bằng chỉ tiêu [
 B32 | IF('01'!AV59>'01'!AV61, 0, 1) | Chỉ tiêu [27a] phải nhỏ hơn hoặc bằng chỉ tiêu [28] | xls
 C32 | '01'!AV59 | Chỉ tiêu [27a] phải nhỏ hơn hoặc bằng chỉ tiêu [28] | xls
 => 67 cell công thức trong file này
+=> 3 dòng công thức C# trong file này (3 effect setFormula, class DkTndn02Nckt224)
 
 MaFile: 02_TNDN_DK
 VersionXML: 2.2.4

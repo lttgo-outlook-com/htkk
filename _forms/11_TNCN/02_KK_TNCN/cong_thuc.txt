@@ -19,9 +19,14 @@ AB50 | 1000000*T70 | [29] | xls
 R51 | IF(R43-R44-R45>0,R43-R44-R45,0) | [30] | xls
 AD51 | R51/T70 | eof | xls
 AE51 | IF(AD51<=0,0,ROUND(IF(AD51<5000000,AD51*0.05,IF(AD51<10000000,AD51*0.1-250000,IF(AD51<18000000,AD51*0.15-750000,IF(AD51<32000000,AD51*0.2-1650000,IF(AD51<52000000,AD51*0.25-3250000,IF(AD51<80000000,AD51*0.3-5850000,AD51*0.35-9850000))))))*T70,0)) | eof | xls
+R52 | ROUND(({opaque(too-many-cases)})*{int(substring(period.DenThang, 0, indexOf(period.DenThang, "/")))-int(substring(period.TuThang, 0, indexOf(period.TuThang, "/")))+1},0) | [31] | C#:TncnKk02Nckt216.CellChange_0:L205 | khi: kích hoạt: sửa ô R43,R44,R46,R47,R48,R49,R50 && activeSheet() == 0 && int(substring(period.DenThang, 0, indexOf(period.DenThang, "/"))).HasValue && int(substring(period.TuThang, 0, indexOf(period.TuThang, "/"))).HasValue
+R52 | ROUND(({opaque(too-many-cases)})*{(int(substring(period.DenThang, 0, indexOf(period.DenThang, "/")))-null)+1},0) | [31] | C#:TncnKk02Nckt216.CellChange_0:L205 | khi: kích hoạt: sửa ô R43,R44,R46,R47,R48,R49,R50 && activeSheet() == 0 && int(substring(period.DenThang, 0, indexOf(period.DenThang, "/"))).HasValue && !(int(substring(period.TuThang, 0, indexOf(period.TuThang, "/"))).HasValue)
+R52 | ROUND(({opaque(too-many-cases)})*{(null-int(substring(period.TuThang, 0, indexOf(period.TuThang, "/"))))+1},0) | [31] | C#:TncnKk02Nckt216.CellChange_0:L205 | khi: kích hoạt: sửa ô R43,R44,R46,R47,R48,R49,R50 && activeSheet() == 0 && int(substring(period.TuThang, 0, indexOf(period.TuThang, "/"))).HasValue
+R52 | ROUND(({opaque(too-many-cases)})*{(null-null)+1},0) | [31] | C#:TncnKk02Nckt216.CellChange_0:L205 | khi: kích hoạt: sửa ô R43,R44,R46,R47,R48,R49,R50 && activeSheet() == 0 && ngược lại
 R54 | IF(R43-R44<>0,ROUND(R52*(R53/(R43-R44))*0.5,0),0) | [33] | xls
 R55 | ROUND(R52-R54,0) | [34] | xls
 R59 | ROUND(R57*R58/100,0) | [37] | xls
+R59 | ROUND(R57*R58/100,0) | [37] | C#:TncnKk02Nckt216.CellChange_0:L196 | khi: kích hoạt: sửa ô R57,R58 && activeSheet() == 0
 AB59 | ROUND(R57*R58/100,0) | [37] | xls
 R63 | ROUND(R61*R62/100,0) | [38] | xls
 AD63 | ROUND(R61*R62/100,0) | [38] | xls
@@ -34,6 +39,7 @@ F70 | IF(Header!V29="","","1") | Bo sung | xls
 I70 | IF(Header!V29="","",Header!V29) | Lan | xls
 M70 | TRIM(Header!V34) | Từ tháng | xls
 O70 | TRIM(Header!V35) | đến tháng | xls
+# C# tóm tắt sheet: 5 dòng setFormula (liệt kê ở trên); setValue 6, lock 2 (không liệt kê); bản ghi unreachable bỏ 0 (0 setFormula)
 ## sheet: KHBS
 B6 | B5+1 |  | xls
 G6 | F6-E6 |  | xls
@@ -54,6 +60,7 @@ C22 | '01'!H68 | Chứng chỉ hành nghề số bắt buộc phải nhập nế
 B23 | IF('01'!R44>'01'!R43,"0","1") | Chỉ tiêu [23] phải nhỏ hơn hoặc bằng chỉ tiêu [22] | xls
 C23 | '01'!R44 | Chỉ tiêu [23] phải nhỏ hơn hoặc bằng chỉ tiêu [22] | xls
 => 45 cell công thức trong file này
+=> 5 dòng công thức C# trong file này (2 effect setFormula, class TncnKk02Nckt216)
 
 MaFile: 02_KK_TNCN
 VersionXML: 2.1.6

@@ -15,14 +15,26 @@ D5 | IF(ISBLANK(Header!C2)," ",TRIM(Header!C2))&IF(ISBLANK(Header!D2)," ",TRIM(H
 D6 | TRIM(Header!C3) | Tên người nộp thuế: | xls
 D7 | TRIM(Header!V6) | Tên đại lý thuế (nếu có): | xls
 D8 | TRIM(Header!V5) | Mã số thuế đại lý: | xls
+L24 | <xóa> | [22] | C#:Gtgt01ViewNckt250.AutoBindData_0:L252 | khi: tk.SheetInfos[0].IsReadDataFile || period.LoaiToKhai == "B"
+L24 | P24 | [22] | C#:Gtgt01ViewNckt250.AutoBindData_0:L256 | khi: !(tk.SheetInfos[0].IsReadDataFile) && period.LoaiToKhai != "B"
 J31 | J32+J33+J34+J35 | [27] | xls
 L31 | L33+L34 | [28] | xls
 L33 | ROUND(J33*5/100,0) | [31] | xls
+L33 | ROUND(J33*5/100,0) | [31] | C#:Gtgt01ViewNckt250.CellChange_0:L1338 | khi: kích hoạt: sửa ô J33 && activeSheet() == 0
 L34 | ROUND(J34*10/100,0) | [33] | xls
+L34 | ROUND(J34*10/100,0) | [33] | C#:Gtgt01ViewNckt250.CellChange_0:L1334 | khi: kích hoạt: sửa ô J34 && activeSheet() == 0
 J36 | J30+J31 | [34] | xls
 L36 | L31 | [35] | xls
 L37 | L36-L28 | [36] | xls
 L41 | M54 | [39] | xls
+L41 | M54 | [39] | C#:Gtgt01ViewNckt250.AutoBindData_0:L260 | khi: tk.SheetInfos[1] != null && period.LoaiToKhai == "C"
+L41 | M54 | [39] | C#:Gtgt01ViewNckt250.AutoBindData_0:L266 | khi: tk.SheetInfos[1] == null || period.LoaiToKhai != "C" && period.LoaiToKhai == "B" && tk.SheetInfos[1] != null
+L41 | <xóa> | [39] | C#:Gtgt01ViewNckt250.AutoBindData_0:L278 | khi: period.LoaiToKhai == "B" && sheetOf(1).Visible
+L41 | <xóa> | [39] | C#:Gtgt01ViewNckt250.Refresh_1:L1252 | khi: actionType == 1
+L41 | M54 | [39] | C#:Gtgt01ViewNckt250.Refresh_1:L1253 | khi: actionType == 1
+L41 | <xóa> | [39] | C#:Gtgt01ViewNckt250.Refresh_1:L1257 | khi: actionType != 1
+L41 | <xóa> | [39] | C#:Gtgt01ViewNckt250.ClearData_1:L1275
+L41 | M54 | [39] | C#:Gtgt01ViewNckt250.CellChange_1:L1356 | khi: kích hoạt: sửa dòng {tk.SheetInfos[1].Tables[0].DataLocationTemplateRowStart}..None cột I && activeSheet() == 1
 L43 | IF(L37-L24+L39-L40-L41>0,L37-L24+L39-L40-L41,0) | [40a] | xls
 L45 | L43-L44 | [40] | xls
 L46 | IF(L37-L24+L39-L40-L41<0,ABS(L37-L24+L39-L40-L41),0) | [41] | xls
@@ -36,7 +48,9 @@ L53 | IF(Header!V29<>"",1,"") |  | xls
 N53 | IF(TRIM(Header!V47)="",0,1) |  | xls
 O53 | IF(Header!V29="","",Header!V29) |  | xls
 M54 | ROUND('01_5'!I9,0) | PL1 | xls
+M54 | ROUND('{sheetName(1)}'!I9,0) | PL1 | C#:Gtgt01ViewNckt250.Refresh_1:L1250 | khi: actionType == 1
 D55 | ROUND('01_5'!I9,0) |  | xls
+# C# tóm tắt sheet: 13 dòng setFormula (liệt kê ở trên); setValue 26, lock 17 (không liệt kê); bản ghi unreachable bỏ 0 (0 setFormula)
 ## sheet: 01_5
 H3 | I9 | Số tiền thuế đã nộp | xls
 I9 | SUM(I7:I8) | Tổng cộng | xls
@@ -54,9 +68,12 @@ J9 | (G9*1/100)+(H9*2/100) | aa | xls
 J10 | SUM(J7:J9) | Tổng | xls
 K10 | SUM(K7:K9) | Tổng | xls
 G12 | '01'!L45 | [06] Số thuế phải nộp của người nộp thuế: | xls
+G12 | '{sheetName(0)}'!L45 | [06] Số thuế phải nộp của người nộp thuế: | C#:Gtgt01ViewNckt250.AutoBindData_0:L270
 G14 | '01'!J36 | [07] Doanh thu chưa có thuế GTGT của sản phẩm sản xuất ra c… | xls
+G14 | '{sheetName(0)}'!J36 | [07] Doanh thu chưa có thuế GTGT của sản phẩm sản xuất ra c… | C#:Gtgt01ViewNckt250.AutoBindData_0:L271
 I17 | IF(G12-J10>0,G12-J10,0) | Số thuế phải nộp cho địa phương nơi có trụ sở chính([19] = … | xls
 I19 | IF(G12-J10>0,0,G12-K10) | Số thuế phải nộp cho địa phương nơi có trụ sở chính trong t… | xls
+# C# tóm tắt sheet: 2 dòng setFormula (liệt kê ở trên); setValue 1, lock 0 (không liệt kê); bản ghi unreachable bỏ 0 (0 setFormula)
 ## sheet: 01_7
 H7 | ROUND(D7*G7/100*2/100,0) | cbo | xls
 H9 | SUM(H7:H8) | Tổng cộng | xls
@@ -94,6 +111,9 @@ BG46 | TRIM('01'!K51) | Ngày ký: | xls
 B47 | BG5 |  | xls
 BD47 | SUM(BH8:BH10) |  | xls
 BF47 | SUM(BH12:BH14) |  | xls
+{col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop)} | {opaque(too-many-cases)},2),0) |  | C#:Gtgt01ViewNckt250.CellChange_7:L1474 | khi: kích hoạt: sửa ô {col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan)} && ttc.loaiTKhai == "B" && indexOf("~08~44~21~40~42~98~99~93~92~89~", "~{period.menuID}~") > 0
+{col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soTienChamNop)} | {opaque(too-many-cases)},0),0) |  | C#:Gtgt01ViewNckt250.CellChange_7:L1474 | khi: kích hoạt: sửa ô {col(colIndex(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan))}{rowIndex(PL01_KHBS/NOIDUNGGIAITHICH/soNgayNhanDuocTienHoan)} && ttc.loaiTKhai == "B" && ngược lại
+# C# tóm tắt sheet: 2 dòng setFormula (liệt kê ở trên); setValue 0, lock 0 (không liệt kê); bản ghi unreachable bỏ 0 (0 setFormula)
 ## sheet: Header
 M2 | IF(TRIM(N2&O2&P2)="","","  - ") | Year | xls
 S7 | " "&IF(TRIM(N2)=""," ",TRIM(N2))&IF(TRIM(O2)=""," ",TRIM(O2))&IF(TRIM(P2)=""," ",TRIM(P2))&" " | Địa chỉ trụ sở ĐL | xls
@@ -137,4 +157,7 @@ B101 | IF(AND( '01'!K4> 1, KHBS!BE27<> 0), IF(KHBS!BE27<>-KHBS!BI27, 0, 1), 1) |
 C101 | KHBS!BE27 | Số thuế đã hoàn phải nộp NSNN phải bằng chênh lệch của chỉ … | xls
 B102 | IF(AND( '01'!K4= 1,  KHBS!BE27<>  -KHBS!BI27,  KHBS!BE27<> 0), 0, 1) | C1 bằng trị tuyệt đối chênh lệch chỉ tiêu 42, C1 ngược dấu … | xls
 C102 | KHBS!BE27 | C1 bằng trị tuyệt đối chênh lệch chỉ tiêu 42, C1 ngược dấu … | xls
+## sheet: activeSheet() (sheet tham số)
+# C# tóm tắt sheet: 0 dòng setFormula (liệt kê ở trên); setValue 7, lock 1 (không liệt kê); bản ghi unreachable bỏ 0 (0 setFormula)
 => 124 cell công thức trong file này
+=> 17 dòng công thức C# trong file này (16 effect setFormula, class Gtgt01ViewNckt250)
