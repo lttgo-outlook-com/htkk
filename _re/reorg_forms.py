@@ -468,6 +468,9 @@ def add(name, gid, folder, ver, rule, evidence, keepname):
     note = globals().get('sbk_note', {}).get(name)
     if note and 'ShowBangKe' not in evidence:     # ShowBangKe target placed by a filename rule
         evidence += '; ' + note
+    mnote = globals().get('MANUAL_NOTES', {}).get(name)
+    if mnote:
+        evidence += '; ' + mnote
     records.append(dict(src=name, magic=magic, root=root or '', ext=ext, gid=gid, folder=folder,
                         ver=ver or 'nv', rule=rule, evidence=evidence, keepname=keepname,
                         kind=true_kind(magic, ext)))
@@ -559,7 +562,32 @@ def sbk_place(name, sb):
                            if sb['menus'] else '; Class khong co menu MaFile/FolderName trong menu.xml')
     return False
 
+# Ngoại lệ đặt tay có bằng chứng tệp:dòng (xét trước mọi quy tắc). Giá trị: (gid, thư mục, phiên bản, rule, bằng chứng).
+MANUAL_PLACEMENTS = {
+    '_9_01_cdkt_tl__hn_xml_26.xml': (
+        '101_6', '49_BCTC_TL_HN', '226', 'OVR',
+        'OVR: ten cab bi cat 28 ky tu (_9_01_cdkt_tl__hn_xml_26.xml); menu.xml:871 Sheet ID=01 '
+        'DataFile=49_01_CDKT_TL_HN cua MaFile=49_BCTC_TL_HN; sha256 trung byte voi '
+        '06_BCTC/49_BCTC_TL_HN/9_01_cdkt_tl_hn_xml_226.xml (7230b0d3...) nen phien ban 226'),
+    'pl_01_tndn_tt199_masothue.xl': (
+        '_ngoai_menu', 'PL_01_TNDN_TT199_MASOTHUE', None, 'R5x',
+        'R5x: stem=01_tndn_tt199_masothue, phien_ban=khong; khong co FolderName/MaFile/DataFile trong menu.xml; '
+        'chi menu he thong 102_19 goi: htkk/HTKK/frmHTKKSystems.cs:872 ShowBangKe("PL_01_TNDN_TT199_MaSoThue.xls"); '
+        'cung quy uoc voi 6 tep PL_*_MASOTHUE/BKGIAHAN_TT170_MASOTHUE da o _ngoai_menu (frmHTKKSystems.cs:854-875); '
+        'ung vien 01_TKTT_IIR,01_TKTT_QDMTT,01_TNDN_DK,01_TNDN_TT80_DK chi trung ten, khong co loi goi'),
+}
+# Ghi chú thêm vào bằng chứng của tệp đã đặt theo quy tắc (không đổi vị trí).
+MANUAL_NOTES = {
+    'copy_of_01_tbvmt_201.xls':
+        'giu o _ngoai_menu: bo tien to copy_of_ thi stem la FolderName 01_TBVMT (menu.xml) nhung sha256 khac '
+        'ban 01_TBVMT v2.0.1 (_forms/12_THUE_BVMT/01_TBVMT/01_TBVMT_v2.0.1_mau.xls sha aa9c0e1d..., ban sao 6987581e...), nen la ban sao khac noi dung, khong phai mau cua form',
+}
+
 for name in files:
+    if name in MANUAL_PLACEMENTS:
+        g_, f_, v_, r_, e_ = MANUAL_PLACEMENTS[name]
+        add(name, g_, f_, v_, r_, e_, True)
+        continue
     key_, sb = sbk_match(name)          # (C) ShowBangKe target: looked up before in_scope
     if sb is not None and sbk_place(name, sb):
         continue
