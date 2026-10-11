@@ -7,7 +7,7 @@ Chạy từ gốc worktree:
 Khóa form: (MaFile, VersionXML) theo menu.xml (242 form).
 Nguồn đầu vào (chỉ đọc):
   _forms/_manifest.csv + _forms/*/ *.xml (mẫu ô, Sections), _spec/formulas (T1), _spec/config/mapcongthucchosua (T4),
-  _spec/xsd (T5), _spec/dv (T9), T2 rules, T3 validations (đường dẫn tuyệt đối của worktree khác, tham số --t2 --t3).
+  _spec/xsd (T5), _spec/dv (T9), T2 _spec/rules, T3 _spec/validations (mặc định trong repo; đổi bằng --t2 --t3).
 Quy ước:
   CellID = ô trong .xls ("xls"); CellID2 = ô trong .xls1 ("xls1").
   Ô dữ liệu = ô có Path trong mẫu XML mà đường dẫn đầy đủ có trong XSD (T5). Ô có Path không giải được vào XSD
@@ -20,8 +20,30 @@ from collections import Counter, defaultdict
 
 ROOT = os.getcwd()
 MENU = '/Users/tuanle/codes/HTKK/_extracted/menu.xml'
-T2 = '/Users/tuanle/codes/HTKK/.claude/worktrees/agent-a69710347074048d8/_spec/rules/'
-T3 = '/Users/tuanle/codes/HTKK/.claude/worktrees/agent-ae09dfc0b7c50411a/_spec/validations/'
+T2 = os.path.join(ROOT, '_spec', 'rules') + '/'
+T3 = os.path.join(ROOT, '_spec', 'validations') + '/'
+# HEAD nhánh nguồn đã gộp vào nhánh tích hợp (chỉ để ghi nhận; sha256 là định danh chính xác của dữ liệu đọc)
+T2_HEAD, T3_HEAD = 'f57052f', 'e9eb658'
+
+
+def dir_sha16(d):
+    import hashlib
+    h = hashlib.sha256()
+    fs = sorted(glob.glob(os.path.join(d, '*.json')) + glob.glob(os.path.join(d, '_app', '*.json')))
+    for f in fs:
+        h.update(os.path.relpath(f, d).encode('utf-8') + b'\0')
+        h.update(open(f, 'rb').read())
+    return len(fs), h.hexdigest()[:16]
+
+
+def input_versions(t2dir, t3dir):
+    out = {}
+    for k, d, head in (('T2', t2dir, T2_HEAD), ('T3', t3dir, T3_HEAD)):
+        n, h = dir_sha16(d)
+        rel = os.path.relpath(d, ROOT)
+        out[k] = {'path': rel if not rel.startswith('..') else d, 'branch_head_merged': head,
+                  'json_files': n, 'sha256_16_all_json': h}
+    return out
 # StatusID chỉ được parse vào HTKKCMCCellInfo, không có mã C# nào đọc lại; hằng HTKKConstant.cs:49-51:
 # STATUS_ID_LOAD_DT_YES="0001" (ô nạp dữ liệu từ tệp), STATUS_ID_LOAD_DT_NO="0002". Dùng 0001 làm ô nhập (heuristic).
 INPUT_STATUS = {'0001'}
@@ -445,6 +467,7 @@ def main():
         if f.get('status') == 'ok':
             f_src.setdefault(f['source_name'].lower(), f)
     rr = load_rowreplace(os.path.join(ROOT, '_spec', 'config', 'mapcongthucchosua.xml.json'))
+    IV = input_versions(a.t2, a.t3)
     t2, t2_un = load_t2(a.t2)
     t3, t3_un = load_t3(a.t3)
     xidx = jload(os.path.join(ROOT, '_spec', 'xsd', 'index.json'))
@@ -1001,7 +1024,7 @@ def main():
         G['cell_path_ngoai_xsd'] += len(off)
         out = {'header': {'form': {'MaFile': mafile, 'VersionXML': ver, 'MenuID': info['menu_id']},
                           'toa_do_csharp': spname, 'xsd_json': xj, 'xsd_thay_the_form_goc': bool(xj_fb), 'tep_Sections': {str(k): os.path.relpath(v, ROOT) for k, v in sorted(sec_files.items())},
-                          'dinh_nghia': 'xem coverage.py'},
+                          'dinh_nghia': 'xem coverage.py', 'input_versions': IV},
                'cells': out_cells, 'path_ngoai_xsd': off_recs, 'khbs_cells_theo_toa_do': khbs_out, 'mau_chung_khbs': mc_info, 'mau_chung_khbs_cells': mc_out}
         with open(os.path.join(a.out, '%s_%s.json' % (mafile, ver)), 'w', encoding='utf-8') as f:
             json.dump(out, f, ensure_ascii=False, sort_keys=True, indent=1)
