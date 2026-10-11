@@ -112,8 +112,29 @@ def load_formulas(path_dir):
     by = defaultdict(dict)  # (mafile, ver) -> {'xls': (src, json), 'xls1': ...}
     for f in idx['files']:
         if f.get('mafile') and f.get('status') == 'ok':
-            kind = 'xls1' if f['source_name'].endswith('xls1') else 'xls'
-            by[(f['mafile'], f['version_xml'])][kind] = f
+            n = f['source_name'].lower()
+            ext = n.rsplit('.', 1)[-1]
+            # đuôi tên nguồn bị cắt cụt: xls/xl = mẫu .xls; xls1/xl1/x1 = mẫu .xls1; xlsx (bảng kê) bỏ
+            if ext in ('xls1', 'xl1', 'x1'):
+                kind = 'xls1'
+            elif ext in ('xls', 'xl', 'x'):
+                kind = 'xls'
+            else:
+                by[(f['mafile'], f['version_xml'])].setdefault('_bo_qua', []).append(f['source_name'])
+                continue
+            d = by[(f['mafile'], f['version_xml'])]
+            d.setdefault('_ds_' + kind, []).append(f)
+    for (mf, vx), d in by.items():
+        for kind in ('xls', 'xls1'):
+            ds = d.pop('_ds_' + kind, None)
+            if not ds:
+                continue
+            # ưu tiên tệp không phải *view* (trừ form VIEW) và tên không kết thúc bằng '_' trước đuôi
+            ds.sort(key=lambda f: (('view' in f['source_name'].lower()) and ('VIEW' not in mf),
+                                   re.search(r'_\.[a-z0-9]+$', f['source_name']) is not None, f['source_name']))
+            d[kind] = ds[0]
+            if len(ds) > 1:
+                d.setdefault('_trung_khoa', []).extend(x['source_name'] for x in ds[1:])
     return by
 
 
