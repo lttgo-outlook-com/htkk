@@ -59,8 +59,20 @@ for i, (im, x) in enumerate(pick):
         continue
     cand = longp if im == "long" else pool[im]
     order = rnd2.sample(cand, len(cand))
-    y = next(y for y in order if y[:2] not in taken and y[:2] not in seen and (im != "long" or ok_long(y)))
-    replaced.append("%d: %s.%s -> %s.%s" % (i + 1, x[0], x[1], y[0], y[1]))
+    # nới dần ràng buộc khi hết ứng viên (seed 8086 từng hết ứng viên tầng dài, StopIteration):
+    # (a) đủ ràng buộc; (b) bỏ ràng buộc khuôn mã/họ; (c) cho phép hook đã đọc; không còn thì giữ slot cũ
+    tiers = [("", lambda y: y[:2] not in seen and (im != "long" or ok_long(y))),
+             (" (nới: bỏ ràng buộc khuôn/họ)", lambda y: y[:2] not in seen),
+             (" (nới: hook đã đọc ở vòng trước)", lambda y: True)]
+    y, note = None, ""
+    for note, cond in tiers:
+        y = next((y for y in order if y[:2] not in taken and cond(y)), None)
+        if y is not None:
+            break
+    if y is None:
+        replaced.append("%d: %s.%s giữ nguyên (hết ứng viên)" % (i + 1, x[0], x[1]))
+        continue
+    replaced.append("%d: %s.%s -> %s.%s%s" % (i + 1, x[0], x[1], y[0], y[1], note))
     taken.add(y[:2]); pick[i] = (im, y)
 print("THAY SLOT:", "; ".join(replaced) if replaced else "không")
 for n, (im, (cls, hook, path, s, e, lines)) in enumerate(pick, 1):

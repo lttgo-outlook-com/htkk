@@ -121,7 +121,8 @@ public sealed class VCell : V
     protected override string MakeKey() => "cell(" + S.Key + "," + Kind + "," + R1?.Key + "," + C1?.Key + "," + R2?.Key + "," + C2?.Key + ")";
 }
 public sealed class VCellInfo : V { public readonly string Path; public VCellInfo(string p) { Path = p; } protected override string MakeKey() => "ci:" + Path; }
-public sealed class VLambda : V { public readonly Microsoft.CodeAnalysis.CSharp.Syntax.LambdaExpressionSyntax L; public VLambda(Microsoft.CodeAnalysis.CSharp.Syntax.LambdaExpressionSyntax l) { L = l; } protected override string MakeKey() => "lambda@" + L.SpanStart; }
+/// hàm vô danh: Text là dạng trung tính fn(tham số: thân) (bỏ kiểu, ép kiểu; biến bắt được có giá trị hằng thì thay giá trị)
+public sealed class VLambda : V { public readonly Microsoft.CodeAnalysis.CSharp.Syntax.LambdaExpressionSyntax L; public readonly string Text; public VLambda(Microsoft.CodeAnalysis.CSharp.Syntax.LambdaExpressionSyntax l, string text) { L = l; Text = text; } protected override string MakeKey() => "lambda@" + L.SpanStart; }
 
 public abstract class Cond
 {
@@ -294,7 +295,7 @@ public static class R
             case VSpread: return "spread()";
             case VSheets: return "sheets()";
             case VCells cs2: return "cells(" + Expr(cs2.S.Index, f) + ")";
-            case VLambda: f.Opaque = true; return "opaque(lambda)";
+            case VLambda la: return la.Text;
             default: f.Opaque = true; return "opaque(?)";
         }
     }

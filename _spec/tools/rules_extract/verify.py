@@ -613,6 +613,7 @@ def negs(g):
         i, op = ops[0]
         out.add(g[:i] + INV[op] + g[i + len(op):])
     return out
+gng_unr_lit = 0; gng_unr_opq = 0
 gng = collections.Counter(); gng_unr = 0; gng_unr_k = collections.Counter(); gng_files = set(); gng_ex = []
 for b, r in all_records():
     conj = [g for g in r["guards"] if not g.startswith("loop: ")] + list(r["trigger"]["when"])
@@ -620,6 +621,13 @@ for b, r in all_records():
     hit = [g for g in conj if negs(g) & cs]
     if hit:
         if r["unreachable"]:
+            # định nghĩa đếm (legend.counting): cặp có g chứa opaque( không tính (mỗi lần đánh giá opaque là giá trị riêng)
+            hit_real = [g for g in hit if "opaque(" not in g]
+            if not hit_real:
+                gng_unr_opq += 1
+                continue
+            if any("!(" + g + ")" in cs or (balanced_inner(g) or "\0") in cs for g in hit_real):
+                gng_unr_lit += 1
             gng_unr += 1
             gng_unr_k["cell" if any("cell(" in g for g in hit) else "field" if any("field(" in g for g in hit) else "opaque" if any("opaque(" in g for g in hit) else "khác"] += 1
             continue
@@ -630,6 +638,7 @@ for b, r in all_records():
 for x in gng_ex:
     print("   g và !(g):", x)
 print("   (8a) theo loại:", dict(gng), "; bản ghi unreachable có g và !(g) cùng phiên bản (mâu thuẫn thật, đã gắn cờ):", gng_unr, dict(gng_unr_k))
+print("   (8a) định nghĩa đếm (legend.counting): literal g/!(g) %d; kể cả cặp so sánh bù %d; cặp chỉ trùng văn bản có opaque( (không tính) %d" % (gng_unr_lit, gng_unr, gng_unr_opq))
 say(sum(gng.values()) == 0, "(8a) bản ghi (không gắn unreachable) có g và !(g) cùng phiên bản trong guards/trigger: %d (%d tệp)" % (sum(gng.values()), len(gng_files)))
 
 lk_null = 0; lk_null_noreason = []; lk_tot = 0; lk_chk = 0; lk_chk_tgt = 0
@@ -735,6 +744,22 @@ def opaque_labels(t):
             dep += {"(": 1, ")": -1}.get(t[j], 0); j += 1
         yield t[i + 7:j - 1]
         i += 7
+def rec_text_raw(r):
+    acc = []; rec_leaves_raw(r, acc)
+    return "\n".join(acc)
+def rec_leaves_raw(o, acc):
+    if isinstance(o, dict):
+        for kk, v in o.items():
+            if kk not in ("reason", "symbols", "key", "source", "hook", "kind", "status", "note", "via", "file", "base", "targetReason"):
+                rec_leaves_raw(v, acc)
+    elif isinstance(o, list):
+        for v in o:
+            rec_leaves_raw(v, acc)
+    elif isinstance(o, str):
+        acc.append(o)
+# định nghĩa đếm nhãn opaque (legend.counting): số lần 'opaque(' trong lá chuỗi của bản ghi, không bỏ chuỗi literal
+op_def = sum(rec_text_raw(r).count("opaque(") for _, r in all_records())
+print("   nhãn opaque theo định nghĩa legend.counting: %d" % op_def)
 lost = collections.Counter(); op_n = 0
 for b, r in all_records():
     for lab in opaque_labels(rec_text(r)):
@@ -771,5 +796,105 @@ cq.append(("(7) Tts01TT40Nckt249 CellChange_1 dropped@595 nêu RemoveDataRows: %
 for msg, good in cq:
     print("   " + ("đúng " if good else "SAI ") + msg)
 say(all(g for _, g in cq), "(8g) các ca QC lần 4 (1)-(7) đúng")
+# ---------- (9) QC lần 5 ----------
+src_cache = {}
+def src_lines(path):
+    if path not in src_cache:
+        src_cache[path] = open(os.path.join(dec, path), encoding="utf-8-sig").read().split("\n")
+    return src_cache[path]
+# (9a) dropped "nhánh hằng" tại điều kiện dựa trên kết quả hộp thoại: hộp thoại có chạy thì điều kiện không thể là hằng;
+# hằng chỉ hợp lệ khi hộp thoại không chạy, lúc đó biến giữ giá trị khởi tạo -> hướng (luôn đúng/luôn sai) phải bằng điều kiện tính trên giá trị khởi tạo
+dlg_assign = re.compile(r"\b(\w+) = (?:MessageBox\.Show|\(\(Form\)\w+\)\.ShowDialog|\w+\.ShowDialog)\(")
+dlg_init = re.compile(r"DialogResult (\w+) = \(DialogResult\)(\d+);")
+frm_new = re.compile(r"(\w+) = new frm\w*\(")
+cond_cmp = re.compile(r"if \(\(int\)(\w+) (==|!=) (\d+)\)")
+dlg_n = 0; dlg_bad = []
+for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+    b = os.path.basename(f)
+    if b in ("formula_points.json", "opaque_calls.json", "index.json"):
+        continue
+    d = json.load(open(f))
+    if "file" not in d:
+        continue
+    L = src_lines(d["file"])
+    for h in d["hooks"]:
+        for x in h["dropped"]:
+            m = re.match(r"nhánh hằng sai: điều kiện dòng (\d+) luôn (đúng|sai)", x["reason"])
+            if not m:
+                continue
+            n = int(m.group(1)); t = L[n - 1]
+            # biến hộp thoại trong cùng method: tìm ngược tới khai báo method
+            j = n - 1
+            while j > 0 and not re.match(r"^\t(?:public|private|protected|internal)\b", L[j - 1]):
+                j -= 1
+            body = L[j - 1:n]
+            dvars = {mm.group(1) for ln_ in body for mm in dlg_assign.finditer(ln_)}
+            fvars = {mm.group(1) for ln_ in body for mm in frm_new.finditer(ln_)}
+            cm = cond_cmp.search(t)
+            if cm and cm.group(1) in dvars:
+                dlg_n += 1
+                init = {mm.group(1): int(mm.group(2)) for ln_ in body for mm in dlg_init.finditer(ln_)}
+                v0 = init.get(cm.group(1))
+                exp = None if v0 is None else ((v0 == int(cm.group(3))) == (cm.group(2) == "=="))
+                if exp is None or exp != (m.group(2) == "đúng"):
+                    dlg_bad.append("%s %s @%d %s" % (b, h["hook"], x["at"], x["reason"]))
+            elif any(re.search(r"\b%s\.(?:Yes|No|DialogResult)\b" % re.escape(v), t) for v in fvars):
+                dlg_n += 1; dlg_bad.append("%s %s @%d %s" % (b, h["hook"], x["at"], x["reason"]))
+for x in dlg_bad[:5]:
+    print("   dropped hằng dựa trên hộp thoại:", x)
+say(not dlg_bad, "(9a) dropped nhánh hằng tại điều kiện dựa trên kết quả hộp thoại: %d lượt, sai hướng so với giá trị khởi tạo/hộp thoại %d" % (dlg_n, len(dlg_bad)))
+# (9b) nhãn opaque của phép tìm/định dạng/hàm vô danh phải giữ đối số
+lab_rx = re.compile(r"opaque\((Find|FirstOrDefault|First|Format|lambda)\)")
+miss9b = collections.Counter(); lam_n = 0; find_n = 0
+for _, r in all_records():
+    t = rec_text_raw(r)
+    for mm in lab_rx.finditer(t):
+        miss9b[mm.group(1)] += 1
+    lam_n += t.count("opaque(lambda")
+    find_n += len(re.findall(r"opaque\((?:Find|FirstOrDefault|First), ", t))
+print("   (9b) opaque(Find|First|FirstOrDefault, ...) có đối số: %d nhãn" % find_n)
+say(not miss9b and lam_n == 0, "(9b) opaque(Find|FirstOrDefault|First|Format|lambda) thiếu đối số: %d %s; opaque(lambda...) còn lại %d" % (sum(miss9b.values()), dict(miss9b), lam_n))
+# (9c) không còn null[ hoặc null. (truy cập trên null) trong văn bản bản ghi
+nn9 = 0; nn9_ex = []
+for b, r in all_records():
+    t = rec_text_raw(r)
+    k = len(re.findall(r"(?<![\w.$@])null[\[.]", t))
+    if k:
+        nn9 += k
+        if len(nn9_ex) < 5:
+            nn9_ex.append("%s %s %s" % (b, r["hook"], r["source"]["lines"]))
+for x in nn9_ex:
+    print("   null[/null.:", x)
+say(nn9 == 0, "(9c) \"null[\" hoặc \"null.\" trong bản ghi: %d" % nn9)
+# (9d) cellVersions chỉ trỏ dòng có lệnh ghi (hoặc lời gọi có thể ghi, hoặc đầu vòng lặp có ghi); dòng lời gọi giao diện không tính
+UI = {"SuspendLayout", "ResumeLayout", "SetActiveCell", "Focus", "ShowCell", "ShowActiveCell", "Invalidate", "Select", "BringToFront", "SetViewportTopRow", "SetViewportLeftColumn", "SetActiveSheet", "SetNodeBackGroundPink", "SetRowHeight", "SetColumnWidth", "Refresh", "Update", "PerformLayout", "ScrollTo", "SetFocus"}
+KW = {"if", "for", "foreach", "while", "switch", "catch", "using", "lock", "return", "new", "typeof", "nameof"}
+def write_line(t):
+    s0 = t.strip()
+    if re.match(r"(for|foreach|while|do)\b", s0):
+        return True
+    s1 = lit.sub('""', s0)
+    if re.search(r"(?<![=!<>+\-*/%&|^])=(?!=)|\+=|-=|\+\+|--", s1) and not re.match(r"(if|else if|while)\b", s1):
+        return True
+    calls = [c for c in re.findall(r"(\w+)\s*\(", s1) if c not in KW]
+    return bool(calls) and not all(c in UI for c in calls)
+cv_n = 0; cv_bad = []
+for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+    b = os.path.basename(f)
+    if b in ("formula_points.json", "opaque_calls.json", "index.json"):
+        continue
+    d = json.load(open(f))
+    for r in d["records"]:
+        L = src_lines(r["source"]["file"])
+        for v in r["cellVersions"]:
+            a = v["after"]
+            a2 = re.sub(r"^hợp nhánh dòng \d+: ", "", a)
+            for n in map(int, re.findall(r"\d+", " ".join(re.findall(r"dòng ([\d, ]+)", a2)))):
+                cv_n += 1
+                if not (0 < n <= len(L)) or not write_line(L[n - 1]):
+                    cv_bad.append("%s %s %s -> dòng %d: %s" % (b, r["hook"], v["ref"][-12:], n, (L[n - 1].strip() if 0 < n <= len(L) else "?")[:60]))
+for x in sorted(set(cv_bad))[:5]:
+    print("   cellVersions trỏ dòng không ghi:", x)
+say(not cv_bad, "(9d) cellVersions: %d tham chiếu dòng, trỏ dòng không có lệnh ghi %d" % (cv_n, len(cv_bad)))
 print("KẾT LUẬN:", "ĐẠT" if ok else "CÓ MỤC TRƯỢT")
 sys.exit(0 if ok else 1)
