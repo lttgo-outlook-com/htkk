@@ -1,16 +1,20 @@
 {
   "tool": "_spec/tools/rules_extract (Roslyn ParseText, không biên dịch)",
   "legend": {
-    "cell_version": "cell(S<n>!X)#L là giá trị ô đọc sau sự kiện tại dòng L trên đường đi: lệnh tác động lên ô đó (ghi giá trị/công thức, khóa/mở, định dạng), lệnh/lời gọi có thể ghi ô bất kỳ, vòng lặp có ghi ô, hoặc hợp nhánh (một nhánh có ghi). #L.k khi cùng ô cùng dòng có nhiều phiên bản. Không có #L là giá trị trước mọi lệnh ghi trên đường đi. Hai lần đọc chỉ là cùng giá trị khi cùng nhãn. Mô tả từng nhãn ở trường cellVersions của bản ghi (ref, after).",
+    "cell_version": "cell(S<n>!X)#L là giá trị ô đọc sau sự kiện tại dòng L trên đường đi. Chỉ lệnh đổi GIÁ TRỊ ô tạo phiên bản (kind ghi): gán Value/Text/Formula, ResetValue/ResetText/ResetFormula, xóa vùng, chèn/xóa hàng làm dịch ô, helper ghi giá trị đã biết. lệnh ghi theo cột hoặc hàng (chỉ số lúc chạy) chỉ tạo phiên bản cho ô thuộc cột/hàng đó. Không tạo phiên bản: đọc ô vào biến cục bộ, Visible/Height/Width, BackColor/Note/Locked/CellType/định dạng, lời gọi giao diện. Lời gọi chưa rõ có ghi ô tạo phiên bản bảo thủ kind co_the_ghi kèm calls. Đầu vòng lặp có lệnh ghi tạo phiên bản chỉ cho lần đọc trong thân vòng. Hợp nhánh khác nhau tạo phiên bản tại dòng hợp nhánh (kind co_the_ghi nếu một nguồn là co_the_ghi). #L.k khi cùng ô cùng dòng có nhiều phiên bản. Không có #L là giá trị trước mọi lệnh ghi trên đường đi. Hai lần đọc chỉ là cùng giá trị khi cùng nhãn. Mỗi nhãn có mục ở cellVersions của bản ghi: ref, kind, after (mô tả), writes (dòng lệnh ghi gốc), calls (tên lời gọi).",
     "symbols_ref": "Mỗi mục symbols là một nguồn (origin, at = dòng). Bản ghi chỉ liệt kê nguồn thật sự có mặt trên đường đi của bản ghi. Một tên có nhiều nguồn trong cùng bản ghi thì văn bản và trường ref viết tên@dòng (thêm _origin khi trùng dòng).",
     "count_length": "count(x) là số phần tử, length(x) là độ dài chuỗi/mảng của giá trị lúc chạy x.",
     "opaque": "opaque(Tên, đối số...) là lời gọi chưa giải kèm đối số đã đánh giá (lời gọi trên đối tượng <obj>.Tên: đối số đầu là đối tượng nhận). opaque(call, method, đối số...) là method cùng class không nội tuyến. opaque(result, method) là giá trị trả về không xác định. opaque(branches, biến) là giá trị phụ thuộc quá nhiều nhánh.",
     "null_branch": "Nhánh giá trị null bị truy cập thành viên (ngoại lệ) được bỏ khỏi cases. truy cập thành viên trên null chắc chắn thì câu lệnh vào dropped (ngoại lệ chắc chắn).",
     "dropped_const": "dropped kind=callee: lệnh ghi trong method nội tuyến không chạy vì nhánh điều kiện gấp thành hằng (nhánh hằng sai), kèm via.",
+    "user_choice": "user_choice(MessageBox <nút>, dòng L) là mã DialogResult người dùng bấm trên hộp thoại MessageBox.Show tại dòng L (1 OK, 2 Cancel, 6 Yes, 7 No). user_choice(form \"mã\", dòng L).yes/.no là lựa chọn Có/Không trên biểu mẫu hộp thoại tạo tại dòng L. user_choice(ShowDialog, dòng L) là kết quả ShowDialog. Giá trị lúc chạy, không gấp thành hằng, mỗi lần hộp thoại hiện là một giá trị riêng. Biến gán từ hộp thoại trong một nhánh giữ cả giá trị khởi tạo (nhánh không hiện hộp thoại) và user_choice khi hợp nhánh.",
+    "lambda": "fn(it: thân) là hàm vô danh viết trung tính: tham số đổi tên it (nhiều tham số: it1, it2, lồng nhau: it1_), bỏ kiểu và ép kiểu, a.Equals(b) viết a == b, CellTemplate/Location bỏ, RowIndex/ColIndex viết rowIndex()/colIndex(), biến/trường bắt được viết theo giá trị đang có. Thân khối nhiều lệnh ghi 'khối lệnh dòng a-b'. opaque(Find|First|FirstOrDefault, tập hợp, fn(...)) là phép tìm phần tử chưa giải kèm tập hợp và vị từ.",
+    "ui_calls": "Lời gọi chỉ tác động giao diện (BringToFront, Focus, Invalidate, PerformLayout, Refresh, ResumeLayout, ScrollTo, Select, SetActiveCell, SetActiveSheet, SetColumnWidth, SetFocus, SetNodeBackGroundPink, SetRowHeight, SetViewportLeftColumn, SetViewportTopRow, ShowActiveCell, ShowCell, SuspendLayout, Update) không ghi ô, không tạo phiên bản ô. Mô tả phiên bản hợp nhánh liệt kê dòng lệnh ghi gốc của các nhánh (dòng lệnh ghi hoặc dòng đầu vòng lặp có ghi), không liệt kê dòng hợp nhánh trung gian.",
+    "counting": "Định nghĩa đếm (verify.py dùng cùng định nghĩa). Nhãn opaque: số lần xuất hiện 'opaque(' trong các lá chuỗi của bản ghi trừ các trường reason, symbols, key, source, hook, kind, status, note, via, file, base, targetReason, không bỏ chuỗi literal. Cặp mâu thuẫn trong bản ghi unreachable: g và !(g) cùng văn bản (literal), hoặc cặp so sánh bù (a == b và a != b, a < b và a >= b, a <= b và a > b) cùng văn bản. Cặp mà g chứa opaque( không tính vì mỗi lần đánh giá opaque là một giá trị riêng dù cùng văn bản. Bản ghi unreachable, hai cách đếm: (1) theo bản ghi: số bản ghi có unreachable=true trên mọi tệp JSON có mảng records (các tệp lớp, _shared.json, _app.json), (2) theo khóa: số khóa phân biệt (lớp, hook, dòng nguồn, effect at, via) trên các bản ghi đó, trong đó lớp là key.Class (tệp _shared/_app: tên tệp), dòng nguồn là source.lines [đầu, cuối], mỗi effect của bản ghi cho một khóa, bản ghi không có effect cho một khóa với at và via rỗng. Hai cách khác nhau vì một bản ghi có nhiều effect và nhiều bản ghi có thể trùng khóa khi khác guard.",
     "lock_table": "inDynamicTable(s, r): dòng mẫu r của sheet s thuộc một bảng động (GeneralFunctions.DetectIndexOfTable >= 0), không xác định tĩnh nên cả hai nhánh đều được ghi kèm điều kiện. tableIndexOf(s, r): chỉ số bảng đó. dataRow: dòng dữ liệu thứ j của bảng động (DataLocationTemplateRowStart + j).",
     "lock_config": "checkLockUnLockCells: ô đích, điều kiện khóa và xóa dữ liệu lấy từ bảng cấu hình cột AK/AL/AM/AN sheet cuối của mẫu .xls (lock_config.json). targetReason khi không xác định được."
   },
-  "dropped_callee_const_branch": 1586,
+  "dropped_callee_const_branch": 1479,
   "classes": 394,
   "hook_counts": {
     "AutoBindData": 756,
@@ -30,22 +34,22 @@
     "Refresh": 310,
     "UpdateFormula": 198
   },
-  "records": 22296,
+  "records": 22538,
   "record_status": {
-    "opaque_only": 4247,
-    "parametric": 10672,
-    "resolved": 2042,
-    "ui_only": 1366,
-    "unresolved": 3969
+    "opaque_only": 4177,
+    "parametric": 10998,
+    "resolved": 2017,
+    "ui_only": 1365,
+    "unresolved": 3981
   },
   "effects_dedup": {
-    "before": 61195,
-    "after": 60453
+    "before": 61155,
+    "after": 61136
   },
   "hook_effect_statements": {
     "total": 17294,
-    "with_effect": 17286,
-    "dropped_flagged": 8
+    "with_effect": 17256,
+    "dropped_flagged": 38
   },
   "hook_other_statements": {
     "button": {
@@ -55,8 +59,8 @@
     },
     "call": {
       "total": 2518,
-      "with_effect": 2505,
-      "dropped_flagged": 13
+      "with_effect": 2499,
+      "dropped_flagged": 19
     },
     "chk": {
       "total": 93,
@@ -70,44 +74,44 @@
     }
   },
   "effect_ops": {
-    "changeFormat": 2773,
-    "lock": 10631,
-    "opaque": 8535,
-    "resetFormat": 23,
+    "changeFormat": 2774,
+    "lock": 10772,
+    "opaque": 8431,
+    "resetFormat": 24,
     "setBorder": 4,
     "setButtonText": 42,
     "setColumnVisible": 4,
     "setColumnWidth": 5,
-    "setFormula": 7318,
+    "setFormula": 7978,
     "setModelDefault": 1,
-    "setRowHeight": 24,
+    "setRowHeight": 18,
     "setRowVisible": 235,
     "setTabColor": 78,
     "setValue": 21675,
-    "unlock": 9105
+    "unlock": 9095
   },
-  "records_unreachable": 196,
+  "records_unreachable": 654,
   "records_with_symbols": {
-    "records": 17352,
-    "entries": 47862
+    "records": 17757,
+    "entries": 47348
   },
   "effect_status": {
-    "opaque": 8535,
-    "parametric": 37182,
-    "resolved": 7772,
-    "unresolved": 6964
+    "opaque": 8431,
+    "parametric": 37793,
+    "resolved": 8056,
+    "unresolved": 6856
   },
   "formula_points": {
     "total": 4172,
     "by_status": {
-      "parametric": 3277,
+      "parametric": 3264,
       "resolved": 662,
-      "unresolved": 233
+      "unresolved": 246
     },
     "business": 4132,
     "app": 40
   },
-  "opaque_call_names": 329,
+  "opaque_call_names": 322,
   "truncated": [],
   "class_list": [
     {
@@ -139,12 +143,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/AcBc26Nckt208.cs",
       "in_menu": true,
       "hooks": 14,
-      "records": 80,
+      "records": 72,
       "status": {
-        "opaque_only": 13,
+        "opaque_only": 8,
         "parametric": 27,
         "resolved": 16,
-        "unresolved": 24
+        "unresolved": 21
       }
     },
     {
@@ -152,12 +156,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/AcBcSl26Nckt201.cs",
       "in_menu": true,
       "hooks": 14,
-      "records": 50,
+      "records": 42,
       "status": {
-        "opaque_only": 8,
+        "opaque_only": 3,
         "parametric": 19,
         "resolved": 16,
-        "unresolved": 7
+        "unresolved": 4
       }
     },
     {
@@ -869,11 +873,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/BlpBcAc26Nckt200.cs",
       "in_menu": true,
       "hooks": 4,
-      "records": 37,
+      "records": 29,
       "status": {
-        "opaque_only": 6,
+        "opaque_only": 1,
         "parametric": 4,
-        "unresolved": 27
+        "unresolved": 24
       }
     },
     {
@@ -1027,10 +1031,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Cnkd01TT40Nckt249.cs",
       "in_menu": false,
       "hooks": 14,
-      "records": 500,
+      "records": 499,
       "status": {
         "opaque_only": 13,
-        "parametric": 291,
+        "parametric": 290,
         "resolved": 14,
         "ui_only": 178,
         "unresolved": 4
@@ -1041,10 +1045,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Cnkd01TT40Nckt253.cs",
       "in_menu": false,
       "hooks": 19,
-      "records": 401,
+      "records": 400,
       "status": {
         "opaque_only": 15,
-        "parametric": 190,
+        "parametric": 189,
         "resolved": 14,
         "ui_only": 178,
         "unresolved": 4
@@ -1055,10 +1059,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Cnkd01TT40Nckt268.cs",
       "in_menu": false,
       "hooks": 24,
-      "records": 431,
+      "records": 430,
       "status": {
         "opaque_only": 16,
-        "parametric": 211,
+        "parametric": 210,
         "resolved": 14,
         "ui_only": 186,
         "unresolved": 4
@@ -1069,10 +1073,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Cnkd01TT40Nckt274.cs",
       "in_menu": false,
       "hooks": 32,
-      "records": 489,
+      "records": 488,
       "status": {
         "opaque_only": 17,
-        "parametric": 260,
+        "parametric": 259,
         "resolved": 14,
         "ui_only": 194,
         "unresolved": 4
@@ -1083,10 +1087,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Cnkd01TT40Nckt283.cs",
       "in_menu": true,
       "hooks": 32,
-      "records": 489,
+      "records": 488,
       "status": {
         "opaque_only": 17,
-        "parametric": 260,
+        "parametric": 259,
         "resolved": 14,
         "ui_only": 194,
         "unresolved": 4
@@ -1097,11 +1101,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt216.cs",
       "in_menu": false,
       "hooks": 3,
-      "records": 29,
+      "records": 21,
       "status": {
-        "opaque_only": 7,
+        "opaque_only": 1,
         "parametric": 3,
-        "unresolved": 19
+        "unresolved": 17
       }
     },
     {
@@ -1109,11 +1113,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/CnkdBcSdhd01Nckt250.cs",
       "in_menu": true,
       "hooks": 5,
-      "records": 33,
+      "records": 25,
       "status": {
-        "opaque_only": 7,
+        "opaque_only": 1,
         "parametric": 7,
-        "unresolved": 19
+        "unresolved": 17
       }
     },
     {
@@ -1211,10 +1215,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Cph01TT57Nckt271.cs",
       "in_menu": true,
       "hooks": 3,
-      "records": 4,
+      "records": 12,
       "status": {
         "parametric": 1,
-        "resolved": 3
+        "resolved": 11
       }
     },
     {
@@ -1430,10 +1434,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/DkMaDADTNckt100.cs",
       "in_menu": true,
       "hooks": 4,
-      "records": 11,
+      "records": 9,
       "status": {
         "opaque_only": 6,
-        "unresolved": 5
+        "unresolved": 3
       }
     },
     {
@@ -1785,10 +1789,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/DkTndn02TT80Nckt276.cs",
       "in_menu": false,
       "hooks": 9,
-      "records": 228,
+      "records": 248,
       "status": {
         "opaque_only": 6,
-        "parametric": 212,
+        "parametric": 232,
         "resolved": 8,
         "ui_only": 2
       }
@@ -1798,10 +1802,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/DkTndn02TT80Nckt294.cs",
       "in_menu": true,
       "hooks": 9,
-      "records": 230,
+      "records": 250,
       "status": {
         "opaque_only": 8,
-        "parametric": 212,
+        "parametric": 232,
         "resolved": 8,
         "ui_only": 2
       }
@@ -2248,11 +2252,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01Nckt212.cs",
       "in_menu": false,
       "hooks": 9,
-      "records": 37,
+      "records": 38,
       "status": {
-        "parametric": 10,
-        "resolved": 25,
-        "unresolved": 2
+        "parametric": 11,
+        "resolved": 26,
+        "unresolved": 1
       }
     },
     {
@@ -2260,11 +2264,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01Nckt240.cs",
       "in_menu": false,
       "hooks": 9,
-      "records": 42,
+      "records": 43,
       "status": {
-        "parametric": 10,
-        "resolved": 29,
-        "unresolved": 3
+        "parametric": 11,
+        "resolved": 31,
+        "unresolved": 1
       }
     },
     {
@@ -2272,12 +2276,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01Nckt250.cs",
       "in_menu": false,
       "hooks": 14,
-      "records": 53,
+      "records": 54,
       "status": {
         "opaque_only": 11,
-        "parametric": 10,
-        "resolved": 29,
-        "unresolved": 3
+        "parametric": 11,
+        "resolved": 31,
+        "unresolved": 1
       }
     },
     {
@@ -2285,12 +2289,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01Nckt262.cs",
       "in_menu": true,
       "hooks": 18,
-      "records": 65,
+      "records": 66,
       "status": {
         "opaque_only": 10,
-        "parametric": 22,
-        "resolved": 29,
-        "unresolved": 4
+        "parametric": 23,
+        "resolved": 31,
+        "unresolved": 2
       }
     },
     {
@@ -2298,11 +2302,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt251.cs",
       "in_menu": false,
       "hooks": 27,
-      "records": 65,
+      "records": 66,
       "status": {
         "opaque_only": 26,
         "parametric": 19,
-        "resolved": 15,
+        "resolved": 16,
         "ui_only": 1,
         "unresolved": 4
       }
@@ -2312,11 +2316,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt268.cs",
       "in_menu": false,
       "hooks": 32,
-      "records": 89,
+      "records": 90,
       "status": {
         "opaque_only": 27,
         "parametric": 42,
-        "resolved": 15,
+        "resolved": 16,
         "ui_only": 1,
         "unresolved": 4
       }
@@ -2326,11 +2330,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt274.cs",
       "in_menu": false,
       "hooks": 38,
-      "records": 122,
+      "records": 123,
       "status": {
         "opaque_only": 28,
         "parametric": 74,
-        "resolved": 15,
+        "resolved": 16,
         "ui_only": 1,
         "unresolved": 4
       }
@@ -2340,11 +2344,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01TT80Nckt283.cs",
       "in_menu": true,
       "hooks": 38,
-      "records": 118,
+      "records": 119,
       "status": {
         "opaque_only": 24,
         "parametric": 73,
-        "resolved": 15,
+        "resolved": 16,
         "ui_only": 1,
         "unresolved": 5
       }
@@ -2354,11 +2358,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt01ViewNckt250.cs",
       "in_menu": true,
       "hooks": 9,
-      "records": 42,
+      "records": 43,
       "status": {
-        "parametric": 10,
-        "resolved": 29,
-        "unresolved": 3
+        "parametric": 11,
+        "resolved": 31,
+        "unresolved": 1
       }
     },
     {
@@ -2368,8 +2372,7 @@
       "hooks": 1,
       "records": 3,
       "status": {
-        "resolved": 2,
-        "unresolved": 1
+        "resolved": 3
       }
     },
     {
@@ -2380,8 +2383,8 @@
       "records": 6,
       "status": {
         "parametric": 1,
-        "resolved": 3,
-        "unresolved": 2
+        "resolved": 4,
+        "unresolved": 1
       }
     },
     {
@@ -2392,8 +2395,8 @@
       "records": 6,
       "status": {
         "parametric": 1,
-        "resolved": 3,
-        "unresolved": 2
+        "resolved": 4,
+        "unresolved": 1
       }
     },
     {
@@ -2404,8 +2407,9 @@
       "records": 5,
       "status": {
         "opaque_only": 1,
+        "parametric": 1,
         "resolved": 2,
-        "unresolved": 2
+        "unresolved": 1
       }
     },
     {
@@ -2413,10 +2417,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt03Nckt206.cs",
       "in_menu": true,
       "hooks": 1,
-      "records": 5,
+      "records": 4,
       "status": {
-        "resolved": 3,
-        "unresolved": 2
+        "resolved": 4
       }
     },
     {
@@ -2424,10 +2427,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt03TT80Nckt251.cs",
       "in_menu": true,
       "hooks": 1,
-      "records": 4,
+      "records": 3,
       "status": {
-        "resolved": 2,
-        "unresolved": 2
+        "resolved": 3
       }
     },
     {
@@ -2435,10 +2437,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt03TT89Nckt309.cs",
       "in_menu": false,
       "hooks": 1,
-      "records": 4,
+      "records": 3,
       "status": {
-        "resolved": 2,
-        "unresolved": 2
+        "resolved": 3
       }
     },
     {
@@ -2533,9 +2534,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Gtgt05TT80Nckt251.cs",
       "in_menu": true,
       "hooks": 1,
-      "records": 1,
+      "records": 2,
       "status": {
-        "unresolved": 1
+        "unresolved": 2
       }
     },
     {
@@ -3149,8 +3150,7 @@
       "status": {
         "opaque_only": 1,
         "parametric": 2,
-        "resolved": 2,
-        "unresolved": 1
+        "resolved": 3
       }
     },
     {
@@ -3299,12 +3299,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tbvmt01TT80Nckt251.cs",
       "in_menu": false,
       "hooks": 11,
-      "records": 81,
+      "records": 80,
       "status": {
         "opaque_only": 32,
         "parametric": 33,
         "ui_only": 2,
-        "unresolved": 14
+        "unresolved": 13
       }
     },
     {
@@ -3312,12 +3312,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tbvmt01TT80Nckt283.cs",
       "in_menu": true,
       "hooks": 11,
-      "records": 78,
+      "records": 77,
       "status": {
         "opaque_only": 29,
         "parametric": 33,
         "ui_only": 2,
-        "unresolved": 14
+        "unresolved": 13
       }
     },
     {
@@ -3452,11 +3452,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/TemRuou06Nckt223.cs",
       "in_menu": true,
       "hooks": 2,
-      "records": 28,
+      "records": 19,
       "status": {
-        "opaque_only": 6,
         "parametric": 3,
-        "unresolved": 19
+        "unresolved": 16
       }
     },
     {
@@ -3474,9 +3473,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/TkttIir01Nckt288.cs",
       "in_menu": true,
       "hooks": 11,
-      "records": 97,
+      "records": 115,
       "status": {
-        "opaque_only": 47,
+        "opaque_only": 65,
         "parametric": 4,
         "resolved": 12,
         "unresolved": 34
@@ -3487,12 +3486,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/TkttQdmtt01Nckt288.cs",
       "in_menu": true,
       "hooks": 11,
-      "records": 98,
+      "records": 138,
       "status": {
-        "opaque_only": 34,
-        "parametric": 37,
+        "opaque_only": 29,
+        "parametric": 34,
         "resolved": 1,
-        "unresolved": 26
+        "unresolved": 74
       }
     },
     {
@@ -3520,12 +3519,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tncn05DkThTctNckt100.cs",
       "in_menu": false,
       "hooks": 4,
-      "records": 43,
+      "records": 44,
       "status": {
         "opaque_only": 2,
-        "parametric": 11,
+        "parametric": 13,
         "resolved": 6,
-        "unresolved": 24
+        "unresolved": 23
       }
     },
     {
@@ -3536,9 +3535,9 @@
       "records": 46,
       "status": {
         "opaque_only": 1,
-        "parametric": 16,
+        "parametric": 17,
         "resolved": 6,
-        "unresolved": 23
+        "unresolved": 22
       }
     },
     {
@@ -3627,12 +3626,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tncn20DkThTctNckt101.cs",
       "in_menu": true,
       "hooks": 4,
-      "records": 50,
+      "records": 48,
       "status": {
         "opaque_only": 1,
         "parametric": 23,
-        "resolved": 1,
-        "unresolved": 25
+        "unresolved": 24
       }
     },
     {
@@ -3640,11 +3638,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tncn20DkThTctNckt277.cs",
       "in_menu": false,
       "hooks": 4,
-      "records": 27,
+      "records": 25,
       "status": {
         "opaque_only": 1,
-        "parametric": 25,
-        "resolved": 1
+        "parametric": 24
       }
     },
     {
@@ -3652,11 +3649,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tncn20DkThTctNckt283.cs",
       "in_menu": true,
       "hooks": 4,
-      "records": 27,
+      "records": 25,
       "status": {
         "opaque_only": 1,
-        "parametric": 25,
-        "resolved": 1
+        "parametric": 24
       }
     },
     {
@@ -3735,8 +3731,8 @@
       "records": 16,
       "status": {
         "opaque_only": 2,
-        "parametric": 9,
-        "unresolved": 5
+        "parametric": 1,
+        "unresolved": 13
       }
     },
     {
@@ -3893,10 +3889,10 @@
       "records": 68,
       "status": {
         "opaque_only": 10,
-        "parametric": 41,
+        "parametric": 37,
         "resolved": 4,
         "ui_only": 1,
-        "unresolved": 12
+        "unresolved": 16
       }
     },
     {
@@ -3907,10 +3903,10 @@
       "records": 71,
       "status": {
         "opaque_only": 12,
-        "parametric": 42,
+        "parametric": 38,
         "resolved": 4,
         "ui_only": 1,
-        "unresolved": 12
+        "unresolved": 16
       }
     },
     {
@@ -3979,9 +3975,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/TncnThDknpt16Nckt206.cs",
       "in_menu": true,
       "hooks": 4,
-      "records": 9,
+      "records": 6,
       "status": {
-        "opaque_only": 4,
+        "opaque_only": 1,
         "parametric": 3,
         "unresolved": 2
       }
@@ -4022,8 +4018,7 @@
       "records": 12,
       "status": {
         "opaque_only": 2,
-        "parametric": 8,
-        "unresolved": 2
+        "parametric": 10
       }
     },
     {
@@ -4034,8 +4029,7 @@
       "records": 23,
       "status": {
         "opaque_only": 2,
-        "parametric": 19,
-        "unresolved": 2
+        "parametric": 21
       }
     },
     {
@@ -4046,9 +4040,9 @@
       "records": 16,
       "status": {
         "opaque_only": 2,
-        "parametric": 2,
+        "parametric": 4,
         "resolved": 2,
-        "unresolved": 10
+        "unresolved": 8
       }
     },
     {
@@ -4081,9 +4075,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn01ANckt207.cs",
       "in_menu": false,
       "hooks": 3,
-      "records": 54,
+      "records": 55,
       "status": {
-        "parametric": 4,
+        "parametric": 5,
         "resolved": 50
       }
     },
@@ -4092,9 +4086,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn01BNckt207.cs",
       "in_menu": false,
       "hooks": 3,
-      "records": 8,
+      "records": 9,
       "status": {
-        "parametric": 4,
+        "parametric": 5,
         "resolved": 4
       }
     },
@@ -4133,10 +4127,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn02TT21Nckt295.cs",
       "in_menu": true,
       "hooks": 3,
-      "records": 12,
+      "records": 10,
       "status": {
-        "opaque_only": 1,
-        "parametric": 9,
+        "parametric": 8,
         "resolved": 2
       }
     },
@@ -4155,10 +4148,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn02TT89Nckt309.cs",
       "in_menu": true,
       "hooks": 2,
-      "records": 12,
+      "records": 10,
       "status": {
-        "opaque_only": 1,
-        "parametric": 9,
+        "parametric": 8,
         "resolved": 2
       }
     },
@@ -4167,11 +4159,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn03Nckt231.cs",
       "in_menu": false,
       "hooks": 45,
-      "records": 496,
+      "records": 515,
       "status": {
         "opaque_only": 39,
-        "parametric": 337,
-        "resolved": 90,
+        "parametric": 366,
+        "resolved": 80,
         "ui_only": 2,
         "unresolved": 28
       }
@@ -4181,11 +4173,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn03Nckt239.cs",
       "in_menu": false,
       "hooks": 49,
-      "records": 694,
+      "records": 733,
       "status": {
         "opaque_only": 41,
-        "parametric": 532,
-        "resolved": 89,
+        "parametric": 581,
+        "resolved": 79,
         "ui_only": 4,
         "unresolved": 28
       }
@@ -4195,11 +4187,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn03Nckt245.cs",
       "in_menu": false,
       "hooks": 53,
-      "records": 709,
+      "records": 748,
       "status": {
         "opaque_only": 49,
-        "parametric": 538,
-        "resolved": 90,
+        "parametric": 587,
+        "resolved": 80,
         "ui_only": 4,
         "unresolved": 28
       }
@@ -4209,11 +4201,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn03Nckt262.cs",
       "in_menu": true,
       "hooks": 53,
-      "records": 710,
+      "records": 749,
       "status": {
         "opaque_only": 49,
-        "parametric": 539,
-        "resolved": 90,
+        "parametric": 588,
+        "resolved": 80,
         "ui_only": 4,
         "unresolved": 28
       }
@@ -4223,13 +4215,13 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn03TT80Nckt251.cs",
       "in_menu": false,
       "hooks": 86,
-      "records": 706,
+      "records": 736,
       "status": {
         "opaque_only": 38,
-        "parametric": 530,
+        "parametric": 550,
         "resolved": 9,
         "ui_only": 3,
-        "unresolved": 126
+        "unresolved": 136
       }
     },
     {
@@ -4237,10 +4229,10 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn03TT80Nckt283.cs",
       "in_menu": false,
       "hooks": 86,
-      "records": 682,
+      "records": 702,
       "status": {
         "opaque_only": 32,
-        "parametric": 522,
+        "parametric": 542,
         "resolved": 9,
         "ui_only": 3,
         "unresolved": 116
@@ -4251,12 +4243,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn03TT80Nckt292.cs",
       "in_menu": false,
       "hooks": 87,
-      "records": 676,
+      "records": 706,
       "status": {
         "opaque_only": 32,
-        "parametric": 543,
+        "parametric": 563,
         "ui_only": 3,
-        "unresolved": 98
+        "unresolved": 108
       }
     },
     {
@@ -4264,12 +4256,12 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn03TT80Nckt294.cs",
       "in_menu": true,
       "hooks": 87,
-      "records": 686,
+      "records": 716,
       "status": {
         "opaque_only": 34,
-        "parametric": 551,
+        "parametric": 571,
         "ui_only": 3,
-        "unresolved": 98
+        "unresolved": 108
       }
     },
     {
@@ -4277,11 +4269,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tndn03ViewNckt245.cs",
       "in_menu": true,
       "hooks": 51,
-      "records": 701,
+      "records": 740,
       "status": {
         "opaque_only": 41,
-        "parametric": 538,
-        "resolved": 90,
+        "parametric": 587,
+        "resolved": 80,
         "ui_only": 4,
         "unresolved": 28
       }
@@ -4461,11 +4453,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
       "in_menu": true,
       "hooks": 14,
-      "records": 60,
+      "records": 61,
       "status": {
         "opaque_only": 22,
         "parametric": 11,
-        "unresolved": 27
+        "unresolved": 28
       }
     },
     {
@@ -4525,11 +4517,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01TT80Nckt251.cs",
       "in_menu": false,
       "hooks": 9,
-      "records": 40,
+      "records": 41,
       "status": {
         "opaque_only": 11,
         "parametric": 8,
-        "unresolved": 21
+        "unresolved": 22
       }
     },
     {
@@ -4537,11 +4529,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01TT80Nckt261.cs",
       "in_menu": false,
       "hooks": 14,
-      "records": 55,
+      "records": 56,
       "status": {
         "opaque_only": 20,
         "parametric": 14,
-        "unresolved": 21
+        "unresolved": 22
       }
     },
     {
@@ -4549,11 +4541,11 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01TT80Nckt283.cs",
       "in_menu": true,
       "hooks": 14,
-      "records": 52,
+      "records": 53,
       "status": {
         "opaque_only": 19,
         "parametric": 14,
-        "unresolved": 19
+        "unresolved": 20
       }
     },
     {
@@ -4586,9 +4578,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tts01Nckt216.cs",
       "in_menu": false,
       "hooks": 10,
-      "records": 178,
+      "records": 174,
       "status": {
-        "opaque_only": 36,
+        "opaque_only": 32,
         "parametric": 112,
         "resolved": 22,
         "ui_only": 1,
@@ -4600,9 +4592,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tts01Nckt250.cs",
       "in_menu": false,
       "hooks": 10,
-      "records": 182,
+      "records": 178,
       "status": {
-        "opaque_only": 36,
+        "opaque_only": 32,
         "parametric": 114,
         "resolved": 22,
         "ui_only": 1,
@@ -4614,9 +4606,9 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tts01Nckt283.cs",
       "in_menu": true,
       "hooks": 10,
-      "records": 182,
+      "records": 178,
       "status": {
-        "opaque_only": 36,
+        "opaque_only": 32,
         "parametric": 114,
         "resolved": 22,
         "ui_only": 1,
@@ -4628,13 +4620,13 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tts01TT40Nckt249.cs",
       "in_menu": false,
       "hooks": 18,
-      "records": 521,
+      "records": 513,
       "status": {
         "opaque_only": 140,
         "parametric": 60,
         "resolved": 9,
         "ui_only": 84,
-        "unresolved": 228
+        "unresolved": 220
       }
     },
     {
@@ -4642,13 +4634,13 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tts01TT40Nckt253.cs",
       "in_menu": false,
       "hooks": 21,
-      "records": 359,
+      "records": 353,
       "status": {
-        "opaque_only": 86,
+        "opaque_only": 84,
         "parametric": 52,
         "resolved": 9,
         "ui_only": 62,
-        "unresolved": 150
+        "unresolved": 146
       }
     },
     {
@@ -4656,13 +4648,13 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tts01TT40Nckt268.cs",
       "in_menu": false,
       "hooks": 27,
-      "records": 417,
+      "records": 411,
       "status": {
-        "opaque_only": 99,
+        "opaque_only": 97,
         "parametric": 95,
         "resolved": 9,
         "ui_only": 62,
-        "unresolved": 152
+        "unresolved": 148
       }
     },
     {
@@ -4670,13 +4662,13 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tts01TT40Nckt274.cs",
       "in_menu": false,
       "hooks": 33,
-      "records": 439,
+      "records": 433,
       "status": {
-        "opaque_only": 100,
+        "opaque_only": 98,
         "parametric": 115,
         "resolved": 9,
         "ui_only": 62,
-        "unresolved": 153
+        "unresolved": 149
       }
     },
     {
@@ -4684,13 +4676,13 @@
       "file": "tax.htkk.business/TAX.HTKK.Business/Tts01TT40Nckt283.cs",
       "in_menu": true,
       "hooks": 33,
-      "records": 439,
+      "records": 433,
       "status": {
-        "opaque_only": 100,
+        "opaque_only": 98,
         "parametric": 115,
         "resolved": 9,
         "ui_only": 62,
-        "unresolved": 153
+        "unresolved": 149
       }
     },
     {

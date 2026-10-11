@@ -212,42 +212,44 @@
         "when": []
       },
       "guards": [
-        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) <= 0 || length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) <= 0 || count(last_in_loop(foreach@1014 item@1014 in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from result@1004, last accum(result@1017 := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017), from result@1014, foreach@1017 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo))))) > 0",
-        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) <= 0 || length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0 || count(result@1004) > 0",
-        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) <= 0 || count(result@1004) > 0",
-        "length(split(\"{item@398.Key}\", [\"_\"])) == 2",
-        "num(cell(S0!{col(colIndex(split(\"{item@398.Key}\", [\"_\"])[0]))}{int(split(\"{item@398.Key}\", [\"_\"])[1])})#398.text) == 0",
-        "loop: foreach@398 item@398 in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0 -> last_in_loop(foreach@1014 item@1014 in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from result@1004, last accum(result@1017 := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017), from result@1014, foreach@1017 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) <= 0 -> result@1004 | else -> result@1004)"
+        "count(result) > 0",
+        "length(split(\"{item.Key}\", [\"_\"])) == 2",
+        "num(cell(S0!{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])})#398.text) == 0",
+        "loop: foreach@398 item in result"
       ],
       "effects": [
         {
           "op": "setFormula",
           "target": {
             "sheet": 0,
-            "cell": "{col(colIndex(split(\"{item@398.Key}\", [\"_\"])[0]))}{int(split(\"{item@398.Key}\", [\"_\"])[1])}"
+            "cell": "{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])}"
           },
           "formula": "",
           "at": 408,
-          "status": "unresolved"
+          "status": "parametric"
         },
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "{col(colIndex(split(\"{item@398.Key}\", [\"_\"])[0]))}{int(split(\"{item@398.Key}\", [\"_\"])[1])}"
+            "cell": "{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])}"
           },
-          "value": "{item@398.Value}",
+          "value": "{item.Value}",
           "params": {
             "prop": "value"
           },
           "at": 409,
-          "status": "unresolved"
+          "status": "parametric"
         }
       ],
       "cellVersions": [
         {
-          "ref": "cell(S0!{col(colIndex(split(\"{item@398.Key}\", [\"_\"])[0]))}{int(split(\"{item@398.Key}\", [\"_\"])[1])})#398",
-          "after": "vòng lặp dòng 398 có lệnh hoặc lời gọi có thể ghi ô"
+          "ref": "cell(S0!{col(colIndex(split(\"{item.Key}\", [\"_\"])[0]))}{int(split(\"{item.Key}\", [\"_\"])[1])})#398",
+          "kind": "ghi",
+          "after": "vòng lặp dòng 398 có lệnh ghi giá trị ô",
+          "writes": [
+            398
+          ]
         }
       ],
       "source": {
@@ -257,72 +259,23 @@
           409
         ]
       },
-      "status": "unresolved",
-      "reason": "chưa giải: colIndex(split(\"{item.Key}\", [\"_\"])[0]), int(split(\"{item.Key}\", [\"_\"])[1]), item.Value, điều kiện đường đi có phần chưa giải",
+      "status": "parametric",
+      "reason": "placeholder: colIndex(split(\"{item.Key}\", [\"_\"])[0]), int(split(\"{item.Key}\", [\"_\"])[1]), item.Value",
       "unreachable": false,
       "symbols": [
         {
-          "name": "fileInfo",
-          "ref": "fileInfo",
-          "origin": "foreach",
-          "at": 1017,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
-        },
-        {
-          "name": "header",
-          "ref": "header",
-          "origin": "hook-param",
-          "at": 358,
-          "desc": "tham số HeaderInfo (HTKKHeaderInfo) của method AutoBindData_0"
-        },
-        {
           "name": "item",
-          "ref": "item@398",
+          "ref": "item",
           "origin": "foreach",
           "at": 398,
-          "desc": "phần tử đang duyệt của cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0 -> last_in_loop(foreach@1014 item@1014 in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from result@1004, last accum(result@1017 := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017), from result@1014, foreach@1017 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) <= 0 -> result@1004 | else -> result@1004)"
-        },
-        {
-          "name": "item",
-          "ref": "item@1014",
-          "origin": "foreach",
-          "at": 1014,
-          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)"
-        },
-        {
-          "name": "period",
-          "ref": "period",
-          "origin": "hook-param",
-          "at": 358,
-          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+          "desc": "phần tử đang duyệt của result"
         },
         {
           "name": "result",
-          "ref": "result@1004",
+          "ref": "result",
           "origin": "local-map",
           "at": 1004,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1004, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "result",
-          "ref": "result@1014",
-          "origin": "loop",
-          "at": 1014,
-          "desc": "biến mang qua vòng lặp dòng 1014: giá trị trước vòng result@1004, cuối mỗi vòng result := accum(result@1017 := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017), from result@1014, foreach@1017 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))"
-        },
-        {
-          "name": "result",
-          "ref": "result@1017",
-          "origin": "loop",
-          "at": 1017,
-          "desc": "biến mang qua vòng lặp dòng 1017: giá trị trước vòng result@1014, cuối mỗi vòng result := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017)"
-        },
-        {
-          "name": "tk",
-          "ref": "tk",
-          "origin": "hook-param",
-          "at": 358,
-          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -344,25 +297,23 @@
         "when": []
       },
       "guards": [
-        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) <= 0 || length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) <= 0 || count(last_in_loop(foreach@1014 item@1014 in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from result@1004, last accum(result@1017 := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017), from result@1014, foreach@1017 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo))))) > 0",
-        "!(obj(DirectoryInfo).Exists) || period.LoaiToKhai != \"C\" || count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) <= 0 || length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0 || count(result@1004) > 0",
-        "obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0 || obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) <= 0 || count(result@1004) > 0",
-        "length(split(\"{item@398.Key}\", [\"_\"])) == 2",
-        "loop: foreach@398 item@398 in cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0 -> last_in_loop(foreach@1014 item@1014 in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from result@1004, last accum(result@1017 := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017), from result@1014, foreach@1017 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) <= 0 -> result@1004 | else -> result@1004)"
+        "count(result) > 0",
+        "length(split(\"{item.Key}\", [\"_\"])) == 2",
+        "loop: foreach@398 item in result"
       ],
       "effects": [
         {
           "op": "setValue",
           "target": {
             "sheet": 0,
-            "cell": "AD{int(split(\"{item@398.Key}\", [\"_\"])[1])}"
+            "cell": "AD{int(split(\"{item.Key}\", [\"_\"])[1])}"
           },
-          "value": "{item@398.Value}",
+          "value": "{item.Value}",
           "params": {
             "prop": "value"
           },
           "at": 411,
-          "status": "unresolved"
+          "status": "parametric"
         }
       ],
       "cellVersions": [],
@@ -373,72 +324,23 @@
           411
         ]
       },
-      "status": "unresolved",
-      "reason": "chưa giải: int(split(\"{item.Key}\", [\"_\"])[1]), item.Value, điều kiện đường đi có phần chưa giải",
+      "status": "parametric",
+      "reason": "placeholder: int(split(\"{item.Key}\", [\"_\"])[1]), item.Value",
       "unreachable": false,
       "symbols": [
         {
-          "name": "fileInfo",
-          "ref": "fileInfo",
-          "origin": "foreach",
-          "at": 1017,
-          "desc": "phần tử đang duyệt của opaque(<obj>.GetFiles, obj(DirectoryInfo))"
-        },
-        {
-          "name": "header",
-          "ref": "header",
-          "origin": "hook-param",
-          "at": 358,
-          "desc": "tham số HeaderInfo (HTKKHeaderInfo) của method AutoBindData_0"
-        },
-        {
           "name": "item",
-          "ref": "item@398",
+          "ref": "item",
           "origin": "foreach",
           "at": 398,
-          "desc": "phần tử đang duyệt của cases(obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) > 0 -> last_in_loop(foreach@1014 item@1014 in opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk), from result@1004, last accum(result@1017 := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017), from result@1014, foreach@1017 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))) | obj(DirectoryInfo).Exists && period.LoaiToKhai == \"C\" && count(opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)) > 0 && length(opaque(<obj>.GetFiles, obj(DirectoryInfo))) <= 0 -> result@1004 | else -> result@1004)"
-        },
-        {
-          "name": "item",
-          "ref": "item@1014",
-          "origin": "foreach",
-          "at": 1014,
-          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetPreperiodFileName_ThangQuy, period, tk)"
-        },
-        {
-          "name": "period",
-          "ref": "period",
-          "origin": "hook-param",
-          "at": 358,
-          "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+          "desc": "phần tử đang duyệt của result"
         },
         {
           "name": "result",
-          "ref": "result@1004",
+          "ref": "result",
           "origin": "local-map",
           "at": 1004,
           "desc": "bảng tra (từ điển) cục bộ tạo mới tại dòng 1004, nội dung nạp lúc chạy"
-        },
-        {
-          "name": "result",
-          "ref": "result@1014",
-          "origin": "loop",
-          "at": 1014,
-          "desc": "biến mang qua vòng lặp dòng 1014: giá trị trước vòng result@1004, cuối mỗi vòng result := accum(result@1017 := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017), from result@1014, foreach@1017 fileInfo in opaque(<obj>.GetFiles, obj(DirectoryInfo)))"
-        },
-        {
-          "name": "result",
-          "ref": "result@1017",
-          "origin": "loop",
-          "at": 1017,
-          "desc": "biến mang qua vòng lặp dòng 1017: giá trị trước vòng result@1014, cuối mỗi vòng result := cases(contains(fileInfo.Name, item@1014) -> opaque(GeneralFunctions.GetValueInXml, \"{HTKKConfig.DATAFILES}\\{header.mst}\\{fileInfo.Name}\", [\"W_40\", \"W_41\", \"W_42\", \"W_43\", \"W_44\", \"W_46\", \"W_47\", \"W_48\", \"W_49\", \"W_50\", \"W_52\", \"W_54\", \"W_57\", \"W_58\", \"W_59\", \"W_60\", \"W_61\"]) | else -> result@1017)"
-        },
-        {
-          "name": "tk",
-          "ref": "tk",
-          "origin": "hook-param",
-          "at": 358,
-          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -494,11 +396,19 @@
       "cellVersions": [
         {
           "ref": "cell(S0!R{int(split(item.Key, [\"_\"])[1])})#495",
-          "after": "vòng lặp dòng 495 có lệnh hoặc lời gọi có thể ghi ô"
+          "kind": "ghi",
+          "after": "vòng lặp dòng 495 có lệnh ghi giá trị ô",
+          "writes": [
+            495
+          ]
         },
         {
           "ref": "cell(S0!{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])})#495",
-          "after": "vòng lặp dòng 495 có lệnh hoặc lời gọi có thể ghi ô"
+          "kind": "ghi",
+          "after": "vòng lặp dòng 495 có lệnh ghi giá trị ô",
+          "writes": [
+            495
+          ]
         }
       ],
       "source": {
@@ -580,11 +490,19 @@
       "cellVersions": [
         {
           "ref": "cell(S0!R{int(split(item.Key, [\"_\"])[1])})#495",
-          "after": "vòng lặp dòng 495 có lệnh hoặc lời gọi có thể ghi ô"
+          "kind": "ghi",
+          "after": "vòng lặp dòng 495 có lệnh ghi giá trị ô",
+          "writes": [
+            495
+          ]
         },
         {
           "ref": "cell(S0!{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])})#508",
-          "after": "hợp nhánh dòng 508: trên một số nhánh có lệnh ghi ô (dòng 495, 510)"
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 508: ô được ghi trên một số nhánh (dòng 510)",
+          "writes": [
+            510
+          ]
         }
       ],
       "source": {
@@ -666,11 +584,20 @@
       "cellVersions": [
         {
           "ref": "cell(S0!R{int(split(item.Key, [\"_\"])[1])})#495",
-          "after": "vòng lặp dòng 495 có lệnh hoặc lời gọi có thể ghi ô"
+          "kind": "ghi",
+          "after": "vòng lặp dòng 495 có lệnh ghi giá trị ô",
+          "writes": [
+            495
+          ]
         },
         {
           "ref": "cell(S0!{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])})#512",
-          "after": "hợp nhánh dòng 512: trên một số nhánh có lệnh ghi ô (dòng 508, 514)"
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 512: ô được ghi trên một số nhánh (dòng 510, 514)",
+          "writes": [
+            510,
+            514
+          ]
         }
       ],
       "source": {
@@ -752,11 +679,21 @@
       "cellVersions": [
         {
           "ref": "cell(S0!R{int(split(item.Key, [\"_\"])[1])})#495",
-          "after": "vòng lặp dòng 495 có lệnh hoặc lời gọi có thể ghi ô"
+          "kind": "ghi",
+          "after": "vòng lặp dòng 495 có lệnh ghi giá trị ô",
+          "writes": [
+            495
+          ]
         },
         {
           "ref": "cell(S0!{col(colIndex(split(item.Key, [\"_\"])[0]))}{int(split(item.Key, [\"_\"])[1])})#516",
-          "after": "hợp nhánh dòng 516: trên một số nhánh có lệnh ghi ô (dòng 512, 518)"
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 516: ô được ghi trên một số nhánh (dòng 510, 514, 518)",
+          "writes": [
+            510,
+            514,
+            518
+          ]
         }
       ],
       "source": {

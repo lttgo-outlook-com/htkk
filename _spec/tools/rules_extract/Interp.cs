@@ -33,11 +33,12 @@ public sealed class State
     public ImmutableList<PathItem> Path;
     public ImmutableList<LoopInfo> Loops;
     public bool Dead, Threw;
-    // phiên bản ô theo đường đi: lệnh ghi ô hằng (CV), lệnh/lời gọi có thể ghi ô bất kỳ (WildV), mọi lệnh ghi (AnyV, cho ô chỉ số lúc chạy)
-    public ImmutableDictionary<string, long> CV = ImmutableDictionary.Create<string, long>(StringComparer.Ordinal);
-    public long WildV, AnyV;
-    public State Clone() => new() { Env = new Dictionary<string, Entry>(Env, StringComparer.Ordinal), Path = Path, Loops = Loops, Dead = Dead, Threw = Threw, CV = CV, WildV = WildV, AnyV = AnyV };
-    public void CopyVers(State o) { CV = o.CV; WildV = o.WildV; AnyV = o.AnyV; }
+    // phiên bản ô theo đường đi, chỉ do lệnh đổi giá trị ô: ô hằng (CV, khóa vùng một ô), vùng có chỉ số lúc chạy (RV: lệnh ghi theo
+    // cột/hàng chỉ phủ cột/hàng đó, '*' = bất kỳ), lệnh/lời gọi có thể ghi ô bất kỳ (WildV)
+    public ImmutableDictionary<string, long> CV = ImmutableDictionary.Create<string, long>(StringComparer.Ordinal), RV = ImmutableDictionary.Create<string, long>(StringComparer.Ordinal);
+    public long WildV;
+    public State Clone() => new() { Env = new Dictionary<string, Entry>(Env, StringComparer.Ordinal), Path = Path, Loops = Loops, Dead = Dead, Threw = Threw, CV = CV, RV = RV, WildV = WildV };
+    public void CopyVers(State o) { CV = o.CV; RV = o.RV; WildV = o.WildV; }
 }
 
 public sealed class Frame
@@ -47,6 +48,7 @@ public sealed class Frame
     public ImmutableHashSet<string> Stack = ImmutableHashSet<string>.Empty;
     public int BasePathLen;
     public List<State> Exits; // phiên bản ô tại các lệnh return của method nội tuyến
+    public Dictionary<string, string> DlgSkip; // biến nhận kết quả hộp thoại trong nhánh hằng không chạy -> nguyên nhân
 }
 
 public sealed class Effect
@@ -74,26 +76,167 @@ public sealed class Interp
     readonly Dictionary<string, Dictionary<long, string>> verLabel = new(StringComparer.Ordinal);
     /// "cell(S0!L8)#74" -> mô tả sự kiện tạo phiên bản (lệnh ghi, lời gọi có thể ghi, hợp nhánh)
     public readonly Dictionary<string, string> VerRefs = new(StringComparer.Ordinal);
-    long NewVer(int line, string desc) { var id = Mk.Next(); verInfo[id] = (line, desc); return id; }
+    readonly Dictionary<string, (int Line, string Type, string Code, int Len)> dialogForms = new(StringComparer.Ordinal);
+    /// lời gọi chỉ tác động giao diện (bố cục, cuộn, chọn ô): không ghi ô, không tạo phiên bản ô
+    public static readonly HashSet<string> UiCalls = new(StringComparer.Ordinal) { "SuspendLayout", "ResumeLayout", "SetActiveCell", "Focus", "ShowCell", "ShowActiveCell", "Invalidate", "Select", "BringToFront", "SetViewportTopRow", "SetViewportLeftColumn", "SetActiveSheet", "SetNodeBackGroundPink", "SetRowHeight", "SetColumnWidth", "Refresh", "Update", "PerformLayout", "ScrollTo", "SetFocus" };
+    /// lời gọi không đổi giá trị ô (đọc ô, ghi chú, xóa kiểm tra, màu nền, khóa, ghi log): đã đối chiếu thân method trong _decompiled
+    /// (GeneralFunctions/HTKKFile/ConvertHelpers: không gán Value/Text/Formula, không ResetValue/Clear/chèn hàng); không tạo phiên bản ô
+    public static readonly HashSet<string> NoWriteCalls = new(StringComparer.Ordinal) { "RemoveValidate", "RemoveValidateCell", "GetMessage", "GetRowIndexInSViewByCompares", "ConvertCellValueToText", "UpdateFromSViewToSInfo", "GetValue", "ChangeLockedCell", "GetPreferredHeight", "SetNodeBackGroundWhite", "SetNote", "ResetNote", "GetCurrentMethod", "Log", "LogErrorBigData" };
+    /// lời gọi đổi giá trị ô hoặc dịch ô (chèn/xóa hàng, xóa vùng, helper ghi giá trị đã đọc thân): phiên bản kind "ghi"
+    public static readonly HashSet<string> WriteCalls = new(StringComparer.Ordinal) { "AddRows", "RemoveRows", "AddRow", "RemoveRow", "InsertRows", "DeleteRows", "InsertTableRow", "RemoveDataRows", "ClearRange", "ClearData", "ClearSelection", "ClearAll", "InsertNumberCell", "InsertCombobox", "resetOtherCheckboxStatic", "ChangeValueCell", "SetValue", "SetText", "SetFormula", "CopyRange", "MoveRange", "SwapRange", "ResetValue", "ResetText", "ResetFormula" };
+    /// thao tác danh sách cục bộ trong thân vòng lặp (không phải Rows/Columns): không ghi ô
+    static readonly HashSet<string> ListOps = new(StringComparer.Ordinal) { "Remove", "RemoveAt", "Insert", "Clear", "FindIndex", "FindAll", "FromArgb", "FromHtml", "GetType", "Value" };
+    /// phân loại lời gọi: null = không ghi ô; "ghi" = đổi giá trị hoặc dịch ô; "co_the_ghi" = chưa rõ có ghi ô (bảo thủ)
+    public static string CallWriteKind(string qn)
+    {
+        string nm = qn.Split('.').Last();
+        if (UiCalls.Contains(nm) || NoWriteCalls.Contains(nm) || nm.StartsWith("SetNodeBackGround", StringComparison.Ordinal) || nm.StartsWith("RemoveValidate", StringComparison.Ordinal)) return null;
+        if (WriteCalls.Contains(nm)) return "ghi";
+        if (nm.StartsWith("Reset", StringComparison.Ordinal) && !nm.Contains('_')) return null; // ResetBackColor, ResetLocked...: trả định dạng
+        if (qn.StartsWith("<cells>.", StringComparison.Ordinal) && nm is "Add" or "Remove" or "Insert" or "Clear") return "ghi";
+        return "co_the_ghi";
+    }
+    /// thân vòng lặp (kể cả method cùng class được gọi, bắc cầu) có lệnh đổi giá trị ô ("ghi") hoặc lời gọi có thể ghi ("co_the_ghi" + tên)
+    (string Kind, string[] Calls) LoopWrites(SyntaxNode node, ClassCtx cls)
+    {
+        bool w = false; var calls = new SortedSet<string>(StringComparer.Ordinal);
+        var seen = new HashSet<SyntaxNode>(); var todo = new Stack<SyntaxNode>();
+        // chỉ phần chạy lặp lại: thân, điều kiện, bước; biểu thức tập duyệt của foreach chạy một lần trước vòng
+        IEnumerable<SyntaxNode> parts = node switch
+        {
+            ForEachStatementSyntax fe0 => new SyntaxNode[] { fe0.Statement },
+            ForStatementSyntax fs0 => new SyntaxNode[] { fs0.Statement, fs0.Condition }.Concat(fs0.Incrementors),
+            WhileStatementSyntax ws0 => new SyntaxNode[] { ws0.Statement, ws0.Condition },
+            DoStatementSyntax ds0 => new SyntaxNode[] { ds0.Statement, ds0.Condition },
+            _ => new[] { node }
+        };
+        foreach (var pn in parts) if (pn != null) todo.Push(pn);
+        while (todo.Count > 0)
+        {
+            var b = todo.Pop(); if (!seen.Add(b)) continue;
+            foreach (var n in b.DescendantNodesAndSelf())
+            {
+                if (n is AssignmentExpressionSyntax a && a.Left is MemberAccessExpressionSyntax lm && lm.Name.Identifier.Text is "Value" or "Text" or "Formula") { w = true; continue; }
+                if (n is not InvocationExpressionSyntax iv) continue;
+                string nm = iv.Expression switch { IdentifierNameSyntax i => i.Identifier.Text, GenericNameSyntax g => g.Identifier.Text, MemberAccessExpressionSyntax m => m.Name.Identifier.Text, _ => "?" };
+                bool local = iv.Expression is IdentifierNameSyntax || (iv.Expression is MemberAccessExpressionSyntax tm && tm.Expression is ThisExpressionSyntax);
+                if (local && cls != null && cls.Methods.TryGetValue(nm, out var ms)) { foreach (var m in ms) todo.Push(m); continue; }
+                if (iv.Expression is MemberAccessExpressionSyntax rm && rm.Expression is MemberAccessExpressionSyntax rm2 && rm2.Name.Identifier.Text is "Rows" or "Columns" && nm is "Add" or "Remove" or "Insert" or "Clear") { w = true; continue; }
+                if (PureCalls.Contains(nm) || ListOps.Contains(nm)) continue;
+                var k = CallWriteKind(nm);
+                if (k == "ghi") w = true; else if (k == "co_the_ghi") calls.Add(nm);
+            }
+        }
+        return (w ? "ghi" : calls.Count > 0 ? "co_the_ghi" : null, calls.ToArray());
+    }
+    /// phiên bản trước vòng và phiên bản đầu vòng của các vòng lặp đang phân tích (EnterLoop đẩy, Loop lấy ra)
+    readonly Stack<(long, long)> loopVers = new();
+    /// đích của break/continue: vòng lặp (Sw = false) hoặc switch (Sw = true); lưu trạng thái tại lệnh nhảy để hợp ở cuối thân vòng
+    /// (continue), sau vòng hoặc sau nhánh switch (break). Câu lệnh sau lệnh nhảy trong cùng khối không chạy trên đường đó.
+    sealed class JumpCtx { public bool Sw; public readonly List<State> Cont = new(), Brk = new(); }
+    readonly List<JumpCtx> jumps = new();
+    /// ký hiệu đầu vòng của biến khai báo kiểu chuỗi/đối tượng
+    readonly HashSet<string> strAtoms = new(StringComparer.Ordinal);
+    /// hợp các trạng thái còn sống vào target: đường đi chung là tiền tố chung, phần sau tiền tố là điều kiện của từng trạng thái
+    void Join(State target, List<State> states, int line)
+    {
+        var live = states.Where(s => !s.Dead).ToList();
+        if (live.Count == 0) { target.Dead = true; return; }
+        int n = live.Min(s => s.Path.Count), p = 0;
+        while (p < n && live.All(s => ReferenceEquals(s.Path[p], live[0].Path[p]))) p++;
+        target.Path = live[0].Path.GetRange(0, p); target.Dead = false; target.Threw = false;
+        Merge(target, live.Select(s => (C.And(s.Path.Skip(p).Select(x => x.C)), s)).ToList(), line);
+    }
+    /// phiên bản đầu vòng của các vòng đang phân tích: hợp nhánh trong thân vòng không lấy dòng đầu vòng làm dòng ghi gốc
+    /// (trừ khi chỉ còn nguồn đó), để dòng đầu vòng không theo phiên bản ra ngoài vòng
+    readonly HashSet<long> activeLoop = new();
+    List<long> SrcVers(IEnumerable<long> vs)
+    {
+        var src = vs.Where(v => v > 0 && verWrites.ContainsKey(v)).Distinct().ToList();
+        var nl = src.Where(v => !activeLoop.Contains(v)).ToList();
+        return nl.Count > 0 ? nl : src;
+    }
+    /// dòng lệnh ghi (hoặc vòng lặp có ghi) gốc của mỗi phiên bản; phiên bản hợp nhánh lấy hợp các dòng gốc của nhánh
+    readonly Dictionary<long, SortedSet<int>> verWrites = new();
+    /// loại phiên bản: ghi | co_the_ghi, kèm tên lời gọi; hợp nhánh là co_the_ghi nếu một nguồn là co_the_ghi
+    readonly Dictionary<long, (string Kind, SortedSet<string> Calls)> verKind = new();
+    /// "cell(S0!L8)#74" -> loại, dòng lệnh ghi gốc, tên lời gọi
+    public readonly Dictionary<string, (string Kind, int[] Writes, string[] Calls)> VerMeta = new(StringComparer.Ordinal);
+    /// phiên bản gốc (lệnh ghi hoặc lời gọi) của mỗi phiên bản: theo dòng ghi (verOrig, như verWrites) và theo loại (verOrigK);
+    /// vùng ghi của phiên bản gốc (null = có thể ghi ô bất kỳ). Dòng ghi hiển thị cho một ô chỉ lấy phiên bản gốc có vùng giao ô đó.
+    readonly Dictionary<long, SortedSet<long>> verOrig = new(), verOrigK = new();
+    readonly Dictionary<long, Rgn> verRg = new();
+    /// số ô có phiên bản mà không phiên bản gốc nào giao vùng ô (giữ mọi phiên bản gốc)
+    public static int RgnFallback;
+    /// chỗ đặt danh sách dòng ghi trong mô tả phiên bản hợp nhánh, điền khi gắn nhãn theo ô
+    const string WPh = "\u0001W";
+    long NewVer(int line, string desc, IEnumerable<long> from = null, string kind = "ghi", IEnumerable<string> calls = null, Rgn rgn = null)
+    {
+        var id = Mk.Next(); verInfo[id] = (line, desc);
+        var w = new SortedSet<int>(); var cs = new SortedSet<string>(StringComparer.Ordinal); string k = kind;
+        var og = new SortedSet<long>(); var ogk = new SortedSet<long>();
+        if (from == null) { w.Add(line); if (calls != null) cs.UnionWith(calls); og.Add(id); ogk.Add(id); verRg[id] = rgn; }
+        else
+        {
+            k = "ghi";
+            var fl = from.ToList();
+            foreach (var v in fl)
+                if (v > 0 && verKind.TryGetValue(v, out var vk)) { if (vk.Kind == "co_the_ghi") k = "co_the_ghi"; cs.UnionWith(vk.Calls); ogk.UnionWith(verOrigK[v]); }
+            foreach (var v in SrcVers(fl)) { w.UnionWith(verWrites[v]); og.UnionWith(verOrig[v]); }
+        }
+        verWrites[id] = w; verKind[id] = (k, cs); verOrig[id] = og; verOrigK[id] = ogk; return id;
+    }
     readonly Dictionary<V, List<Effect>> pendingBtn = new(ReferenceEqualityComparer.Instance);
-    static string CellKey(VCell c, out bool isConst)
+    /// vùng ô (sheet, dòng, cột 0-based); thành phần lúc chạy là bất kỳ
+    /// RS/CS: phần ký hiệu của chỉ số hàng/cột tuyến tính (cùng phần ký hiệu, khác hằng RO/CO thì rời nhau)
+    public sealed record Rgn(string S, long R1, long R2, long C1, long C2, string RS = null, long RO = 0, string CS = null, long CO = 0);
+    readonly Dictionary<string, Rgn> rgnOf = new(StringComparer.Ordinal);
+    static long? Lc(V v) => v is VConst k && k.Val is long l ? l : null;
+    string RegionKey(VCell c, out bool exact)
     {
-        isConst = c.Kind == "cell" && c.S.Index is VConst && c.R1 is VConst && c.C1 is VConst;
-        return isConst ? R.Expr(c.S.Index, new Flags()) + "!" + R.Expr(c.R1, new Flags()) + "," + R.Expr(c.C1, new Flags()) : null;
+        string s = c.S.Index is VConst sk ? R.Expr(sk, new Flags()) : null;
+        long? r1 = null, r2 = null, c1 = null, c2 = null;
+        string rs = null, cs = null; long ro = 0, co = 0;
+        static string Ls(V v, out long off) { off = 0; if (v is VLin l) { off = l.C; return string.Join(",", l.T.Select(kv => kv.Key + "*" + kv.Value.ToString(CultureInfo.InvariantCulture))); } return null; }
+        switch (c.Kind)
+        {
+            case "cell": r1 = r2 = Lc(c.R1); c1 = c2 = Lc(c.C1); if (r1 == null) rs = Ls(c.R1, out ro); if (c1 == null) cs = Ls(c.C1, out co); break;
+            case "range":
+                r1 = Lc(c.R1); r2 = Lc(c.R2); c1 = Lc(c.C1); c2 = Lc(c.C2);
+                if (r1 == null || r2 == null) r1 = r2 = null;
+                if (c1 == null || c2 == null) c1 = c2 = null;
+                break;
+            case "row": r1 = r2 = Lc(c.R1); if (r1 == null) rs = Ls(c.R1, out ro); break;
+            case "col": c1 = c2 = Lc(c.C1); if (c1 == null) cs = Ls(c.C1, out co); break;
+        }
+        exact = s != null && c.Kind == "cell" && r1 != null && c1 != null;
+        static string P(long? x) => x == null ? "*" : x.Value.ToString(CultureInfo.InvariantCulture);
+        static string Q(string sy, long o) => sy == null ? "" : "~" + sy + "@" + o.ToString(CultureInfo.InvariantCulture);
+        var key = (s ?? "*") + "|" + P(r1) + "|" + P(r2) + Q(rs, ro) + "|" + P(c1) + "|" + P(c2) + Q(cs, co);
+        if (!rgnOf.ContainsKey(key)) rgnOf[key] = new Rgn(s, r1 ?? long.MinValue, r2 ?? long.MaxValue, c1 ?? long.MinValue, c2 ?? long.MaxValue, rs, ro, cs, co);
+        return key;
     }
-    void Wild(State st, int line, string desc) { st.WildV = st.AnyV = NewVer(line, desc); }
-    void BumpCell(State st, V t, int line, string desc)
+    static bool Overlap(Rgn a, Rgn b) => (a.S == null || b.S == null || a.S == b.S) && a.R1 <= b.R2 && b.R1 <= a.R2 && a.C1 <= b.C2 && b.C1 <= a.C2
+        && !(a.RS != null && a.RS == b.RS && a.RO != b.RO) && !(a.CS != null && a.CS == b.CS && a.CO != b.CO);
+    void Wild(State st, int line, string desc, string kind, IEnumerable<string> calls) { st.WildV = NewVer(line, desc, null, kind, calls); }
+    /// lệnh đổi giá trị ô: phiên bản mới chỉ cho vùng được ghi (ô hằng, hoặc cột/hàng/sheet khi chỉ số lúc chạy)
+    void WriteCell(State st, VCell c, int line, string desc, string kind = "ghi", IEnumerable<string> calls = null)
     {
-        if (t is VCell c) { var k = CellKey(c, out var isConst); if (isConst) { var v = NewVer(line, desc); st.CV = st.CV.SetItem(k, v); st.AnyV = v; return; } }
-        Wild(st, line, desc);
+        var key = RegionKey(c, out var exact); var v = NewVer(line, desc, null, kind, calls, rgnOf[key]);
+        if (exact) st.CV = st.CV.SetItem(key, v); else st.RV = st.RV.SetItem(key, v);
     }
-    long ReadVer(State st, VCell c)
+    /// phiên bản hiệu lực của vùng trong một trạng thái: lớn nhất trong các lệnh ghi có vùng giao với vùng đọc
+    long EffVer(State st, string key, bool exact)
     {
-        var k = CellKey(c, out var isConst);
-        return isConst ? Math.Max(st.CV.GetValueOrDefault(k), st.WildV) : st.AnyV;
+        var g = rgnOf[key]; long v = st.WildV;
+        if (exact) v = Math.Max(v, st.CV.GetValueOrDefault(key));
+        else foreach (var kv in st.CV) if (kv.Value > v && Overlap(g, rgnOf[kv.Key])) v = kv.Value;
+        foreach (var kv in st.RV) if (kv.Value > v && Overlap(g, rgnOf[kv.Key])) v = kv.Value;
+        return v;
     }
+    long ReadVer(State st, VCell c) { var k = RegionKey(c, out var exact); return EffVer(st, k, exact); }
     /// nhãn phiên bản hiển thị #<dòng sự kiện tạo phiên bản>; cùng ô cùng dòng nhiều phiên bản thì #<dòng>.2, .3 theo thứ tự gặp
-    string VerTag(string cellText, long ver)
+    string VerTag(VCell cell, string cellText, long ver)
     {
         if (ver <= 0) return "";
         if (!verLabel.TryGetValue(cellText, out var m)) verLabel[cellText] = m = new();
@@ -102,33 +245,101 @@ public sealed class Interp
         string b = "#" + vi.Line.ToString(CultureInfo.InvariantCulture); lab = b; int n = 1;
         while (m.ContainsValue(lab)) lab = b + "." + (++n).ToString(CultureInfo.InvariantCulture);
         m[ver] = lab;
-        VerRefs["cell(" + cellText + ")" + lab] = vi.Desc;
+        var rf = "cell(" + cellText + ")" + lab;
+        (string Kind, SortedSet<string> Calls) vk = verKind.TryGetValue(ver, out var vk0) ? vk0 : ("co_the_ghi", new SortedSet<string>(StringComparer.Ordinal));
+        int[] wr = verWrites.TryGetValue(ver, out var vw) ? vw.ToArray() : Array.Empty<int>();
+        string desc = vi.Desc;
+        if (verOrig.TryGetValue(ver, out var og))
+        {
+            // dòng ghi, loại, lời gọi theo vùng ô đang đọc: chỉ phiên bản gốc có vùng ghi giao ô này
+            var g = rgnOf[RegionKey(cell, out _)];
+            bool Hit(long o) => verRg.GetValueOrDefault(o) is not Rgn r || Overlap(r, g);
+            var ogf = og.Where(Hit).ToList();
+            if (ogf.Count == 0 && og.Count > 0) { RgnFallback++; ogf = og.ToList(); }
+            wr = ogf.SelectMany(o => verWrites[o]).Distinct().OrderBy(x => x).ToArray();
+            var okf = verOrigK[ver].Where(Hit).ToList(); if (okf.Count == 0) okf = verOrigK[ver].ToList();
+            if (okf.Count > 0)
+            {
+                var cs2 = new SortedSet<string>(okf.SelectMany(o => verKind[o].Calls), StringComparer.Ordinal);
+                vk = (okf.Any(o => verKind[o].Kind == "co_the_ghi") ? "co_the_ghi" : "ghi", cs2);
+            }
+            desc = desc.Replace(WPh, string.Join(", ", wr));
+        }
+        VerRefs[rf] = desc;
+        VerMeta[rf] = (vk.Kind, wr, vk.Calls.ToArray());
         return lab;
     }
-    /// hợp phiên bản ô của các nhánh còn sống: khác nhau thì tạo phiên bản mới tại dòng hợp nhánh
+    string WriteLines(IEnumerable<long> vs) => string.Join(", ", SrcVers(vs).SelectMany(v => verWrites[v]).Distinct().OrderBy(x => x));
+    /// hợp phiên bản ô của các nhánh còn sống: khác nhau thì tạo phiên bản mới tại dòng hợp nhánh.
+    /// Thứ tự: lời gọi có thể ghi (WildV), vùng (RV), ô hằng (CV); mỗi khóa so phiên bản hiệu lực của từng nhánh (kể cả vùng phủ nó)
     void MergeVers(State st, List<State> live, int line)
     {
         if (live.Count == 0) return;
-        string Lines(IEnumerable<long> vs) => string.Join(", ", vs.Where(v => v > 0).Select(v => verInfo.TryGetValue(v, out var i) ? i.Line : 0).Distinct().OrderBy(x => x));
-        st.WildV = live.All(s => s.WildV == live[0].WildV) ? live[0].WildV : NewVer(line, "hợp nhánh dòng " + line + ": trên một số nhánh có lệnh hoặc lời gọi có thể ghi ô (dòng " + Lines(live.Select(s => s.WildV)) + ")");
-        st.AnyV = live.All(s => s.AnyV == live[0].AnyV) ? live[0].AnyV : NewVer(line, "hợp nhánh dòng " + line + ": trên một số nhánh có lệnh ghi ô (dòng " + Lines(live.Select(s => s.AnyV)) + ")");
-        var keys = new SortedSet<string>(live.SelectMany(s => s.CV.Keys), StringComparer.Ordinal);
-        var cv = ImmutableDictionary.CreateBuilder<string, long>(StringComparer.Ordinal);
-        foreach (var k in keys)
+        var wv = live.Select(s => s.WildV).ToList();
+        long wild = wv.All(v => v == wv[0]) ? wv[0] : NewVer(line, "hợp nhánh dòng " + line + ": trên một số nhánh có lời gọi có thể ghi ô (dòng " + WPh + ")", wv);
+        // mục vùng được ghi trong các nhánh (giá trị khác nhau giữa các nhánh): mỗi mục là một lệnh ghi cuối có thể có cho phần ô
+        // giao với nó, nên phiên bản hợp nhánh của một khóa lấy nguồn từ mọi mục như vậy giao khóa (không chỉ phiên bản lớn nhất)
+        var div = new List<(string K, long V)>();
+        foreach (var s in live)
+            foreach (var kv in s.RV.Concat(s.CV))
+                if (!live.All(o => (o.RV.TryGetValue(kv.Key, out var x) || o.CV.TryGetValue(kv.Key, out x)) && x == kv.Value)) div.Add((kv.Key, kv.Value));
+        ImmutableDictionary<string, long> MergeMap(Func<State, ImmutableDictionary<string, long>> sel, bool exact)
         {
-            var vs = live.Select(s => s.CV.GetValueOrDefault(k)).ToList();
-            cv[k] = vs.All(v => v == vs[0]) ? vs[0] : NewVer(line, "hợp nhánh dòng " + line + ": ô được ghi trên một số nhánh (dòng " + Lines(vs) + ")");
+            var keys = new SortedSet<string>(live.SelectMany(s => sel(s).Keys), StringComparer.Ordinal);
+            var bld = ImmutableDictionary.CreateBuilder<string, long>(StringComparer.Ordinal);
+            foreach (var k in keys)
+            {
+                var raw = live.Select(s => sel(s).GetValueOrDefault(k)).ToList();
+                if (raw.All(v => v == raw[0]) && live.All(s => s.WildV == live[0].WildV) && live.All(s => s.RV == live[0].RV)) { bld[k] = raw[0]; continue; }
+                var vs = live.Select(s => EffVer(s, k, exact)).ToList();
+                if (!vs.All(v => v == vs[0])) { var gk = rgnOf[k]; foreach (var (dk, dv) in div) if (Overlap(gk, rgnOf[dk])) vs.Add(dv); }
+                bld[k] = vs.Take(live.Count).All(v => v == vs[0]) ? vs[0] : NewVer(line, "hợp nhánh dòng " + line + ": ô được ghi trên một số nhánh (dòng " + WPh + ")", vs);
+            }
+            return bld.ToImmutable();
         }
-        st.CV = cv.ToImmutable();
+        var rv = MergeMap(s => s.RV, false);
+        var cv = MergeMap(s => s.CV, true);
+        st.WildV = wild; st.RV = rv; st.CV = cv;
     }
     void AddEffect(Effect e, State st)
     {
         Effects.Add(e);
         string d = e.Op + " dòng " + e.Line + (e.Via != null ? " qua " + e.Via : "");
-        if (e.Target is VCell) BumpCell(st, e.Target, e.Line, "sau lệnh " + d);
-        else if (e.Op is "setTabColor" or "setTabProp" or "setButtonText" or "setModelDefault") { }
-        else if (e.Op != "opaque" || (e.Params.TryGetValue("touchesSheet", out var ts) && ts is true)) Wild(st, e.Line, "sau " + (e.Op == "opaque" && e.Params.TryGetValue("call", out var cn) ? "lời gọi chưa giải " + cn + " dòng " + e.Line + " (có thể ghi ô)" : "lệnh " + d));
+        // chỉ lệnh đổi giá trị ô tạo phiên bản; khóa/mở, định dạng, Visible/Height/Width, ghi chú, màu thẻ, chữ nút: không
+        if (e.Op is "setValue" or "setFormula")
+        {
+            if (e.Target is VCell tc) WriteCell(st, tc, e.Line, "sau lệnh " + d);
+            else Wild(st, e.Line, "sau lệnh " + d + " (ô đích chưa xác định)", "ghi", null);
+        }
+        else if (e.Op == "opaque" && e.Params.TryGetValue("touchesSheet", out var ts) && ts is true && e.Params.TryGetValue("call", out var cu) && cu is string cus && CallWriteKind(cus) is string wk)
+            Wild(st, e.Line, wk == "ghi" ? "sau lệnh " + cus + " dòng " + e.Line + (e.Via != null ? " qua " + e.Via : "") + " (đổi giá trị hoặc dịch ô)" : "sau lời gọi chưa giải " + cus + " dòng " + e.Line + " (có thể ghi ô)", wk, new[] { cus });
         e.Params.Remove("touchesSheet");
+    }
+    /// nguyên nhân điều kiện hằng dựa trên biến kết quả hộp thoại khi hộp thoại không hiện (nhánh gán kết quả bị bỏ vì điều kiện hằng)
+    string DialogCause(ExpressionSyntax cond, State st, Frame f)
+    {
+        if (f.DlgSkip == null) return null;
+        foreach (var id in cond.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
+            if (f.DlgSkip.TryGetValue(id.Identifier.Text, out var cause))
+            {
+                var iv = st.Env.TryGetValue(id.Identifier.Text, out var en) && en.Val is VConst ik ? R.Expr(ik, new Flags()) : null;
+                return cause + (iv != null ? ", giá trị khởi tạo " + iv : "");
+            }
+        return null;
+    }
+    void NoteSkippedDialog(StatementSyntax skipped, ExpressionSyntax cond, State st, Frame f)
+    {
+        if (skipped == null) return;
+        foreach (var a in skipped.DescendantNodesAndSelf().OfType<AssignmentExpressionSyntax>())
+        {
+            if (a.Left is not IdentifierNameSyntax lid) continue;
+            bool dlg = a.Right.DescendantNodesAndSelf().OfType<InvocationExpressionSyntax>().Any(iv => iv.Expression is MemberAccessExpressionSyntax m && (m.Name.Identifier.Text == "ShowDialog" || (m.Name.Identifier.Text == "Show" && m.Expression.ToString() == "MessageBox")));
+            if (!dlg) continue;
+            var parts = cond.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Select(i => i.Identifier.Text).Distinct()
+                .Where(n => st.Env.TryGetValue(n, out var en) && en.Val is VConst).Select(n => n + " = " + R.Expr(st.Env[n].Val, new Flags())).ToList();
+            f.DlgSkip ??= new Dictionary<string, string>(StringComparer.Ordinal);
+            f.DlgSkip[lid.Identifier.Text] = "hộp thoại không hiện vì " + (parts.Count > 0 ? string.Join(", ", parts) : "điều kiện dòng " + Line(a) + " luôn sai");
+        }
     }
     /// method cùng class có ghi ô (do Program cấp), dùng khi ghi dropped cho nhánh hằng
     public Func<string, bool> IsWriterMethod;
@@ -284,7 +495,11 @@ public sealed class Interp
                     if (c is CConst k)
                     {
                         if (k.B) es2.Dead = true; else ts.Dead = true; ts.Path = st.Path; es2.Path = st.Path;
-                        DropConst(k.B ? ifs.Else?.Statement : ifs.Statement, f, "điều kiện dòng " + ln + " luôn " + (k.B ? "đúng, nhánh else không chạy" : "sai"));
+                        var skipped = k.B ? ifs.Else?.Statement : ifs.Statement;
+                        string why = "điều kiện dòng " + ln + " luôn " + (k.B ? "đúng, nhánh else không chạy" : "sai");
+                        if (DialogCause(ifs.Condition, st, f) is string dcause) why += " (" + dcause + ")";
+                        NoteSkippedDialog(skipped, ifs.Condition, st, f);
+                        DropConst(skipped, f, why);
                     }
                     if (!ts.Dead) Exec(ifs.Statement, ts, f);
                     if (!es2.Dead && ifs.Else != null) Exec(ifs.Else.Statement, es2, f);
@@ -293,13 +508,21 @@ public sealed class Interp
                 }
             case ReturnStatementSyntax rs:
                 if (rs.Expression != null) { used = new(); var v = Eval(rs.Expression, st, f); f.Returns.Add((st.Path, v)); }
-                if (!st.Dead) f.Exits?.Add(new State { CV = st.CV, WildV = st.WildV, AnyV = st.AnyV });
+                if (!st.Dead) f.Exits?.Add(new State { CV = st.CV, RV = st.RV, WildV = st.WildV });
                 st.Dead = true; break;
             case ThrowStatementSyntax: st.Dead = true; st.Threw = true; break;
             case TryStatementSyntax ts2:
                 Exec(ts2.Block, st, f);
                 if (st.Threw) { st.Dead = false; st.Threw = false; }
-                if (ts2.Finally != null) { st.Dead = false; Exec(ts2.Finally.Block, st, f); }
+                // finally chạy cả khi khối try kết thúc bằng return/break/continue; sau finally đường đó vẫn đã thoát
+                if (ts2.Finally != null) { bool wd = st.Dead; st.Dead = false; Exec(ts2.Finally.Block, st, f); if (wd) st.Dead = true; }
+                break;
+            case BreakStatementSyntax:
+                if (jumps.Count > 0) { jumps[^1].Brk.Add(st.Clone()); st.Dead = true; }
+                break;
+            case ContinueStatementSyntax:
+                for (int i = jumps.Count - 1; i >= 0; i--)
+                    if (!jumps[i].Sw) { jumps[i].Cont.Add(st.Clone()); st.Dead = true; break; }
                 break;
             case UsingStatementSyntax us:
                 if (us.Declaration != null) foreach (var v in us.Declaration.Variables) { used = new(); Assign(st, v.Identifier.Text, v.Initializer != null ? Eval(v.Initializer.Value, st, f) : UninitSym(v.Identifier.Text, Line(v)), Line(v)); }
@@ -313,7 +536,7 @@ public sealed class Interp
                     if (TryUnroll(fs, st, f)) break;
                     var init0 = Snap(st, assigned);
                     foreach (var kv in declInit) init0[kv.Key] = kv.Value;
-                    var atoms = EnterLoop(st, assigned, Line(fs), fs);
+                    var atoms = EnterLoop(st, assigned, Line(fs), fs, f);
                     if (fs.Declaration != null) foreach (var v in fs.Declaration.Variables) { var si = RegSym(v.Identifier.Text, "loop", Line(fs), "biến lặp của vòng lặp dòng " + Line(fs)); atoms[v.Identifier.Text] = si.Ref; st.Env[v.Identifier.Text] = new Entry(VLin.Atom(si.Ref), ImmutableSortedSet.Create(Line(v))); }
                     used = new();
                     string cond = fs.Condition != null ? R.Cond(C.Of(Eval(fs.Condition, st, f)), new Flags()) : "true";
@@ -326,7 +549,7 @@ public sealed class Interp
                     var coll = Eval(fe.Expression, st, f);
                     var assigned = AssignedIn(fe);
                     var init0 = Snap(st, assigned);
-                    var atoms = EnterLoop(st, assigned, Line(fe), fe);
+                    var atoms = EnterLoop(st, assigned, Line(fe), fe, f);
                     string ct = R.Expr(coll, new Flags());
                     var fsi = RegSym(fe.Identifier.Text, "foreach", Line(fe), "phần tử đang duyệt của " + ct);
                     st.Env[fe.Identifier.Text] = new Entry(new VSym(fsi.Ref), ImmutableSortedSet.Create(Line(fe)));
@@ -337,7 +560,7 @@ public sealed class Interp
                 {
                     var assigned = AssignedIn(ws);
                     var init0 = Snap(st, assigned);
-                    var atoms = EnterLoop(st, assigned, Line(ws), ws);
+                    var atoms = EnterLoop(st, assigned, Line(ws), ws, f);
                     used = new();
                     Loop(st, f, ws.Statement, "while", R.Cond(C.Of(Eval(ws.Condition, st, f)), new Flags()), Line(ws), assigned, init0, null, null, atoms);
                     break;
@@ -346,7 +569,7 @@ public sealed class Interp
                 {
                     var assigned = AssignedIn(ds);
                     var init0 = Snap(st, assigned);
-                    var atoms = EnterLoop(st, assigned, Line(ds), ds);
+                    var atoms = EnterLoop(st, assigned, Line(ds), ds, f);
                     used = new();
                     Loop(st, f, ds.Statement, "do", "while " + R.Cond(C.Of(Eval(ds.Condition, st, f)), new Flags()), Line(ds), assigned, init0, null, null, atoms);
                     break;
@@ -373,13 +596,13 @@ public sealed class Interp
                         var c = C.Or(cs); labels.Add(c);
                         var bs = st.Clone(); bs.Path = bs.Path.Add(new PathItem(c, Line(sec)));
                         if (c is CConst k0 && !k0.B) { bs.Dead = true; foreach (var x in sec.Statements) DropConst(x, f, "nhãn case dòng " + Line(sec) + " không khớp giá trị switch dòng " + ln); }
-                        foreach (var x in sec.Statements) { if (bs.Dead) break; Exec(x, bs, f); }
+                        bs = SwitchSection(sec, bs, f);
                         branches.Add((c, bs));
                     }
                     var dc = C.Not(C.Or(labels));
                     var ds2 = st.Clone(); ds2.Path = ds2.Path.Add(new PathItem(dc, def != null ? Line(def) : ln));
                     if (dc is CConst k1 && !k1.B) { ds2.Dead = true; if (def != null) foreach (var x in def.Statements) DropConst(x, f, "nhánh default dòng " + Line(def) + " không chạy vì giá trị switch dòng " + ln + " luôn khớp một nhãn case"); }
-                    if (def != null) foreach (var x in def.Statements) { if (ds2.Dead) break; Exec(x, ds2, f); }
+                    if (def != null) ds2 = SwitchSection(def, ds2, f);
                     branches.Add((dc, ds2));
                     Merge(st, branches, ln);
                     break;
@@ -390,6 +613,18 @@ public sealed class Interp
             case FixedStatementSyntax fx: Exec(fx.Statement, st, f); break;
             default: break; // break/continue/goto/empty/local function: bỏ qua
         }
+    }
+
+    /// một nhánh switch: break thoát nhánh; trạng thái sau nhánh là hợp các đường tới break và đường chạy hết nhánh
+    State SwitchSection(SwitchSectionSyntax sec, State bs, Frame f)
+    {
+        if (bs.Dead) return bs;
+        var jc = new JumpCtx { Sw = true }; jumps.Add(jc);
+        foreach (var x in sec.Statements) { if (bs.Dead) break; Exec(x, bs, f); }
+        jumps.RemoveAt(jumps.Count - 1);
+        if (jc.Brk.Count == 0) return bs;
+        var all = new List<State>(jc.Brk); if (!bs.Dead) all.Add(bs);
+        var t = bs.Clone(); Join(t, all, Line(sec)); return t;
     }
 
     const int MaxUnroll = 40;
@@ -417,11 +652,28 @@ public sealed class Interp
         }
         used = savedUsed;
         if (vals.Count == 0) return false; // không kết luận vòng lặp 0 lần, để phân tích ký hiệu
+        var brk = new List<State>();
         foreach (var v in vals)
         {
             if (st.Dead) break;
             st.Env[name] = new Entry(v, ImmutableSortedSet.Create(Line(fs)));
+            var jc = new JumpCtx(); jumps.Add(jc);
             Exec(fs.Statement, st, f);
+            jumps.RemoveAt(jumps.Count - 1);
+            if (jc.Cont.Count > 0)
+            {
+                // continue: vòng sau chạy từ hợp các đường tới continue và đường chạy hết thân
+                var all = new List<State>(jc.Cont); if (!st.Dead) all.Add(st);
+                var t = st.Clone(); Join(t, all, Line(fs));
+                st.Env = t.Env; st.CopyVers(t); st.Path = t.Path; st.Dead = t.Dead; st.Threw = t.Threw;
+            }
+            brk.AddRange(jc.Brk);
+        }
+        if (brk.Count > 0)
+        {
+            var all = new List<State>(brk); if (!st.Dead) all.Add(st);
+            var t = st.Clone(); Join(t, all, Line(fs));
+            st.Env = t.Env; st.CopyVers(t); st.Path = t.Path; st.Dead = t.Dead; st.Threw = t.Threw;
         }
         return true;
     }
@@ -433,14 +685,26 @@ public sealed class Interp
         return d;
     }
 
-    Dictionary<string, string> EnterLoop(State st, HashSet<string> assigned, int line, SyntaxNode loopNode = null)
+    Dictionary<string, string> EnterLoop(State st, HashSet<string> assigned, int line, SyntaxNode loopNode, Frame f)
     {
-        if (loopNode != null && MayWrite(loopNode)) { Wild(st, line, "vòng lặp dòng " + line + " có lệnh hoặc lời gọi có thể ghi ô"); fieldVer = Mk.Next(); }
+        long pre = st.WildV;
+        if (loopNode != null)
+        {
+            if (MayWrite(loopNode)) fieldVer = Mk.Next();
+            // phiên bản đầu vòng: chỉ khi thân vòng có lệnh đổi giá trị ô hoặc lời gọi có thể ghi; chỉ có hiệu lực trong thân vòng (xem Loop)
+            var lw = LoopWrites(loopNode, f?.Cls);
+            if (lw.Kind != null) { Wild(st, line, "vòng lặp dòng " + line + (lw.Kind == "ghi" ? " có lệnh ghi giá trị ô" : " có lời gọi có thể ghi ô (" + string.Join(", ", lw.Calls) + ")"), lw.Kind, lw.Calls); activeLoop.Add(st.WildV); }
+        }
+        loopVers.Push((pre, st.WildV));
         var atoms = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var n in assigned.OrderBy(x => x, StringComparer.Ordinal))
         {
             var si = RegSym(n, "loop", line, "giá trị đầu mỗi vòng của vòng lặp dòng " + line);
             atoms[n] = si.Ref;
+            // biến chuỗi/đối tượng mang qua vòng: phép chuyển số trên nó không được bỏ (int(text) khác text)
+            if (loopNode != null && loopNode.Ancestors().OfType<BaseMethodDeclarationSyntax>().FirstOrDefault() is { } md
+                && md.DescendantNodes().OfType<VariableDeclaratorSyntax>().FirstOrDefault(d => d.Identifier.Text == n)?.Parent is VariableDeclarationSyntax vd
+                && vd.Type.ToString() is "string" or "object" or "String" or "Object") strAtoms.Add(si.Ref);
             st.Env[n] = new Entry(VLin.Atom(si.Ref), ImmutableSortedSet<int>.Empty);
         }
         return atoms;
@@ -451,11 +715,24 @@ public sealed class Interp
     {
         string A(string n) => atoms != null && atoms.TryGetValue(n, out var a) ? a : n;
         var li = new LoopInfo(head + (cond != null ? " " + cond : ""), line);
+        var lp = loopVers.Count > 0 ? loopVers.Pop() : (st.WildV, st.WildV);
         var bs = st.Clone(); bs.Loops = bs.Loops.Add(li);
+        var b0 = bs.Clone(); var jc = new JumpCtx(); jumps.Add(jc);
         Exec(body, bs, f);
+        jumps.RemoveAt(jumps.Count - 1);
+        // continue: cuối thân vòng là hợp các đường tới continue và đường chạy hết thân
+        if (jc.Cont.Count > 0) { var all = new List<State>(jc.Cont); if (!bs.Dead) all.Add(bs); Join(b0, all, line); bs = b0; }
         if (incs != null) { bs.Dead = false; foreach (var inc in incs.Value) { used = new(); ExecExpr(inc, bs, f); } }
-        // vòng lặp chạy 0 hoặc nhiều lần: hợp phiên bản ô trước vòng và sau thân vòng
-        MergeVers(st, new List<State> { st.Clone(), bs }, line);
+        // vòng lặp chạy 0 hoặc nhiều lần: hợp phiên bản ô trước vòng và sau thân vòng; phiên bản đầu vòng chỉ dùng trong thân vòng,
+        // sau vòng ô giữ phiên bản trước vòng hoặc phiên bản của lệnh ghi trong thân (theo vùng ghi)
+        var pre0 = st.Clone();
+        if (pre0.WildV == lp.Item2) pre0.WildV = lp.Item1;
+        if (bs.WildV == lp.Item2) bs.WildV = lp.Item1;
+        var outs = new List<State> { pre0, bs };
+        // break: phiên bản ô tại lệnh break cũng ra sau vòng
+        foreach (var b in jc.Brk) { var bc = b.Clone(); if (bc.WildV == lp.Item2) bc.WildV = lp.Item1; outs.Add(bc); }
+        MergeVers(st, outs, line);
+        activeLoop.Remove(lp.Item2);
         // biến cảm ứng: giá trị đầu và bước hằng
         var ind = new List<string>();
         foreach (var n in assigned.OrderBy(x => (declared != null && declared.Contains(x)) ? 0 : 1).ThenBy(x => x, StringComparer.Ordinal))
@@ -855,7 +1132,7 @@ public sealed class Interp
                 {
                     if (oc.Initializer != null && oc.Initializer.IsKind(SyntaxKind.CollectionInitializerExpression))
                         return new VArr(oc.Initializer.Expressions.Select(x => Eval(x, st, f)).ToList());
-                    if (oc.ArgumentList != null) foreach (var a in oc.ArgumentList.Arguments) Eval(a.Expression, st, f);
+                    var ocArgs = oc.ArgumentList != null ? oc.ArgumentList.Arguments.Select(a => Eval(a.Expression, st, f)).ToList() : new List<V>();
                     var tn = oc.Type.ToString(); int lt = tn.IndexOf('<'); if (lt > 0) tn = tn.Substring(0, lt);
                     if ((tn == "List" || tn == "HashSet") && oc.Initializer == null && (oc.ArgumentList == null || oc.ArgumentList.Arguments.Count == 0)) return new VArr(new List<V>());
                     tn = tn.Split('.').Last();
@@ -863,6 +1140,13 @@ public sealed class Interp
                     {
                         var props = oc.Initializer?.Expressions.OfType<AssignmentExpressionSyntax>().Select(a => a.Left.ToString().Trim() + "=" + R.Expr(Eval(a.Right, st, f), new Flags())) ?? Enumerable.Empty<string>();
                         return new VSym("celltype(" + string.Join(", ", new[] { tn.Substring(0, tn.Length - 8) }.Concat(props)) + ")");
+                    }
+                    if (tn.StartsWith("frm", StringComparison.Ordinal))
+                    {
+                        // biểu mẫu hộp thoại: mỗi lần tạo là một đối tượng riêng; Yes/No/DialogResult đọc sau ShowDialog là lựa chọn của người dùng
+                        var t0 = "obj(" + tn + ")"; var tf = t0 + Mk.Tag(Mk.Next());
+                        dialogForms[tf] = (Line(oc), tn, ocArgs.Count > 0 ? StrConst(ocArgs[0]) : null, t0.Length);
+                        return new VSym(tf);
                     }
                     return new VSym("obj(" + tn + ")");
                 }
@@ -877,7 +1161,7 @@ public sealed class Interp
                 }
             case ImplicitArrayCreationExpressionSyntax ia: return new VArr(ia.Initializer.Expressions.Select(x => Eval(x, st, f)).ToList());
             case InitializerExpressionSyntax ie: return new VArr(ie.Expressions.Select(x => Eval(x, st, f)).ToList());
-            case LambdaExpressionSyntax le: return new VLambda(le);
+            case LambdaExpressionSyntax le: return new VLambda(le, LamText(le, st, f, 0));
             case DefaultExpressionSyntax: return VConst.Null;
             case TypeOfExpressionSyntax to: return new VSym("type(" + to.Type + ")");
             case AwaitExpressionSyntax aw: return Eval(aw.Expression, st, f);
@@ -976,7 +1260,7 @@ public sealed class Interp
                     var fl = new Flags(); string rf = R.CellRef(c, fl);
                     string pre = R.SheetPrefix(c.S, new Flags());
                     long ver = ReadVer(st, c);
-                    return new VSym("cell(" + pre + rf + ")" + VerTag(pre + rf, ver) + "." + n.ToLowerInvariant(), fl.Opaque);
+                    return new VSym("cell(" + pre + rf + ")" + VerTag(c, pre + rf, ver) + "." + n.ToLowerInvariant(), fl.Opaque);
                 }
             case VCellInfo ci:
                 if (n == "CellTemplate" || n == "Location") return ci;
@@ -1002,6 +1286,12 @@ public sealed class Interp
                     if (alts.Count == 0) alts = cs.Alts;
                     if (alts.Count < cs.Alts.Count && alts.Count > 0 && alts[^1].When != null) alts[^1] = (null, alts[^1].Val);
                     return Ar.Cases(alts.Select(x => (x.When, Member(x.Val, n, st))).ToList());
+                }
+            case VSym y when (n == "Yes" || n == "No" || n == "DialogResult") && dialogForms.TryGetValue(y.Text, out var dfm):
+                {
+                    var si = RegSym("user_choice", "dialog", dfm.Line, "nút người dùng bấm trên biểu mẫu hộp thoại" + (dfm.Code != null ? " mã \"" + dfm.Code + "\"" : "") + " tạo tại dòng " + dfm.Line + ", chọn lúc chạy, .yes đúng khi người dùng chọn Có, .no khi chọn Không" + (n == "DialogResult" ? ", .result theo mã DialogResult: 1 OK, 2 Cancel, 6 Yes, 7 No" : ""));
+                    var txt = si.Ref + "(form" + (dfm.Code != null ? " \"" + dfm.Code + "\"" : "") + ", dòng " + dfm.Line + ")." + (n == "Yes" ? "yes" : n == "No" ? "no" : "result") + y.Text.Substring(dfm.Len);
+                    return n == "DialogResult" ? VLin.Atom(txt) : new VSym(txt);
                 }
             case VSym y:
                 if (n == "Location" || n == "CellTemplate" || n == "Value" && y.Text.EndsWith(".value")) return y;
@@ -1044,9 +1334,14 @@ public sealed class Interp
                 if (c.Kind == "rows" && idx.Count == 1) return new VCell(c.S, "row", idx[0], null);
                 if (c.Kind == "cols" && idx.Count == 1) return new VCell(c.S, "col", null, idx[0]);
                 return new VOpaque("cells-index");
+            case VConst kn1 when kn1.Val == null:
+                pendingThrow = true; pendingWhat = "truy cập chỉ số trên giá trị null";
+                return new VOpaque("null-deref");
             case VCases cs:
                 {
-                    // ngoại lệ chắc chắn chỉ khi mọi nhánh đều ngoài mảng
+                    // nhánh null không đi tiếp được (ngoại lệ): bỏ, giữ các nhánh còn lại; ngoại lệ chắc chắn chỉ khi mọi nhánh đều ngoài mảng
+                    var nn = cs.Alts.Where(x => !(x.Val is VConst kz && kz.Val == null)).ToList();
+                    if (nn.Count > 0 && nn.Count < cs.Alts.Count) { if (nn[^1].When != null) nn[^1] = (null, nn[^1].Val); cs = new VCases(nn); }
                     bool saved = pendingThrow, allThrow = true; var alts = new List<(Cond, V)>();
                     foreach (var x in cs.Alts) { pendingThrow = false; alts.Add((x.When, Element(x.Val, idx, hint))); allThrow &= pendingThrow; }
                     pendingThrow = saved || allThrow;
@@ -1108,7 +1403,7 @@ public sealed class Interp
             if (crec.Reason != null && m != null)
             {
                 // không theo được: lời gọi có thể ghi ô và trường lớp bất kỳ
-                Wild(st, ln, "lời gọi " + name + " không nội tuyến dòng " + ln + " (có thể ghi ô)"); fieldVer = Mk.Next();
+                Wild(st, ln, "lời gọi " + name + " không nội tuyến dòng " + ln + " (có thể ghi ô)", "co_the_ghi", new[] { name }); fieldVer = Mk.Next();
                 var smt = RegSym(name, "method", ln, "method cùng class không nội tuyến tại dòng " + ln + ": " + crec.Reason);
                 crec.EffAfter = Effects.Count; crec.DropAfter = Dropped.Count;
                 var cargs = new List<V> { new VSym(smt.Ref) };
@@ -1277,13 +1572,19 @@ public sealed class Interp
                 {
                     var v = Arg(inv, 0, st, f);
                     if (v is VCat vcat && vcat.Parts.Count == 1 && vcat.Parts[0] is not VConst) v = vcat.Parts[0];
+                    if (name == "Parse" && rt is "bool" or "Boolean")
+                    {
+                        // ép kiểu theo nguồn: bool.Parse ra bool(...), không int(...)
+                        if (v is VConst kb0) { if (kb0.Val is bool) return kb0; if (kb0.Val is string sb0 && bool.TryParse(sb0.Trim(), out var bb0)) return new VConst(bb0); }
+                        return VLin.Atom(((VSym)Fn("bool", v)).Text);
+                    }
                     bool isInt = !(name.Contains("Double") || name.Contains("Decimal")) && rt != "double" && rt != "decimal";
                     if (v is VConst k)
                     {
                         if (k.Val is string s) { if (isInt && long.TryParse(s.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var l)) return new VConst(l); if (double.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var d)) return isInt ? new VConst((long)d) : new VConst(d); }
                         if (k.IsNum) return k;
                     }
-                    if (v is VLin vl && (!isInt || !vl.T.Keys.Any(a => a.Contains("cell(") || a.Contains("num(")))) return v;
+                    if (v is VLin vl && (!isInt || !vl.T.Keys.Any(a => a.Contains("cell(") || a.Contains("num("))) && !vl.T.Keys.Any(strAtoms.Contains)) return v;
                     var fv = Fn(isInt ? "int" : "num", v);
                     return VLin.Atom(((VSym)fv).Text);
                 }
@@ -1294,7 +1595,7 @@ public sealed class Interp
                     var p = lam != null ? PathOfLambda(lam.L, st, f) : null;
                     if (p != null) return new VCellInfo(p);
                     Opaque(rt.Length > 0 ? "<collection>." + name : name, inv, "value");
-                    return new VOpaque(name);
+                    return new VOpaque(name, new List<V> { coll, lam != null ? lam : Arg(inv, 0, st, f) });
                 }
             case "GetValueCustom" when args.Count >= 3:
                 {
@@ -1436,6 +1737,20 @@ public sealed class Interp
                     var vs = Enumerable.Range(0, args.Count).Select(i => Arg(inv, i, st, f)).ToArray();
                     return Fn(name.ToLowerInvariant(), vs);
                 }
+            case "Show" when rt == "MessageBox" || rt.EndsWith(".MessageBox", StringComparison.Ordinal):
+                {
+                    // kết quả hộp thoại: người dùng chọn lúc chạy, không phải hằng
+                    var av = Enumerable.Range(0, args.Count).Select(i => Arg(inv, i, st, f)).ToList();
+                    string btn = args.Count >= 3 && av[2] is VConst bk && bk.Val is long bl && bl >= 0 && bl <= 5 ? new[] { "OK", "OKCancel", "AbortRetryIgnore", "YesNoCancel", "YesNo", "RetryCancel" }[bl] : args.Count >= 3 ? "?" : "OK";
+                    var si = RegSym("user_choice", "dialog", ln, "nút người dùng bấm trên hộp thoại MessageBox tại dòng " + ln + " (nút " + btn + "), chọn lúc chạy, mã DialogResult: 1 OK, 2 Cancel, 3 Abort, 4 Retry, 5 Ignore, 6 Yes, 7 No");
+                    return VLin.Atom(si.Ref + "(MessageBox " + btn + ", dòng " + ln + ")" + Mk.Tag(Mk.Next()));
+                }
+            case "ShowDialog" when args.Count == 0 && !isStmt:
+                {
+                    var si = RegSym("user_choice", "dialog", ln, "kết quả hộp thoại ShowDialog tại dòng " + ln + ", người dùng chọn lúc chạy, mã DialogResult: 1 OK, 2 Cancel, 6 Yes, 7 No");
+                    if (recv != null) Eval(recv, st, f);
+                    return VLin.Atom(si.Ref + "(ShowDialog, dòng " + ln + ")" + Mk.Tag(Mk.Next()));
+                }
             case "Log" or "Show" or "WriteLine":
                 foreach (var a in args) Eval(a.Expression, st, f);
                 return VConst.Null;
@@ -1450,11 +1765,11 @@ public sealed class Interp
             rv = Eval(recv, st, f);
             qn = rv switch { VSheet => "<sheet>.", VCell => "<cell>.", VSpread => "<spread>.", VSheets => "<sheets>.", VCells => "<cells>.", _ => "<obj>." } + name;
         }
-        var argv = args.Select(a => a.Expression is LambdaExpressionSyntax ? new VOpaque("lambda") : Eval(a.Expression, st, f)).ToList();
+        var argv = args.Select(a => Eval(a.Expression, st, f)).ToList();
         Opaque(qn, inv, isStmt ? "statement" : "value");
         bool classLocal = (recv == null || recv is ThisExpressionSyntax) && f.Cls != null && f.Cls.Methods.ContainsKey(name);
         SymInfo cls0 = null;
-        if (classLocal) { cls0 = RegSym(name, "method", ln, "method cùng class không nội tuyến tại dòng " + ln + ": không khớp chữ ký (số đối số " + args.Count + ")"); Wild(st, ln, "lời gọi " + name + " không nội tuyến dòng " + ln + " (có thể ghi ô)"); fieldVer = Mk.Next(); }
+        if (classLocal) { cls0 = RegSym(name, "method", ln, "method cùng class không nội tuyến tại dòng " + ln + ": không khớp chữ ký (số đối số " + args.Count + ")"); Wild(st, ln, "lời gọi " + name + " không nội tuyến dòng " + ln + " (có thể ghi ô)", "co_the_ghi", new[] { name }); fieldVer = Mk.Next(); }
         bool localRecv = rv is VArr || rv is VConst || (rv is VSym rsy && rsy.Text.StartsWith("new ", StringComparison.Ordinal));
         bool touches = SheetLike(rv) || argv.Any(SheetLike) || argv.Any(a => a is VSym ts0 && ts0.Text == "this");
         if (isStmt && !localRecv)
@@ -1465,7 +1780,8 @@ public sealed class Interp
             e1.Params["touchesSheet"] = touches;
             AddEffect(e1, st);
         }
-        else if (touches) Wild(st, ln, "lời gọi chưa giải " + qn + " dòng " + ln + " (có thể ghi ô)");
+        else if (touches && CallWriteKind(qn) is string wk)
+            Wild(st, ln, wk == "ghi" ? "lệnh " + qn + " dòng " + ln + " (đổi giá trị hoặc dịch ô)" : "lời gọi chưa giải " + qn + " dòng " + ln + " (có thể ghi ô)", wk, new[] { qn });
         // lời gọi trên đối tượng: đối số đầu của nhãn là đối tượng nhận
         return classLocal ? new VOpaque("call", new List<V> { new VSym(cls0.Ref) }.Concat(argv).ToList()) : new VOpaque(qn, rv != null ? new List<V> { rv }.Concat(argv).ToList() : argv);
     }
@@ -1603,7 +1919,7 @@ public sealed class Interp
     {
         if (fmt is VCat fc) return VCat.Make(fc.Parts.Select(p => p is VConst pk && pk.Val is string ps ? FormatV(new VConst(ps), vals) : p));
         var s = StrConst(fmt);
-        if (s == null) return new VOpaque("Format");
+        if (s == null) return new VOpaque("Format", new List<V> { fmt }.Concat(vals).ToList());
         var parts = new List<V>();
         int i = 0; var sb = new System.Text.StringBuilder();
         while (i < s.Length)
@@ -1614,9 +1930,9 @@ public sealed class Interp
             if (ch == '{')
             {
                 int j = s.IndexOf('}', i);
-                if (j < 0) return new VOpaque("Format");
+                if (j < 0) return new VOpaque("Format", new List<V> { fmt }.Concat(vals).ToList());
                 var full = s.Substring(i + 1, j - i - 1); var spec = full.Split(':', ',')[0];
-                if (!int.TryParse(spec, out var ai) || ai >= vals.Count) return new VOpaque("Format");
+                if (!int.TryParse(spec, out var ai) || ai >= vals.Count) return new VOpaque("Format", new List<V> { fmt }.Concat(vals).ToList());
                 parts.Add(new VConst(sb.ToString())); sb.Clear();
                 parts.Add(full.Length > spec.Length ? Ar.Fn("format", vals[ai], new VConst(full.Substring(spec.Length))) : vals[ai]); i = j + 1; continue;
             }
@@ -1624,6 +1940,79 @@ public sealed class Interp
         }
         parts.Add(new VConst(sb.ToString()));
         return VCat.Make(parts);
+    }
+
+    Dictionary<string, string> outerLam = new(StringComparer.Ordinal);
+    /// hàm vô danh dạng trung tính: fn(it: thân), tham số đổi tên it/it1/it2; thân khối nhiều lệnh ghi phạm vi dòng
+    string LamText(LambdaExpressionSyntax l, State st, Frame f, int depth)
+    {
+        var ps = l switch { SimpleLambdaExpressionSyntax s1 => new List<string> { s1.Parameter.Identifier.Text }, ParenthesizedLambdaExpressionSyntax p1 => p1.ParameterList.Parameters.Select(x => x.Identifier.Text).ToList(), _ => new List<string>() };
+        var body = l switch { SimpleLambdaExpressionSyntax s2 => s2.Body, ParenthesizedLambdaExpressionSyntax p2 => p2.Body, _ => null };
+        var ren = new Dictionary<string, string>(StringComparer.Ordinal);
+        for (int i = 0; i < ps.Count; i++) ren[ps[i]] = (depth == 0 ? "it" : "it" + depth + "_") + (ps.Count == 1 ? "" : (i + 1).ToString(CultureInfo.InvariantCulture));
+        foreach (var kv in outerLam) if (!ren.ContainsKey(kv.Key)) ren[kv.Key] = kv.Value;
+        var saveLam = outerLam; outerLam = ren;
+        var set = new HashSet<string>(ren.Keys, StringComparer.Ordinal);
+        string bt = body is ExpressionSyntax be ? Neu(be, set, st, f, depth)
+            : body is BlockSyntax bk ? (bk.Statements.Count == 1 && bk.Statements[0] is ReturnStatementSyntax rs && rs.Expression != null ? Neu(rs.Expression, set, st, f, depth) : "khối lệnh dòng " + Line(bk) + "-" + (bk.GetLocation().GetLineSpan().EndLinePosition.Line + 1))
+            : "?";
+        outerLam = saveLam;
+        return "fn(" + string.Join(", ", ps.Select(x => ren[x])) + ": " + bt + ")";
+    }
+    string Neu(ExpressionSyntax e, HashSet<string> ps, State st, Frame f, int depth)
+    {
+        string N(ExpressionSyntax x) => Neu(x, ps, st, f, depth);
+        string A(ArgumentListSyntax al) => string.Join(", ", al.Arguments.Select(a => N(a.Expression)));
+        switch (e)
+        {
+            case ParenthesizedExpressionSyntax p: return "(" + N(p.Expression) + ")";
+            case CastExpressionSyntax c: return N(c.Expression);
+            case LiteralExpressionSyntax lit: return lit.IsKind(SyntaxKind.StringLiteralExpression) ? R.Expr(new VConst(lit.Token.ValueText), new Flags()) : lit.Token.Text;
+            case IdentifierNameSyntax id:
+                {
+                    var n = id.Identifier.Text;
+                    if (ps.Contains(n)) return outerLam[n];
+                    // biến/trường bắt được: viết theo giá trị đang có (như mọi chỗ khác); tên kiểu/lớp tĩnh giữ nguyên
+                    V cv = st.Env.TryGetValue(n, out var en) ? en.Val : f.Cls != null && f.Cls.Members.Contains(n) ? Lookup(n, st, f, id) : null;
+                    if (cv == null) return n;
+                    var ct = R.Expr(cv, new Flags());
+                    return cv is VConst || cv is VSym || ct.IndexOf(' ') < 0 ? ct : "(" + ct + ")";
+                }
+            case MemberAccessExpressionSyntax ma:
+                {
+                    // điều hướng cấu trúc ô/bảng viết như chỗ khác: bỏ CellTemplate/Location, chỉ số dòng/cột dạng hàm
+                    var mn = ma.Name.Identifier.Text;
+                    if (mn is "CellTemplate" or "Location") return N(ma.Expression);
+                    if (mn == "RowIndex") return "rowIndex(" + N(ma.Expression) + ")";
+                    if (mn == "ColIndex") return "colIndex(" + N(ma.Expression) + ")";
+                    return N(ma.Expression) + "." + mn;
+                }
+            case InvocationExpressionSyntax iv:
+                {
+                    var a = A(iv.ArgumentList);
+                    if (iv.Expression is MemberAccessExpressionSyntax m)
+                    {
+                        if (m.Name.Identifier.Text == "Equals" && iv.ArgumentList.Arguments.Count == 1) return N(m.Expression) + " == " + a;
+                        return N(m.Expression) + "." + m.Name.Identifier.Text + "(" + a + ")";
+                    }
+                    return (iv.Expression is IdentifierNameSyntax ii ? ii.Identifier.Text : iv.Expression is GenericNameSyntax gn ? gn.Identifier.Text : "expr:" + iv.Expression.Kind()) + "(" + a + ")";
+                }
+            case BinaryExpressionSyntax b: return N(b.Left) + " " + b.OperatorToken.Text + " " + N(b.Right);
+            case PrefixUnaryExpressionSyntax pu: return pu.OperatorToken.Text + N(pu.Operand);
+            case ElementAccessExpressionSyntax ea:
+                {
+                    var ix = string.Join(", ", ea.ArgumentList.Arguments.Select(a => N(a.Expression)));
+                    if (ea.Expression is MemberAccessExpressionSyntax em && em.Name.Identifier.Text is "Cells" or "Rows" or "Columns") return N(em.Expression) + "." + em.Name.Identifier.Text.ToLowerInvariant() + "[" + ix + "]";
+                    return N(ea.Expression) + "[" + ix + "]";
+                }
+            case ConditionalExpressionSyntax ce: return "(" + N(ce.Condition) + " ? " + N(ce.WhenTrue) + " : " + N(ce.WhenFalse) + ")";
+            case LambdaExpressionSyntax l2: return depth < 3 ? LamText(l2, st, f, depth + 1) : "fn(...)";
+            case ThisExpressionSyntax: return "this";
+            case PredefinedTypeSyntax pt: return pt.Keyword.ValueText;
+            case GenericNameSyntax g2: return g2.Identifier.Text;
+            case InterpolatedStringExpressionSyntax istr: return "concat(" + string.Join(", ", istr.Contents.Select(c => c is InterpolatedStringTextSyntax t ? R.Expr(new VConst(t.TextToken.ValueText), new Flags()) : N(((InterpolationSyntax)c).Expression))) + ")";
+            default: return "expr:" + e.Kind();
+        }
     }
 
     string PathOfLambda(LambdaExpressionSyntax l, State st, Frame f)

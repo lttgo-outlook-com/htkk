@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Chọn 30 hook ngẫu nhiên (seed cố định, phân tầng: 5 hook dài trên 300 dòng đọc 15 dòng tác dụng mỗi hook,
-25 hook còn lại chia in_menu true/false; chỉ hook có ít nhất 1 tác dụng),
+25 hook còn lại chia in_menu true/false; ngưỡng dòng: mọi hook trong mẫu, kể cả hook thay slot, có ít nhất MINL dòng tác dụng, mặc định 15),
 in dòng nguồn có tác dụng (đầu/giữa/cuối) kèm điều kiện bao quanh và tác dụng trích được ở dòng đó để đọc tay.
-Dùng: python3 -I sample_hooks.py <decompiledDir> <rulesDir> [seed]"""
+Dùng: python3 -I sample_hooks.py <decompiledDir> <rulesDir> [seed] [minLines (mặc định 15; 1 = bỏ ngưỡng)]"""
 import glob, json, os, random, re, sys
 
 dec, rules = sys.argv[1], sys.argv[2]
 seed = int(sys.argv[3]) if len(sys.argv) > 3 else 20261010
+MINL = int(sys.argv[4]) if len(sys.argv) > 4 else 15
 EFF = re.compile(r"\.(?:Cells|Rows|Columns)\[.*\]\.\w+ = |\.(Formula|Value|Text|Locked|CellType|BackColor) = |ChangeValueCell\(|LockUnLockCols?\(|changFormatCell\(|\.Reset\w*\(\)|TabStrip\[|checkLockUnLockCells\(")
 MDECL = re.compile(r"^\t(?:(?:public|private|protected|internal|static)\s+)*[\w<>\[\],.?]+\s+(\w+)\s*\(", re.M)
 CALL = re.compile(r"^\s*(?:[\w<>\[\],.]+\s+\w+\s*=\s*|\w+\s*=\s*)?(?:this\.)?(\w+)\s*\(")
@@ -21,10 +22,11 @@ for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
         s, e = h["lines"]
         mnames = set(MDECL.findall("\n".join(src)))
         lines = [i for i in range(s + 1, e + 1) if EFF.search(src[i - 1]) or ((CALL.match(src[i - 1]) or [None, None])[1] in mnames)]
-        if lines:
+        # ngưỡng dòng áp ngay khi lập pool: mọi tầng và mọi bậc nới khi thay slot đều kế thừa
+        if len(lines) >= max(1, MINL):
             pool[d["key"]["in_menu"]].append((d["key"]["Class"], h["hook"], d["file"], s, e, lines))
 rnd = random.Random(seed)
-longp = sorted([x for k in (True, False) for x in pool[k] if x[4] - x[3] > 300 and len(x[5]) >= 15])
+longp = sorted([x for k in (True, False) for x in pool[k] if x[4] - x[3] > 300 and len(x[5]) >= max(15, MINL)])
 pl = rnd.sample(longp, 5)
 pick = [("long", x) for x in pl]
 pick += [(True, x) for x in rnd.sample([x for x in pool[True] if x not in pl], 13)] + [(False, x) for x in rnd.sample([x for x in pool[False] if x not in pl], 12)]
@@ -59,13 +61,26 @@ for i, (im, x) in enumerate(pick):
         continue
     cand = longp if im == "long" else pool[im]
     order = rnd2.sample(cand, len(cand))
-    y = next(y for y in order if y[:2] not in taken and y[:2] not in seen and (im != "long" or ok_long(y)))
-    replaced.append("%d: %s.%s -> %s.%s" % (i + 1, x[0], x[1], y[0], y[1]))
+    # nới dần ràng buộc khi hết ứng viên (seed 8086 từng hết ứng viên tầng dài, StopIteration):
+    # (a) đủ ràng buộc; (b) bỏ ràng buộc khuôn mã/họ; (c) cho phép hook đã đọc; không còn thì giữ slot cũ
+    tiers = [("", lambda y: y[:2] not in seen and (im != "long" or ok_long(y))),
+             (" (nới: bỏ ràng buộc khuôn/họ)", lambda y: y[:2] not in seen),
+             (" (nới: hook đã đọc ở vòng trước)", lambda y: True)]
+    y, note = None, ""
+    for note, cond in tiers:
+        y = next((y for y in order if y[:2] not in taken and cond(y)), None)
+        if y is not None:
+            break
+    if y is None:
+        replaced.append("%d: %s.%s giữ nguyên (hết ứng viên)" % (i + 1, x[0], x[1]))
+        continue
+    replaced.append("%d: %s.%s -> %s.%s%s" % (i + 1, x[0], x[1], y[0], y[1], note))
     taken.add(y[:2]); pick[i] = (im, y)
 print("THAY SLOT:", "; ".join(replaced) if replaced else "không")
 for n, (im, (cls, hook, path, s, e, lines)) in enumerate(pick, 1):
     src = open(os.path.join(dec, path), encoding="utf-8-sig").read().split("\n")
     d = json.load(open(os.path.join(rules, cls + ".json")))
+    assert len(lines) >= MINL, (cls, hook, len(lines))
     k = 15  # QC4: mỗi hook ít nhất 15 dòng (hook ít dòng tác dụng hơn thì đọc hết)
     chosen = lines if len(lines) <= k else sorted({lines[(len(lines) - 1) * i // (k - 1)] for i in range(k)})
     print("=" * 8, n, "in_menu=%s" % im, cls, hook, "%d-%d" % (s, e), "effect-lines=%d" % len(lines))

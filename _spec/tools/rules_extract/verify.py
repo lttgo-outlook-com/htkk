@@ -523,50 +523,7 @@ for x in st_bad[:5]:
     print("   trạng thái sai:", x)
 say(not st_bad, "(7i) effect resolved/parametric không chứa opaque (kể cả điều kiện): vi phạm %d" % len(st_bad))
 
-# (7j) ca QC lần 3
-def recs_of(c):
-    return json.load(open(os.path.join(rules, c + ".json")))
-cj = []
-d1 = recs_of("BctcTt200DdNckt226")
-for hk, ln in (("ButtonClick_0", 377), ("ButtonClick_1", 396), ("ButtonClick_2", 415), ("ButtonClick_3", 434)):
-    effs = [e for r in d1["records"] if r["hook"] == hk for e in r["effects"] if (e.get("via") or "").startswith("getSoKyTruoc@%d" % ln) and e["op"] == "setValue"]
-    cj.append(("(1) %s getSoKyTruoc@%d setValue qua via: %d" % (hk, ln, len(effs)), len(effs) > 0))
-d2 = recs_of("Cnkd01TT40Nckt253")
-bad2 = [r for r in d2["records"] if r["unreachable"] and any("cell(S0!B10).value" in g for g in r["guards"])]
-cj.append(("(2) Cnkd01TT40Nckt253: bản ghi unreachable dựa trên ô B10 (bị ghi ở SetHinhThucKeKhai): %d" % len(bad2), not bad2))
-d3 = recs_of("AcTb03Nckt210")
-r87 = [r for r in d3["records"] for e in r["effects"] if e["at"] == 87]
-cj.append(("(2) AcTb03Nckt210 dòng 87 có effect, không gắn unreachable: %d bản ghi, unreachable %d" % (len(r87), sum(r["unreachable"] for r in r87)), bool(r87) and not any(r["unreachable"] for r in r87)))
-d4 = recs_of("CnkdBcSdhd01Nckt250")
-tabs = {e["at"] for r in d4["records"] for e in r["effects"] if e["op"] == "setTabColor"}
-cj.append(("(3) CnkdBcSdhd01Nckt250 setTabColor tại 2135, 2144: %s" % sorted(tabs & {2135, 2144}), {2135, 2144} <= tabs))
-d5 = recs_of("Ttdb01ND373Nckt293")
-h5 = [h for h in d5["hooks"] if h["hook"] == "ClearData_1"][0]
-cj.append(("(3) Ttdb01ND373Nckt293:1440 checkLockUnLockCells có dropped (ngoại lệ chắc chắn dòng 1439) hoặc effect", any(x["at"] == 1440 for x in h5["dropped"]) or any(e["at"] == 1440 and e["op"] == "lock" for r in d5["records"] for e in r["effects"])))
-d6 = recs_of("CnkdTcktHkd01Nckt289")
-e6 = [e for r in d6["records"] for e in r["effects"] if e["at"] in (90, 91) and "via" not in e]
-cj.append(("(4) CnkdTcktHkd01Nckt289:90-91 ToIntOrDefault -> int(ô): %d effect" % len(e6), bool(e6) and all("int(cell(" in json.dumps(e, ensure_ascii=False) for e in e6)))
-d7 = recs_of("TncnXsbhdcHkd01Nckt289")
-g7 = [g for r in d7["records"] for g in r["guards"] if "500000000" in g]
-cj.append(("(4) TncnXsbhdcHkd01Nckt289:332 điều kiện %s" % sorted(set(g7))[:1], bool(g7) and all("int(cell(" in g for g in g7)))
-d8 = recs_of("Gtgt02TT80Nckt251")
-e8 = [e for r in d8["records"] for e in r["effects"] if e["at"] in (155, 159, 163, 167) and "via" not in e]
-cj.append(("(6) Gtgt02TT80Nckt251:155-167 giữ chỉ số mảng, không còn null[...]: %s" % [json.dumps(e["value"], ensure_ascii=False)[:70] for e in e8[:2]], bool(e8) and all("null[" not in json.dumps(e["value"]) and re.search(r"\[\d+\]", json.dumps(e["value"])) for e in e8)))
-for msg, good in cj:
-    print("   " + ("đúng " if good else "SAI ") + msg)
-say(all(g for _, g in cj), "(7j) các ca QC lần 3 (1)-(6) đúng")
-
-# (7k) không còn dấu ẩn nội bộ trong JSON
-leak = [os.path.basename(f) for f in glob.glob(os.path.join(rules, "*.json")) if "\\u001f" in open(f).read().lower() or "\x1f" in open(f).read()]
-say(not leak, "(7k) JSON không chứa dấu ẩn nội bộ: %d tệp vi phạm" % len(leak))
-# ---------- (8) QC lần 4 ----------
-def all_records():
-    for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
-        b = os.path.basename(f)
-        if b in ("formula_points.json", "opaque_calls.json", "index.json", "lock_config.json"):
-            continue
-        for r in json.load(open(f))["records"]:
-            yield b, r
+# phủ định văn bản của guard (dùng ở (7j), (8a), (10a))
 CMP_OPS = [" == ", " != ", " <= ", " >= ", " < ", " > "]
 INV = {" == ": " != ", " != ": " == ", " <= ": " > ", " > ": " <= ", " >= ": " < ", " < ": " >= "}
 def top_scan(s):
@@ -613,6 +570,93 @@ def negs(g):
         i, op = ops[0]
         out.add(g[:i] + INV[op] + g[i + len(op):])
     return out
+# (7j) ca QC lần 3
+def recs_of(c):
+    return json.load(open(os.path.join(rules, c + ".json")))
+cj = []
+d1 = recs_of("BctcTt200DdNckt226")
+for hk, ln in (("ButtonClick_0", 377), ("ButtonClick_1", 396), ("ButtonClick_2", 415), ("ButtonClick_3", 434)):
+    effs = [e for r in d1["records"] if r["hook"] == hk for e in r["effects"] if (e.get("via") or "").startswith("getSoKyTruoc@%d" % ln) and e["op"] == "setValue"]
+    cj.append(("(1) %s getSoKyTruoc@%d setValue qua via: %d" % (hk, ln, len(effs)), len(effs) > 0))
+d2 = recs_of("Cnkd01TT40Nckt253")
+# định nghĩa chặt (QC lần 7): bản ghi unreachable dựa trên ô B10 chỉ đúng khi cặp mâu thuẫn là hai lần đọc CÙNG phiên bản
+# (cùng tag #...) và không có lệnh ghi B10 trên đường đi. Trượt khi (a) cặp literal B10 mâu thuẫn (g và phủ định của g sau khi bỏ
+# tag) mang tag khác nhau mà không có cặp cùng tag, hoặc (b) cặp cùng tag nhưng bản ghi có lệnh ghi B10 (effect setValue/setFormula
+# đích S0 B10, hoặc via qua method có lệnh ghi B10 theo effect của chính class).
+B10TAG = re.compile(r"cell\(S0!B10\)(#\d+(?:\.\d+)?)?")
+def b10_pairs(r):
+    gs = [g for g in [x for x in r["guards"] if not x.startswith("loop: ")] + list(r["trigger"]["when"]) if "cell(S0!B10)" in g]
+    same, diff = [], []
+    for i, g in enumerate(gs):
+        for h in gs[i + 1:]:
+            if B10TAG.sub("cell(S0!B10)", h) in negs(B10TAG.sub("cell(S0!B10)", g)) or B10TAG.sub("cell(S0!B10)", g) in negs(B10TAG.sub("cell(S0!B10)", h)):
+                (same if sorted(set(B10TAG.findall(g))) == sorted(set(B10TAG.findall(h))) else diff).append((g, h))
+    return same, diff
+def b10_writers(d):
+    w = set()
+    for r in d["records"]:
+        for e in r["effects"]:
+            t = e.get("target") or {}
+            if e["op"] in ("setValue", "setFormula") and t.get("sheet") == 0 and t.get("cell") == "B10" and e.get("via"):
+                w.add(e["via"].split("@")[0])
+    return w
+def b10_writes(r, wr):
+    for e in r["effects"]:
+        t = e.get("target") or {}
+        if e["op"] in ("setValue", "setFormula") and t.get("sheet") == 0 and t.get("cell") == "B10":
+            return True
+        if (e.get("via") or "").split("@")[0] in wr:
+            return True
+    return False
+def check_7j2(d):
+    wr = b10_writers(d)
+    ub = [r for r in d["records"] if r["unreachable"] and any("cell(S0!B10)" in g for g in r["guards"] + list(r["trigger"]["when"]))]
+    bad_a = bad_b = real = 0
+    for r in ub:
+        same, diff = b10_pairs(r)
+        if diff and not same:
+            bad_a += 1
+        elif same and b10_writes(r, wr):
+            bad_b += 1
+        elif same:
+            real += 1
+    return len(ub), real, bad_a, bad_b, sorted(wr)
+n2, real2, ba2, bb2, wr2 = check_7j2(d2)
+cj.append(("(2) Cnkd01TT40Nckt253: bản ghi unreachable dựa trên B10 %d; mâu thuẫn thật (cùng tag, không ghi B10 trên đường đi) %d; cặp khác tag %d; cặp cùng tag mà có lệnh ghi B10 %d; method ghi B10: %s" % (n2, real2, ba2, bb2, wr2), ba2 == 0 and bb2 == 0 and real2 > 0))
+d3 = recs_of("AcTb03Nckt210")
+r87 = [r for r in d3["records"] for e in r["effects"] if e["at"] == 87]
+cj.append(("(2) AcTb03Nckt210 dòng 87 có effect, không gắn unreachable: %d bản ghi, unreachable %d" % (len(r87), sum(r["unreachable"] for r in r87)), bool(r87) and not any(r["unreachable"] for r in r87)))
+d4 = recs_of("CnkdBcSdhd01Nckt250")
+tabs = {e["at"] for r in d4["records"] for e in r["effects"] if e["op"] == "setTabColor"}
+cj.append(("(3) CnkdBcSdhd01Nckt250 setTabColor tại 2135, 2144: %s" % sorted(tabs & {2135, 2144}), {2135, 2144} <= tabs))
+d5 = recs_of("Ttdb01ND373Nckt293")
+h5 = [h for h in d5["hooks"] if h["hook"] == "ClearData_1"][0]
+cj.append(("(3) Ttdb01ND373Nckt293:1440 checkLockUnLockCells có dropped (ngoại lệ chắc chắn dòng 1439) hoặc effect", any(x["at"] == 1440 for x in h5["dropped"]) or any(e["at"] == 1440 and e["op"] == "lock" for r in d5["records"] for e in r["effects"])))
+d6 = recs_of("CnkdTcktHkd01Nckt289")
+e6 = [e for r in d6["records"] for e in r["effects"] if e["at"] in (90, 91) and "via" not in e]
+cj.append(("(4) CnkdTcktHkd01Nckt289:90-91 ToIntOrDefault -> int(ô): %d effect" % len(e6), bool(e6) and all("int(cell(" in json.dumps(e, ensure_ascii=False) for e in e6)))
+d7 = recs_of("TncnXsbhdcHkd01Nckt289")
+g7 = [g for r in d7["records"] for g in r["guards"] if "500000000" in g]
+cj.append(("(4) TncnXsbhdcHkd01Nckt289:332 điều kiện %s" % sorted(set(g7))[:1], bool(g7) and all("int(cell(" in g for g in g7)))
+d8 = recs_of("Gtgt02TT80Nckt251")
+e8 = [e for r in d8["records"] for e in r["effects"] if e["at"] in (155, 159, 163, 167) and "via" not in e]
+cj.append(("(6) Gtgt02TT80Nckt251:155-167 giữ chỉ số mảng, không còn null[...]: %s" % [json.dumps(e["value"], ensure_ascii=False)[:70] for e in e8[:2]], bool(e8) and all("null[" not in json.dumps(e["value"]) and re.search(r"\[\d+\]", json.dumps(e["value"])) for e in e8)))
+for msg, good in cj:
+    print("   " + ("đúng " if good else "SAI ") + msg)
+say(all(g for _, g in cj), "(7j) các ca QC lần 3 (1)-(6) đúng")
+
+# (7k) không còn dấu ẩn nội bộ trong JSON
+leak = [os.path.basename(f) for f in glob.glob(os.path.join(rules, "*.json")) if "\\u001f" in open(f).read().lower() or "\x1f" in open(f).read()]
+say(not leak, "(7k) JSON không chứa dấu ẩn nội bộ: %d tệp vi phạm" % len(leak))
+# ---------- (8) QC lần 4 ----------
+def all_records():
+    for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+        b = os.path.basename(f)
+        if b in ("formula_points.json", "opaque_calls.json", "index.json", "lock_config.json"):
+            continue
+        for r in json.load(open(f))["records"]:
+            yield b, r
+gng_unr_lit = 0; gng_unr_opq = 0
 gng = collections.Counter(); gng_unr = 0; gng_unr_k = collections.Counter(); gng_files = set(); gng_ex = []
 for b, r in all_records():
     conj = [g for g in r["guards"] if not g.startswith("loop: ")] + list(r["trigger"]["when"])
@@ -620,6 +664,13 @@ for b, r in all_records():
     hit = [g for g in conj if negs(g) & cs]
     if hit:
         if r["unreachable"]:
+            # định nghĩa đếm (legend.counting): cặp có g chứa opaque( không tính (mỗi lần đánh giá opaque là giá trị riêng)
+            hit_real = [g for g in hit if "opaque(" not in g]
+            if not hit_real:
+                gng_unr_opq += 1
+                continue
+            if any("!(" + g + ")" in cs or (balanced_inner(g) or "\0") in cs for g in hit_real):
+                gng_unr_lit += 1
             gng_unr += 1
             gng_unr_k["cell" if any("cell(" in g for g in hit) else "field" if any("field(" in g for g in hit) else "opaque" if any("opaque(" in g for g in hit) else "khác"] += 1
             continue
@@ -630,6 +681,7 @@ for b, r in all_records():
 for x in gng_ex:
     print("   g và !(g):", x)
 print("   (8a) theo loại:", dict(gng), "; bản ghi unreachable có g và !(g) cùng phiên bản (mâu thuẫn thật, đã gắn cờ):", gng_unr, dict(gng_unr_k))
+print("   (8a) định nghĩa đếm (legend.counting): literal g/!(g) %d; kể cả cặp so sánh bù %d; cặp chỉ trùng văn bản có opaque( (không tính) %d" % (gng_unr_lit, gng_unr, gng_unr_opq))
 say(sum(gng.values()) == 0, "(8a) bản ghi (không gắn unreachable) có g và !(g) cùng phiên bản trong guards/trigger: %d (%d tệp)" % (sum(gng.values()), len(gng_files)))
 
 lk_null = 0; lk_null_noreason = []; lk_tot = 0; lk_chk = 0; lk_chk_tgt = 0
@@ -735,6 +787,22 @@ def opaque_labels(t):
             dep += {"(": 1, ")": -1}.get(t[j], 0); j += 1
         yield t[i + 7:j - 1]
         i += 7
+def rec_text_raw(r):
+    acc = []; rec_leaves_raw(r, acc)
+    return "\n".join(acc)
+def rec_leaves_raw(o, acc):
+    if isinstance(o, dict):
+        for kk, v in o.items():
+            if kk not in ("reason", "symbols", "key", "source", "hook", "kind", "status", "note", "via", "file", "base", "targetReason"):
+                rec_leaves_raw(v, acc)
+    elif isinstance(o, list):
+        for v in o:
+            rec_leaves_raw(v, acc)
+    elif isinstance(o, str):
+        acc.append(o)
+# định nghĩa đếm nhãn opaque (legend.counting): số lần 'opaque(' trong lá chuỗi của bản ghi, không bỏ chuỗi literal
+op_def = sum(rec_text_raw(r).count("opaque(") for _, r in all_records())
+print("   nhãn opaque theo định nghĩa legend.counting: %d" % op_def)
 lost = collections.Counter(); op_n = 0
 for b, r in all_records():
     for lab in opaque_labels(rec_text(r)):
@@ -743,7 +811,7 @@ for b, r in all_records():
         if head in KNOWN and head == lab:
             lost[head] += 1
 print("   (8f) hàm đã biết có tham số bắt buộc: %d; nhãn mất đối số nhiều nhất: %s" % (len(KNOWN), lost.most_common(5)))
-say(not lost, "(8f) nhãn opaque(Tên) của hàm đã biết mà không giữ đối số: %d / %d nhãn" % (sum(lost.values()), op_n))
+say(not lost, "(8f) nhãn opaque(Tên) của hàm đã biết mà không giữ đối số: %d / %d nhãn (tổng theo legend.counting, không bỏ literal: %d; số phân tích được sau khi bỏ chuỗi literal: %d)" % (sum(lost.values()), op_def, op_def, op_n))
 
 # (8g) các ca QC lần 4 (1)-(7)
 cq = []
@@ -771,5 +839,402 @@ cq.append(("(7) Tts01TT40Nckt249 CellChange_1 dropped@595 nêu RemoveDataRows: %
 for msg, good in cq:
     print("   " + ("đúng " if good else "SAI ") + msg)
 say(all(g for _, g in cq), "(8g) các ca QC lần 4 (1)-(7) đúng")
+# ---------- (9) QC lần 5 ----------
+src_cache = {}
+def src_lines(path):
+    if path not in src_cache:
+        src_cache[path] = open(os.path.join(dec, path), encoding="utf-8-sig").read().split("\n")
+    return src_cache[path]
+# (9a) dropped "nhánh hằng" tại điều kiện dựa trên kết quả hộp thoại: hộp thoại có chạy thì điều kiện không thể là hằng;
+# hằng chỉ hợp lệ khi hộp thoại không chạy, lúc đó biến giữ giá trị khởi tạo -> hướng (luôn đúng/luôn sai) phải bằng điều kiện tính trên giá trị khởi tạo
+dlg_assign = re.compile(r"\b(\w+) = (?:MessageBox\.Show|\(\(Form\)\w+\)\.ShowDialog|\w+\.ShowDialog)\(")
+dlg_init = re.compile(r"DialogResult (\w+) = \(DialogResult\)(\d+);")
+frm_new = re.compile(r"(\w+) = new frm\w*\(")
+cond_cmp = re.compile(r"if \(\(int\)(\w+) (==|!=) (\d+)\)")
+dlg_n = 0; dlg_bad = []
+for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+    b = os.path.basename(f)
+    if b in ("formula_points.json", "opaque_calls.json", "index.json"):
+        continue
+    d = json.load(open(f))
+    if "file" not in d:
+        continue
+    L = src_lines(d["file"])
+    for h in d["hooks"]:
+        for x in h["dropped"]:
+            m = re.match(r"nhánh hằng sai: điều kiện dòng (\d+) luôn (đúng|sai)", x["reason"])
+            if not m:
+                continue
+            n = int(m.group(1)); t = L[n - 1]
+            # biến hộp thoại trong cùng method: tìm ngược tới khai báo method
+            j = n - 1
+            while j > 0 and not re.match(r"^\t(?:public|private|protected|internal)\b", L[j - 1]):
+                j -= 1
+            body = L[j - 1:n]
+            dvars = {mm.group(1) for ln_ in body for mm in dlg_assign.finditer(ln_)}
+            fvars = {mm.group(1) for ln_ in body for mm in frm_new.finditer(ln_)}
+            cm = cond_cmp.search(t)
+            if cm and cm.group(1) in dvars:
+                dlg_n += 1
+                init = {mm.group(1): int(mm.group(2)) for ln_ in body for mm in dlg_init.finditer(ln_)}
+                v0 = init.get(cm.group(1))
+                exp = None if v0 is None else ((v0 == int(cm.group(3))) == (cm.group(2) == "=="))
+                if exp is None or exp != (m.group(2) == "đúng"):
+                    dlg_bad.append("%s %s @%d %s" % (b, h["hook"], x["at"], x["reason"]))
+            elif any(re.search(r"\b%s\.(?:Yes|No|DialogResult)\b" % re.escape(v), t) for v in fvars):
+                dlg_n += 1; dlg_bad.append("%s %s @%d %s" % (b, h["hook"], x["at"], x["reason"]))
+for x in dlg_bad[:5]:
+    print("   dropped hằng dựa trên hộp thoại:", x)
+print("   (9a) dropped trên nhánh không hiện hộp thoại (biến giữ giá trị khởi tạo, đúng hướng): %d" % (dlg_n - len(dlg_bad)))
+say(not dlg_bad, "(9a) dropped có lý do hằng dựa trên ký hiệu hộp thoại (hướng khác giá trị khởi tạo, hoặc điều kiện form.Yes/No): %d" % len(dlg_bad))
+# (9b) nhãn opaque của phép tìm/định dạng/hàm vô danh phải giữ đối số
+lab_rx = re.compile(r"opaque\((Find|FirstOrDefault|First|Format|lambda)\)")
+miss9b = collections.Counter(); lam_n = 0; find_n = 0
+for _, r in all_records():
+    t = rec_text_raw(r)
+    for mm in lab_rx.finditer(t):
+        miss9b[mm.group(1)] += 1
+    lam_n += t.count("opaque(lambda")
+    find_n += len(re.findall(r"opaque\((?:Find|FirstOrDefault|First), ", t))
+print("   (9b) opaque(Find|First|FirstOrDefault, ...) có đối số: %d nhãn" % find_n)
+say(not miss9b and lam_n == 0, "(9b) opaque(Find|FirstOrDefault|First|Format|lambda) thiếu đối số: %d %s; opaque(lambda...) còn lại %d" % (sum(miss9b.values()), dict(miss9b), lam_n))
+# (9c) không còn null[ hoặc null. (truy cập trên null) trong văn bản bản ghi
+nn9 = 0; nn9_ex = []
+for b, r in all_records():
+    t = rec_text_raw(r)
+    k = len(re.findall(r"(?<![\w.$@])null[\[.]", t))
+    if k:
+        nn9 += k
+        if len(nn9_ex) < 5:
+            nn9_ex.append("%s %s %s" % (b, r["hook"], r["source"]["lines"]))
+for x in nn9_ex:
+    print("   null[/null.:", x)
+say(nn9 == 0, "(9c) \"null[\" hoặc \"null.\" trong bản ghi: %d" % nn9)
+# (9d) cellVersions theo định nghĩa chặt: chỉ lệnh đổi GIÁ TRỊ ô tạo phiên bản (kind "ghi"): gán .Value/.Text/.Formula,
+# ResetValue/ResetText/ResetFormula, Clear*, chèn/xóa hàng (dịch ô), helper ghi giá trị đã biết; đầu vòng lặp chỉ hợp lệ khi thân
+# vòng có lệnh như vậy hoặc lời gọi có thể ghi. Lời gọi chưa rõ có ghi ô (kind "co_the_ghi") phải có mặt ở dòng được trỏ.
+# Không tính là dòng ghi: dòng chỉ gán biến cục bộ hoặc chỉ có lời gọi không ghi ô (đọc ô, giao diện, xóa kiểm tra/ghi chú, màu nền),
+# dòng chỉ đổi Visible/Height/Width, BackColor/ForeColor/Note/Locked/CellType/Font/căn lề/Border.
+UI = {"SuspendLayout", "ResumeLayout", "SetActiveCell", "Focus", "ShowCell", "ShowActiveCell", "Invalidate", "Select", "BringToFront", "SetViewportTopRow", "SetViewportLeftColumn", "SetActiveSheet", "SetNodeBackGroundPink", "SetRowHeight", "SetColumnWidth", "Refresh", "Update", "PerformLayout", "ScrollTo", "SetFocus"}
+# lời gọi không ghi ô: đọc ô/giao diện/ghi chú/kiểm tra (đối chiếu thân method trong _decompiled: không gán Value/Text/Formula, không Reset/Clear/chèn hàng)
+NOWRITE9 = UI | {"RemoveValidate", "RemoveValidateCell", "GetMessage", "GetRowIndexInSViewByCompares", "ConvertCellValueToText", "UpdateFromSViewToSInfo",
+                 "GetValue", "ChangeLockedCell", "GetPreferredHeight", "SetNodeBackGroundWhite", "SetNote", "ResetNote", "GetCurrentMethod", "Log", "LogErrorBigData"}
+PURE9 = {"ToString", "ToStringOrDefault", "ToIntOrDefault", "ToBoolOrDefault", "Trim", "TrimEnd", "TrimStart", "ToUpper", "ToLower", "Equals", "Contains", "ContainsKey",
+         "TryGetValue", "StartsWith", "EndsWith", "IndexOf", "LastIndexOf", "Substring", "Replace", "Split", "Format", "Concat", "Parse", "TryParse", "ToInt32", "ToInt64",
+         "ToInt16", "ToDouble", "ToDecimal", "ToBoolean", "ConvertToInt", "ConvertToLong", "ConvertToDouble", "ConvertToDecimal", "ConvertToDouble1", "ConvertToDecimal1",
+         "ConvertToBool", "ConvertToString", "IsNullOrEmpty", "IsNullOrWhiteSpace", "isNullString", "ArrayCellId", "ColumnLettersToIndex", "ColumnIndexToLetters",
+         "GetValueCustom", "GetObjectValue", "Round", "Abs", "Max", "Min", "Floor", "Ceiling", "Count", "Any", "ToList", "ToArray", "Where", "Select", "FirstOrDefault",
+         "First", "Find", "FindIndex", "FindAll", "PadLeft", "PadRight", "ConvertToDateTime", "ToDateTime", "Exists", "Sum", "GetLength", "AddDays", "AddMonths",
+         "ParseExact", "Compare", "DaysInMonth", "Show", "WriteLine", "FromArgb", "FromHtml", "GetType", "Add", "Remove", "RemoveAt", "Insert", "Clear", "Value"}
+KW9 = {"if", "for", "foreach", "while", "switch", "catch", "using", "lock", "return", "new", "typeof", "nameof", "else", "do", "sizeof", "default"}
+VALW = re.compile(r"\.(?:Value|Text|Formula)\s*=(?!=)|\.Reset(?:Value|Text|Formula)\s*\(|\.Clear(?:Range|Data|Selection|All)\s*\(|\b(?:AddRows?|RemoveRows?|InsertRows?|DeleteRows?|InsertTableRow|RemoveDataRows|RecalculateAll|Recalculate)\s*\(|\.Rows\.(?:Add|Remove|Insert)\s*\(")
+PROPW = re.compile(r"\.(?:Visible|Height|Width)\s*=(?!=)")
+FMTW = re.compile(r"\.(?:BackColor|ForeColor|Note|NoteStyle|Locked|CellType|Font|HorizontalAlignment|VerticalAlignment|Formatter|Border|Tag|CanFocus)\s*=(?!=)|\]\.Reset(?!Value\b|Text\b|Formula\b)\w+\s*\(")
+def calls9(s1):
+    s2 = re.sub(r"\bnew\s+[\w.<>]+\s*\(", "(", s1)
+    out = []
+    for c in re.findall(r"(\w+)\s*\(", s2):
+        if c in KW9:
+            continue
+        if re.match(r"Reset(?!Value$|Text$|Formula$)", c) and "_" not in c:
+            continue  # ResetBackColor, ResetNote...: trả định dạng, không đổi giá trị
+        out.append(c)
+    return out
+def maywrite_calls(s1):
+    return [c for c in calls9(s1) if c not in NOWRITE9 and c not in PURE9 and not c.startswith(("SetNodeBackGround", "RemoveValidate"))]
+def loop_body(L, n):
+    # thân vòng lặp bắt đầu ở dòng n (1-based): khối {...} hoặc một câu lệnh
+    out = []; depth = 0; started = False
+    for j in range(n - 1, min(len(L), n + 3000)):
+        t = lit.sub('""', L[j])
+        if j > n - 1 or "{" in t:
+            out.append(t)
+        for ch in t:
+            if ch == "{": depth += 1; started = True
+            elif ch == "}": depth -= 1
+        if started and depth <= 0:
+            break
+        if not started and j > n - 1 and t.strip().endswith(";"):
+            break
+    return out
+def classify9(L, n, memo={}):
+    """ghi | co_the_ghi | loop_ghi | loop_khong | visible | dinh_dang | chi_doc"""
+    t = L[n - 1].strip(); s1 = lit.sub('""', t)
+    if re.match(r"(for|foreach|while|do)\b", t):
+        # lời gọi có thể ghi ngay trên dòng đầu vòng (tập duyệt của foreach, điều kiện) cũng tạo phiên bản tại dòng này
+        if maywrite_calls(s1):
+            return "co_the_ghi"
+        key = (id(L), n)
+        if key not in memo:
+            body = loop_body(L, n)
+            memo[key] = "loop_ghi" if any(VALW.search(x) or maywrite_calls(x) for x in body) else "loop_khong"
+        return memo[key]
+    if VALW.search(s1):
+        return "ghi"
+    if maywrite_calls(s1):
+        return "co_the_ghi"
+    if PROPW.search(s1):
+        return "visible"
+    if FMTW.search(s1):
+        return "dinh_dang"
+    return "chi_doc"
+def version_lines(v):
+    if "writes" in v:
+        return list(v["writes"])
+    a2 = re.sub(r"^hợp nhánh dòng \d+: ", "", v["after"])
+    return list(map(int, re.findall(r"\d+", " ".join(re.findall(r"dòng ([\d, ]+)", a2)))))
+cv_n = 0; cv_bad = []; cv_cat = {}; kind_n = {}; kind_bad = []
+for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+    b = os.path.basename(f)
+    if b in ("formula_points.json", "opaque_calls.json", "index.json"):
+        continue
+    d = json.load(open(f))
+    if "records" not in d:
+        continue
+    for r in d["records"]:
+        L = src_lines(r["source"]["file"])
+        for v in r["cellVersions"]:
+            k = v.get("kind")
+            kind_n[k] = kind_n.get(k, 0) + 1
+            if k not in ("ghi", "co_the_ghi") or (k == "co_the_ghi" and not v.get("calls")):
+                kind_bad.append("%s %s %s kind=%s" % (b, r["hook"], v["ref"][-14:], k))
+            for n in version_lines(v):
+                cv_n += 1
+                c = classify9(L, n) if 0 < n <= len(L) else "ngoai_tep"
+                cv_cat[c] = cv_cat.get(c, 0) + 1
+                if c not in ("ghi", "co_the_ghi", "loop_ghi"):
+                    cv_bad.append("%s %s %s -> dòng %d [%s]: %s" % (b, r["hook"], v["ref"][-14:], n, c, (L[n - 1].strip() if 0 < n <= len(L) else "?")[:60]))
+for x in sorted(set(cv_bad))[:6]:
+    print("   cellVersions trỏ dòng không ghi giá trị:", x)
+print("   (9d) phân loại dòng được trỏ:", json.dumps(dict(sorted(cv_cat.items())), ensure_ascii=False), "| kind:", json.dumps({str(k): n for k, n in sorted(kind_n.items(), key=lambda x: str(x[0]))}, ensure_ascii=False))
+say(not cv_bad, "(9d) cellVersions: %d tham chiếu dòng, trỏ dòng không đổi giá trị ô %d (chỉ đọc/gán biến cục bộ %d, Visible/Height/Width %d, BackColor/Note/Locked/CellType %d, vòng lặp không ghi %d)"
+    % (cv_n, len(cv_bad), cv_cat.get("chi_doc", 0), cv_cat.get("visible", 0), cv_cat.get("dinh_dang", 0), cv_cat.get("loop_khong", 0)))
+say(cv_cat.get("visible", 0) == 0 and cv_cat.get("dinh_dang", 0) == 0, "(9d) 0 phiên bản trỏ dòng Visible/Height/Width/BackColor/Note/Locked/CellType: %d" % (cv_cat.get("visible", 0) + cv_cat.get("dinh_dang", 0)))
+for x in kind_bad[:3]:
+    print("   kind sai:", x)
+say(not kind_bad, "(9d) mỗi phiên bản có kind ghi|co_the_ghi (co_the_ghi kèm calls): sai %d" % len(kind_bad))
+# ---------- (10) vòng chốt T2 ----------
+# (10a) guard sau thoát sớm: khối "if (c) { ...; continue|break|return|throw; }" không có else; effect ở các câu lệnh sau khối
+# trong cùng khối bao phải mang guard phủ định c. Đối chiếu bằng văn bản: trong cùng hook, bản ghi có effect (không qua via) trong
+# khối if mang guard g; bản ghi có effect sau khối phải có guard thuộc negs(g) (cùng định nghĩa phủ định với (8a)).
+STR_RE = re.compile(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'')
+EXIT_RE = re.compile(r"^(continue;|break;|return\b.*;|throw\b.*;)$")
+def brace_pairs(L):
+    st, pairs, parent = [], {}, {}
+    for i, s in enumerate(L):
+        t = STR_RE.sub('""', s).strip()
+        if t == "{":
+            parent[i] = st[-1] if st else None
+            st.append(i)
+        elif t.startswith("}") and st:
+            pairs[st.pop()] = i
+    return pairs, parent
+def prev_nonempty(L, i):
+    j = i - 1
+    while j >= 0 and not L[j].strip():
+        j -= 1
+    return j
+def bparse(x):
+    """cây logic của một guard: ("or"|"and", [..]) | ("not", t) | ("atom", khóa); so sánh bù dùng chung khóa (== / !=, < / >=, > / <=)"""
+    x = x.strip()
+    ops = top_scan(x)
+    for j in (" || ", " && "):
+        cut = [i for i, op in ops if op == j]
+        if cut:
+            parts, st = [], 0
+            for i in cut:
+                parts.append(x[st:i]); st = i + len(j)
+            parts.append(x[st:])
+            return ("or" if j == " || " else "and", [bparse(q) for q in parts])
+    inner = balanced_inner(x)
+    if inner is not None:
+        return ("not", bparse(inner))
+    if x.startswith("(") and x.endswith(")") and balanced_inner("!" + x) is not None:
+        return bparse(x[1:-1])
+    if x.startswith("!") and not x.startswith("!="):
+        return ("not", bparse(x[1:]))
+    if len(ops) == 1:
+        i, op = ops[0]
+        l, r = x[:i].strip(), x[i + len(op):].strip()
+        o = op.strip()
+        base = {"==": "==", "!=": "==", "<": "<", ">=": "<", ">": ">", "<=": ">"}[o]
+        t = ("atom", (l, base, r))
+        return ("not", t) if o in ("!=", ">=", "<=") else t
+    return ("atom", (x,))
+def batoms(t, acc):
+    if t[0] == "atom":
+        acc.add(t[1])
+    elif t[0] == "not":
+        batoms(t[1], acc)
+    else:
+        for q in t[1]:
+            batoms(q, acc)
+    return acc
+def beval(t, asg):
+    if t[0] == "atom":
+        return asg[t[1]]
+    if t[0] == "not":
+        return not beval(t[1], asg)
+    if t[0] == "and":
+        return all(beval(q, asg) for q in t[1])
+    return any(beval(q, asg) for q in t[1])
+def contradicts(pg, tg):
+    """True khi hội các guard pg và hội các guard tg không cùng đúng được (nguyên tử độc lập); None khi quá nhiều nguyên tử"""
+    if not (set(pg) - set(tg)) or not tg:
+        return False
+    ts = [bparse(g) for g in tg]
+    ta = set().union(*[batoms(t, set()) for t in ts])
+    # thường một guard của pg (phủ định điều kiện if) đã mâu thuẫn với các guard của tg cùng nguyên tử
+    for g in sorted(pg):
+        pt = bparse(g); pa = batoms(pt, set())
+        rel = [t for t in ts if batoms(t, set()) & pa]
+        at1 = sorted(pa.union(*[batoms(t, set()) for t in rel]))
+        if rel and len(at1) <= 14 and not any(beval(pt, a) and all(beval(t, a) for t in rel) for a in ({k: bool(m >> i & 1) for i, k in enumerate(at1)} for m in range(1 << len(at1)))):
+            return True
+    ps = [t for t in (bparse(g) for g in pg) if batoms(t, set()) & ta]
+    if not ps:
+        return False
+    at = sorted(ta.union(*[batoms(t, set()) for t in ps]))
+    if len(at) > 14:
+        return None
+    for m in range(1 << len(at)):
+        asg = {k: bool(m >> i & 1) for i, k in enumerate(at)}
+        if all(beval(t, asg) for t in ts) and all(beval(t, asg) for t in ps):
+            return False
+    return True
+recs_by_file = collections.defaultdict(list)
+for b, r in all_records():
+    recs_by_file[r["source"]["file"]].append(r)
+ee_blocks = collections.Counter(); ee_big = 0; ee_checked = 0; ee_nocmp = 0; ee_bad = []; ee_eff = 0
+for sf, rs in sorted(recs_by_file.items()):
+    L = src_lines(sf)
+    pairs, parent = brace_pairs(L)
+    hooks = collections.defaultdict(list)
+    for r in rs:
+        hooks[r["hook"]].append(r)
+    for o, cl in sorted(pairs.items()):
+        h = prev_nonempty(L, o)
+        if h < 0 or not re.match(r"^\s*if \(", L[h]):
+            continue
+        nx = prev_nonempty(L, cl + 2) if False else cl + 1
+        while nx < len(L) and not L[nx].strip():
+            nx += 1
+        if nx < len(L) and L[nx].strip().startswith("else"):
+            continue
+        last = prev_nonempty(L, cl)
+        m = EXIT_RE.match(L[last].strip())
+        if not m or last <= o:
+            continue
+        enc = parent.get(o)
+        if enc is None or enc not in pairs:
+            continue
+        ee_blocks[m.group(1).split()[0].rstrip(";")] += 1
+        lo_t, hi_t, lo_p, hi_p = o, cl, cl + 1, pairs[enc] - 1
+        for hk, hr in hooks.items():
+            T = [r for r in hr if any(lo_t < e["at"] < hi_t and "via" not in e for e in r["effects"])]
+            P = [r for r in hr if any(lo_p <= e["at"] <= hi_p and "via" not in e for e in r["effects"])]
+            if not P:
+                continue
+            if not T:
+                ee_nocmp += 1
+                continue
+            ee_checked += 1
+            tgs = [set([x for x in r["guards"] if not x.startswith("loop: ")] + list(r["trigger"]["when"])) for r in T]
+            for r in P:
+                ee_eff += 1
+                pg = set([x for x in r["guards"] if not x.startswith("loop: ")] + list(r["trigger"]["when"]))
+                cr = [contradicts(pg, tg) for tg in tgs]
+                ee_big += sum(1 for c in cr if c is None)
+                if not all(c is not False for c in cr):
+                    if not ee_bad:
+                        print("   (10a) ví dụ: P", sorted(pg)[:6], "| T", [sorted(t)[:6] for t in tgs][:3])
+                    ee_bad.append("%s:%d %s %s effect %s" % (sf.split("/")[-1], h + 1, hk, L[last].strip()[:12], sorted(e["at"] for e in r["effects"] if lo_p <= e["at"] <= hi_p)[:4]))
+for x in ee_bad[:6]:
+    print("   (10a) thiếu guard phủ định:", x)
+if ee_bad:
+    print("   (10a) khối thiếu guard:", " ".join(sorted(set(x.split(" ")[0] + "/" + x.split(" ")[2] for x in ee_bad))))
+print("   (10a) khối thoát sớm (if không else): %s; cặp (khối, hook) có effect sau khối: đối chiếu được %d, không có effect trong khối để đối chiếu %d; bản ghi sau khối đã kiểm %d (cặp quá 14 nguyên tử, không kết luận: %d)"
+      % (dict(sorted(ee_blocks.items())), ee_checked, ee_nocmp, ee_eff, ee_big))
+say(not ee_bad, "(10a) bản ghi có effect sau khối thoát sớm mà thiếu guard phủ định điều kiện if: %d (khối %d)" % (len(ee_bad), len(set(x.split(" ")[0] for x in ee_bad))))
+
+
+# (10b) writes theo vùng: dòng ghi của một phiên bản ô phải ghi vào cột (và hàng) của ô khi cả hai là hằng.
+# Chỉ số cột hằng: số, ColumnLettersToIndex("X") - 1, ArrayCellId("X_n")[0]; hàng hằng: số, ArrayCellId("X_n")[1].
+def col_idx(letters):
+    n = 0
+    for ch in letters:
+        n = n * 26 + ord(ch) - 64
+    return n - 1
+def cells_writes(line):
+    out = []
+    for m in re.finditer(r"\.Cells\[", line):
+        i, dep, st, args = m.end(), 1, m.end(), []
+        while i < len(line) and dep:
+            ch = line[i]
+            if ch in "[(":
+                dep += 1
+            elif ch in "])":
+                dep -= 1
+            elif ch == "," and dep == 1:
+                args.append(line[st:i]); st = i + 1
+            i += 1
+        args.append(line[st:i - 1])
+        if re.match(r"\.(Value|Text|Formula)\s*=[^=]", line[i:]):
+            out.append([a.strip() for a in args])
+    return out
+def const_col(a):
+    if re.fullmatch(r"\d+", a):
+        return int(a)
+    m = re.fullmatch(r'(?:HTKKFile\.)?ColumnLettersToIndex\("([A-Z]+)"\) - 1', a)
+    if m:
+        return col_idx(m.group(1))
+    m = re.fullmatch(r'(?:GeneralFunctions\.)?ArrayCellId\("([A-Z]+)_\d+"\)\[0\]', a)
+    return col_idx(m.group(1)) if m else None
+def const_row(a):
+    if re.fullmatch(r"\d+", a):
+        return int(a)
+    m = re.fullmatch(r'(?:GeneralFunctions\.)?ArrayCellId\("[A-Z]+_(\d+)"\)\[1\]', a)
+    return int(m.group(1)) - 1 if m else None
+REF_RE = re.compile(r"cell\(.*!([A-Z]+)(\d+|\{.*\})\)#")
+wr_chk = 0; wr_bad = []
+for b, r in all_records():
+    L = src_lines(r["source"]["file"])
+    for v in r["cellVersions"]:
+        m = REF_RE.match(v["ref"])
+        if not m:
+            continue
+        rc = col_idx(m.group(1)); rr = int(m.group(2)) - 1 if m.group(2).isdigit() else None
+        for n in v["writes"]:
+            if not 0 < n <= len(L):
+                continue
+            cw = cells_writes(L[n - 1])
+            if len(cw) != 1 or len(cw[0]) != 2:
+                continue
+            c0, r0 = const_col(cw[0][1]), const_row(cw[0][0])
+            if c0 is None and (r0 is None or rr is None):
+                continue
+            wr_chk += 1
+            if (c0 is not None and c0 != rc) or (r0 is not None and rr is not None and r0 != rr):
+                wr_bad.append("%s %s %s -> dòng %d: %s" % (b, r["hook"], v["ref"][-40:], n, L[n - 1].strip()[:70]))
+for x in sorted(set(wr_bad))[:6]:
+    print("   (10b) dòng ghi khác ô:", x)
+say(not wr_bad, "(10b) writes theo vùng: %d cặp (phiên bản, dòng ghi) có cột/hàng hằng ở cả hai phía; ghi khác cột/hàng %d" % (wr_chk, len(wr_bad)))
+d10 = recs_of("Tndn03TT80Nckt283")
+v10 = [v for r in d10["records"] if r["hook"] == "ButtonClick_17" for v in r["cellVersions"] if v["ref"] == "cell(S17!N{count(tk.SheetInfos[17].Tables[0].RowsValues)+43})#3154"]
+w10 = sorted(set(w for v in v10 for w in v["writes"]))
+say(bool(v10) and {3162, 3179} <= set(w10) and not ({3048, 3145, 3164, 3170} & set(w10)),
+    "(10b) Tndn03TT80Nckt283 ButtonClick_17 N{count+43}#3154: writes %s (có 3162, 3179; không 3048, 3145, 3164, 3170)" % w10)
+
+# (10c) định nghĩa đếm unreachable (legend.counting): theo bản ghi và theo khóa (lớp, hook, dòng nguồn, effect at, via)
+u_rec = 0; u_keys = set()
+for b, r in all_records():
+    if r["unreachable"]:
+        u_rec += 1
+        effs = r["effects"] or [{"at": None}]
+        for e in effs:
+            u_keys.add((r["key"].get("Class") if isinstance(r.get("key"), dict) else b, r["hook"], tuple(r["source"]["lines"]), e.get("at"), e.get("via")))
+leg = json.load(open(os.path.join(rules, "index.json"))).get("legend", {}).get("counting", "") if os.path.exists(os.path.join(rules, "index.json")) else ""
+print("   (10c) unreachable: %d bản ghi (unreachable=true trên mọi tệp JSON có records); %d khóa (lớp, hook, dòng nguồn, effect at, via)" % (u_rec, len(u_keys)))
+say("unreachable" in leg and "khóa" in leg, "(10c) legend.counting ghi định nghĩa đếm unreachable theo bản ghi và theo khóa")
 print("KẾT LUẬN:", "ĐẠT" if ok else "CÓ MỤC TRƯỢT")
 sys.exit(0 if ok else 1)

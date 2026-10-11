@@ -94,7 +94,7 @@
         235,
         322
       ],
-      "records": 24,
+      "records": 25,
       "effects": 63,
       "truncated": false,
       "dropped": []
@@ -652,7 +652,7 @@
       },
       "guards": [
         "period.TieuMucHachToanVal == \"03\"",
-        "loop: for@1485 num from 0 step +1 while num < count(opaque(FirstOrDefault).RowsValues)"
+        "loop: for@1485 num from 0 step +1 while num < count(opaque(FirstOrDefault, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)"
       ],
       "effects": [
         {
@@ -661,7 +661,7 @@
           "params": {
             "args": [
               "sheet(0)",
-              "num+opaque(FirstOrDefault).DataLocationTemplateRowStart",
+              "num+opaque(FirstOrDefault, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart",
               "7",
               "obj(Dictionary)",
               "false"
@@ -698,6 +698,13 @@
           "origin": "hook-param",
           "at": 131,
           "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method AutoBindData_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 131,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -720,6 +727,7 @@
       },
       "guards": [
         "period.TieuMucHachToanVal == \"03\"",
+        "item.TableName != \"01_TTDB_II\"",
         "loop: foreach@1489 item in tk.SheetInfos[0].Tables",
         "loop: for@1496 num2 from 0 step +1 while num2 < count(item.RowsValues)",
         "loop: foreach@1498 cell in item.RowsInfo.cells"
@@ -816,8 +824,8 @@
           "params": {
             "args": [
               "sheet(0)",
-              "opaque(Find)",
-              "opaque(GeneralFunctions.getAllColumnsInTable, opaque(Find))",
+              "opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\"))",
+              "opaque(GeneralFunctions.getAllColumnsInTable, opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")))",
               "true",
               "true"
             ],
@@ -830,7 +838,18 @@
       "cellVersions": [
         {
           "ref": "cell(S0!M42)#148",
-          "after": "hợp nhánh dòng 148: trên một số nhánh có lệnh hoặc lời gọi có thể ghi ô (dòng 147, 1489)"
+          "kind": "co_the_ghi",
+          "after": "hợp nhánh dòng 148: ô được ghi trên một số nhánh (dòng 142, 147, 1487)",
+          "writes": [
+            142,
+            147,
+            1487
+          ],
+          "calls": [
+            "GeneralFunctions.InsertCombobox",
+            "GeneralFunctions.ThayDoiTinhTheoCQT2Cap",
+            "LockUnLockCol"
+          ]
         }
       ],
       "source": {
@@ -843,7 +862,15 @@
       "status": "opaque_only",
       "reason": "chỉ có lời gọi chưa giải | gọi chưa giải: GeneralFunctions.LockUnLockColsInTable",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 131,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
+        }
+      ]
     },
     {
       "key": {
@@ -863,10 +890,11 @@
         "when": []
       },
       "guards": [
+        "count(opaque(GeneralFunctions.GetDMFromCombobox, sheet(0), num+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart, 7)) > 0",
         "item.Key == \"10501\" || item.Key == \"10502\" || item.Key == \"10503\" || item.Key == \"10504\" || item.Key == \"10505\" || item.Key == \"10506\" || item.Key == \"1050101\" || item.Key == \"1050201\" || item.Key == \"1050301\" || item.Key == \"1050401\" || item.Key == \"1050501\" || item.Key == \"1050601\"",
         "!(hasKey(dictionary, item.Key))",
-        "loop: for@1789 num from 0 step +1 while num < count(opaque(Find).RowsValues)",
-        "loop: foreach@1796 item in opaque(GeneralFunctions.GetDMFromCombobox, sheet(0), num+opaque(Find).DataLocationTemplateRowStart, 7)"
+        "loop: for@1789 num from 0 step +1 while num < count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).RowsValues)",
+        "loop: foreach@1796 item in opaque(GeneralFunctions.GetDMFromCombobox, sheet(0), num+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart, 7)"
       ],
       "effects": [
         {
@@ -888,7 +916,7 @@
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
-          1796,
+          1792,
           1800
         ]
       },
@@ -908,7 +936,7 @@
           "ref": "item",
           "origin": "foreach",
           "at": 1796,
-          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetDMFromCombobox, sheet(0), num+opaque(Find).DataLocationTemplateRowStart, 7)"
+          "desc": "phần tử đang duyệt của opaque(GeneralFunctions.GetDMFromCombobox, sheet(0), num+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart, 7)"
         },
         {
           "name": "num",
@@ -916,6 +944,13 @@
           "origin": "loop",
           "at": 1789,
           "desc": "biến mang qua vòng lặp dòng 1789: giá trị trước vòng 0, cuối mỗi vòng num := num+1"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 131,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -938,7 +973,7 @@
       },
       "guards": [
         "count(dictionary) > 0",
-        "loop: for@1777 num from 0 step +1 while num < count(opaque(Find).RowsValues)"
+        "loop: for@1777 num from 0 step +1 while num < count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).RowsValues)"
       ],
       "effects": [
         {
@@ -947,7 +982,7 @@
           "params": {
             "args": [
               "sheet(0)",
-              "num+opaque(Find).DataLocationTemplateRowStart",
+              "num+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
               "7",
               "dictionary",
               "false"
@@ -984,6 +1019,13 @@
           "origin": "loop",
           "at": 1777,
           "desc": "biến mang qua vòng lặp dòng 1777: giá trị trước vòng 0, cuối mỗi vòng num := num+1"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 131,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method AutoBindData_0"
         }
       ]
     },
@@ -1030,7 +1072,11 @@
       "cellVersions": [
         {
           "ref": "cell(S3!L{i+tk.SheetInfos[3].Tables[0].DataLocationTemplateRowStart})#1740",
-          "after": "vòng lặp dòng 1740 có lệnh hoặc lời gọi có thể ghi ô"
+          "kind": "ghi",
+          "after": "vòng lặp dòng 1740 có lệnh ghi giá trị ô",
+          "writes": [
+            1740
+          ]
         }
       ],
       "source": {
@@ -1100,7 +1146,14 @@
       "cellVersions": [
         {
           "ref": "cell(S3!L{i+tk.SheetInfos[3].Tables[0].DataLocationTemplateRowStart})#1744",
-          "after": "sau lời gọi chưa giải GeneralFunctions.InsertNumberCell dòng 1744 (có thể ghi ô)"
+          "kind": "ghi",
+          "after": "sau lệnh GeneralFunctions.InsertNumberCell dòng 1744 qua ThayDoiCellType_PL01_4@180 (đổi giá trị hoặc dịch ô)",
+          "writes": [
+            1744
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         }
       ],
       "source": {
@@ -1203,11 +1256,27 @@
       "cellVersions": [
         {
           "ref": "cell(S3!{col(colIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/doiChieuChenhLech))}{rowIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/doiChieuChenhLech)})#1755",
-          "after": "hợp nhánh dòng 1755: trên một số nhánh có lệnh ghi ô (dòng 1754, 1757)"
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 1755: ô được ghi trên một số nhánh (dòng 1754, 1757)",
+          "writes": [
+            1754,
+            1757
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         },
         {
           "ref": "cell(S3!{col(colIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/tongCong))}{rowIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/tongCong)})#1740",
-          "after": "hợp nhánh dòng 1740: trên một số nhánh có lệnh ghi ô (dòng 1740, 1745)"
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 1740: ô được ghi trên một số nhánh (dòng 1744, 1747)",
+          "writes": [
+            1744,
+            1747
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         }
       ],
       "source": {
@@ -1283,11 +1352,25 @@
       "cellVersions": [
         {
           "ref": "cell(S3!{col(colIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/doiChieuChenhLech))}{rowIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/doiChieuChenhLech)})#1763",
-          "after": "sau lời gọi chưa giải GeneralFunctions.InsertNumberCell dòng 1763 (có thể ghi ô)"
+          "kind": "ghi",
+          "after": "sau lệnh GeneralFunctions.InsertNumberCell dòng 1763 qua ThayDoiCellType_PL01_4@180 (đổi giá trị hoặc dịch ô)",
+          "writes": [
+            1763
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         },
         {
           "ref": "cell(S3!{col(colIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/tongCong))}{rowIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/tongCong)})#1754",
-          "after": "sau lời gọi chưa giải GeneralFunctions.InsertNumberCell dòng 1754 (có thể ghi ô)"
+          "kind": "ghi",
+          "after": "sau lệnh GeneralFunctions.InsertNumberCell dòng 1754 qua ThayDoiCellType_PL01_4@180 (đổi giá trị hoặc dịch ô)",
+          "writes": [
+            1754
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         }
       ],
       "source": {
@@ -1456,8 +1539,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1"
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1"
       ],
       "effects": [
         {
@@ -1486,7 +1570,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1514,8 +1606,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
         "isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
       "effects": [
@@ -1583,7 +1676,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1611,8 +1712,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "!(hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))"
       ],
@@ -1685,7 +1787,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1713,8 +1823,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
@@ -1797,7 +1908,15 @@
       "status": "unresolved",
       "reason": "chưa giải: field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][1], field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][3], giá trị hoặc tham số có phần chưa giải, num(field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][4]), opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1825,9 +1944,11 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1"
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1"
       ],
       "effects": [
         {
@@ -1843,20 +1964,6 @@
           "at": 1615,
           "via": "ChangeCombobox_0@237",
           "status": "unresolved"
-        },
-        {
-          "op": "setValue",
-          "target": {
-            "sheet": 0,
-            "cell": "BG{trigger.row}"
-          },
-          "value": "",
-          "params": {
-            "prop": "text"
-          },
-          "at": 1661,
-          "via": "ChangeCombobox_0@237",
-          "status": "unresolved"
         }
       ],
       "cellVersions": [],
@@ -1864,13 +1971,21 @@
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
           237,
-          1661
+          1615
         ]
       },
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1898,9 +2013,11 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1",
         "isEmpty(cell(S0!G{trigger.row}).text)"
       ],
       "effects": [
@@ -1944,7 +2061,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -1972,9 +2097,11 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1",
         "!(isEmpty(cell(S0!G{trigger.row}).text))",
         "period.TieuMucHachToanVal != \"03\"",
         "!(hasKey(dicDichVuThueDB, cell(S0!G{trigger.row}).text))"
@@ -2041,6 +2168,13 @@
           "origin": "hook-param",
           "at": 235,
           "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method CellChange_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
         }
       ]
     },
@@ -2070,9 +2204,11 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1",
         "!(isEmpty(cell(S0!G{trigger.row}).text))",
         "period.TieuMucHachToanVal != \"03\"",
         "hasKey(dicDichVuThueDB, cell(S0!G{trigger.row}).text)"
@@ -2139,6 +2275,13 @@
           "origin": "hook-param",
           "at": 235,
           "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method CellChange_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
         }
       ]
     },
@@ -2168,13 +2311,15 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1",
         "!(isEmpty(cell(S0!G{trigger.row}).text))",
         "period.TieuMucHachToanVal == \"03\"",
-        "opaque(FirstOrDefault).Value != null",
-        "opaque(<obj>.Count, opaque(FirstOrDefault).Value) == 0"
+        "opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value != null",
+        "opaque(<obj>.Count, opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value) == 0"
       ],
       "effects": [
         {
@@ -2238,6 +2383,13 @@
           "origin": "hook-param",
           "at": 235,
           "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method CellChange_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
         }
       ]
     },
@@ -2267,12 +2419,14 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1",
         "!(isEmpty(cell(S0!G{trigger.row}).text))",
         "period.TieuMucHachToanVal == \"03\"",
-        "opaque(FirstOrDefault).Value == null || opaque(<obj>.Count, opaque(FirstOrDefault).Value) != 0"
+        "opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value == null || opaque(<obj>.Count, opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value) != 0"
       ],
       "effects": [
         {
@@ -2281,7 +2435,7 @@
             "sheet": 0,
             "cell": "BG{trigger.row}"
           },
-          "value": "{opaque(FirstOrDefault).Value[0]}",
+          "value": "{opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value[0]}",
           "params": {
             "prop": "value"
           },
@@ -2295,7 +2449,7 @@
             "sheet": 0,
             "cell": "P{trigger.row}"
           },
-          "value": "{opaque(FirstOrDefault).Value[3]}",
+          "value": "{opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value[3]}",
           "params": {
             "prop": "value"
           },
@@ -2309,7 +2463,7 @@
             "sheet": 0,
             "cell": "AD{trigger.row}"
           },
-          "value": "{num(opaque(FirstOrDefault).Value[2])}",
+          "value": "{num(opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value[2])}",
           "params": {
             "prop": "value"
           },
@@ -2323,7 +2477,7 @@
             "sheet": 0,
             "cell": "BL{trigger.row}"
           },
-          "value": "{opaque(GeneralFunctions.GetMaTieuMucByMaHH, opaque(FirstOrDefault).Value[0], \"TTDB\")}",
+          "value": "{opaque(GeneralFunctions.GetMaTieuMucByMaHH, opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value[0], \"TTDB\")}",
           "params": {
             "prop": "value"
           },
@@ -2341,7 +2495,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, num(opaque(FirstOrDefault).Value[2]), opaque(FirstOrDefault).Value[0], opaque(FirstOrDefault).Value[3], opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: giá trị hoặc tham số có phần chưa giải, num(opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value[2]), opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value[0], opaque(FirstOrDefault, obj(Dictionary), fn(it: it.Value[1] == cell(S0!G{trigger.row}).text)).Value[3], opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
         {
@@ -2350,6 +2504,13 @@
           "origin": "hook-param",
           "at": 235,
           "desc": "tham số PeriodInfo (HTKKPeriodInfo) của method CellChange_0"
+        },
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
         }
       ]
     },
@@ -2379,9 +2540,80 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_A\")).DataLocationTemplateRowStart"
+      ],
+      "effects": [
+        {
+          "op": "setValue",
+          "target": {
+            "sheet": 0,
+            "cell": "BG{trigger.row}"
+          },
+          "value": "",
+          "params": {
+            "prop": "text"
+          },
+          "at": 1661,
+          "via": "ChangeCombobox_0@237",
+          "status": "unresolved"
+        }
+      ],
+      "cellVersions": [],
+      "source": {
+        "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
+        "lines": [
+          237,
+          1661
+        ]
+      },
+      "status": "unresolved",
+      "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
+      "unreachable": false,
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
+    },
+    {
+      "key": {
+        "MenuID": "R5",
+        "MaFile": "01_TTDB_ND373",
+        "VersionXML": "2.9.3",
+        "Class": "Ttdb01ND373Nckt293",
+        "in_menu": true
+      },
+      "hook": "CellChange_0",
+      "kind": "CellChange",
+      "sheetIndex": 0,
+      "trigger": {
+        "cells": [],
+        "rowRange": {
+          "from": null,
+          "to": null,
+          "cols": [
+            "G"
+          ]
+        },
+        "base": "iRow/iCol 1-based (dòng/cột Excel)",
+        "when": [
+          "trigger.col == G"
+        ]
+      },
+      "guards": [
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_A\")).DataLocationTemplateRowStart",
         "isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
       "effects": [
@@ -2411,7 +2643,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2439,9 +2679,11 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_A\")).DataLocationTemplateRowStart",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "!(hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))"
       ],
@@ -2486,7 +2728,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2514,9 +2764,11 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_2\")).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_A\")).DataLocationTemplateRowStart",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
@@ -2561,7 +2813,15 @@
       "status": "unresolved",
       "reason": "chưa giải: field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][1], field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][3], trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2589,9 +2849,9 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart-1",
         "isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
       "effects": [
@@ -2659,7 +2919,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2687,9 +2955,9 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "!(hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))"
       ],
@@ -2776,7 +3044,15 @@
       "status": "unresolved",
       "reason": "chưa giải: trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2804,9 +3080,9 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart || trigger.row > count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_I_1\")).DataLocationTemplateRowStart || trigger.row > count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_III_C\")).DataLocationTemplateRowStart-1",
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart-1",
         "!(isEmpty(\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"))",
         "hasKey(dicDMThueDB, \"{trim(\"{cell(S0!G{trigger.row}).text}\")}\")"
       ],
@@ -2889,7 +3165,15 @@
       "status": "unresolved",
       "reason": "chưa giải: field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][1], field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][3], giá trị hoặc tham số có phần chưa giải, num(field(dicDMThueDB)[\"{trim(\"{cell(S0!G{trigger.row}).text}\")}\"][4]), opaque:GeneralFunctions.GetMaTieuMucByMaHH, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2920,8 +3204,8 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
-        "trigger.row <= count(opaque(Find).RowsValues)+opaque(Find).DataLocationTemplateRowStart-1"
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "trigger.row <= count(opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).RowsValues)+opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"01_TTDB_II\")).DataLocationTemplateRowStart-1"
       ],
       "effects": [
         {
@@ -2941,7 +3225,12 @@
       "cellVersions": [
         {
           "ref": "cell(S0!BJ{trigger.row})#237",
-          "after": "hợp nhánh dòng 237: trên một số nhánh có lệnh ghi ô (dòng 1572, 1619, 1627, 1648)"
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 237: ô được ghi trên một số nhánh (dòng 1712, 1722)",
+          "writes": [
+            1712,
+            1722
+          ]
         }
       ],
       "source": {
@@ -2954,7 +3243,15 @@
       "status": "unresolved",
       "reason": "chưa giải: cell(S0!BJ{trigger.row})#237.value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -2974,7 +3271,7 @@
         "when": []
       },
       "guards": [
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
         "tk.SheetInfos[2] != null"
       ],
       "effects": [
@@ -3062,7 +3359,7 @@
         "when": []
       },
       "guards": [
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
         "tk.SheetInfos[2] != null",
         "loop: foreach@1522 table in tk.SheetInfos[2].Tables"
       ],
@@ -3136,8 +3433,8 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
-        "startswith(\"{trim(\"{cell(S0!G{trigger.row})#261.text}\")}\", \"-----\") || startswith(\"{trim(\"{cell(S0!G{trigger.row})#261.text}\")}\", \"---\")"
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "startswith(\"{trim(\"{cell(S0!G{trigger.row})#257.text}\")}\", \"-----\") || startswith(\"{trim(\"{cell(S0!G{trigger.row})#257.text}\")}\", \"---\")"
       ],
       "effects": [
         {
@@ -3169,8 +3466,21 @@
       ],
       "cellVersions": [
         {
-          "ref": "cell(S0!G{trigger.row})#261",
-          "after": "lời gọi chưa giải HTKKFile.GetMessage dòng 261 (có thể ghi ô)"
+          "ref": "cell(S0!G{trigger.row})#257",
+          "kind": "co_the_ghi",
+          "after": "hợp nhánh dòng 257: ô được ghi trên một số nhánh (dòng 1521, 1524, 1596, 1629, 1668, 1708)",
+          "writes": [
+            1521,
+            1524,
+            1596,
+            1629,
+            1668,
+            1708
+          ],
+          "calls": [
+            "GeneralFunctions.TongCongTheoTungTinh",
+            "GeneralFunctions.fpSpReindexingTableTemplate"
+          ]
         }
       ],
       "source": {
@@ -3183,7 +3493,15 @@
       "status": "unresolved",
       "reason": "chưa giải: Color.Pink, gọi chưa giải: HTKKFile.SetNodeBackGroundPink, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -3211,9 +3529,9 @@
         ]
       },
       "guards": [
-        "trigger.row < opaque(Find).DataLocationTemplateRowStart",
-        "!(startswith(\"{trim(\"{cell(S0!G{trigger.row})#261.text}\")}\", \"-----\"))",
-        "!(startswith(\"{trim(\"{cell(S0!G{trigger.row})#261.text}\")}\", \"---\"))"
+        "trigger.row < opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "!(startswith(\"{trim(\"{cell(S0!G{trigger.row})#257.text}\")}\", \"-----\"))",
+        "!(startswith(\"{trim(\"{cell(S0!G{trigger.row})#257.text}\")}\", \"---\"))"
       ],
       "effects": [
         {
@@ -3244,8 +3562,21 @@
       ],
       "cellVersions": [
         {
-          "ref": "cell(S0!G{trigger.row})#261",
-          "after": "lời gọi chưa giải HTKKFile.GetMessage dòng 261 (có thể ghi ô)"
+          "ref": "cell(S0!G{trigger.row})#257",
+          "kind": "co_the_ghi",
+          "after": "hợp nhánh dòng 257: ô được ghi trên một số nhánh (dòng 1521, 1524, 1596, 1629, 1668, 1708)",
+          "writes": [
+            1521,
+            1524,
+            1596,
+            1629,
+            1668,
+            1708
+          ],
+          "calls": [
+            "GeneralFunctions.TongCongTheoTungTinh",
+            "GeneralFunctions.fpSpReindexingTableTemplate"
+          ]
         }
       ],
       "source": {
@@ -3258,7 +3589,15 @@
       "status": "unresolved",
       "reason": "chưa giải: Color.White, gọi chưa giải: HTKKFile.RemoveValidate, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -3287,7 +3626,7 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart"
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart"
       ],
       "effects": [
         {
@@ -3296,7 +3635,7 @@
             "sheet": 0,
             "cell": "AR{trigger.row}"
           },
-          "value": "{cell(S0!BK{trigger.row})#237.value}",
+          "value": "{cell(S0!BK{trigger.row}).value}",
           "params": {
             "prop": "value"
           },
@@ -3304,12 +3643,7 @@
           "status": "unresolved"
         }
       ],
-      "cellVersions": [
-        {
-          "ref": "cell(S0!BK{trigger.row})#237",
-          "after": "hợp nhánh dòng 237: trên một số nhánh có lệnh ghi ô (dòng 1572, 1619, 1627, 1648)"
-        }
-      ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
@@ -3318,9 +3652,17 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: cell(S0!BK{trigger.row})#237.value, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: cell(S0!BK{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -3348,8 +3690,8 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "startswith(\"{trim(\"{cell(S0!G{trigger.row})#302.text}\")}\", \"-----\") || startswith(\"{trim(\"{cell(S0!G{trigger.row})#302.text}\")}\", \"---\")"
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "startswith(\"{trim(\"{cell(S0!G{trigger.row})#237.text}\")}\", \"-----\") || startswith(\"{trim(\"{cell(S0!G{trigger.row})#237.text}\")}\", \"---\")"
       ],
       "effects": [
         {
@@ -3381,8 +3723,15 @@
       ],
       "cellVersions": [
         {
-          "ref": "cell(S0!G{trigger.row})#302",
-          "after": "lời gọi chưa giải HTKKFile.GetMessage dòng 302 (có thể ghi ô)"
+          "ref": "cell(S0!G{trigger.row})#237",
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 237: ô được ghi trên một số nhánh (dòng 1596, 1629, 1668, 1708)",
+          "writes": [
+            1596,
+            1629,
+            1668,
+            1708
+          ]
         }
       ],
       "source": {
@@ -3395,7 +3744,15 @@
       "status": "unresolved",
       "reason": "chưa giải: Color.Pink, gọi chưa giải: HTKKFile.SetNodeBackGroundPink, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -3423,9 +3780,9 @@
         ]
       },
       "guards": [
-        "trigger.row >= opaque(Find).DataLocationTemplateRowStart",
-        "!(startswith(\"{trim(\"{cell(S0!G{trigger.row})#302.text}\")}\", \"-----\"))",
-        "!(startswith(\"{trim(\"{cell(S0!G{trigger.row})#302.text}\")}\", \"---\"))"
+        "trigger.row >= opaque(Find, tk.SheetInfos[0].Tables, fn(it: it.TableName == \"02_TTDB_I_1\")).DataLocationTemplateRowStart",
+        "!(startswith(\"{trim(\"{cell(S0!G{trigger.row})#237.text}\")}\", \"-----\"))",
+        "!(startswith(\"{trim(\"{cell(S0!G{trigger.row})#237.text}\")}\", \"---\"))"
       ],
       "effects": [
         {
@@ -3456,8 +3813,15 @@
       ],
       "cellVersions": [
         {
-          "ref": "cell(S0!G{trigger.row})#302",
-          "after": "lời gọi chưa giải HTKKFile.GetMessage dòng 302 (có thể ghi ô)"
+          "ref": "cell(S0!G{trigger.row})#237",
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 237: ô được ghi trên một số nhánh (dòng 1596, 1629, 1668, 1708)",
+          "writes": [
+            1596,
+            1629,
+            1668,
+            1708
+          ]
         }
       ],
       "source": {
@@ -3470,7 +3834,15 @@
       "status": "unresolved",
       "reason": "chưa giải: Color.White, gọi chưa giải: HTKKFile.RemoveValidate, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
-      "symbols": []
+      "symbols": [
+        {
+          "name": "tk",
+          "ref": "tk",
+          "origin": "hook-param",
+          "at": 235,
+          "desc": "tham số ToKhaiInfo (HTKKCMCToKhaiInfo) của method CellChange_0"
+        }
+      ]
     },
     {
       "key": {
@@ -3520,7 +3892,7 @@
             "sheet": 1,
             "cell": "N{trigger.row}"
           },
-          "value": "{cell(S1!R{trigger.row})#352.value}",
+          "value": "{cell(S1!R{trigger.row}).value}",
           "params": {
             "prop": "value"
           },
@@ -3528,12 +3900,7 @@
           "status": "parametric"
         }
       ],
-      "cellVersions": [
-        {
-          "ref": "cell(S1!R{trigger.row})#352",
-          "after": "sau lệnh setValue dòng 352"
-        }
-      ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
@@ -3542,7 +3909,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: cell(S1!Q{trigger.row}).value, cell(S1!R{trigger.row})#352.value, trigger.row",
+      "reason": "placeholder: cell(S1!Q{trigger.row}).value, cell(S1!R{trigger.row}).value, trigger.row",
       "unreachable": false,
       "symbols": [
         {
@@ -3591,7 +3958,7 @@
             "sheet": 1,
             "cell": "N{trigger.row}"
           },
-          "value": "{cell(S1!R{trigger.row})#350.value}",
+          "value": "{cell(S1!R{trigger.row}).value}",
           "params": {
             "prop": "value"
           },
@@ -3599,12 +3966,7 @@
           "status": "unresolved"
         }
       ],
-      "cellVersions": [
-        {
-          "ref": "cell(S1!R{trigger.row})#350",
-          "after": "hợp nhánh dòng 350: trên một số nhánh có lệnh ghi ô (dòng 353)"
-        }
-      ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
@@ -3613,7 +3975,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: cell(S1!R{trigger.row})#350.value, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: cell(S1!R{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
         {
@@ -3666,7 +4028,7 @@
             "sheet": 1,
             "cell": "O{trigger.row}"
           },
-          "value": "{cell(S1!S{trigger.row})#355.value}",
+          "value": "{cell(S1!S{trigger.row}).value}",
           "params": {
             "prop": "value"
           },
@@ -3674,12 +4036,7 @@
           "status": "unresolved"
         }
       ],
-      "cellVersions": [
-        {
-          "ref": "cell(S1!S{trigger.row})#355",
-          "after": "hợp nhánh dòng 355: trên một số nhánh có lệnh ghi ô (dòng 350, 357)"
-        }
-      ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
@@ -3688,7 +4045,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: cell(S1!S{trigger.row})#355.value, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: cell(S1!S{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
         {
@@ -3736,7 +4093,7 @@
             "sheet": 1,
             "cell": "K{trigger.row}"
           },
-          "value": "{cell(S1!Q{trigger.row})#359.value}",
+          "value": "{cell(S1!Q{trigger.row}).value}",
           "params": {
             "prop": "value"
           },
@@ -3744,12 +4101,7 @@
           "status": "unresolved"
         }
       ],
-      "cellVersions": [
-        {
-          "ref": "cell(S1!Q{trigger.row})#359",
-          "after": "hợp nhánh dòng 359: trên một số nhánh có lệnh ghi ô (dòng 355, 361)"
-        }
-      ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
@@ -3758,7 +4110,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: cell(S1!Q{trigger.row})#359.value, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: cell(S1!Q{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
         {
@@ -3808,7 +4160,7 @@
             "sheet": 1,
             "cell": "M{trigger.row}"
           },
-          "value": "{cell(S1!R{trigger.row})#363.value}",
+          "value": "{cell(S1!R{trigger.row}).value}",
           "params": {
             "prop": "value"
           },
@@ -3821,7 +4173,7 @@
             "sheet": 1,
             "cell": "M{trigger.row}"
           },
-          "value": "{cell(S1!R{trigger.row})#367.value}",
+          "value": "{cell(S1!R{trigger.row}).value}",
           "params": {
             "prop": "value"
           },
@@ -3829,16 +4181,7 @@
           "status": "unresolved"
         }
       ],
-      "cellVersions": [
-        {
-          "ref": "cell(S1!R{trigger.row})#363",
-          "after": "hợp nhánh dòng 363: trên một số nhánh có lệnh ghi ô (dòng 359, 365)"
-        },
-        {
-          "ref": "cell(S1!R{trigger.row})#367",
-          "after": "hợp nhánh dòng 367: trên một số nhánh có lệnh ghi ô (dòng 363, 369)"
-        }
-      ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
@@ -3847,7 +4190,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: cell(S1!R{trigger.row})#363.value, cell(S1!R{trigger.row})#367.value, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: cell(S1!R{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
         {
@@ -3899,7 +4242,7 @@
             "sheet": 1,
             "cell": "N{trigger.row}"
           },
-          "value": "{cell(S1!S{trigger.row})#371.value}",
+          "value": "{cell(S1!S{trigger.row}).value}",
           "params": {
             "prop": "value"
           },
@@ -3907,12 +4250,7 @@
           "status": "unresolved"
         }
       ],
-      "cellVersions": [
-        {
-          "ref": "cell(S1!S{trigger.row})#371",
-          "after": "hợp nhánh dòng 371: trên một số nhánh có lệnh ghi ô (dòng 367, 373)"
-        }
-      ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
@@ -3921,7 +4259,7 @@
         ]
       },
       "status": "unresolved",
-      "reason": "chưa giải: cell(S1!S{trigger.row})#371.value, trigger.row, điều kiện đường đi có phần chưa giải",
+      "reason": "chưa giải: cell(S1!S{trigger.row}).value, trigger.row, điều kiện đường đi có phần chưa giải",
       "unreachable": false,
       "symbols": [
         {
@@ -4005,7 +4343,11 @@
       "cellVersions": [
         {
           "ref": "cell(S6!BB2)#413",
-          "after": "sau lệnh setFormula dòng 413"
+          "kind": "ghi",
+          "after": "sau lệnh setFormula dòng 413",
+          "writes": [
+            413
+          ]
         }
       ],
       "source": {
@@ -4071,7 +4413,7 @@
             "clearData": "có (AN2 = \"1\" trong mẫu): khi khóa thì xóa giá trị ô (số 0, checkbox false, chữ rỗng)",
             "configRow": "S6!AK2:AN2",
             "control": "S2!J45",
-            "locked": "int(cell(S6!AL2)#413.value) == 0",
+            "locked": "int(cell(S6!AL2).value) == 0",
             "sheetNote": "DetectIndexOfSheet dùng Contains: theo tên tab trong mẫu thì sheet đầu tiên khớp là S0 (tên là chuỗi con của tên sheet được tham chiếu), tên sheet lúc chạy lấy từ thông tin sheet của tờ khai (WinSpreadProcess.cs:1701) nên chưa xác định, ghi theo sheet được tham chiếu S2",
             "template": "_forms/04_TTDB/01_TTDB_ND373/01_TTDB_ND373_v2.9.3_mau.xls",
             "via": "checkLockUnLockCells"
@@ -4080,12 +4422,7 @@
           "status": "parametric"
         }
       ],
-      "cellVersions": [
-        {
-          "ref": "cell(S6!AL2)#413",
-          "after": "sau lệnh lock dòng 413"
-        }
-      ],
+      "cellVersions": [],
       "source": {
         "file": "tax.htkk.business/TAX.HTKK.Business/Ttdb01ND373Nckt293.cs",
         "lines": [
@@ -4094,7 +4431,7 @@
         ]
       },
       "status": "parametric",
-      "reason": "placeholder: int(cell(S6!AL2)#413.value)",
+      "reason": "placeholder: int(cell(S6!AL2).value)",
       "unreachable": false,
       "symbols": []
     },
@@ -4357,7 +4694,11 @@
       "cellVersions": [
         {
           "ref": "cell(S3!L{i+tk.SheetInfos[3].Tables[0].DataLocationTemplateRowStart})#1740",
-          "after": "vòng lặp dòng 1740 có lệnh hoặc lời gọi có thể ghi ô"
+          "kind": "ghi",
+          "after": "vòng lặp dòng 1740 có lệnh ghi giá trị ô",
+          "writes": [
+            1740
+          ]
         }
       ],
       "source": {
@@ -4433,7 +4774,14 @@
       "cellVersions": [
         {
           "ref": "cell(S3!L{i+tk.SheetInfos[3].Tables[0].DataLocationTemplateRowStart})#1744",
-          "after": "sau lời gọi chưa giải GeneralFunctions.InsertNumberCell dòng 1744 (có thể ghi ô)"
+          "kind": "ghi",
+          "after": "sau lệnh GeneralFunctions.InsertNumberCell dòng 1744 qua ThayDoiCellType_PL01_4@434 (đổi giá trị hoặc dịch ô)",
+          "writes": [
+            1744
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         }
       ],
       "source": {
@@ -4528,11 +4876,27 @@
       "cellVersions": [
         {
           "ref": "cell(S3!{col(colIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/doiChieuChenhLech))}{rowIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/doiChieuChenhLech)})#1755",
-          "after": "hợp nhánh dòng 1755: trên một số nhánh có lệnh ghi ô (dòng 1754, 1757)"
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 1755: ô được ghi trên một số nhánh (dòng 1754, 1757)",
+          "writes": [
+            1754,
+            1757
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         },
         {
           "ref": "cell(S3!{col(colIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/tongCong))}{rowIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/tongCong)})#1740",
-          "after": "hợp nhánh dòng 1740: trên một số nhánh có lệnh ghi ô (dòng 1740, 1745)"
+          "kind": "ghi",
+          "after": "hợp nhánh dòng 1740: ô được ghi trên một số nhánh (dòng 1744, 1747)",
+          "writes": [
+            1744,
+            1747
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         }
       ],
       "source": {
@@ -4606,11 +4970,25 @@
       "cellVersions": [
         {
           "ref": "cell(S3!{col(colIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/doiChieuChenhLech))}{rowIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/doiChieuChenhLech)})#1763",
-          "after": "sau lời gọi chưa giải GeneralFunctions.InsertNumberCell dòng 1763 (có thể ghi ô)"
+          "kind": "ghi",
+          "after": "sau lệnh GeneralFunctions.InsertNumberCell dòng 1763 qua ThayDoiCellType_PL01_4@434 (đổi giá trị hoặc dịch ô)",
+          "writes": [
+            1763
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         },
         {
           "ref": "cell(S3!{col(colIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/tongCong))}{rowIndex(Pluc_01_TT146/PLPhieuTHDoanhThu/BKDoanhThu/tongCong)})#1754",
-          "after": "sau lời gọi chưa giải GeneralFunctions.InsertNumberCell dòng 1754 (có thể ghi ô)"
+          "kind": "ghi",
+          "after": "sau lệnh GeneralFunctions.InsertNumberCell dòng 1754 qua ThayDoiCellType_PL01_4@434 (đổi giá trị hoặc dịch ô)",
+          "writes": [
+            1754
+          ],
+          "calls": [
+            "GeneralFunctions.InsertNumberCell"
+          ]
         }
       ],
       "source": {
