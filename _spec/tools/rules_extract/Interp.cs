@@ -181,7 +181,7 @@ public sealed class Interp
                 {
                     used = new();
                     V val = v.Initializer != null ? Eval(v.Initializer.Value, st, f) : UninitSym(v.Identifier.Text, Line(v));
-                    Assign(st, v.Identifier.Text, val, Line(v));
+                    Assign(st, v.Identifier.Text, NamedCollection(v.Identifier.Text, val, Line(v)), Line(v));
                     CheckThrow(st, Line(v), "chỉ số ngoài mảng");
                     if (st.Dead) break;
                 }
@@ -548,7 +548,7 @@ public sealed class Interp
                 {
                     string n = id.Identifier.Text;
                     if (!st.Env.ContainsKey(n) && f.Cls != null && f.Cls.Members.Contains(n)) n = "this." + n;
-                    Assign(st, n, rhs, ln); return rhs;
+                    Assign(st, n, n.StartsWith("this.", StringComparison.Ordinal) ? rhs : NamedCollection(n, rhs, ln), ln); return rhs;
                 }
             case MemberAccessExpressionSyntax ma when ma.Expression is ThisExpressionSyntax:
                 Assign(st, "this." + ma.Name.Identifier.Text, rhs, ln); return rhs;
@@ -689,7 +689,9 @@ public sealed class Interp
         used = saved;
         cls.Evaluating.Remove(n);
         // giá trị có đọc ô: không lưu đệm (phiên bản ô thay đổi theo lệnh ghi)
-        if (!R.Expr(v, new Flags()).Contains("cell(")) cls.Cache[n] = v;
+        // ký hiệu có tên trong dấu ẩn đăng ký ở Interp hiện tại: không lưu đệm để Interp sau đăng ký lại symbols
+        var ftxt = R.Expr(v, new Flags());
+        if (!ftxt.Contains("cell(") && !Mk.Names(ftxt).Any()) cls.Cache[n] = v;
         return v;
     }
 
@@ -1366,6 +1368,16 @@ public sealed class Interp
         return parts.Count == 0 ? "map" : string.Join(".", parts);
     }
     static string CallName(InvocationExpressionSyntax inv) => inv.Expression is MemberAccessExpressionSyntax ma ? (ma.Expression is IdentifierNameSyntax id ? id.Identifier.Text + "." : "") + ma.Name.Identifier.Text : inv.Expression is IdentifierNameSyntax i2 ? i2.Identifier.Text : "?";
+    /// từ điển/bảng tra cục bộ tạo mới (nội dung nạp lúc chạy): giữ tên biến làm ký hiệu thay cho obj(Dictionary) vô danh
+    V NamedCollection(string n, V v, int line)
+    {
+        if (v is VSym y && y.Text.StartsWith("obj(", StringComparison.Ordinal) && (y.Text.Contains("Dictionary") || y.Text.Contains("Hashtable") || y.Text.Contains("SortedList")))
+        {
+            RegSym(n, "local-map", line, "bảng tra (từ điển) cục bộ tạo mới tại dòng " + line + ", nội dung nạp lúc chạy");
+            return new VSym(n + Mk.Tag(Mk.Next()));
+        }
+        return v;
+    }
     V UninitSym(string n, int line) { RegSym(n, "uninit", line, "khai báo tại dòng " + line + " không có giá trị đầu"); return new VSym(n); }
     V ParamSym(string n, BaseMethodDeclarationSyntax m) { RegSym(n, "param", Line(m), "tham số của method " + MethodName(m) + " không được truyền"); return new VSym(n); }
 

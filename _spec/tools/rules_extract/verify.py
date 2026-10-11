@@ -473,6 +473,24 @@ for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
                 lab_bad.append("%s %s opaque(%s)" % (b, r["hook"], lab))
 for x in sorted(set(lab_bad))[:8]:
     print("   nhãn lộ tên:", x)
+# tên bị bỏ khỏi nhãn phải nằm trong symbols: opaque(branches) -> origin merge, opaque(result) -> method-result, opaque(call) -> method
+NEED = {"branches": "merge", "result": "method-result", "call": "method"}
+sym_miss = []; sym_n = 0
+for f in sorted(glob.glob(os.path.join(rules, "*.json"))):
+    b = os.path.basename(f)
+    if b in ("formula_points.json", "opaque_calls.json", "index.json"):
+        continue
+    for r in json.load(open(f))["records"]:
+        txt = json.dumps({k: v for k, v in r.items() if k not in ("reason", "symbols")}, ensure_ascii=False)
+        origins = {s["origin"] for s in r.get("symbols", [])}
+        for lab, org in NEED.items():
+            if "opaque(%s)" % lab in txt:
+                sym_n += 1
+                if org not in origins:
+                    sym_miss.append("%s %s opaque(%s)" % (b, r["hook"], lab))
+for x in sym_miss[:5]:
+    print("   thiếu symbols:", x)
+say(not sym_miss, "(7h2) bản ghi có opaque(branches/result/call) đều có symbols origin merge/method-result/method: %d lượt, thiếu %d" % (sym_n, len(sym_miss)))
 say(not lab_bad, "(7h) nhãn opaque(...) chỉ mô tả loại, không chứa tên biến/method C#: %d nhãn, vi phạm %d" % (lab_n, len(lab_bad)))
 
 # (7i) trạng thái: effect resolved/parametric không được chứa opaque ở giá trị/tham số/đích hoặc điều kiện đường đi

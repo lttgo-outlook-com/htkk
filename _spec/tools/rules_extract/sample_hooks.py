@@ -28,6 +28,41 @@ longp = sorted([x for k in (True, False) for x in pool[k] if x[4] - x[3] > 300 a
 pl = rnd.sample(longp, 5)
 pick = [("long", x) for x in pl]
 pick += [(True, x) for x in rnd.sample([x for x in pool[True] if x not in pl], 13)] + [(False, x) for x in rnd.sample([x for x in pool[False] if x not in pl], 12)]
+# Mẫu mới: loại hook đã đọc ở các vòng trước (manual_check*.csv trong rulesDir, trừ tệp của chính seed này);
+# tầng dài: không hai hook cùng khuôn mã (>50% dòng chuẩn hóa giống nhau) hoặc cùng (họ class bỏ hậu tố phiên bản, tên hook);
+# chỉ 3 họ có hook trên 300 dòng (DkTndn02, Tndn03, Tts01) nên không thể buộc mỗi họ 1 hook.
+# Slot vi phạm thay bằng lượt rút kế tiếp từ Random(seed + 1), giữ nguyên các slot hợp lệ.
+import csv
+seen = set()
+for f in sorted(glob.glob(os.path.join(rules, "manual_check*.csv"))):
+    if "seed%d" % seed in os.path.basename(f):
+        continue
+    for row in csv.DictReader(open(f, encoding="utf-8")):
+        seen.add((row["class"], row["hook"]))
+def family(c):
+    return re.sub(r"(?:TT\d+|ND\d+)?(?:View)?Nckt\d+$", "", c)
+sig_cache = {}
+def sig(x):
+    if x[:2] not in sig_cache:
+        src0 = open(os.path.join(dec, x[2]), encoding="utf-8-sig").read().split("\n")
+        sig_cache[x[:2]] = {re.sub(r"\d+", "#", t.strip()) for t in src0[x[3] - 1:x[4]] if len(t.strip()) >= 15}
+    return sig_cache[x[:2]]
+def same_tpl(a, b):
+    sa, sb = sig(a), sig(b)
+    return len(sa & sb) / max(1, min(len(sa), len(sb))) > 0.5
+rnd2 = random.Random(seed + 1)
+taken = {x[:2] for _, x in pick}
+replaced = []
+for i, (im, x) in enumerate(pick):
+    ok_long = lambda y, i=i: all((family(y[0]), y[1]) != (family(p[0]), p[1]) and not same_tpl(y, p) for j, (k2, p) in enumerate(pick) if k2 == "long" and j < i)
+    if x[:2] not in seen and (im != "long" or ok_long(x)):
+        continue
+    cand = longp if im == "long" else pool[im]
+    order = rnd2.sample(cand, len(cand))
+    y = next(y for y in order if y[:2] not in taken and y[:2] not in seen and (im != "long" or ok_long(y)))
+    replaced.append("%d: %s.%s -> %s.%s" % (i + 1, x[0], x[1], y[0], y[1]))
+    taken.add(y[:2]); pick[i] = (im, y)
+print("THAY SLOT:", "; ".join(replaced) if replaced else "không")
 for n, (im, (cls, hook, path, s, e, lines)) in enumerate(pick, 1):
     src = open(os.path.join(dec, path), encoding="utf-8-sig").read().split("\n")
     d = json.load(open(os.path.join(rules, cls + ".json")))

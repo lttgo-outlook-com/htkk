@@ -330,6 +330,7 @@ int recUnreachable = 0, recWithSyms = 0, symEntries = 0;
 List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<string, object> key, string hook, string kind, int sheet, string file, string ctxLabel, SortedDictionary<string, List<SymInfo>> syms)
 {
     var groupConj = new Dictionary<string, List<List<Cond>>>(StringComparer.Ordinal);
+    var groupNames = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal); // tên trong dấu ẩn của điều kiện (trước khi bỏ dấu)
     var groups = new List<(string gk, List<Effect> effs, List<Cond> trig, List<string> guards)>();
     var effSeen = new HashSet<string>(StringComparer.Ordinal);
     var gidx = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -346,9 +347,11 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
         }
         foreach (var lp in ef.Loops) guards.Add("loop: " + lp.Desc);
         // nhóm theo văn bản hiển thị (bỏ dấu ẩn); cờ unreachable chỉ khi mọi effect của nhóm có đường đi mâu thuẫn
+        var rawNames = guards.SelectMany(Mk.Names).ToList();
         guards = guards.Select(Mk.Strip).Distinct(StringComparer.Ordinal).ToList();
         string gk = string.Join("\u0001", trig.Select(t => t.Key)) + "\u0002" + string.Join("\u0001", guards);
-        if (!gidx.TryGetValue(gk, out var gi)) { gi = groups.Count; gidx[gk] = gi; groups.Add((gk, new List<Effect>(), trig, guards)); groupConj[gk] = new List<List<Cond>>(); }
+        if (!gidx.TryGetValue(gk, out var gi)) { gi = groups.Count; gidx[gk] = gi; groups.Add((gk, new List<Effect>(), trig, guards)); groupConj[gk] = new List<List<Cond>>(); groupNames[gk] = new HashSet<string>(StringComparer.Ordinal); }
+        groupNames[gk].UnionWith(rawNames);
         effRaw++;
         string ek = gk + "\u0003" + ef.Op + "|" + Mk.Strip(ef.Target == null ? "" : R.Expr(ef.Target, new Flags())) + "|" + Mk.Strip(ef.Val == null ? "" : R.Expr(ef.Val, new Flags())) + "|" + ef.Line + "|" + ef.Via + "|" + Mk.Strip(JsonSerializer.Serialize(ef.Params, jsonOpt));
         groupConj[gk].Add(conj);
@@ -416,6 +419,7 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
         var trigJ = BuildTrigger(g.trig, kind);
         var toks = new HashSet<string>(StringComparer.Ordinal);
         Tokens(g.guards, "guards", toks); Tokens(trigJ, "trigger", toks); Tokens(effJson, "effects", toks);
+        toks.UnionWith(groupNames[g.gk]);
         var symJ = new List<object>();
         foreach (var t in toks.OrderBy(x => x, StringComparer.Ordinal))
             if (syms != null && syms.TryGetValue(t, out var sl0))
