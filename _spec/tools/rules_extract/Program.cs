@@ -501,7 +501,12 @@ List<Dictionary<string, object>> BuildRecords(List<Effect> effects, Dictionary<s
         var verJ = new List<object>();
         foreach (var kv in itp.VerRefs.OrderBy(k => Mk.Strip(k.Key), StringComparer.Ordinal).ThenBy(k => k.Key, StringComparer.Ordinal))
             if (allTxt.Contains(kv.Key, StringComparison.Ordinal))
-                verJ.Add(new Dictionary<string, object> { ["ref"] = kv.Key, ["after"] = kv.Value });
+            {
+                var vm = itp.VerMeta[kv.Key];
+                var vd = new Dictionary<string, object> { ["ref"] = kv.Key, ["kind"] = vm.Kind, ["after"] = kv.Value, ["writes"] = vm.Writes };
+                if (vm.Calls.Length > 0) vd["calls"] = vm.Calls;
+                verJ.Add(vd);
+            }
         var ids = new SortedSet<long>();
         CollectSym(guardsJ, ids); CollectSym(trigJ, ids); CollectSym(effJson, ids); CollectSym(verJ, ids);
         var infos = ids.Select(i => itp.SymById[i]).ToList();
@@ -795,7 +800,7 @@ Write("index.json", new Dictionary<string, object>
     ["tool"] = "_spec/tools/rules_extract (Roslyn ParseText, không biên dịch)",
     ["legend"] = new Dictionary<string, object>
     {
-        ["cell_version"] = "cell(S<n>!X)#L là giá trị ô đọc sau sự kiện tại dòng L trên đường đi: lệnh tác động lên ô đó (ghi giá trị/công thức, khóa/mở, định dạng), lệnh/lời gọi có thể ghi ô bất kỳ, vòng lặp có ghi ô, hoặc hợp nhánh (một nhánh có ghi). #L.k khi cùng ô cùng dòng có nhiều phiên bản. Không có #L là giá trị trước mọi lệnh ghi trên đường đi. Hai lần đọc chỉ là cùng giá trị khi cùng nhãn. Mô tả từng nhãn ở trường cellVersions của bản ghi (ref, after).",
+        ["cell_version"] = "cell(S<n>!X)#L là giá trị ô đọc sau sự kiện tại dòng L trên đường đi. Chỉ lệnh đổi GIÁ TRỊ ô tạo phiên bản (kind ghi): gán Value/Text/Formula, ResetValue/ResetText/ResetFormula, xóa vùng, chèn/xóa hàng làm dịch ô, helper ghi giá trị đã biết. lệnh ghi theo cột hoặc hàng (chỉ số lúc chạy) chỉ tạo phiên bản cho ô thuộc cột/hàng đó. Không tạo phiên bản: đọc ô vào biến cục bộ, Visible/Height/Width, BackColor/Note/Locked/CellType/định dạng, lời gọi giao diện. Lời gọi chưa rõ có ghi ô tạo phiên bản bảo thủ kind co_the_ghi kèm calls. Đầu vòng lặp có lệnh ghi tạo phiên bản chỉ cho lần đọc trong thân vòng. Hợp nhánh khác nhau tạo phiên bản tại dòng hợp nhánh (kind co_the_ghi nếu một nguồn là co_the_ghi). #L.k khi cùng ô cùng dòng có nhiều phiên bản. Không có #L là giá trị trước mọi lệnh ghi trên đường đi. Hai lần đọc chỉ là cùng giá trị khi cùng nhãn. Mỗi nhãn có mục ở cellVersions của bản ghi: ref, kind, after (mô tả), writes (dòng lệnh ghi gốc), calls (tên lời gọi).",
         ["symbols_ref"] = "Mỗi mục symbols là một nguồn (origin, at = dòng). Bản ghi chỉ liệt kê nguồn thật sự có mặt trên đường đi của bản ghi. Một tên có nhiều nguồn trong cùng bản ghi thì văn bản và trường ref viết tên@dòng (thêm _origin khi trùng dòng).",
         ["count_length"] = "count(x) là số phần tử, length(x) là độ dài chuỗi/mảng của giá trị lúc chạy x.",
         ["opaque"] = "opaque(Tên, đối số...) là lời gọi chưa giải kèm đối số đã đánh giá (lời gọi trên đối tượng <obj>.Tên: đối số đầu là đối tượng nhận). opaque(call, method, đối số...) là method cùng class không nội tuyến. opaque(result, method) là giá trị trả về không xác định. opaque(branches, biến) là giá trị phụ thuộc quá nhiều nhánh.",

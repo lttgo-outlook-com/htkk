@@ -532,8 +532,11 @@ for hk, ln in (("ButtonClick_0", 377), ("ButtonClick_1", 396), ("ButtonClick_2",
     effs = [e for r in d1["records"] if r["hook"] == hk for e in r["effects"] if (e.get("via") or "").startswith("getSoKyTruoc@%d" % ln) and e["op"] == "setValue"]
     cj.append(("(1) %s getSoKyTruoc@%d setValue qua via: %d" % (hk, ln, len(effs)), len(effs) > 0))
 d2 = recs_of("Cnkd01TT40Nckt253")
-bad2 = [r for r in d2["records"] if r["unreachable"] and any("cell(S0!B10).value" in g for g in r["guards"])]
-cj.append(("(2) Cnkd01TT40Nckt253: bản ghi unreachable dựa trên ô B10 (bị ghi ở SetHinhThucKeKhai): %d" % len(bad2), not bad2))
+# định nghĩa chặt (QC lần 6): chỉ lệnh đổi giá trị ô tạo phiên bản; RemoveValidate/SetNodeBackGroundPink không ghi ô, nên hai lần đọc B10
+# không qua lệnh ghi là cùng giá trị và mâu thuẫn là thật. Trượt khi bản ghi unreachable dựa trên B10 có SetHinhThucKeKhai (ghi B10) trên đường đi.
+ub10 = [r for r in d2["records"] if r["unreachable"] and any("cell(S0!B10).value" in g for g in r["guards"])]
+bad2 = [r for r in ub10 if any("SetHinhThucKeKhai@" in (e.get("via") or "") for e in r["effects"]) or any("SetHinhThucKeKhai" in v["after"] for v in r["cellVersions"])]
+cj.append(("(2) Cnkd01TT40Nckt253: bản ghi unreachable dựa trên ô B10 có SetHinhThucKeKhai (ghi B10) trên đường đi: %d; unreachable B10 không qua lệnh ghi giá trị (mâu thuẫn thật): %d" % (len(bad2), len(ub10) - len(bad2)), not bad2))
 d3 = recs_of("AcTb03Nckt210")
 r87 = [r for r in d3["records"] for e in r["effects"] if e["at"] == 87]
 cj.append(("(2) AcTb03Nckt210 dòng 87 có effect, không gắn unreachable: %d bản ghi, unreachable %d" % (len(r87), sum(r["unreachable"] for r in r87)), bool(r87) and not any(r["unreachable"] for r in r87)))
@@ -918,6 +921,9 @@ def classify9(L, n, memo={}):
     """ghi | co_the_ghi | loop_ghi | loop_khong | visible | dinh_dang | chi_doc"""
     t = L[n - 1].strip(); s1 = lit.sub('""', t)
     if re.match(r"(for|foreach|while|do)\b", t):
+        # lời gọi có thể ghi ngay trên dòng đầu vòng (tập duyệt của foreach, điều kiện) cũng tạo phiên bản tại dòng này
+        if maywrite_calls(s1):
+            return "co_the_ghi"
         key = (id(L), n)
         if key not in memo:
             body = loop_body(L, n)
