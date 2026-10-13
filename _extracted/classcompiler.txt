@@ -1,0 +1,836 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Xml;
+using TAX.HTKK.Utilities.Core;
+using System.IO;
+using HTKK;
+namespace HTKK
+{
+    public class ClassCompilerConvert
+    {
+        public static void ConverDataVb6(string pathDataFileOld, out string listFileError)
+        {
+            string fileToLog = "";
+            listFileError = "";
+            string returnDataFileName = string.Empty;
+            string kieuKy = string.Empty;
+            string thang = string.Empty;
+            string quy = string.Empty;
+            string nam = string.Empty;
+            string tuNgay = string.Empty;
+            string denNgay = string.Empty;
+            string tuThang = string.Empty;
+            string denThang = string.Empty;
+            string ngay = string.Empty;
+            string pathTemp = pathDataFileOld;
+            string strKy = string.Empty;
+            string dataFileNameOld = string.Empty;
+            string dataFileNameNew = string.Empty;
+            string idMenu = string.Empty;
+            string templateXml = string.Empty;
+            string versionXml = string.Empty;
+            int indexRowDong = 0;
+            string arrIdHeader = "01;94;96;97;03";
+            //pathDataFileOld = @"c:\Project\HTKK_TCT\HTKK_OUTPUT\Debug\DataFilesOld\2222222222\01_CNKD_082016.xml";
+            //pathTemp = pathDataFileOld;
+            try
+            {
+                int startStr = pathDataFileOld.LastIndexOf("\\");
+                string fileName = pathTemp.Substring(startStr + 1, pathDataFileOld.Length - startStr - 1)
+                    .Replace(".xml", "");
+                fileToLog = fileName;
+                if (fileName.IndexOf("_") == -1)
+                    return;
+                String fileName1 = fileName;
+                if (fileName.IndexOf("bs") == 0)
+                {
+                    fileName1 = fileName.Replace(fileName.Split('_')[0] + "_", "");
+
+                }
+                XmlDocument xmlConverData = new XmlDocument();
+                XmlDataDocument xmlMenu = new XmlDataDocument();
+                XmlDocument xmlMap = new XmlDocument();
+                xmlMap.LoadXml(HTKKFile.LoadFile("ConverDataFile.xml"));
+                xmlMenu = WinSettings.xmlDocMenu;
+                XmlNodeList NodeListFileNameMenu = xmlMenu.SelectNodes("/Root/Menu/Validity/Sheet");
+
+                XmlNodeList nodeMapList = null;
+                if (HTKKFormater.isNullString(dataFileNameNew) || HTKKFormater.isNullString(dataFileNameNew)
+                    || HTKKFormater.isNullString(idMenu) || HTKKFormater.isNullString(versionXml))
+                {
+                    nodeMapList = xmlMap.SelectNodes("/Root/Map");
+                    foreach (XmlNode node in nodeMapList)
+                    {
+                        if (node.Attributes["DataFileOld"] != null && fileName1.IndexOf(node.Attributes["DataFileOld"].Value) == 0)
+                        {
+                            dataFileNameOld = node.Attributes["DataFileOld"] == null ? "" : node.Attributes["DataFileOld"].Value;
+                            dataFileNameNew = node.Attributes["DataFile"] == null ? "" : node.Attributes["DataFile"].Value;
+                            foreach (XmlNode node1 in NodeListFileNameMenu)
+                            {
+                                if (node1.Attributes["DataFile"] != null && (dataFileNameNew + "_").IndexOf(node1.Attributes["DataFile"].Value.ToString() + "_") == 0)
+                                {
+                                    idMenu = node1.ParentNode.ParentNode.Attributes["ID"] == null ? "" : node1.ParentNode.ParentNode.Attributes["ID"].Value;
+                                    versionXml = node1.ParentNode.ParentNode.Attributes["VersionXML"] == null ? "" : node1.ParentNode.ParentNode.Attributes["VersionXML"].Value.Replace(".", "");
+                                    if (fileName.IndexOf("KHBS") >= 0)
+                                        versionXml = node1.ParentNode.ParentNode.Attributes["VersionKHBS"] == null ? "" : node1.ParentNode.ParentNode.Attributes["VersionKHBS"].Value.Replace(".", "");
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                if (HTKKFormater.isNullString(dataFileNameNew) || HTKKFormater.isNullString(dataFileNameNew)
+                    || HTKKFormater.isNullString(idMenu) || HTKKFormater.isNullString(versionXml))
+                {
+                    foreach (XmlNode node in NodeListFileNameMenu)
+                    {
+                        int test = 0;
+                        if (node.Attributes["DataFile"] != null && node.Attributes["DataFile"].Value == "02_TNDN_TT36_DK")
+                            test = 1;
+                        if (node.Attributes["DataFile"] != null && fileName1.IndexOf(node.Attributes["DataFile"].Value + "_") == 0
+                            && !HTKKFormater.isNullString(node.Attributes["DataFile"].Value) && !node.Attributes["DataFile"].Value.Equals("KHBS"))
+                        {
+                            string strKyTT = fileName1.Replace(node.Attributes["DataFile"].Value + "_", "");
+                            if (!strKyTT.StartsWith("DT") && !strKyTT.StartsWith("L") && !strKyTT.StartsWith("KTN") && !strKyTT.StartsWith("CD")
+                                && !strKyTT.StartsWith("Q") && (strKyTT.Length > 2 && ConvertHelpers.ConvertToInt(strKyTT.Substring(0, 2)) == 0)
+                                && !strKyTT.StartsWith("DK"))
+                                continue;
+                            if (strKyTT.StartsWith("DK") && node.Attributes["DataFile"].Value.IndexOf("DK") == -1)
+                                continue;
+                            dataFileNameOld = node.Attributes["DataFile"] == null ? "" : node.Attributes["DataFile"].Value;
+                            dataFileNameNew = node.Attributes["DataFile"] == null ? "" : node.Attributes["DataFile"].Value;
+                            idMenu = node.ParentNode.ParentNode.Attributes["ID"] == null ? "" : node.ParentNode.ParentNode.Attributes["ID"].Value;
+                            versionXml = node.ParentNode.ParentNode.Attributes["VersionXML"] == null ? "" : node.ParentNode.ParentNode.Attributes["VersionXML"].Value.Replace(".", "");
+                            if (fileName.IndexOf("KHBS") >= 0)
+                                versionXml = node.ParentNode.ParentNode.Attributes["VersionKHBS"] == null ? "" : node.ParentNode.ParentNode.Attributes["VersionKHBS"].Value.Replace(".", "");
+                            //if (pathDataFileOld.IndexOf(dataFileNameOld) > -1)
+                            break;
+                        }
+                    }
+                }
+                if (HTKKFormater.isNullString(dataFileNameNew) || HTKKFormater.isNullString(dataFileNameNew)
+                   || HTKKFormater.isNullString(idMenu) || HTKKFormater.isNullString(versionXml))
+                {
+                    listFileError = listFileError + fileToLog.PadRight(50, ' ') + "Không tìm thấy phiên bản tờ khai trên ứng dụng mới.";
+                    return;
+                }
+                nodeMapList = xmlMap.SelectNodes("/Root/Map[@DataFile='" + dataFileNameNew + "']");
+                int rowIncre = 0;
+                if (idMenu == "01")
+                {
+                    foreach (XmlNode nodeMapTmp in nodeMapList)
+                    {
+                        if (nodeMapTmp.Attributes["ROW_NCKT_HTKK"] != null)
+                        {
+                            rowIncre = ConvertHelpers.ConvertToInt(nodeMapTmp.Attributes["ROW_NCKT_HTKK"].Value);
+                            break;
+                        }
+                    }
+                }
+                Dictionary<string, string> dicMapCell = new Dictionary<string, string>();
+                foreach (XmlNode nodeMapTmp in nodeMapList)
+                {
+                    if (nodeMapTmp.Attributes["CELL_NEW"] != null && nodeMapTmp.Attributes["CELL_OLD"] != null
+                        && !HTKKFormater.isNullString(nodeMapTmp.Attributes["CELL_NEW"].Value)
+                        && !HTKKFormater.isNullString(nodeMapTmp.Attributes["CELL_OLD"].Value))
+                    {
+                        HTKKFile.AddOrUpdateDicStr(dicMapCell, nodeMapTmp.Attributes["CELL_NEW"].Value, nodeMapTmp.Attributes["CELL_OLD"].Value);
+                    }
+                }
+                strKy = fileName.Substring(fileName.IndexOf(dataFileNameOld));
+                strKy = fileName.Replace(dataFileNameOld + "_", "");
+                templateXml = HTKKConfig.INTERFACE_TEMPLATES + @"\xml\" + dataFileNameNew + "_" + versionXml + ".xml";
+                XmlDocument xmlDataNew = new XmlDocument();
+                if (!File.Exists(templateXml))
+                    return;
+                xmlDataNew.Load(templateXml);
+                XmlDocument xmlDataOld = new XmlDocument();
+                xmlDataOld.Load(pathDataFileOld);
+
+                XmlNodeList elemListTmp = xmlDataNew.SelectNodes("/Sections/Section");
+                XmlNodeList elemListOld = xmlDataOld.SelectNodes("/Sections/Section");
+
+                int rowCount = 0;
+                int indexTable = 0;
+                int countTable = 0;
+                foreach (XmlNode node in elemListTmp)
+                {
+                    //TH la cell tinh
+                    if (node.Attributes["Dynamic"].Value == "0")
+                    {
+                        List<XmlNode> xmlListProcess = new List<XmlNode>();
+                        foreach (XmlNode nodeSection in elemListOld)
+                        {
+                            if (nodeSection.Attributes["Dynamic"].Value == "0")
+                                foreach (XmlNode nodeCells in nodeSection)
+                                    foreach (XmlNode nodeCellTmp in nodeCells)
+                                        xmlListProcess.Add(nodeCellTmp);
+                        }
+                        XmlNodeList nodeCell = node.ChildNodes[0].ChildNodes;
+                        foreach (XmlNode nodeCellTmp in nodeCell)
+                        {
+                            if (idMenu == "30" && dataFileNameNew.IndexOf("01_1_TTS") > -1)
+                            {
+                                if (nodeCellTmp.Attributes["CellID"].Value == "B_15")
+                                {
+                                    nodeCellTmp.Attributes["Value"].Value = "VB6";
+                                }
+                            }
+                            string cellNew = "";
+                            string cellOld = "";
+                            string cellIndex = nodeCellTmp.Attributes["CellID"].Value;
+                            if (cellIndex.IndexOf("_") > -1)
+                            {
+                                if (ConvertHelpers.ConvertToInt(cellIndex.Split('_')[1]) + rowIncre - rowCount > indexRowDong)
+                                    cellNew = cellIndex.Split('_')[0] + "_" + (ConvertHelpers.ConvertToInt(cellIndex.Split('_')[1]) + rowIncre - rowCount).ToString();
+                                else
+                                    cellNew = cellIndex.Split('_')[0] + "_" + (ConvertHelpers.ConvertToInt(cellIndex.Split('_')[1]) + rowIncre).ToString();
+                            }
+                            dicMapCell.TryGetValue(cellNew, out cellOld);
+                            if (!HTKKFormater.isNullString(cellOld))
+                            {
+                                for (int t1 = 0; t1 < xmlListProcess.Count; t1++)
+                                {
+                                    //Lay cellID trong data file cu
+                                    string[] arrCellID = xmlListProcess[t1].Attributes["CellID"].Value.ToString().Split('_');
+                                    string cellID = arrCellID[0] + "_" +
+                                                    (ConvertHelpers.ConvertToInt(arrCellID[1]) + rowIncre).ToString();
+
+                                    //Lay cellID trong file map
+                                    string[] arrCellID1 = cellOld.Split('_');
+                                    string cellID1 = arrCellID1[0] + "_" +
+                                                    (ConvertHelpers.ConvertToInt(arrCellID1[1]) - rowIncre + rowCount).ToString();
+                                    if (cellID1 == cellID)
+                                    {
+                                        string valueOld = xmlListProcess[t1].Attributes["Value"].Value;
+                                        if (valueOld.IndexOf("{") > -1 && dataFileNameNew == "01_1_BC26_AC")
+                                        {
+                                            string vaueTmp1 = valueOld.Split('{')[1].Replace("}", "");
+                                            valueOld = HTKKWinDictionaryDiaDanh.CoQuanThueQuanLy[vaueTmp1];
+                                        }
+                                        if (valueOld.IndexOf(" - ") > 0)
+                                            valueOld = valueOld.Substring(valueOld.IndexOf(" - ") + 3);
+                                        if (valueOld.IndexOf("         ") > -1)
+                                        {
+                                            if (System.Text.RegularExpressions.Regex.Split(valueOld, "         ").Length > 2)
+                                            {
+                                                valueOld = System.Text.RegularExpressions.Regex.Split(valueOld, "         ")[0];
+                                            }
+                                        }
+                                        nodeCellTmp.Attributes["Value"].Value = valueOld;
+                                        break;
+                                    }
+                                }
+                                continue;
+
+                            }
+                            int t = 0;
+                            bool isSet = false;
+                            for (t = 0; t < xmlListProcess.Count; t++)
+                            {
+                                string[] arrCellID = xmlListProcess[t].Attributes["CellID"].Value.ToString().Split('_');
+                                string cellID = arrCellID[0] + "_" +
+                                                (ConvertHelpers.ConvertToInt(arrCellID[1]) + rowIncre).ToString();
+                                if (nodeCellTmp.Attributes["CellID"].Value == cellID)
+                                //if (nodeCellTmp.Attributes["CellID"].Value == xmlListProcess[t].Attributes["CellID"].Value)
+                                {
+                                    string valueOld = xmlListProcess[t].Attributes["Value"].Value;
+                                    if (valueOld.IndexOf(" - ") > 0)
+                                        valueOld = valueOld.Substring(valueOld.IndexOf(" - ") + 3);
+                                    nodeCellTmp.Attributes["Value"].Value = valueOld;
+                                    isSet = true;
+                                    break;
+                                }
+                            }
+                            //if (isSet && xmlListProcess[t].Attributes["Dynamic"].Value == "0")
+                            //    xmlListProcess.Remove(xmlListProcess[t]);
+                        }
+                    }
+                    //TH cell dong
+                    else
+                    {
+                        //Lay ra cac the co cell dong
+                        XmlNode nodeRowInfo = null;
+                        XmlNode nodeRowHeader = null;
+                        int rowTmpStart = 0;
+                        foreach (XmlNode nodeTmp in node.ChildNodes)
+                        {
+                            if (nodeTmp.Name == "Location")
+                                foreach (XmlNode nodeTmp2 in nodeTmp.ChildNodes)
+                                {
+                                    if (nodeTmp2.Name == "DataLocationTemplateRowStart")
+                                        rowTmpStart = ConvertHelpers.ConvertToInt(nodeTmp2.InnerText);
+                                }
+                            if (nodeTmp.Name == "RowInfo")
+                                nodeRowInfo = nodeTmp;
+                            if (nodeTmp.Name == "Header")
+                                nodeRowHeader = nodeTmp;
+                        }
+                        XmlNode nodeCellFisrt = null;
+                        if (nodeRowHeader != null)
+                        {
+                            nodeCellFisrt = nodeRowHeader.FirstChild;
+                        }
+                        else
+                            nodeCellFisrt = nodeRowInfo.FirstChild;
+                        XmlNode nodeSectionOld = null;
+
+                        //Xac dinh the section tuong ung tren data cu
+                        foreach (XmlNode nodeSectionTmp in elemListOld)
+                        {
+                            XmlNode nodeCellsOld = null;
+                            if (nodeSectionTmp.HasChildNodes)
+                                nodeCellsOld = nodeSectionTmp.FirstChild;
+                            if (nodeCellsOld != null && nodeCellsOld.HasChildNodes)
+                                foreach (XmlNode nodeTmp in nodeCellsOld.ChildNodes)
+                                {
+                                    if (nodeRowHeader != null)
+                                    {
+                                        if (nodeTmp.Attributes["CellID"].Value ==
+                                            nodeCellFisrt.Attributes["CellID"].Value)
+                                        {
+                                            nodeSectionOld = nodeCellsOld.ParentNode;
+                                            break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        //string cellID = nodeCellFisrt.Attributes["CellID"].Value.ToString() + "_" +
+                                        //                (rowTmpStart + rowCount).ToString();
+                                        string cellID = nodeCellFisrt.Attributes["CellID"].Value.ToString() + "_" +
+                                                        (rowTmpStart - rowIncre).ToString();
+                                        if (nodeTmp.Attributes["CellID"].Value == cellID)
+                                        {
+                                            nodeSectionOld = nodeCellsOld.ParentNode;
+                                            break;
+                                        }
+                                    }
+                                }
+                        }
+
+                        //Fill du lieu
+                        XmlNodeList nodeListCellsOld = null;
+                        if (nodeSectionOld != null && nodeSectionOld.HasChildNodes)
+                            nodeListCellsOld = nodeSectionOld.ChildNodes;
+                        else
+                            continue;
+
+                        int countRowSection = 0;
+                        int passNodeOld = 0;
+                        //Dem tong so table tren data cu
+                        List<XmlNode> nodeClone = new List<XmlNode>();
+                        foreach (XmlNode nodeCellsTmp in nodeListCellsOld)
+                        {
+                            if ((nodeCellsTmp.LastChild.Attributes["Value"].Value == "x" && arrIdHeader.IndexOf(idMenu) > -1)
+                                || (nodeCellsTmp.LastChild.Attributes["PageBreak"] != null &&
+                                    nodeCellsTmp.LastChild.Attributes["PageBreak"].Value == "1" && arrIdHeader.IndexOf(idMenu) > -1)
+                                || (nodeRowHeader != null && arrIdHeader.IndexOf(idMenu) == -1))
+                            {
+                                indexTable = indexTable + 1;
+                                countTable = countTable + 1;
+                                XmlNode newXmlTableNode = node.Clone();
+                                nodeClone.Add(newXmlTableNode);
+                            }
+                        }
+                        if (nodeRowHeader != null && nodeClone.Count == 0)
+                        {
+                            listFileError = listFileError + fileToLog.PadRight(50, ' ') + "Không có nhà máy thủy điện.";
+                            return;
+                        }
+                        if (nodeClone.Count > 0)
+                        {
+                            //Gen data cho cau truc data moi
+                            for (int i = 0; i < nodeClone.Count; i++)
+                            {
+                                foreach (XmlNode nodeTmp in nodeClone[i].ChildNodes)
+                                {
+                                    if (nodeTmp.Name == "Location")
+                                        foreach (XmlNode nodeTmp2 in nodeTmp.ChildNodes)
+                                        {
+                                            if (nodeTmp2.Name == "DataLocationTemplateRowStart")
+                                                rowTmpStart = ConvertHelpers.ConvertToInt(nodeTmp2.InnerText);
+                                        }
+                                    if (nodeTmp.Name == "RowInfo")
+                                        nodeRowInfo = nodeTmp;
+                                    if (nodeTmp.Name == "Header")
+                                        nodeRowHeader = nodeTmp;
+                                }
+                                int flagStop = 0;
+                                string data = "";
+                                string cellID = "";
+                                foreach (XmlNode nodeCellsTmp in nodeListCellsOld)
+                                {
+                                    cellID = nodeCellsTmp.FirstChild.Attributes["CellID"].Value.ToString().Split('_')[1];
+                                    if (ConvertHelpers.ConvertToInt(cellID) > passNodeOld)
+                                    {
+                                        passNodeOld = ConvertHelpers.ConvertToInt(cellID);
+                                        indexRowDong = passNodeOld;
+                                        //Fill data vao header
+                                        if ((nodeCellsTmp.LastChild.Attributes["Value"].Value == "x" && arrIdHeader.IndexOf(idMenu) > -1)
+                                            || (nodeCellsTmp.LastChild.Attributes["PageBreak"] != null &&
+                                                nodeCellsTmp.LastChild.Attributes["PageBreak"].Value == "1" && arrIdHeader.IndexOf(idMenu) > -1)
+                                            || (arrIdHeader.IndexOf(idMenu) == -1 && nodeCellsTmp.HasChildNodes))
+                                        {
+                                            flagStop = flagStop + 1;
+                                            foreach (XmlNode nodeCellOld in nodeCellsTmp.ChildNodes)
+                                            {
+                                                foreach (XmlNode nodeHeader in nodeRowHeader.ChildNodes)
+                                                {
+                                                    cellID =
+                                                        nodeCellOld.Attributes["CellID"].Value.ToString().Split('_')[0] +
+                                                        "_" +
+                                                        (ConvertHelpers.ConvertToInt(
+                                                            nodeCellOld.Attributes["CellID"].Value.ToString().Split('_')
+                                                                [1]) + countRowSection).ToString();
+                                                    if (nodeHeader.Attributes["CellID"].Value.ToString() == cellID)
+                                                    {
+                                                        string valueOld = nodeCellOld.Attributes["Value"].Value;
+                                                        if (valueOld.IndexOf(" - ") > 0)
+                                                            valueOld = valueOld.Substring(valueOld.IndexOf(" - ") + 3);
+                                                        if (valueOld.IndexOf("         ") > -1)
+                                                        {
+                                                            if (System.Text.RegularExpressions.Regex.Split(valueOld, "         ").Length > 2)
+                                                            {
+                                                                valueOld = System.Text.RegularExpressions.Regex.Split(valueOld, "         ")[0];
+                                                            }
+                                                        }
+                                                        nodeHeader.Attributes["Value"].Value = valueOld;
+                                                    }
+                                                }
+                                            }
+                                            if (flagStop == 2) //tang index cho table ke tiep
+                                            {
+                                                if (i < nodeClone.Count - 1)
+                                                {
+                                                    XmlNode nodeCloneNext = nodeClone[i + 1];
+                                                    XmlNode TableTemplateRowStart = null;
+                                                    XmlNode TableReportRowStart = null;
+                                                    XmlNode DataLocationTemplateRowStart = null;
+                                                    XmlNode DataLocationReportRowStart = null;
+                                                    XmlNode Header = null;
+                                                    foreach (XmlNode nodeTmp in nodeCloneNext.ChildNodes)
+                                                    {
+                                                        if (nodeTmp.Name == "Location")
+                                                            foreach (XmlNode nodeTmp2 in nodeTmp.ChildNodes)
+                                                            {
+                                                                if (nodeTmp2.Name == "TableTemplateRowStart")
+                                                                    TableTemplateRowStart = nodeTmp2;
+                                                                if (nodeTmp2.Name == "TableReportRowStart")
+                                                                    TableReportRowStart = nodeTmp2;
+                                                                if (nodeTmp2.Name == "DataLocationTemplateRowStart")
+                                                                    DataLocationTemplateRowStart = nodeTmp2;
+                                                                if (nodeTmp2.Name == "DataLocationReportRowStart")
+                                                                    DataLocationReportRowStart = nodeTmp2;
+                                                            }
+                                                        if (nodeTmp.Name == "RowInfo")
+                                                            nodeRowInfo = nodeTmp;
+                                                        if (nodeTmp.Name == "Header")
+                                                            Header = nodeTmp;
+                                                    }
+                                                    if (TableTemplateRowStart != null)
+                                                        TableTemplateRowStart.InnerText =
+                                                            (3 + countRowSection + rowCount +
+                                                             ConvertHelpers.ConvertToInt(TableTemplateRowStart.InnerText)).ToString();
+                                                    if (TableReportRowStart != null)
+                                                        TableReportRowStart.InnerText =
+                                                            (3 + countRowSection + rowCount +
+                                                             ConvertHelpers.ConvertToInt(TableReportRowStart.InnerText)).ToString();
+                                                    if (DataLocationTemplateRowStart != null)
+                                                        DataLocationTemplateRowStart.InnerText =
+                                                            (3 + countRowSection + rowCount +
+                                                             ConvertHelpers.ConvertToInt(DataLocationTemplateRowStart.InnerText))
+                                                                .ToString();
+                                                    if (DataLocationReportRowStart != null)
+                                                        DataLocationReportRowStart.InnerText =
+                                                            (3 + countRowSection + rowCount +
+                                                             ConvertHelpers.ConvertToInt(DataLocationReportRowStart.InnerText)).ToString
+                                                                ();
+                                                    string col = "";
+                                                    if (Header != null)
+                                                    {
+                                                        foreach (XmlNode xmlTmp in Header.ChildNodes)
+                                                        {
+                                                            //string row = xmlTmp.Attributes["CellID"].Value.ToString().Split('_')[1];
+                                                            col =
+                                                                xmlTmp.Attributes["CellID"].Value.ToString().Split('_')[
+                                                                    0];
+                                                            xmlTmp.Attributes["CellID"].Value = col + "_" +
+                                                                                                (ConvertHelpers.ConvertToInt(
+                                                                                                    DataLocationTemplateRowStart
+                                                                                                        .InnerText) - 1)
+                                                                                                    .ToString();
+                                                        }
+                                                        foreach (XmlNode nodeCellOld in nodeCellsTmp.ChildNodes)
+                                                        {
+                                                            foreach (XmlNode nodeHeader in Header.ChildNodes)
+                                                            {
+                                                                cellID =
+                                                                    nodeCellOld.Attributes["CellID"].Value.ToString()
+                                                                        .Split('_')[0] + "_" +
+                                                                    (ConvertHelpers.ConvertToInt(
+                                                                        nodeCellOld.Attributes["CellID"].Value.ToString()
+                                                                            .Split('_')[1]) + countRowSection).ToString();
+                                                                if (nodeHeader.Attributes["CellID"].Value.ToString() ==
+                                                                    cellID)
+                                                                {
+                                                                    nodeHeader.Attributes["Value"].Value =
+                                                                        nodeCellOld.Attributes["Value"].Value;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    col =
+                                                        nodeCloneNext.Attributes["TableSTTLocation"].Value.ToString()
+                                                            .Split('_')[0];
+                                                    nodeCloneNext.Attributes["TableSTTLocation"].Value = col + "_" +
+                                                                                                         (ConvertHelpers.ConvertToInt(
+                                                                                                             DataLocationTemplateRowStart
+                                                                                                                 .InnerText) -
+                                                                                                          1).ToString();
+                                                    col =
+                                                        nodeCloneNext.Attributes["TableReportSTTLocation"].Value
+                                                            .ToString().Split('_')[0];
+                                                    nodeCloneNext.Attributes["TableReportSTTLocation"].Value = col + "_" +
+                                                                                                               (Int32
+                                                                                                                   .Parse
+                                                                                                                   (TableReportRowStart
+                                                                                                                       .InnerText) +
+                                                                                                                1)
+                                                                                                                   .ToString
+                                                                                                                   ();
+                                                }
+                                                flagStop = 0;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (flagStop != 2)
+                                            {
+                                                data = "";
+                                                int indexCellsOld =
+                                                    ConvertHelpers.ConvertToInt(
+                                                        nodeCellsTmp.FirstChild.Attributes["CellID"].Value.Split('_')[1]);
+                                                int indexCellHeader =
+                                                    ConvertHelpers.ConvertToInt(
+                                                        nodeRowHeader.FirstChild.Attributes["CellID"].Value.Split('_')[1
+                                                            ]);
+                                                foreach (XmlNode nodeCellTmp in nodeCellsTmp.ChildNodes)
+                                                {
+                                                    string valueOld = nodeCellTmp.Attributes["Value"].Value;
+                                                    if (valueOld.IndexOf("         ") > -1)
+                                                    {
+                                                        if (System.Text.RegularExpressions.Regex.Split(valueOld, "         ").Length > 2)
+                                                        {
+                                                            valueOld = System.Text.RegularExpressions.Regex.Split(valueOld, "         ")[0];
+                                                        }
+                                                    }
+                                                    data = data + valueOld + "###";
+                                                }
+                                                countRowSection = countRowSection + 1;
+                                                data = data.Substring(0, data.LastIndexOf("###"));
+                                                XmlNode nodeDataLast = nodeClone[i].LastChild;
+                                                nodeDataLast.InnerText = data;
+                                                if (nodeDataLast.Attributes["RowDisplay"] != null)
+                                                    nodeDataLast.Attributes["RowDisplay"].Value = "1";
+                                                XmlNode newXmlTableNode = nodeDataLast.Clone();
+                                                nodeClone[i].InsertAfter(newXmlTableNode, nodeDataLast);
+                                            }
+                                        }
+                                    }
+                                    //nodeCellsTmp.ParentNode.RemoveChild(nodeCellsTmp);
+                                }
+                                if (countRowSection > 0)
+                                    nodeClone[i].RemoveChild(nodeClone[i].LastChild);
+                            }
+                            if (countTable == 0)
+                                rowCount = rowCount + countRowSection - 1;
+                            else
+                                rowCount = rowCount + countTable * 2 + countRowSection - 1 - 2; //tru 2 vi 1 table cuoi dc clone nhung ko dung( moi table la 2 dong)
+
+                            //Tang cell ID cho cac cell sau table
+                            foreach (XmlNode nodeSectionAfter in node.ParentNode.ChildNodes)
+                            {
+                                XmlNode Header = null;
+                                foreach (XmlNode nodeTmp in nodeSectionAfter.ChildNodes)
+                                {
+                                    if (nodeTmp.Name == "Header" || nodeTmp.Name == "Cells")
+                                    {
+                                        foreach (XmlNode nodeCellTmp in nodeTmp.ChildNodes)
+                                        {
+                                            string row = nodeCellTmp.Attributes["CellID"].Value.ToString().Split('_')[1];
+                                            if (rowTmpStart - rowCount < ConvertHelpers.ConvertToInt(row))
+                                            {
+                                                nodeCellTmp.Attributes["CellID"].Value =
+                                                    nodeCellTmp.Attributes["CellID"].Value.ToString().Split('_')[0] +
+                                                    "_" +
+                                                    (ConvertHelpers.ConvertToInt(
+                                                        nodeCellTmp.Attributes["CellID"].Value.ToString().Split('_')[1]) +
+                                                     rowCount).ToString();
+                                                nodeCellTmp.Attributes["CellID2"].Value =
+                                                    nodeCellTmp.Attributes["CellID2"].Value.ToString().Split('_')[0] +
+                                                    "_" +
+                                                    (ConvertHelpers.ConvertToInt(
+                                                        nodeCellTmp.Attributes["CellID2"].Value.ToString().Split('_')[1]) +
+                                                     rowCount).ToString();
+                                                if (nodeTmp.Name == "Header")
+                                                {
+                                                    string col = "";
+                                                    if (nodeSectionAfter.Attributes["TableSTTLocation"] != null)
+                                                    {
+                                                        col =
+                                                            nodeSectionAfter.Attributes["TableSTTLocation"].Value.ToString()
+                                                                .Split('_')[0];
+                                                        nodeSectionAfter.Attributes["TableSTTLocation"].Value = col + "_" +
+                                                                                                                (ConvertHelpers.ConvertToInt
+                                                                                                                    (nodeSectionAfter.Attributes
+                                                                                                                        [
+                                                                                                                            "TableSTTLocation"
+                                                                                                                        ]
+                                                                                                                        .Value
+                                                                                                                        .ToString
+                                                                                                                        ()
+                                                                                                                        .Split
+                                                                                                                        ('_')
+                                                                                                                        [1]) +
+                                                                                                                 rowCount)
+                                                                                                                    .ToString
+                                                                                                                    ();
+                                                    }
+                                                    if (nodeSectionAfter.Attributes["TableReportSTTLocation"] != null)
+                                                    {
+                                                        nodeSectionAfter.Attributes["TableReportSTTLocation"].Value = col +
+                                                                                                                      "_" +
+                                                                                                                      (Int32
+                                                                                                                          .Parse
+                                                                                                                          (nodeSectionAfter.Attributes
+                                                                                                                              [
+                                                                                                                                  "TableReportSTTLocation"
+                                                                                                                              ]
+                                                                                                                              .Value
+                                                                                                                              .ToString
+                                                                                                                              ()
+                                                                                                                              .Split
+                                                                                                                              ('_')
+                                                                                                                              [
+                                                                                                                                  1
+                                                                                                                              ]) +
+                                                                                                                       rowCount)
+                                                                                                                          .ToString
+                                                                                                                          ();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+
+                            for (int i = nodeClone.Count - 1; i >= 0; i--)
+                            {
+                                node.ParentNode.InsertAfter(nodeClone[i], node);
+                            }
+
+                            node.ParentNode.RemoveChild(node);
+                        }
+                        else
+                        {
+                            rowCount = nodeListCellsOld.Count - 1;
+                            if (indexRowDong < rowTmpStart - rowCount)
+                                indexRowDong = rowTmpStart - rowCount;
+                            foreach (XmlNode nodeCellsTmp in nodeListCellsOld)
+                            {
+                                string data = "";
+                                XmlNodeList cellInfo = node.ChildNodes[1].ChildNodes;
+                                if (cellInfo != null)
+                                {
+                                    foreach (XmlNode nodeCellTmpInfo in cellInfo)
+                                    {
+                                        bool isExistCell = false;
+                                        foreach (XmlNode nodeCellTmp in nodeCellsTmp)
+                                        {
+                                            if (nodeCellTmpInfo.Attributes["CellID"] != null && nodeCellTmp.Attributes["CellID"] != null && nodeCellTmp.Attributes["CellID"].Value.IndexOf("_") > 0)
+                                            {
+                                                if (nodeCellTmpInfo.Attributes["CellID"].Value == nodeCellTmp.Attributes["CellID"].Value.Split('_')[0])
+                                                {
+                                                    string valueOld = nodeCellTmp.Attributes["Value"].Value;
+                                                    if (valueOld.IndexOf(" - ") > 0)
+                                                        valueOld = valueOld.Substring(valueOld.IndexOf(" - ") + 3);
+                                                    if (valueOld.IndexOf("         ") > -1)
+                                                    {
+                                                        if (System.Text.RegularExpressions.Regex.Split(valueOld, "         ").Length > 2)
+                                                        {
+                                                            valueOld = System.Text.RegularExpressions.Regex.Split(valueOld, "         ")[0];
+                                                        }
+                                                    }
+                                                    data = data + valueOld + "###";
+                                                    isExistCell = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if (!isExistCell)
+                                        {
+                                            if (nodeCellTmpInfo.Attributes["Value"] != null)
+                                            {
+                                                string valueOld = nodeCellTmpInfo.Attributes["Value"].Value;
+                                                if (valueOld.IndexOf("         ") > -1)
+                                                {
+                                                    if (System.Text.RegularExpressions.Regex.Split(valueOld, "         ").Length > 2)
+                                                    {
+                                                        valueOld = System.Text.RegularExpressions.Regex.Split(valueOld, "         ")[0];
+                                                    }
+                                                }
+                                                data = data + valueOld + "###";
+                                            }
+                                            else
+                                                data = data + "###";
+                                        }
+                                    }
+                                    data = data.Substring(0, data.LastIndexOf("###"));
+                                    XmlNode nodeDataLast = node.LastChild;
+                                    nodeDataLast.InnerText = data;
+                                    XmlNode newXmlTableNode = nodeDataLast.Clone();
+                                    node.InsertAfter(newXmlTableNode, nodeDataLast);
+                                }
+                            }
+                            node.RemoveChild(node.LastChild);
+
+                            //Tang cell ID cho cac cell sau table
+                            foreach (XmlNode nodeSectionAfter in node.ParentNode.ChildNodes)
+                            {
+                                XmlNode Header = null;
+                                foreach (XmlNode nodeTmp in nodeSectionAfter.ChildNodes)
+                                {
+                                    if (nodeTmp.Name == "Location")
+                                        if ((nodeTmp.SelectNodes("DataLocationTemplateRowStart")[0] != null
+                                                && ConvertHelpers.ConvertToInt(nodeTmp.SelectNodes("DataLocationTemplateRowStart")[0].InnerText) > rowTmpStart))
+                                            foreach (XmlNode nodeLocalChild in nodeTmp.ChildNodes)
+                                            {
+                                                if (ConvertHelpers.ConvertToInt(nodeLocalChild.InnerXml) > 0)
+                                                    nodeLocalChild.InnerXml = (ConvertHelpers.ConvertToInt(nodeLocalChild.InnerXml) + rowCount).ToString();
+
+                                            }
+                                    if (nodeTmp.Name == "Header" || nodeTmp.Name == "Cells")
+                                    {
+                                        foreach (XmlNode nodeCellTmp in nodeTmp.ChildNodes)
+                                        {
+                                            if (nodeCellTmp.Attributes["CellID"] != null && nodeCellTmp.Attributes["CellID"].Value.IndexOf("_") > -1)
+                                            {
+                                                string row = nodeCellTmp.Attributes["CellID"].Value.ToString().Split('_')[1];
+                                                //if (rowTmpStart - rowCount < ConvertHelpers.ConvertToInt(row))
+                                                if (rowTmpStart < ConvertHelpers.ConvertToInt(row))
+                                                {
+                                                    if (nodeCellTmp.Attributes["CellID"] != null && nodeCellTmp.Attributes["CellID"].Value.IndexOf("_") > -1)
+                                                    {
+                                                        nodeCellTmp.Attributes["CellID"].Value =
+                                                            nodeCellTmp.Attributes["CellID"].Value.ToString().Split('_')[0] +
+                                                            "_" +
+                                                            (ConvertHelpers.ConvertToInt(
+                                                                nodeCellTmp.Attributes["CellID"].Value.ToString().Split('_')[1]) +
+                                                             rowCount).ToString();
+                                                    }
+                                                    if (nodeCellTmp.Attributes["CellID2"] != null && nodeCellTmp.Attributes["CellID2"].Value.IndexOf("_") > -1)
+                                                    {
+                                                        nodeCellTmp.Attributes["CellID2"].Value =
+                                                            nodeCellTmp.Attributes["CellID2"].Value.ToString().Split('_')[0] +
+                                                            "_" +
+                                                            (ConvertHelpers.ConvertToInt(
+                                                                nodeCellTmp.Attributes["CellID2"].Value.ToString().Split('_')[1]) +
+                                                             rowCount).ToString();
+                                                    }
+                                                    if (nodeTmp.Name == "Header")
+                                                    {
+                                                        string col =
+                                                            nodeSectionAfter.Attributes["TableSTTLocation"].Value.ToString()
+                                                                .Split('_')[0];
+                                                        nodeSectionAfter.Attributes["TableSTTLocation"].Value = col + "_" +
+                                                                                                                (ConvertHelpers.ConvertToInt
+                                                                                                                    (nodeSectionAfter
+                                                                                                                        .Attributes
+                                                                                                                        [
+                                                                                                                            "TableSTTLocation"
+                                                                                                                        ]
+                                                                                                                        .Value
+                                                                                                                        .ToString
+                                                                                                                        ()
+                                                                                                                        .Split
+                                                                                                                        ('_')
+                                                                                                                        [1]) +
+                                                                                                                 rowCount)
+                                                                                                                    .ToString
+                                                                                                                    ();
+                                                        nodeSectionAfter.Attributes["TableReportSTTLocation"].Value = col +
+                                                                                                                      "_" +
+                                                                                                                      (Int32
+                                                                                                                          .Parse
+                                                                                                                          (nodeSectionAfter
+                                                                                                                              .Attributes
+                                                                                                                              [
+                                                                                                                                  "TableReportSTTLocation"
+                                                                                                                              ]
+                                                                                                                              .Value
+                                                                                                                              .ToString
+                                                                                                                              ()
+                                                                                                                              .Split
+                                                                                                                              ('_')
+                                                                                                                              [
+                                                                                                                                  1
+                                                                                                                              ]) +
+                                                                                                                       rowCount)
+                                                                                                                          .ToString
+                                                                                                                          ();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                xmlDataNew.DocumentElement.SetAttribute("Version", WinSettings.ToKhaiInfo.Version);
+                string pathFile = HTKKConfig.DATAFILES + @"\" + WinSettings.HTKKHeaderInfo.mst + @"\" + fileName.Replace(dataFileNameOld, dataFileNameNew) +
+                                  "_" + versionXml.Replace(".", "") + ".xml";
+                if (HTKKConstant.ID_TRA_CUU_HOA_DON.IndexOf(idMenu) > -1 || idMenu == "35")
+                {
+                    if (HTKKConstant.TO_KHAI_KO_CO_KY_KK.IndexOf(idMenu) > -1)
+                    {
+                        pathFile = HTKKConfig.DATAFILES + @"\" + WinSettings.HTKKHeaderInfo.mst + @"\" + dataFileNameNew + "_" + versionXml.Replace(".", "") + ".xml";
+                    }
+                    else
+                    {
+                        string pathFileTmp = pathFile.Substring(pathFile.IndexOf(dataFileNameNew));
+                        pathFileTmp = pathFileTmp.Replace(dataFileNameNew + "_", "");
+                        if (pathFileTmp.StartsWith("T"))
+                        {
+                            pathFile = pathFile.Replace(pathFileTmp, pathFileTmp.Substring(1));
+                        }
+                        else
+                        {
+                            pathFile = pathFile.Replace(pathFileTmp, "Q" + pathFileTmp);
+                        }
+                    }
+                }
+                using (XmlTextWriter writer = new XmlTextWriter(pathFile, Encoding.UTF8))
+                {
+                    writer.Formatting = Formatting.Indented;
+                    xmlDataNew.Save(writer);
+                }
+            }
+            catch (Exception ex)
+            {
+                listFileError = listFileError + fileToLog.PadRight(50, ' ') + "Lỗi chuyển đổi.";
+                HTKKFile.Log(System.Reflection.MethodBase.GetCurrentMethod().Name, ex);
+                HTKKFile.LogRun(System.Reflection.MethodBase.GetCurrentMethod().Name, "Loi conver TK: " + pathDataFileOld);
+                //throw;
+            }
+        }
+    }
+}

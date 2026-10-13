@@ -1,0 +1,974 @@
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
+using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using System.Xml;
+using FarPoint.Win.Spread;
+using FarPoint.Win.Spread.CellType;
+using TAX.HTKK.Utilities.Control;
+using TAX.HTKK.Utilities.Core;
+using TAX.HTKK.Utilities.Entity;
+
+namespace TAX.HTKK.Business;
+
+public class Ttdb01Nckt207
+{
+	private Dictionary<string, string[]> dicDMThueDB = new Dictionary<string, string[]>();
+
+	private Dictionary<string, string> dicDMThueDBTmp = new Dictionary<string, string>();
+
+	private Dictionary<string, string[]> dicDichVuThueDB = new Dictionary<string, string[]>();
+
+	private Dictionary<string, string> dicDichVuThueDBTmp = new Dictionary<string, string>();
+
+	private Dictionary<string, string> dicDMDonVi = new Dictionary<string, string>();
+
+	private string nameTable_01_TTDB_I = "01_TTDB_I";
+
+	private string nameTable_01_TTDB_II = "01_TTDB_II";
+
+	private string nameTable_01_TTDB_III_A = "01_TTDB_III_A";
+
+	private string nameTable_01_TTDB_III_B = "01_TTDB_III_B";
+
+	private string nameTable_01_TTDB_III_C = "01_TTDB_III_C";
+
+	private string cellId_TieuMuc = "L_14";
+
+	private string cellId_N34 = "N_34";
+
+	private string formatFormulaCt6 = "V{0}/(1+AD{0}/100)";
+
+	private string formatFormulaCt9 = "ROUND(AA{0}*(AD{0}/100),0)-AG{0}";
+
+	private string fmlCt10_PL1 = "H{0}-J{0}";
+
+	private int[] CellId_TieuMuc => GeneralFunctions.ArrayCellId(cellId_TieuMuc);
+
+	private int[] CellId_N34 => GeneralFunctions.ArrayCellId(cellId_N34);
+
+	private int idxCol_F => HTKKFile.ColumnLettersToIndex("F") - 1;
+
+	private int idxCol_G => HTKKFile.ColumnLettersToIndex("G") - 1;
+
+	private int idxCol_P => HTKKFile.ColumnLettersToIndex("P") - 1;
+
+	private int idxCol_S => HTKKFile.ColumnLettersToIndex("S") - 1;
+
+	private int idxCol_V => HTKKFile.ColumnLettersToIndex("V") - 1;
+
+	private int idxCol_AA => HTKKFile.ColumnLettersToIndex("AA") - 1;
+
+	private int idxCol_AD => HTKKFile.ColumnLettersToIndex("AD") - 1;
+
+	private int idxCol_AG => HTKKFile.ColumnLettersToIndex("AG") - 1;
+
+	private int idxCol_AN => HTKKFile.ColumnLettersToIndex("AN") - 1;
+
+	private int idxCol_C_PL1 => HTKKFile.ColumnLettersToIndex("C") - 1;
+
+	private int idxCol_D_PL1 => HTKKFile.ColumnLettersToIndex("D") - 1;
+
+	private int idxCol_E_PL1 => HTKKFile.ColumnLettersToIndex("E") - 1;
+
+	private int idxCol_F_PL1 => HTKKFile.ColumnLettersToIndex("F") - 1;
+
+	private int idxCol_G_PL1 => HTKKFile.ColumnLettersToIndex("G") - 1;
+
+	private int idxCol_H_PL1 => HTKKFile.ColumnLettersToIndex("H") - 1;
+
+	private int idxCol_I_PL1 => HTKKFile.ColumnLettersToIndex("I") - 1;
+
+	private int idxCol_J_PL1 => HTKKFile.ColumnLettersToIndex("J") - 1;
+
+	private int idxCol_K_PL1 => HTKKFile.ColumnLettersToIndex("K") - 1;
+
+	public void AutoBindData_0(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo)
+	{
+		try
+		{
+			SheetView sheetView = winFpSpread.Sheets[0];
+			HTKKCMCSheetInfo sInfoTK = ToKhaiInfo.SheetInfos[0];
+			sheetView.Cells[CellId_TieuMuc[1], CellId_TieuMuc[0]].Text = PeriodInfo.TieuMucHachToanVal;
+			bool isCheckN = ConvertHelpers.ConvertToBool(sheetView.Cells[CellId_N34[1], CellId_N34[0]].Value);
+			ClearAndLockCellTK(sheetView, sInfoTK, isBindData: true, isCheckN);
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	public void CellEditchange_0(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo, long iRow, long iCol)
+	{
+		try
+		{
+			SheetView sheetView = winFpSpread.Sheets[0];
+			HTKKCMCSheetInfo hTKKCMCSheetInfo = ToKhaiInfo.SheetInfos[0];
+			HTKKCMCTableInfo hTKKCMCTableInfo = hTKKCMCSheetInfo.Tables.Find((HTKKCMCTableInfo table) => table.TableName == nameTable_01_TTDB_I);
+			HTKKCMCTableInfo hTKKCMCTableInfo2 = hTKKCMCSheetInfo.Tables.Find((HTKKCMCTableInfo table) => table.TableName == nameTable_01_TTDB_II);
+			HTKKCMCTableInfo hTKKCMCTableInfo3 = hTKKCMCSheetInfo.Tables.Find((HTKKCMCTableInfo table) => table.TableName == nameTable_01_TTDB_III_A);
+			HTKKCMCTableInfo hTKKCMCTableInfo4 = hTKKCMCSheetInfo.Tables.Find((HTKKCMCTableInfo table) => table.TableName == nameTable_01_TTDB_III_B);
+			HTKKCMCTableInfo hTKKCMCTableInfo5 = hTKKCMCSheetInfo.Tables.Find((HTKKCMCTableInfo table) => table.TableName == nameTable_01_TTDB_III_C);
+			int dataLocationTemplateRowStart = hTKKCMCTableInfo.Location.DataLocationTemplateRowStart;
+			int num = dataLocationTemplateRowStart + hTKKCMCTableInfo.RowsValues.Count - 1;
+			int dataLocationTemplateRowStart2 = hTKKCMCTableInfo2.Location.DataLocationTemplateRowStart;
+			int num2 = dataLocationTemplateRowStart2 + hTKKCMCTableInfo2.RowsValues.Count - 1;
+			int dataLocationTemplateRowStart3 = hTKKCMCTableInfo3.Location.DataLocationTemplateRowStart;
+			int num3 = dataLocationTemplateRowStart3 + hTKKCMCTableInfo3.RowsValues.Count - 1;
+			int dataLocationTemplateRowStart4 = hTKKCMCTableInfo4.Location.DataLocationTemplateRowStart;
+			int num4 = dataLocationTemplateRowStart4 + hTKKCMCTableInfo4.RowsValues.Count - 1;
+			int dataLocationTemplateRowStart5 = hTKKCMCTableInfo5.Location.DataLocationTemplateRowStart;
+			int num5 = dataLocationTemplateRowStart5 + hTKKCMCTableInfo5.RowsValues.Count - 1;
+			if (iCol - 1 != idxCol_G)
+			{
+				return;
+			}
+			if ((iRow >= dataLocationTemplateRowStart && iRow <= num) || (iRow >= dataLocationTemplateRowStart3 && iRow <= num3) || (iRow >= dataLocationTemplateRowStart4 && iRow <= num4) || (iRow >= dataLocationTemplateRowStart5 && iRow <= num5))
+			{
+				string text = sheetView.Cells[(int)iRow - 1, idxCol_G].Text;
+				if (HTKKFormater.isNullString(text))
+				{
+					sheetView.Cells[(int)iRow - 1, idxCol_F].ResetValue();
+					sheetView.Cells[(int)iRow - 1, idxCol_P].ResetValue();
+					sheetView.Cells[(int)iRow - 1, idxCol_P].Locked = true;
+					if (iRow >= dataLocationTemplateRowStart && iRow <= num)
+					{
+						sheetView.Cells[(int)iRow - 1, idxCol_AD].Value = 0;
+					}
+					return;
+				}
+				string[] array = dicDMThueDB[text];
+				sheetView.Cells[(int)iRow - 1, idxCol_G].Text = text;
+				sheetView.Cells[(int)iRow - 1, idxCol_F].Text = array[1];
+				sheetView.Cells[(int)iRow - 1, idxCol_P].Locked = false;
+				sheetView.Cells[(int)iRow - 1, idxCol_P].Value = array[3];
+				if (iRow >= dataLocationTemplateRowStart && iRow <= num)
+				{
+					sheetView.Cells[(int)iRow - 1, idxCol_AD].Locked = true;
+					sheetView.Cells[(int)iRow - 1, idxCol_AD].Value = array[4];
+				}
+			}
+			else if (iRow >= dataLocationTemplateRowStart2 && iRow <= num2)
+			{
+				string text2 = sheetView.Cells[(int)iRow - 1, idxCol_G].Text;
+				if (HTKKFormater.isNullString(text2))
+				{
+					sheetView.Cells[(int)iRow - 1, idxCol_F].ResetValue();
+					sheetView.Cells[(int)iRow - 1, idxCol_AD].Value = 0;
+				}
+				else
+				{
+					string[] array = dicDichVuThueDB[text2];
+					sheetView.Cells[(int)iRow - 1, idxCol_F].Value = array[1];
+					sheetView.Cells[(int)iRow - 1, idxCol_AD].Value = array[4];
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	public void CellEditchange_1(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo, long iRow, long iCol)
+	{
+		try
+		{
+			SheetView sheetView = winFpSpread.Sheets[1];
+			HTKKCMCSheetInfo hTKKCMCSheetInfo = ToKhaiInfo.SheetInfos[1];
+			HTKKCMCTableInfo hTKKCMCTableInfo = hTKKCMCSheetInfo.Tables.Find((HTKKCMCTableInfo table) => table.TableName == "01_1_TTDB_I");
+			int dataLocationTemplateRowStart = hTKKCMCTableInfo.Location.DataLocationTemplateRowStart;
+			int num = dataLocationTemplateRowStart + hTKKCMCTableInfo.RowsValues.Count - 1;
+			if (iCol - 1 == idxCol_K_PL1)
+			{
+				sheetView.Cells[(int)iRow - 1, idxCol_K_PL1].ResetFormula();
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	public void CellChange_0(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo, long iRow, long iCol)
+	{
+		try
+		{
+			int activeSheetIndex = winFpSpread.ActiveSheetIndex;
+			HTKKCMCSheetInfo hTKKCMCSheetInfo = ToKhaiInfo.SheetInfos[0];
+			if (activeSheetIndex != 0)
+			{
+				return;
+			}
+			SheetView sheetView = winFpSpread.Sheets[0];
+			HTKKCMCTableInfo hTKKCMCTableInfo = hTKKCMCSheetInfo.Tables.Find((HTKKCMCTableInfo table) => table.TableName == nameTable_01_TTDB_I);
+			HTKKCMCTableInfo hTKKCMCTableInfo2 = hTKKCMCSheetInfo.Tables.Find((HTKKCMCTableInfo table) => table.TableName == nameTable_01_TTDB_II);
+			int dataLocationTemplateRowStart = hTKKCMCTableInfo.Location.DataLocationTemplateRowStart;
+			int num = dataLocationTemplateRowStart + hTKKCMCTableInfo.RowsValues.Count - 1;
+			int dataLocationTemplateRowStart2 = hTKKCMCTableInfo2.Location.DataLocationTemplateRowStart;
+			int num2 = dataLocationTemplateRowStart2 + hTKKCMCTableInfo2.RowsValues.Count - 1;
+			if (!Convert.ToBoolean(sheetView.Cells[CellId_N34[1], CellId_N34[0]].Value))
+			{
+				string text = formatFormulaCt9;
+				if (iCol == idxCol_V + 1 && ((iRow >= dataLocationTemplateRowStart && iRow <= num) || (iRow >= dataLocationTemplateRowStart2 && iRow <= num2)))
+				{
+					sheetView.Cells[(int)iRow - 1, idxCol_AA].Formula = string.Format(formatFormulaCt6, iRow);
+					string newValue = sheetView.Cells[(int)iRow - 1, idxCol_AA].Text.Replace(".", "").Replace(",", ".");
+					text = text.Replace("AA{0}", newValue);
+					sheetView.Cells[(int)iRow - 1, idxCol_AN].Formula = string.Format(text, iRow);
+				}
+				else if (iCol == idxCol_AA + 1 && ((iRow >= dataLocationTemplateRowStart && iRow <= num) || (iRow >= dataLocationTemplateRowStart2 && iRow <= num2)))
+				{
+					sheetView.Cells[(int)iRow - 1, idxCol_AA].ResetFormula();
+					string newValue = sheetView.Cells[(int)iRow - 1, idxCol_AA].Text.Replace(".", "").Replace(",", ".");
+					text = text.Replace("AA{0}", newValue);
+					sheetView.Cells[(int)iRow - 1, idxCol_AN].Formula = string.Format(text, iRow);
+				}
+				else if (iCol == idxCol_AG + 1 && ((iRow >= dataLocationTemplateRowStart && iRow <= num) || (iRow >= dataLocationTemplateRowStart2 && iRow <= num2)))
+				{
+					string newValue = sheetView.Cells[(int)iRow - 1, idxCol_AA].Text.Replace(".", "").Replace(",", ".");
+					text = text.Replace("AA{0}", newValue);
+					sheetView.Cells[(int)iRow - 1, idxCol_AN].Formula = string.Format(text, iRow);
+				}
+			}
+			else if (iCol == idxCol_AG + 1 && ((iRow >= dataLocationTemplateRowStart && iRow <= num) || (iRow >= dataLocationTemplateRowStart2 && iRow <= num2)))
+			{
+				string text = formatFormulaCt9;
+				string newValue = sheetView.Cells[(int)iRow - 1, idxCol_AA].Text.Replace(".", "").Replace(",", ".");
+				text = text.Replace("AA{0}", newValue);
+				sheetView.Cells[(int)iRow - 1, idxCol_AN].Formula = string.Format(text, iRow);
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	public void CellChange_1(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo, long iRow, long iCol)
+	{
+		try
+		{
+			SheetView sheetView = winFpSpread.Sheets[1];
+			HTKKCMCSheetInfo hTKKCMCSheetInfo = ToKhaiInfo.SheetInfos[1];
+			HTKKCMCTableInfo hTKKCMCTableInfo = hTKKCMCSheetInfo.Tables.Find((HTKKCMCTableInfo table) => table.TableName == "01_1_TTDB_I");
+			int dataLocationTemplateRowStart = hTKKCMCTableInfo.Location.DataLocationTemplateRowStart;
+			int num = dataLocationTemplateRowStart + hTKKCMCTableInfo.RowsValues.Count - 1;
+			if ((iCol - 1 == idxCol_H_PL1 || iCol - 1 == idxCol_J_PL1) && iRow <= num)
+			{
+				sheetView.Cells[(int)iRow - 1, idxCol_K_PL1].Formula = string.Format(fmlCt10_PL1, iRow.ToString());
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	public void ButtonClick_0(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo, Dictionary<string, int> DicSheet)
+	{
+		//IL_00b9: Unknown result type (might be due to invalid IL or missing references)
+		try
+		{
+			int activeColumnIndex = winFpSpread.ActiveSheet.ActiveColumnIndex;
+			int activeRowIndex = winFpSpread.ActiveSheet.ActiveRowIndex;
+			int activeSheetIndex = winFpSpread.ActiveSheetIndex;
+			SheetView sheetView = winFpSpread.Sheets[0];
+			HTKKCMCSheetInfo sInfoTK = ToKhaiInfo.SheetInfos[0];
+			if (activeSheetIndex != 0 || activeRowIndex != CellId_N34[1] || activeColumnIndex != CellId_N34[0])
+			{
+				return;
+			}
+			bool flag = Convert.ToBoolean(sheetView.Cells[CellId_N34[1], CellId_N34[0]].Value);
+			if (flag)
+			{
+				frmMessage frmMessage = new frmMessage("0394", "5", "1", "Thông báo");
+				((Form)frmMessage).ShowDialog();
+				if (frmMessage.Yes)
+				{
+					ClearAndLockCellTK(sheetView, sInfoTK, isBindData: false, flag);
+					if (ToKhaiInfo.SheetInfos[1] != null)
+					{
+						SheetView sViewPL = winFpSpread.Sheets[1];
+						ClearCellNumberPL1(sViewPL, ToKhaiInfo.SheetInfos[1]);
+					}
+				}
+				else
+				{
+					sheetView.Cells[CellId_N34[1], CellId_N34[0]].Value = false;
+				}
+			}
+			else
+			{
+				ClearAndLockCellTK(sheetView, sInfoTK, isBindData: false, flag);
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	public bool isValidDuLieuTK(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo, HTKKHeaderInfo HeaderInfo, Dictionary<int, int> levelWarning)
+	{
+		try
+		{
+			bool result = true;
+			foreach (KeyValuePair<int, int> item in levelWarning)
+			{
+				int key = item.Key;
+				int value = item.Value;
+				if (value == 2 && winFpSpread.TabStrip[key].BackColor != Color.Pink)
+				{
+					winFpSpread.TabStrip[key].BackColor = Color.Pink;
+				}
+				else if (value == 1 && winFpSpread.TabStrip[key].BackColor == Color.White)
+				{
+					winFpSpread.TabStrip[key].BackColor = Color.Yellow;
+				}
+				else
+				{
+					winFpSpread.TabStrip[key].BackColor = Color.White;
+				}
+			}
+			Validate_0(winFpSpread, ToKhaiInfo, TTinChung, PeriodInfo);
+			Validate_1(winFpSpread, ToKhaiInfo, TTinChung, PeriodInfo);
+			if (winFpSpread.TabStrip[0].BackColor == Color.Pink || winFpSpread.TabStrip[1].BackColor == Color.Pink)
+			{
+				result = false;
+			}
+			return result;
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	public void Validate_0(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo)
+	{
+		try
+		{
+			SheetView sheetView = winFpSpread.Sheets[0];
+			HTKKCMCSheetInfo hTKKCMCSheetInfo = ToKhaiInfo.SheetInfos[0];
+			int num = 0;
+			bool flag = false;
+			string message = HTKKFile.GetMessage(sheetView, GeneralFunctions.ArrayCellId("E_16"));
+			string message2 = HTKKFile.GetMessage(sheetView, GeneralFunctions.ArrayCellId("E_17"));
+			string message3 = HTKKFile.GetMessage(sheetView, GeneralFunctions.ArrayCellId("E_18"));
+			string message4 = HTKKFile.GetMessage(sheetView, GeneralFunctions.ArrayCellId("E_20"));
+			bool flag2 = Convert.ToBoolean(sheetView.Cells[CellId_N34[1], CellId_N34[0]].Value);
+			for (int i = 0; i < hTKKCMCSheetInfo.Tables.Count; i++)
+			{
+				if (hTKKCMCSheetInfo.Tables[i].TableName != nameTable_01_TTDB_I && hTKKCMCSheetInfo.Tables[i].TableName != nameTable_01_TTDB_II)
+				{
+					continue;
+				}
+				HTKKCMCTableInfo hTKKCMCTableInfo = hTKKCMCSheetInfo.Tables[i];
+				int num2 = hTKKCMCTableInfo.Location.DataLocationTemplateRowStart - 1;
+				string[] array = new string[hTKKCMCTableInfo.RowsInfo.Cells.Count];
+				for (int j = 0; j < hTKKCMCTableInfo.RowsValues.Count; j++)
+				{
+					array[3] = ConvertHelpers.ConvertToString(sheetView.Cells[num2 + j, idxCol_G].Value);
+					array[5] = ConvertHelpers.ConvertToString(sheetView.Cells[num2 + j, idxCol_P].Value);
+					array[8] = ConvertHelpers.ConvertToString(sheetView.Cells[num2 + j, idxCol_S].Value);
+					array[9] = ConvertHelpers.ConvertToString(sheetView.Cells[num2 + j, idxCol_V].Value);
+					array[10] = ConvertHelpers.ConvertToString(sheetView.Cells[num2 + j, idxCol_AA].Value);
+					array[11] = ConvertHelpers.ConvertToString(sheetView.Cells[num2 + j, idxCol_AD].Value);
+					array[12] = ConvertHelpers.ConvertToString(sheetView.Cells[num2 + j, idxCol_AG].Value);
+					array[14] = ConvertHelpers.ConvertToString(sheetView.Cells[num2 + j, idxCol_AN].Value);
+					if (!GeneralFunctions.HaveToValidateRow(hTKKCMCTableInfo.RowsInfo, array))
+					{
+						HTKKFile.RemoveValidate(sheetView, num2 + j, idxCol_V);
+						HTKKFile.RemoveValidate(sheetView, num2 + j, idxCol_AA);
+						HTKKFile.RemoveValidate(sheetView, num2 + j, idxCol_AG);
+						continue;
+					}
+					if (!flag2)
+					{
+						if (!string.IsNullOrEmpty(array[3]) && array[9] == hTKKCMCTableInfo.RowsInfo.Cells[9].DefaultValue)
+						{
+							HTKKFile.SetNodeBackGroundPink(sheetView, num2 + j, idxCol_V, message);
+							num = 2;
+						}
+						else
+						{
+							HTKKFile.RemoveValidate(sheetView, num2 + j, idxCol_V);
+						}
+						if (!string.IsNullOrEmpty(array[3]) && array[10] == "0")
+						{
+							HTKKFile.SetNodeBackGroundPink(sheetView, num2 + j, idxCol_AA, message2);
+							num = 2;
+							flag = true;
+						}
+						else
+						{
+							HTKKFile.RemoveValidate(sheetView, num2 + j, idxCol_AA);
+						}
+					}
+					else
+					{
+						HTKKFile.RemoveValidate(sheetView, num2 + j, idxCol_V);
+						HTKKFile.RemoveValidate(sheetView, num2 + j, idxCol_AA);
+					}
+					double num3 = Convert.ToDouble(array[14]);
+					if (num3 < 0.0)
+					{
+						HTKKFile.SetNodeBackGroundPink(sheetView, num2 + j, idxCol_AG, message4);
+						num = 2;
+					}
+					else
+					{
+						HTKKFile.RemoveValidate(sheetView, num2 + j, idxCol_AG);
+					}
+					double num4 = Convert.ToDouble(array[9]);
+					double num5 = Convert.ToDouble(array[10]);
+					if (!string.IsNullOrEmpty(array[3]) && num5 >= num4 && !flag2 && !flag)
+					{
+						HTKKFile.SetNodeBackGroundPink(sheetView, num2 + j, idxCol_AA, message3);
+						num = 2;
+					}
+					else if (!flag)
+					{
+						HTKKFile.RemoveValidate(sheetView, num2 + j, idxCol_AA);
+					}
+				}
+			}
+			switch (num)
+			{
+			case 2:
+				winFpSpread.TabStrip[0].BackColor = Color.Pink;
+				break;
+			case 1:
+				winFpSpread.TabStrip[0].BackColor = Color.Yellow;
+				break;
+			default:
+				winFpSpread.TabStrip[0].BackColor = Color.White;
+				break;
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	public void Validate_1(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo, HTKKCMCTTinChungInfo TTinChung, HTKKPeriodInfo PeriodInfo)
+	{
+		try
+		{
+			int num = 0;
+			SheetView sheetView = winFpSpread.Sheets[0];
+			SheetView sheetView2 = winFpSpread.Sheets[1];
+			HTKKCMCSheetInfo hTKKCMCSheetInfo = ToKhaiInfo.SheetInfos[0];
+			HTKKCMCSheetInfo hTKKCMCSheetInfo2 = ToKhaiInfo.SheetInfos[1];
+			string message = HTKKFile.GetMessage("0071");
+			string message2 = HTKKFile.GetMessage("0112");
+			string message3 = HTKKFile.GetMessage(sheetView2, GeneralFunctions.ArrayCellId("E_21"));
+			string message4 = HTKKFile.GetMessage(sheetView2, GeneralFunctions.ArrayCellId("E_24"));
+			string message5 = HTKKFile.GetMessage(sheetView2, GeneralFunctions.ArrayCellId("E_25"));
+			string message6 = HTKKFile.GetMessage(sheetView2, GeneralFunctions.ArrayCellId("E_26"));
+			HTKKCMCTableInfo hTKKCMCTableInfo = null;
+			if (hTKKCMCSheetInfo2 != null)
+			{
+				hTKKCMCTableInfo = hTKKCMCSheetInfo2.Tables.Find((HTKKCMCTableInfo table) => table.TableName == "01_1_TTDB_I");
+			}
+			if (hTKKCMCTableInfo != null)
+			{
+				int num2 = hTKKCMCTableInfo.Location.DataLocationTemplateRowStart - 1;
+				string[] array = new string[hTKKCMCTableInfo.RowsInfo.Cells.Count];
+				for (int num3 = 0; num3 < hTKKCMCTableInfo.RowsValues.Count; num3++)
+				{
+					array[1] = sheetView2.Cells[num2 + num3, idxCol_C_PL1].Text;
+					array[2] = sheetView2.Cells[num2 + num3, idxCol_D_PL1].Text;
+					array[3] = sheetView2.Cells[num2 + num3, idxCol_E_PL1].Text;
+					array[4] = sheetView2.Cells[num2 + num3, idxCol_F_PL1].Text;
+					array[5] = ConvertHelpers.ConvertToString(sheetView2.Cells[num2 + num3, idxCol_G_PL1].Value);
+					array[6] = ConvertHelpers.ConvertToString(sheetView2.Cells[num2 + num3, idxCol_H_PL1].Value);
+					array[8] = ConvertHelpers.ConvertToString(sheetView2.Cells[num2 + num3, idxCol_J_PL1].Value);
+					array[9] = ConvertHelpers.ConvertToString(sheetView2.Cells[num2 + num3, idxCol_K_PL1].Value);
+					if (!GeneralFunctions.HaveToValidateRow(hTKKCMCTableInfo.RowsInfo, array))
+					{
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_E_PL1);
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_F_PL1);
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_G_PL1);
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_H_PL1);
+						continue;
+					}
+					string value = array[1].Replace(",", "").Replace(".", "").Replace("0", "") + array[2].Replace(",", "").Replace(".", "").Replace("0", "") + array[3].Replace(",", "").Replace(".", "").Replace("0", "") + array[4].Replace(",", "").Replace(".", "").Replace("0", "") + array[5].Replace(",", "").Replace(".", "").Replace("0", "") + array[6].Replace(",", "").Replace(".", "").Replace("0", "") + array[8].Replace(",", "").Replace(".", "").Replace("0", "") + array[9].Replace(",", "").Replace(".", "").Replace("0", "");
+					if (string.IsNullOrEmpty(value))
+					{
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_C_PL1);
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_D_PL1);
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_E_PL1);
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_F_PL1);
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_G_PL1);
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_H_PL1);
+						break;
+					}
+					if (HTKKFormater.isNullString(array[1]))
+					{
+						HTKKFile.SetNodeBackGroundPink(sheetView2, num2 + num3, idxCol_C_PL1, message3);
+						num = 2;
+					}
+					else
+					{
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_C_PL1);
+					}
+					if (HTKKFormater.isNullString(array[2]))
+					{
+						HTKKFile.SetNodeBackGroundPink(sheetView2, num2 + num3, idxCol_D_PL1, message3);
+						num = 2;
+					}
+					else
+					{
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_D_PL1);
+					}
+					if (!string.IsNullOrEmpty(array[3]))
+					{
+						if (DateTime.TryParseExact(array[3], "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
+						{
+							int num4 = 12 * ConvertHelpers.ConvertToInt(PeriodInfo.Nam) + ConvertHelpers.ConvertToInt(PeriodInfo.Thang);
+							int num5 = 12 * result.Year + result.Month;
+							if (num5 > num4)
+							{
+								HTKKFile.SetNodeBackGroundPink(sheetView2, num2 + num3, idxCol_E_PL1, message2);
+								num = 2;
+							}
+							else
+							{
+								HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_E_PL1);
+							}
+						}
+						else
+						{
+							HTKKFile.SetNodeBackGroundPink(sheetView2, num2 + num3, idxCol_E_PL1, message);
+							num = 2;
+						}
+					}
+					else
+					{
+						HTKKFile.SetNodeBackGroundPink(sheetView2, num2 + num3, idxCol_E_PL1, message3);
+						num = 2;
+					}
+					if (string.IsNullOrEmpty(array[4]))
+					{
+						HTKKFile.SetNodeBackGroundPink(sheetView2, num2 + num3, idxCol_F_PL1, message3);
+						num = 2;
+					}
+					else
+					{
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_F_PL1);
+					}
+					if (string.IsNullOrEmpty(array[5]) || Convert.ToDouble(array[5]) == 0.0)
+					{
+						HTKKFile.SetNodeBackGroundPink(sheetView2, num2 + num3, idxCol_G_PL1, message3);
+						num = 2;
+					}
+					else
+					{
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_G_PL1);
+					}
+					if (string.IsNullOrEmpty(array[6]) || Convert.ToDouble(array[6]) == 0.0)
+					{
+						HTKKFile.SetNodeBackGroundPink(sheetView2, num2 + num3, idxCol_H_PL1, message3);
+						num = 2;
+					}
+					else
+					{
+						HTKKFile.RemoveValidate(sheetView2, num2 + num3, idxCol_H_PL1);
+					}
+				}
+			}
+			HTKKCMCCellInfo hTKKCMCCellInfo = hTKKCMCSheetInfo2?.StaticCells.Find((HTKKCMCCellInfo cell) => cell.Path == "Pluc_01_1_TTDB/TTinThueNLMVao/tong_ct10");
+			HTKKCMCCellInfo hTKKCMCCellInfo2 = hTKKCMCSheetInfo2?.StaticCells.Find((HTKKCMCCellInfo cell) => cell.Path == "Pluc_01_1_TTDB/TTinThueNLDuocKTru/tong_ct7");
+			HTKKCMCCellInfo hTKKCMCCellInfo3 = hTKKCMCSheetInfo?.StaticCells.Find((HTKKCMCCellInfo cell) => cell.Path == "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/BangChiTietThueTTDB/tongThueKTru");
+			double num6 = ((hTKKCMCCellInfo != null) ? Convert.ToDouble(sheetView2.Cells[hTKKCMCCellInfo.CellTemplate.RowIndex - 1, hTKKCMCCellInfo.CellTemplate.ColIndex - 1].Value) : 0.0);
+			double num7 = ((hTKKCMCCellInfo2 != null) ? Convert.ToDouble(sheetView2.Cells[hTKKCMCCellInfo2.CellTemplate.RowIndex - 1, hTKKCMCCellInfo2.CellTemplate.ColIndex - 1].Value) : 0.0);
+			double num8 = ((hTKKCMCCellInfo3 != null) ? Convert.ToDouble(sheetView.Cells[hTKKCMCCellInfo3.CellTemplate.RowIndex - 1, hTKKCMCCellInfo3.CellTemplate.ColIndex - 1].Value) : 0.0);
+			if (hTKKCMCCellInfo2 != null)
+			{
+				if (num7 > num6)
+				{
+					HTKKFile.SetNodeBackGroundPink(sheetView2, hTKKCMCCellInfo2.CellTemplate.RowIndex - 1, hTKKCMCCellInfo2.CellTemplate.ColIndex - 1, message4);
+					num = 2;
+				}
+				else if (num8 != num7)
+				{
+					HTKKFile.SetNodeBackGroundPink(sheetView2, hTKKCMCCellInfo2.CellTemplate.RowIndex - 1, hTKKCMCCellInfo2.CellTemplate.ColIndex - 1, message5);
+					num = 2;
+				}
+				else
+				{
+					HTKKFile.RemoveValidateBackGround(sheetView2, hTKKCMCCellInfo2.CellTemplate.RowIndex - 1, hTKKCMCCellInfo2.CellTemplate.ColIndex - 1);
+				}
+			}
+			switch (num)
+			{
+			case 2:
+				sheetView2.FpSpread.TabStrip[1].BackColor = Color.Pink;
+				break;
+			case 1:
+				sheetView2.FpSpread.TabStrip[1].BackColor = Color.Yellow;
+				break;
+			default:
+				sheetView2.FpSpread.TabStrip[1].BackColor = Color.White;
+				break;
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	private void ClearAndLockCellTK(SheetView sViewTK, HTKKCMCSheetInfo sInfoTK, bool isBindData, bool isCheckN34)
+	{
+		try
+		{
+			List<int> list = new List<int>();
+			list.Add(idxCol_S);
+			list.Add(idxCol_V);
+			list.Add(idxCol_AA);
+			list.Add(idxCol_AD);
+			List<int> list2 = list;
+			HTKKCMCTableInfo hTKKCMCTableInfo = sInfoTK.Tables.Find((HTKKCMCTableInfo table) => table.TableName == "01_TTDB_I");
+			int num = hTKKCMCTableInfo.Location.DataLocationTemplateRowStart - 1;
+			for (int num2 = 0; num2 < hTKKCMCTableInfo.RowsValues.Count; num2++)
+			{
+				for (int num3 = 0; num3 < hTKKCMCTableInfo.RowsInfo.Cells.Count; num3++)
+				{
+					HTKKCMCTableCellInfo hTKKCMCTableCellInfo = hTKKCMCTableInfo.RowsInfo.Cells[num3];
+					if (list2.Contains(hTKKCMCTableCellInfo.CellTemplate.ColIndex - 1))
+					{
+						if (!isBindData && isCheckN34)
+						{
+							SetDefaultValueToTableCell(sViewTK, hTKKCMCTableCellInfo, num + num2);
+						}
+						sViewTK.Cells[num + num2, hTKKCMCTableCellInfo.CellTemplate.ColIndex - 1].Locked = isCheckN34;
+					}
+				}
+			}
+			HTKKCMCTableInfo hTKKCMCTableInfo2 = sInfoTK.Tables.Find((HTKKCMCTableInfo table) => table.TableName == "01_TTDB_II");
+			int num4 = hTKKCMCTableInfo2.Location.DataLocationTemplateRowStart - 1;
+			for (int num2 = 0; num2 < hTKKCMCTableInfo2.RowsValues.Count; num2++)
+			{
+				for (int num3 = 0; num3 < hTKKCMCTableInfo2.RowsInfo.Cells.Count; num3++)
+				{
+					HTKKCMCTableCellInfo hTKKCMCTableCellInfo = hTKKCMCTableInfo2.RowsInfo.Cells[num3];
+					if (list2.Contains(hTKKCMCTableCellInfo.CellTemplate.ColIndex - 1))
+					{
+						if (!isBindData && isCheckN34)
+						{
+							SetDefaultValueToTableCell(sViewTK, hTKKCMCTableCellInfo, num4 + num2);
+						}
+						sViewTK.Cells[num4 + num2, hTKKCMCTableCellInfo.CellTemplate.ColIndex - 1].Locked = isCheckN34;
+					}
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	private void ClearCellNumberPL1(SheetView sViewPL1, HTKKCMCSheetInfo sInfoPL1)
+	{
+		try
+		{
+			for (int i = 0; i < sInfoPL1.Tables.Count; i++)
+			{
+				HTKKCMCTableInfo hTKKCMCTableInfo = sInfoPL1.Tables[i];
+				int num = hTKKCMCTableInfo.Location.DataLocationTemplateRowStart - 1;
+				if (hTKKCMCTableInfo.RowsValues.Count <= 0)
+				{
+					continue;
+				}
+				for (int j = 0; j < hTKKCMCTableInfo.RowsValues.Count; j++)
+				{
+					for (int k = 0; k < hTKKCMCTableInfo.RowsInfo.Cells.Count; k++)
+					{
+						HTKKCMCTableCellInfo hTKKCMCTableCellInfo = hTKKCMCTableInfo.RowsInfo.Cells[k];
+						ICellType cellType = sViewPL1.Cells[num + j, hTKKCMCTableCellInfo.CellTemplate.ColIndex - 1].CellType;
+						if (hTKKCMCTableCellInfo.Controltype == "16" || (hTKKCMCTableCellInfo.Controltype == "0" && cellType.ToString() == "NumberCellType"))
+						{
+							string value = ((hTKKCMCTableCellInfo.DefaultValue != null) ? hTKKCMCTableCellInfo.DefaultValue : "0");
+							sViewPL1.Cells[num + j, hTKKCMCTableCellInfo.CellTemplate.ColIndex - 1].Value = value;
+						}
+					}
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	private void SetDefaultValueToTableCell(SheetView sView, HTKKCMCTableCellInfo cellInfo, int idxRow)
+	{
+		try
+		{
+			string text = "";
+			if (cellInfo.DefaultValue != null)
+			{
+				text = cellInfo.DefaultValue;
+			}
+			else if (cellInfo.Controltype != null)
+			{
+				text = ((!(cellInfo.Controltype == "16")) ? "" : "0");
+			}
+			else
+			{
+				ICellType cellType = sView.Cells[idxRow, cellInfo.CellTemplate.ColIndex - 1].CellType;
+				if (cellType != null)
+				{
+					text = ((!(cellType.ToString() == "NumberCellType")) ? "" : "0");
+				}
+			}
+			sView.Cells[idxRow, cellInfo.CellTemplate.ColIndex - 1].Text = text;
+			sView.Cells[idxRow, cellInfo.CellTemplate.ColIndex - 1].Locked = true;
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	private void SetDefaultValueToRow(SheetView sViewPL1, HTKKCMCRowInfo rowInfo, int idxRow)
+	{
+		try
+		{
+			foreach (HTKKCMCTableCellInfo cell in rowInfo.Cells)
+			{
+				string text = "";
+				int column = cell.CellTemplate.ColIndex - 1;
+				if (cell.DefaultValue != null)
+				{
+					text = cell.DefaultValue;
+				}
+				else if (cell.Controltype != null)
+				{
+					text = ((!(cell.Controltype == "16")) ? "" : "0");
+				}
+				else
+				{
+					ICellType cellType = sViewPL1.Cells[idxRow, column].CellType;
+					text = ((!(cellType.ToString() == "NumberCellType")) ? "" : "0");
+				}
+				sViewPL1.Cells[idxRow, column].Text = text;
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			throw ex;
+		}
+	}
+
+	public Dictionary<string, string> GetDMThueTieuThuDB(string pathFile)
+	{
+		//IL_0034: Unknown result type (might be due to invalid IL or missing references)
+		//IL_003a: Expected O, but got Unknown
+		//IL_0079: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0080: Expected O, but got Unknown
+		try
+		{
+			if (dicDMThueDBTmp.Count > 0)
+			{
+				return dicDMThueDBTmp;
+			}
+			Dictionary<string, string[]> dictionary = new Dictionary<string, string[]>();
+			Dictionary<string, string> dictionary2 = new Dictionary<string, string>();
+			XmlDocument val = new XmlDocument();
+			if (!File.Exists(pathFile))
+			{
+				return null;
+			}
+			val.Load(pathFile);
+			XmlNodeList elementsByTagName = val.GetElementsByTagName("Cell");
+			foreach (XmlNode item in elementsByTagName)
+			{
+				XmlNode val2 = item;
+				string value = ((XmlNode)val2.Attributes["Value"]).Value;
+				string[] array = Regex.Split(value, "###");
+				if (array.Length > 2 && array[1].StartsWith("1") && array[^1] == "1")
+				{
+					string key = array[1];
+					string text = array[2].Trim();
+					string text2 = array[4].Trim();
+					if (!string.IsNullOrEmpty(text2))
+					{
+						text = text + " (" + text2 + " %)";
+					}
+					if (!dictionary2.ContainsKey(key))
+					{
+						dictionary2.Add(key, text);
+					}
+					if (!dictionary.ContainsKey(text))
+					{
+						dictionary.Add(text, array);
+					}
+				}
+			}
+			dicDMThueDB = dictionary;
+			dicDMThueDBTmp = dictionary2;
+			return dictionary2;
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			return null;
+		}
+	}
+
+	public Dictionary<string, string> GetDichVuThueTieuThuDB(string pathFile)
+	{
+		//IL_0034: Unknown result type (might be due to invalid IL or missing references)
+		//IL_003a: Expected O, but got Unknown
+		//IL_0079: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0080: Expected O, but got Unknown
+		try
+		{
+			if (dicDichVuThueDBTmp.Count > 0)
+			{
+				return dicDichVuThueDBTmp;
+			}
+			Dictionary<string, string[]> dictionary = new Dictionary<string, string[]>();
+			Dictionary<string, string> dictionary2 = new Dictionary<string, string>();
+			XmlDocument val = new XmlDocument();
+			if (!File.Exists(pathFile))
+			{
+				return null;
+			}
+			val.Load(pathFile);
+			XmlNodeList elementsByTagName = val.GetElementsByTagName("Cell");
+			foreach (XmlNode item in elementsByTagName)
+			{
+				XmlNode val2 = item;
+				string value = ((XmlNode)val2.Attributes["Value"]).Value;
+				string[] array = Regex.Split(value, "###");
+				if (array.Length > 2 && array[1].StartsWith("2"))
+				{
+					string key = array[1];
+					string text = array[2].Trim();
+					if (!dictionary2.ContainsKey(key))
+					{
+						dictionary2.Add(key, text);
+					}
+					if (!dictionary.ContainsKey(text))
+					{
+						dictionary.Add(text, array);
+					}
+				}
+			}
+			dicDichVuThueDB = dictionary;
+			dicDichVuThueDBTmp = dictionary2;
+			return dictionary2;
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			return null;
+		}
+	}
+
+	public Dictionary<string, string> GetDMTTDBDonVi(string pathFile)
+	{
+		//IL_002c: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0032: Expected O, but got Unknown
+		//IL_005a: Unknown result type (might be due to invalid IL or missing references)
+		//IL_0061: Expected O, but got Unknown
+		try
+		{
+			if (dicDMDonVi.Count > 0)
+			{
+				return dicDMDonVi;
+			}
+			Dictionary<string, string> dictionary = new Dictionary<string, string>();
+			XmlDocument val = new XmlDocument();
+			val.Load(pathFile);
+			XmlNodeList elementsByTagName = val.GetElementsByTagName("Item");
+			int num = 0;
+			foreach (XmlNode item in elementsByTagName)
+			{
+				XmlNode val2 = item;
+				string value = ((XmlNode)val2.Attributes["value"]).Value;
+				num++;
+				dictionary.Add(num.ToString(), value);
+			}
+			dicDMDonVi = dictionary;
+			return dictionary;
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+			return null;
+		}
+	}
+
+	public void FinishImportXML(FpSpread winFpSpread, HTKKCMCToKhaiInfo ToKhaiInfo)
+	{
+		try
+		{
+			SheetView sheetView = winFpSpread.Sheets[0];
+			string[] array = new string[5] { "01_TTDB_I", "01_TTDB_II", "01_TTDB_III_A", "01_TTDB_III_B", "01_TTDB_III_C" };
+			string[] array2 = null;
+			string[] array3 = null;
+			string[] array4 = array;
+			foreach (string tableName in array4)
+			{
+				HTKKCMCSheetInfo hTKKCMCSheetInfo = ToKhaiInfo.SheetInfos[0];
+				List<HTKKCMCTableInfo> tables = hTKKCMCSheetInfo.Tables;
+				Predicate<HTKKCMCTableInfo> match = (HTKKCMCTableInfo table) => table.TableName == tableName;
+				HTKKCMCTableInfo hTKKCMCTableInfo = tables.Find(match);
+				int dataLocationTemplateRowStart = hTKKCMCTableInfo.Location.DataLocationTemplateRowStart;
+				int num = dataLocationTemplateRowStart + hTKKCMCTableInfo.RowsValues.Count - 1;
+				ComboBoxCellType comboBoxCellType = new ComboBoxCellType();
+				comboBoxCellType = (ComboBoxCellType)sheetView.Cells[dataLocationTemplateRowStart - 1, HTKKFile.ColumnLettersToIndex("G") - 1].Editor;
+				array2 = comboBoxCellType.Items;
+				array3 = comboBoxCellType.ItemData;
+				string empty = string.Empty;
+				string empty2 = string.Empty;
+				Dictionary<string, string> dictionary = new Dictionary<string, string>();
+				for (int num2 = dataLocationTemplateRowStart; num2 <= num; num2++)
+				{
+					empty2 = sheetView.Cells[num2 - 1, HTKKFile.ColumnLettersToIndex("F") - 1].Text;
+					ICellType cellType = sheetView.Cells[num2 - 1, HTKKFile.ColumnLettersToIndex("G") - 1].CellType;
+					if (cellType.ToString() == "TaxComboBoxCellType")
+					{
+						List<string> list = new List<string>(array3);
+						if (list.Contains(empty2))
+						{
+							int num3 = list.IndexOf(empty2);
+							empty = array2[num3];
+							sheetView.Cells[num2 - 1, HTKKFile.ColumnLettersToIndex("G") - 1].Text = empty;
+						}
+					}
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			HTKKFile.Log(MethodBase.GetCurrentMethod().Name, ex);
+		}
+	}
+}
