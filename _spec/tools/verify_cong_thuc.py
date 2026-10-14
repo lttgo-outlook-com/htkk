@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """verify_cong_thuc.py: kiểm độc lập các _forms/**/cong_thuc.txt với _spec/rules (không dùng mã của render_cong_thuc.py).
 
-Chạy: python3 -I _spec/tools/verify_cong_thuc.py [--repo .] [--excel 417348]
+Chạy: python3 -I _spec/tools/verify_cong_thuc.py [--repo .] [--excel 417351]
 In: số dòng ô Excel (so với --excel), số dòng C#, số effect setFormula không unreachable của class đã map,
 số nhánh cases thêm, class không map được; thoát mã 1 nếu lệch.
 Dòng C# = dòng có cột nguồn bắt đầu 'C#:'; dòng Excel = cột nguồn là xls | xls1 | xlsx
@@ -19,7 +19,7 @@ SKIP = {'index.json', '_app.json', '_shared.json', 'opaque_calls.json', 'formula
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repo', default=os.getcwd())
-    ap.add_argument('--excel', type=int, default=417348)
+    ap.add_argument('--excel', type=int, default=417351)
     a = ap.parse_args()
     F = os.path.join(a.repo, '_forms')
     excel = cs = 0

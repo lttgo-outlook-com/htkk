@@ -1,5 +1,7 @@
 # _spec
 
+> **Lưu ý quan trọng (Quy tắc làm việc):** Trọng tâm của dự án là trích xuất **biểu mẫu, templates (`.xls`, `.xls1`, `.xlsx`), `.xml`, `.xsd`, danh mục và công thức (`cong_thuc.txt`, `_spec/formulas/`)**. **KHÔNG** tự ý decompile lại `.dll`/`.exe` hay chạy lại các bộ phân tích C#/Roslyn (`T0 csharp`, `T2 rules`, `T3 validations`) với mục tiêu rebuild app khi cập nhật phiên bản HTKK mới. Xem quy trình chuẩn tại `../README.md` và `../GEMINI.md`.
+
 ## Mục tiêu
 
 Decompile và lập danh mục toàn bộ công cụ HTKK 5.7.9 của Tổng cục Thuế (logic, thuật toán, dữ liệu, hành vi tĩnh). Không nhằm dựng web app. `_spec` là đặc tả máy đọc được (JSON, CSV) sinh từ hai nguồn:
